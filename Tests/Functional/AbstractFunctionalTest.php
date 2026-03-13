@@ -132,14 +132,8 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
             'db_mountpoints' => '0',
             'file_mountpoints' => '',
             'publish_time' => 0,
-            'unpublish_time' => 0,
-            'freeze' => 0,
-            'live_edit' => 0,
-            'swap_modes' => 0,
             'publish_access' => 0,
             'stagechg_notification' => 0,
-            'custom_stages' => 0,
-            'uid' => 0,
             'pid' => 0,
         ]);
         
