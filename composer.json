@@ -21,7 +21,9 @@
         "typo3/testing-framework": "^9.2.0",
         "typo3/cms-install": "^13.4 || ^14.0",
         "georgringer/news": "^12.0",
-        "brianium/paratest": "^7.11"
+        "brianium/paratest": "^7.11",
+        "phpstan/phpstan": "^2.0",
+        "saschaegerer/phpstan-typo3": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -56,6 +58,9 @@
         ],
         "test:llm": [
             "paratest -c Tests/Llm/phpunit-llm.xml"
+        ],
+        "phpstan": [
+            "phpstan analyse --no-progress"
         ]
     },
     "config": {

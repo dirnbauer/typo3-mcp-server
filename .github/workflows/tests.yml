@@ -7,7 +7,42 @@ on:
 jobs:
   functional-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php-version: '8.2'
+            typo3-version: '^13.4'
+          - php-version: '8.3'
+            typo3-version: '^13.4'
+          - php-version: '8.3'
+            typo3-version: '^14.0'
+          - php-version: '8.4'
+            typo3-version: '^14.0'
 
+    name: "PHP ${{ matrix.php-version }} / TYPO3 ${{ matrix.typo3-version }}"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: |
+          composer require --no-update "typo3/cms-core:${{ matrix.typo3-version }}"
+          composer install --no-interaction --prefer-dist
+
+      - name: Run functional test suite
+        run: composer test
+
+  code-quality:
+    runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,5 +57,5 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Run functional test suite
-        run: composer test
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress
