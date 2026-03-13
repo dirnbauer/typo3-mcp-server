@@ -32,7 +32,7 @@ class WriteTableTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get all accessible tables for enum (exclude read-only tables for write operations)
         $accessibleTables = $this->tableAccessService->getAccessibleTables(false);

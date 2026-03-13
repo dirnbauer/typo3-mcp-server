@@ -16,7 +16,7 @@ class ListTablesTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'List available tables in TYPO3 that can be accessed via MCP, organized by extension.',

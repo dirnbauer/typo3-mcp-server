@@ -38,7 +38,7 @@ class GetPageTreeTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         $schema = [
             'description' => 'Get the TYPO3 page tree structure as a readable text tree.Essential for understanding page hierarchy before creating new pages, finding pages by their position, and verifying parent-child relationships.',

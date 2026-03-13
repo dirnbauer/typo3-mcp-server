@@ -11,32 +11,76 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Abstract base class for record-related MCP tools
- */
 abstract class AbstractRecordTool extends AbstractTool
 {
-    
     protected TableAccessService $tableAccessService;
     protected WorkspaceContextService $workspaceContextService;
-    
+
+    /**
+     * Workspace ID requested by the current tool call (null = auto-select).
+     */
+    private ?int $requestedWorkspaceId = null;
+
     public function __construct()
     {
         $this->tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
         $this->workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
-    
+
     /**
-     * Initialize workspace context before execution
-     * 
-     * This method is called automatically by AbstractTool::execute()
-     * before doExecute() is invoked.
+     * Override execute to extract workspace_id before initialize() runs.
      */
+    final public function execute(array $params): CallToolResult
+    {
+        if (isset($params['workspace_id']) && $params['workspace_id'] !== null) {
+            $this->requestedWorkspaceId = (int)$params['workspace_id'];
+            unset($params['workspace_id']);
+        } else {
+            $this->requestedWorkspaceId = null;
+        }
+        return parent::executeInternal($params);
+    }
+
+    /**
+     * Wraps the concrete schema with the optional workspace_id property.
+     */
+    public function getSchema(): array
+    {
+        $schema = $this->getToolSchema();
+
+        if (isset($schema['inputSchema']['properties']) && $schema['inputSchema']['properties'] instanceof \stdClass) {
+            $props = (array)$schema['inputSchema']['properties'];
+        } elseif (isset($schema['inputSchema']['properties']) && is_array($schema['inputSchema']['properties'])) {
+            $props = $schema['inputSchema']['properties'];
+        } else {
+            $props = [];
+        }
+
+        $props['workspace_id'] = [
+            'type' => 'integer',
+            'description' => 'Optional workspace ID. Use list_workspaces to see available workspaces. Omit to use the default workspace.',
+        ];
+        $schema['inputSchema']['properties'] = empty($props) ? new \stdClass() : $props;
+
+        return $schema;
+    }
+
+    /**
+     * Concrete tools implement this instead of getSchema().
+     */
+    abstract protected function getToolSchema(): array;
+
     protected function initialize(): void
     {
         parent::initialize();
-        
-        if (isset($GLOBALS['BE_USER'])) {
+
+        if (!isset($GLOBALS['BE_USER'])) {
+            return;
+        }
+
+        if ($this->requestedWorkspaceId !== null) {
+            $this->workspaceContextService->switchToWorkspace($GLOBALS['BE_USER'], $this->requestedWorkspaceId);
+        } else {
             $this->workspaceContextService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
         }
     }

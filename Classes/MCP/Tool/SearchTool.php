@@ -35,7 +35,7 @@ class SearchTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         $schema = [
             'description' => "Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. " .

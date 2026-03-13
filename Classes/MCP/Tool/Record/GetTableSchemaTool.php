@@ -18,7 +18,7 @@ class GetTableSchemaTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get all accessible tables for enum
         $accessibleTables = $this->tableAccessService->getAccessibleTables(true);

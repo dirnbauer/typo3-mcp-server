@@ -28,52 +28,29 @@ abstract class AbstractTool implements ToolInterface
         return str_replace('Tool', '', $className);
     }
     
+    public function execute(array $params): CallToolResult
+    {
+        return $this->executeInternal($params);
+    }
+
     /**
-     * Execute the tool with the given parameters
-     * 
-     * This method is final to ensure consistent error handling across all tools.
-     * Subclasses should implement doExecute() for their specific logic.
-     *
-     * @param array $params
-     * @return CallToolResult
+     * Internal execution with consistent error handling.
+     * Subclasses that override execute() call this to preserve the template method.
      */
-    final public function execute(array $params): CallToolResult
+    protected function executeInternal(array $params): CallToolResult
     {
         try {
-            // Initialize any necessary context (overridden in subclasses)
             $this->initialize();
-            
-            // Execute the actual tool logic
             return $this->doExecute($params);
         } catch (\Throwable $e) {
-            // Use the trait's exception handler for consistent logging and messaging
             return $this->handleException($e, $this->getName());
         }
     }
-    
-    /**
-     * Initialize any necessary context before execution
-     * 
-     * Override this method in subclasses to perform initialization
-     * such as workspace context setup.
-     */
+
     protected function initialize(): void
     {
-        // Default implementation does nothing
-        // Subclasses can override to add initialization logic
     }
-    
-    /**
-     * Execute the tool logic
-     * 
-     * This method must be implemented by subclasses to provide
-     * the actual tool functionality. Any exceptions thrown will
-     * be handled by the execute() method.
-     *
-     * @param array $params
-     * @return CallToolResult
-     * @throws \Exception Any exception thrown will be handled by execute()
-     */
+
     abstract protected function doExecute(array $params): CallToolResult;
     
     /**

@@ -48,7 +48,7 @@ class GetPageTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get available domains text dynamically
         $domainsText = $this->siteInformationService->getAvailableDomainsText();

@@ -33,7 +33,7 @@ class ReadTableTool extends AbstractRecordTool
     /**
      * Get the tool schema
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Check if multiple languages are available
         $availableLanguages = $this->languageService->getAvailableIsoCodes();
