@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
+use Exception;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 
 final class ReadFileMetadataTool extends AbstractTool
@@ -19,6 +23,9 @@ final class ReadFileMetadataTool extends AbstractTool
         private readonly ConnectionPool $connectionPool,
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getSchema(): array
     {
         return [
@@ -46,10 +53,13 @@ final class ReadFileMetadataTool extends AbstractTool
         ];
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     protected function doExecute(array $params): CallToolResult
     {
-        $uid = isset($params['uid']) ? (int)$params['uid'] : null;
-        $identifier = $params['identifier'] ?? null;
+        $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int)$params['uid'] : null;
+        $identifier = is_string($params['identifier'] ?? null) ? $params['identifier'] : null;
 
         if ($uid === null && $identifier === null) {
             throw new ValidationException(['Either uid or identifier must be provided']);
@@ -61,12 +71,17 @@ final class ReadFileMetadataTool extends AbstractTool
             } else {
                 $file = $this->resourceFactory->getFileObjectFromCombinedIdentifier($identifier);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new ValidationException(['File not found: ' . $e->getMessage()]);
         }
 
+        if (!$file instanceof File && !$file instanceof ProcessedFile) {
+            throw new ValidationException(['File could not be loaded']);
+        }
+
         $props = $file->getProperties();
-        $metaData = $file->getMetaData()->get();
+        $metadataFile = $file instanceof ProcessedFile ? $file->getOriginalFile() : $file;
+        $metaData = $metadataFile->getMetaData()->get();
 
         $result = [
             'uid' => $file->getUid(),
@@ -74,20 +89,20 @@ final class ReadFileMetadataTool extends AbstractTool
             'identifier' => $file->getCombinedIdentifier(),
             'mimeType' => $file->getMimeType(),
             'size' => $file->getSize(),
-            'sizeFormatted' => \TYPO3\CMS\Core\Utility\GeneralUtility::formatSize($file->getSize(), 'si'),
+            'sizeFormatted' => GeneralUtility::formatSize($file->getSize(), 'si'),
             'extension' => $file->getExtension(),
         ];
 
         if (str_starts_with($file->getMimeType(), 'image/')) {
-            $result['width'] = (int)($props['width'] ?? 0);
-            $result['height'] = (int)($props['height'] ?? 0);
+            $result['width'] = is_numeric($props['width'] ?? null) ? (int)$props['width'] : 0;
+            $result['height'] = is_numeric($props['height'] ?? null) ? (int)$props['height'] : 0;
         }
 
         $result['metadata'] = [
-            'title' => $metaData['title'] ?? '',
-            'description' => $metaData['description'] ?? '',
-            'alternative' => $metaData['alternative'] ?? '',
-            'copyright' => $metaData['copyright'] ?? '',
+            'title' => is_scalar($metaData['title'] ?? null) ? (string)$metaData['title'] : '',
+            'description' => is_scalar($metaData['description'] ?? null) ? (string)$metaData['description'] : '',
+            'alternative' => is_scalar($metaData['alternative'] ?? null) ? (string)$metaData['alternative'] : '',
+            'copyright' => is_scalar($metaData['copyright'] ?? null) ? (string)$metaData['copyright'] : '',
         ];
 
         $categories = $this->getFileCategories($file->getUid());
@@ -100,7 +115,8 @@ final class ReadFileMetadataTool extends AbstractTool
             $result['usedIn'] = $references;
         }
 
-        return new CallToolResult([new TextContent(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))]);
+        $json = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        return new CallToolResult([new TextContent($json)]);
     }
 
     /**
@@ -120,7 +136,13 @@ final class ReadFileMetadataTool extends AbstractTool
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(static fn(array $r): array => ['uid' => (int)$r['uid'], 'title' => $r['title']], $rows);
+        return array_map(
+            static fn(array $r): array => [
+                'uid' => is_numeric($r['uid'] ?? null) ? (int)$r['uid'] : 0,
+                'title' => is_scalar($r['title'] ?? null) ? (string)$r['title'] : '',
+            ],
+            $rows
+        );
     }
 
     /**
@@ -141,9 +163,9 @@ final class ReadFileMetadataTool extends AbstractTool
             ->fetchAllAssociative();
 
         return array_map(static fn(array $r): array => [
-            'table' => $r['tablenames'],
-            'uid' => (int)$r['uid_foreign'],
-            'field' => $r['fieldname'],
+            'table' => is_scalar($r['tablenames'] ?? null) ? (string)$r['tablenames'] : '',
+            'uid' => is_numeric($r['uid_foreign'] ?? null) ? (int)$r['uid_foreign'] : 0,
+            'field' => is_scalar($r['fieldname'] ?? null) ? (string)$r['fieldname'] : '',
         ], $rows);
     }
 }

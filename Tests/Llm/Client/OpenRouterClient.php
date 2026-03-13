@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm\Client;
 
+use RuntimeException;
+use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
+use Exception;
+use stdClass;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -16,16 +22,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class OpenRouterClient implements LlmClientInterface
 {
     private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-
-    private string $apiKey;
-    private RequestFactory $requestFactory;
+    private readonly RequestFactory $requestFactory;
 
     /** @var array Full conversation history for multi-turn support */
     private array $conversationHistory = [];
 
-    public function __construct(string $apiKey)
+    public function __construct(private readonly string $apiKey)
     {
-        $this->apiKey = $apiKey;
         $this->requestFactory = GeneralUtility::makeInstance(RequestFactory::class);
     }
 
@@ -120,7 +123,7 @@ class OpenRouterClient implements LlmClientInterface
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
             if ($attempt > 0) {
                 // Exponential backoff: 2s, 4s, 8s
-                sleep((int)pow(2, $attempt));
+                sleep((int)2 ** $attempt);
             }
 
             try {
@@ -149,50 +152,50 @@ class OpenRouterClient implements LlmClientInterface
 
                 // Retry on server errors (5xx) and rate limits (429)
                 if ($statusCode >= 500 || $statusCode === 429) {
-                    $lastException = new \RuntimeException(
+                    $lastException = new RuntimeException(
                         'OpenRouter API error: ' . $statusCode . ' - ' . $errorBody
                     );
                     continue;
                 }
 
                 // Client errors (4xx except 429) are not retryable
-                throw new \RuntimeException(
+                throw new RuntimeException(
                     'OpenRouter API error: ' . $statusCode . ' - ' . $errorBody .
                     "\n\nRequest body:\n" . json_encode($requestBody, JSON_PRETTY_PRINT)
                 );
-            } catch (\GuzzleHttp\Exception\ServerException $e) {
-                $lastException = new \RuntimeException(
+            } catch (ServerException $e) {
+                $lastException = new RuntimeException(
                     'OpenRouter API server error: ' . $e->getMessage(),
                     0,
                     $e
                 );
                 continue;
-            } catch (\GuzzleHttp\Exception\ClientException $e) {
+            } catch (ClientException $e) {
                 // Retry on 429 Too Many Requests (rate limiting)
                 if ($e->getResponse() && $e->getResponse()->getStatusCode() === 429) {
-                    $lastException = new \RuntimeException(
+                    $lastException = new RuntimeException(
                         'OpenRouter API rate limited: ' . $e->getMessage(),
                         0,
                         $e
                     );
                     continue;
                 }
-                throw new \RuntimeException(
+                throw new RuntimeException(
                     'OpenRouter API client error: ' . $e->getMessage(),
                     0,
                     $e
                 );
-            } catch (\GuzzleHttp\Exception\ConnectException $e) {
-                $lastException = new \RuntimeException(
+            } catch (ConnectException $e) {
+                $lastException = new RuntimeException(
                     'OpenRouter API connection error: ' . $e->getMessage(),
                     0,
                     $e
                 );
                 continue;
-            } catch (\RuntimeException $e) {
+            } catch (RuntimeException $e) {
                 throw $e;
-            } catch (\Exception $e) {
-                throw new \RuntimeException(
+            } catch (Exception $e) {
+                throw new RuntimeException(
                     'Failed to call OpenRouter API: ' . $e->getMessage(),
                     0,
                     $e
@@ -200,7 +203,7 @@ class OpenRouterClient implements LlmClientInterface
             }
         }
 
-        throw $lastException ?? new \RuntimeException('OpenRouter API request failed after retries');
+        throw $lastException ?? new RuntimeException('OpenRouter API request failed after retries');
     }
 
     /**
@@ -222,7 +225,7 @@ class OpenRouterClient implements LlmClientInterface
                         'description' => $tool['function']['description'] ?? '',
                         'parameters' => $tool['function']['parameters'] ?? [
                             'type' => 'object',
-                            'properties' => new \stdClass(),
+                            'properties' => new stdClass(),
                         ],
                     ],
                 ];

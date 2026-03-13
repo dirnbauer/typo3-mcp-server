@@ -69,24 +69,21 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
      */
     public function testInlineRelationsToSysFileReferenceAreHidden(): void
     {
-        // tt_content has 'assets' field which is type='inline' with foreign_table='sys_file_reference'
-        if (!isset($GLOBALS['TCA']['tt_content']['columns']['assets'])) {
-            $this->markTestSkipped('tt_content.assets field not available in this TYPO3 version');
-        }
-
+        // TYPO3 v13/v14 model this relation differently, but access should stay blocked in both.
+        $this->assertArrayHasKey('assets', $GLOBALS['TCA']['tt_content']['columns'] ?? []);
         $fieldConfig = $GLOBALS['TCA']['tt_content']['columns']['assets'] ?? [];
-        if (($fieldConfig['config']['type'] ?? '') !== 'inline') {
-            $this->markTestSkipped('tt_content.assets is not an inline field in this TYPO3 version');
-        }
+        $config = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
+        $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
+        $foreignTable = is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
 
-        $foreignTable = $fieldConfig['config']['foreign_table'] ?? '';
-        if ($foreignTable !== 'sys_file_reference') {
-            $this->markTestSkipped('tt_content.assets does not reference sys_file_reference in this TYPO3 version');
+        $this->assertContains($fieldType, ['file', 'inline']);
+        if ($fieldType === 'inline') {
+            $this->assertSame('sys_file_reference', $foreignTable);
         }
 
         $canAccess = $this->service->canAccessField('tt_content', 'assets');
 
-        $this->assertFalse($canAccess, 'Inline relations to sys_file_reference should not be accessible');
+        $this->assertFalse($canAccess, 'Relations to sys_file_reference should not be accessible');
     }
 
     /**

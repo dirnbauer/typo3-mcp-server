@@ -8,14 +8,11 @@ use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use PHPUnit\Framework\Attributes\Group;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Test resource constraint edge cases
- * 
- * @group resource-intensive
- */
+#[Group('resource-intensive')]
 class ResourceConstraintTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;

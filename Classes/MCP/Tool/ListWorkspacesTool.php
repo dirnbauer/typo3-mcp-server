@@ -4,23 +4,34 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use stdClass;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 final class ListWorkspacesTool extends AbstractTool
 {
     public function __construct(
-        private readonly WorkspaceContextService $workspaceContextService,
-    ) {}
+        ?WorkspaceContextService $workspaceContextService = null,
+    ) {
+        $this->workspaceContextService = $workspaceContextService
+            ?? GeneralUtility::makeInstance(WorkspaceContextService::class);
+    }
 
+    private readonly WorkspaceContextService $workspaceContextService;
+
+    /**
+     * @return array<string, mixed>
+     */
     public function getSchema(): array
     {
         return [
             'description' => 'List all workspaces accessible to the current user. Shows which workspace is currently active. Use this to find the workspace_id for other tools.',
             'inputSchema' => [
                 'type' => 'object',
-                'properties' => new \stdClass(),
+                'properties' => new stdClass(),
                 'required' => [],
             ],
             'annotations' => [
@@ -30,13 +41,17 @@ final class ListWorkspacesTool extends AbstractTool
         ];
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     protected function doExecute(array $params): CallToolResult
     {
-        if (!isset($GLOBALS['BE_USER'])) {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
             return new CallToolResult([new TextContent('No backend user session available.')], true);
         }
 
-        $workspaces = $this->workspaceContextService->getAvailableWorkspaces($GLOBALS['BE_USER']);
+        $workspaces = $this->workspaceContextService->getAvailableWorkspaces($backendUser);
 
         if (empty($workspaces)) {
             return new CallToolResult([new TextContent(

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Controller;
 
+use Throwable;
+use TYPO3\CMS\Core\Database\Connection;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -21,15 +23,15 @@ use Hn\McpServer\Service\WorkspaceContextService;
 /**
  * Backend module controller for MCP Server configuration
  */
-final class McpServerModuleController
+final readonly class McpServerModuleController
 {
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly ToolRegistry $toolRegistry,
-        private readonly PageRenderer $pageRenderer,
-        private readonly OAuthService $oauthService,
-        private readonly WorkspaceContextService $workspaceContextService,
-        private readonly UriBuilder $uriBuilder
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private ToolRegistry $toolRegistry,
+        private PageRenderer $pageRenderer,
+        private OAuthService $oauthService,
+        private WorkspaceContextService $workspaceContextService,
+        private UriBuilder $uriBuilder
     ) {}
 
     public function mainAction(ServerRequestInterface $request): ResponseInterface
@@ -43,7 +45,8 @@ final class McpServerModuleController
         }
         
         // Get user's OAuth tokens
-        $userId = (int)$backendUser->user['uid'];
+        $userId = (int)($backendUser->user['uid'] ?? 0);
+        /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
         $tokens = $this->oauthService->getUserTokens($userId);
         
         // Get base URL for endpoint
@@ -72,6 +75,7 @@ final class McpServerModuleController
 
         // Check if any workspace exists
         $hasWorkspace = $this->hasAnyWorkspace();
+        $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
 
         // Detect if the server is running on localhost
         $isLocalhost = $this->isLocalhostUrl($baseUrl);
@@ -88,7 +92,7 @@ final class McpServerModuleController
             'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
             'tools' => $tools,
-            'username' => $backendUser->user['username'],
+            'username' => is_string($backendUser->user['username'] ?? null) ? $backendUser->user['username'] : 'unknown',
             'userId' => $userId,
             'mcpRemoteUrl' => $mcpRemoteUrl,
             'n8nTokenInfo' => $n8nTokenInfo,
@@ -97,6 +101,7 @@ final class McpServerModuleController
             'hasWorkspace' => $hasWorkspace,
             'isLocalhost' => $isLocalhost,
             'createWorkspaceUrl' => $createWorkspaceUrl,
+            'workspaceInfo' => $workspaceInfo,
         ];
         
         // Include JavaScript for copy functionality
@@ -128,18 +133,19 @@ final class McpServerModuleController
         // Reset body stream position for further processing
         $request->getBody()->rewind();
         
-        $parsedBody = $request->getParsedBody();
+        $parsedBody = $this->getRequestData($request->getParsedBody());
         
         // If parsedBody is null, try to decode JSON manually
-        if ($parsedBody === null && !empty($rawBody)) {
+        if ($parsedBody === [] && $rawBody !== '') {
             $jsonData = json_decode($rawBody, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
                 $parsedBody = $jsonData;
             }
         }
         
-        $tokenId = (int)($parsedBody['tokenId'] ?? 0);
-        $userId = (int)$backendUser->user['uid'];
+        $tokenIdValue = $parsedBody['tokenId'] ?? '0';
+        $tokenId = is_numeric($tokenIdValue) ? (int)$tokenIdValue : 0;
+        $userId = (int)($backendUser->user['uid'] ?? 0);
 
         if ($tokenId <= 0) {
             return new JsonResponse(['success' => false, 'message' => 'Invalid token ID'], 400);
@@ -159,7 +165,7 @@ final class McpServerModuleController
                     'message' => 'Token not found or access denied'
                 ], 404);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Error revoking token: ' . $e->getMessage()
@@ -177,7 +183,7 @@ final class McpServerModuleController
             return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
         }
 
-        $userId = (int)$backendUser->user['uid'];
+        $userId = (int)($backendUser->user['uid'] ?? 0);
 
         try {
             $revokedCount = $this->oauthService->revokeAllUserTokens($userId);
@@ -193,7 +199,7 @@ final class McpServerModuleController
                     'message' => 'No tokens found to revoke'
                 ], 404);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Error revoking tokens: ' . $e->getMessage()
@@ -204,7 +210,12 @@ final class McpServerModuleController
     private function getBaseUrl(ServerRequestInterface $request): string
     {
         // Try to get from TYPO3 configuration first
-        $baseUrl = $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] ?? '';
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+            : null;
+        $baseUrl = is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
         
         if (empty($baseUrl)) {
             // Fallback to request-based detection
@@ -224,12 +235,18 @@ final class McpServerModuleController
     
     private function getSiteName(): string
     {
-        return $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ?? 'TYPO3 MCP Server';
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $siteName = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+            ? ($confVars['SYS']['sitename'] ?? null)
+            : null;
+        return is_string($siteName) && $siteName !== '' ? $siteName : 'TYPO3 MCP Server';
     }
     
     private function getBackendUser(): ?BackendUserAuthentication
     {
-        return $GLOBALS['BE_USER'] ?? null;
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        return $backendUser instanceof BackendUserAuthentication ? $backendUser : null;
     }
 
     /**
@@ -243,27 +260,26 @@ final class McpServerModuleController
         }
 
         try {
-            $userId = (int)$backendUser->user['uid'];
+            $userId = (int)($backendUser->user['uid'] ?? 0);
+            /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
             $tokens = $this->oauthService->getUserTokens($userId);
             
             // Format tokens for frontend display
-            $formattedTokens = array_map(function($token) {
-                return [
-                    'uid' => $token['uid'],
-                    'client_name' => $token['client_name'],
-                    'created' => date('Y-m-d H:i:s', $token['crdate']),
-                    'expires' => date('Y-m-d H:i:s', $token['expires']),
-                    'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : 'Never',
-                    'token_preview' => substr($token['token'], 0, 20) . '...',
-                ];
-            }, $tokens);
+            $formattedTokens = array_map(fn(array $token): array => [
+                'uid' => $token['uid'],
+                'client_name' => $token['client_name'],
+                'created' => date('Y-m-d H:i:s', $token['crdate']),
+                'expires' => date('Y-m-d H:i:s', $token['expires']),
+                'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : 'Never',
+                'token_preview' => substr((string) $token['token'], 0, 20) . '...',
+            ], $tokens);
             
             return new JsonResponse([
                 'success' => true,
                 'tokens' => $formattedTokens
             ]);
             
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Error retrieving tokens: ' . $e->getMessage()
@@ -274,14 +290,16 @@ final class McpServerModuleController
     /**
      * Generate mcp-remote URL with token parameter for clients that don't support auth headers
      */
+    /**
+     * @param list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens
+     * @return array{baseUrl: string, hasTokens: bool, tokenUrl: string|null, description: string}
+     */
     private function generateMcpRemoteUrl(string $baseUrl, array $tokens): array
     {
         $endpointUrl = $baseUrl . '/mcp';
 
         // Filter tokens to only include mcp-remote tokens
-        $mcpRemoteTokens = array_filter($tokens, function($token) {
-            return $token['client_name'] === 'mcp-remote token';
-        });
+        $mcpRemoteTokens = array_filter($tokens, fn(array $token): bool => $token['client_name'] === 'mcp-remote token');
 
         return [
             'baseUrl' => $endpointUrl,
@@ -294,14 +312,17 @@ final class McpServerModuleController
     /**
      * Get token info for a specific client type
      */
+    /**
+     * @param list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens
+     * @return array{hasToken: bool, token: string|null, expires: int|null, clientName: string}
+     */
     private function getClientTokenInfo(array $tokens, string $clientName): array
     {
-        $clientTokens = array_filter($tokens, function($token) use ($clientName) {
-            return $token['client_name'] === $clientName;
-        });
+        $clientTokens = array_filter($tokens, fn(array $token): bool => $token['client_name'] === $clientName);
 
         $hasToken = !empty($clientTokens);
-        $token = $hasToken ? array_values($clientTokens)[0] : null;
+        $tokenValues = array_values($clientTokens);
+        $token = $hasToken && isset($tokenValues[0]) ? $tokenValues[0] : null;
 
         return [
             'hasToken' => $hasToken,
@@ -323,12 +344,12 @@ final class McpServerModuleController
                 ->count('uid')
                 ->from('sys_workspace')
                 ->where(
-                    $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, \TYPO3\CMS\Core\Database\Connection::PARAM_INT))
+                    $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
                 )
                 ->executeQuery()
                 ->fetchOne();
-            return (int)$count > 0;
-        } catch (\Throwable $e) {
+            return is_numeric($count) && (int)$count > 0;
+        } catch (Throwable) {
             return false;
         }
     }
@@ -342,7 +363,7 @@ final class McpServerModuleController
     private function isLocalhostUrl(string $baseUrl): bool
     {
         $host = parse_url($baseUrl, PHP_URL_HOST);
-        if ($host === null || $host === '') {
+        if (!is_string($host) || $host === '') {
             return false;
         }
         $host = strtolower($host);
@@ -410,7 +431,7 @@ final class McpServerModuleController
         }
 
         try {
-            $userId = (int)$backendUser->user['uid'];
+            $userId = (int)($backendUser->user['uid'] ?? 0);
 
             // Get client type from POST body (default to mcp-remote for backward compatibility)
             $rawBody = $request->getBody()->getContents();
@@ -419,12 +440,13 @@ final class McpServerModuleController
 
             if ($parsedBody === null && !empty($rawBody)) {
                 $jsonData = json_decode($rawBody, true);
-                if (json_last_error() === JSON_ERROR_NONE) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
                     $parsedBody = $jsonData;
                 }
             }
 
-            $clientType = $parsedBody['clientType'] ?? 'mcp-remote token';
+        $requestData = $this->getRequestData($parsedBody);
+        $clientType = $requestData['clientType'] ?? 'mcp-remote token';
 
             // Validate client type
             $allowedClientTypes = ['mcp-remote token', 'n8n token', 'manus token'];
@@ -461,12 +483,33 @@ final class McpServerModuleController
                 'token' => $token
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Error creating token: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * @param mixed $source
+     * @return array<string, string>
+     */
+    private function getRequestData(mixed $source): array
+    {
+        if (!is_array($source)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($source as $key => $value) {
+            if (!is_string($key) || !is_string($value)) {
+                continue;
+            }
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 
 }

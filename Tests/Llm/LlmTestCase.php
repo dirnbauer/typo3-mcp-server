@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Mcp\Types\TextContent;
+use Exception;
 use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Llm\Client\LlmClientInterface;
@@ -343,7 +345,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             // Convert CallToolResult to simple array
             $content = '';
             foreach ($result->content as $contentItem) {
-                if ($contentItem instanceof \Mcp\Types\TextContent) {
+                if ($contentItem instanceof TextContent) {
                     $content .= $contentItem->text;
                 } else {
                     $content .= json_encode($contentItem);
@@ -359,7 +361,7 @@ abstract class LlmTestCase extends FunctionalTestCase
                 'content' => $content,
                 'isError' => $result->isError || $hasErrorContent
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'error' => $e->getMessage(),
                 'content' => "Error: " . $e->getMessage()

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Traits;
 
+use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use Mcp\Types\CallToolResult;
 
 /**
@@ -80,7 +83,7 @@ trait McpAssertionsTrait
      */
     protected function assertRecordEquals(array $expected, array $actual, ?array $fields = null): void
     {
-        $fields = $fields ?? array_keys($expected);
+        $fields ??= array_keys($expected);
         
         foreach ($fields as $field) {
             $this->assertArrayHasKey($field, $actual, "Field '$field' missing in actual record");
@@ -197,7 +200,7 @@ trait McpAssertionsTrait
     {
         $this->assertFalse($result->isError);
         $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(\Mcp\Types\TextContent::class, $result->content[0]);
+        $this->assertInstanceOf(TextContent::class, $result->content[0]);
         
         $data = json_decode($result->content[0]->text, true);
         $this->assertIsArray($data);
@@ -213,8 +216,8 @@ trait McpAssertionsTrait
      */
     protected function assertRecordInWorkspace(string $table, int $uid): void
     {
-        $connection = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Database\ConnectionPool::class
+        $connection = GeneralUtility::makeInstance(
+            ConnectionPool::class
         )->getConnectionForTable($table);
         
         // Check record doesn't exist in live (workspace 0)

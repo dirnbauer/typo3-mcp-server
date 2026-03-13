@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use ReflectionClass;
+use Throwable;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -24,10 +26,13 @@ abstract class AbstractTool implements ToolInterface
      */
     public function getName(): string
     {
-        $className = (new \ReflectionClass($this))->getShortName();
+        $className = (new ReflectionClass($this))->getShortName();
         return str_replace('Tool', '', $className);
     }
     
+    /**
+     * @param array<string, mixed> $params
+     */
     public function execute(array $params): CallToolResult
     {
         return $this->executeInternal($params);
@@ -36,13 +41,15 @@ abstract class AbstractTool implements ToolInterface
     /**
      * Internal execution with consistent error handling.
      * Subclasses that override execute() call this to preserve the template method.
+     *
+     * @param array<string, mixed> $params
      */
     protected function executeInternal(array $params): CallToolResult
     {
         try {
             $this->initialize();
             return $this->doExecute($params);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->handleException($e, $this->getName());
         }
     }
@@ -51,6 +58,9 @@ abstract class AbstractTool implements ToolInterface
     {
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     abstract protected function doExecute(array $params): CallToolResult;
     
     /**

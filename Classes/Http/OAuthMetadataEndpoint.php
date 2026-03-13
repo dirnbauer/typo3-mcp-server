@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -34,15 +35,20 @@ final class OAuthMetadataEndpoint
             }
 
             // Override base URL for development if needed
-            if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'])) {
-                $baseUrl = rtrim($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'], '/');
+            /** @var mixed $confVars */
+            $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+            $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+                ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+                : null;
+            if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
+                $baseUrl = rtrim($configuredBaseUrl, '/');
             }
 
             $oauthService = GeneralUtility::makeInstance(OAuthService::class);
             $metadata = $oauthService->getMetadata($baseUrl);
 
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($metadata, JSON_PRETTY_PRINT));
+            $stream->write($this->encodeJson($metadata));
             $stream->rewind();
 
             $response = new Response(
@@ -56,14 +62,14 @@ final class OAuthMetadataEndpoint
             
             return $this->addCorsHeaders($response);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $errorData = [
                 'error' => 'server_error',
                 'error_description' => $e->getMessage()
             ];
 
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($errorData));
+            $stream->write($this->encodeJson($errorData));
             $stream->rewind();
 
             $response = new Response(
@@ -74,5 +80,14 @@ final class OAuthMetadataEndpoint
             
             return $this->addCorsHeaders($response);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+        return is_string($json) ? $json : '{}';
     }
 }

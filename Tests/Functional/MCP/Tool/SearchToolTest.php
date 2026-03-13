@@ -163,23 +163,23 @@ class SearchToolTest extends FunctionalTestCase
     public function testPageSpecificSearch(): void
     {
         $tool = new SearchTool();
-        
+
         // Search only on page 2 (About)
         $result = $tool->execute([
             'terms' => ['team'],
             'pageId' => 2
         ]);
-        
+
         $this->assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find team content on About page
         $this->assertStringContainsString('[UID: 102] Team Introduction', $content);
         $this->assertStringContainsString('[UID: 103] Team Members', $content);
-        
+
         // Should show correct page info
         $this->assertStringContainsString('📍 Page: About [UID: 2]', $content);
-        
+
         // Note: The search with pageId filters only content elements (tt_content) 
         // by page, but pages table is searched globally. So the Team page (UID: 4)
         // will still appear in results because it matches the search term
@@ -249,19 +249,19 @@ class SearchToolTest extends FunctionalTestCase
     public function testSearchResultFormatting(): void
     {
         $tool = new SearchTool();
-        
+
         $result = $tool->execute([
             'terms' => ['team']
         ]);
-        
+
         $this->assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Check overall structure
         $this->assertStringContainsString('SEARCH RESULTS', $content);
         $this->assertStringContainsString('Total Results:', $content);
         $this->assertStringContainsString('Tables Searched:', $content);
-        
+
         // Check record formatting
         $this->assertStringContainsString('• [UID:', $content); // Record prefix
         $this->assertStringContainsString('📍 Page:', $content); // Page info
@@ -344,28 +344,28 @@ class SearchToolTest extends FunctionalTestCase
     public function testSearchWithLimit(): void
     {
         $tool = new SearchTool();
-        
+
         // Search with very small limit - use a term that will match multiple records
         $result = $tool->execute([
             'terms' => ['content'], // Will match multiple content elements
             'limit' => 2
         ]);
-        
+
         $this->assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find some results
         $this->assertStringContainsString('Total Results:', $content);
-        
+
         // The limit applies per table, not globally
         // So if multiple tables have matches, total can exceed limit
         // Just verify that the search completes successfully with a limit
         $this->assertStringContainsString('Found', $content);
-        
+
         // Verify we have results but not too many (basic sanity check)
         preg_match_all('/• \[UID: \d+\]/', $content, $matches);
         $totalRecords = count($matches[0]);
-        
+
         // With limit of 2 per table and multiple tables, should be reasonable
         $this->assertGreaterThan(0, $totalRecords);
         $this->assertLessThan(20, $totalRecords); // Sanity check - not unlimited

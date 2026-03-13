@@ -28,6 +28,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
     {
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
+        $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         // Don't import workspace fixture - let WorkspaceContextService handle it
         $this->setUpBackendUser(1);
         // Don't set workspace - let the MCP tools handle it automatically

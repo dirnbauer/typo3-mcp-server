@@ -141,16 +141,16 @@ class ValidationRefactoringTest extends FunctionalTestCase
                 'starttime' => '2024-01-01T10:00:00Z'
             ]
         ];
-        
+
         $result = $this->writeTool->execute($params);
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+
         $resultData = $result->jsonSerialize();
         $this->assertArrayHasKey('content', $resultData);
         $this->assertNotEmpty($resultData['content']);
-        $contentData = json_decode($resultData['content'][0]->text, true);
+        $contentData = json_decode((string) $resultData['content'][0]->text, true);
         $this->assertArrayHasKey('uid', $contentData);
-        
+
         // Verify the date was converted to timestamp
         $uid = $contentData['uid'];
         $record = $this->getRecordByUid('pages', $uid);
@@ -171,7 +171,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'data' => ['title' => 'Category 1']
         ]);
         $this->assertFalse($cat1Result->isError);
-        $cat1Data = json_decode($cat1Result->jsonSerialize()['content'][0]->text, true);
+        $cat1Data = json_decode((string) $cat1Result->jsonSerialize()['content'][0]->text, true);
         
         $cat2Result = $this->writeTool->execute([
             'action' => 'create',
@@ -180,7 +180,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'data' => ['title' => 'Category 2']
         ]);
         $this->assertFalse($cat2Result->isError);
-        $cat2Data = json_decode($cat2Result->jsonSerialize()['content'][0]->text, true);
+        $cat2Data = json_decode((string) $cat2Result->jsonSerialize()['content'][0]->text, true);
         
         // Test that the array conversion happens in validateRecordData
         // For this test, we'll use pages.categories field if available, or just test the validation logic

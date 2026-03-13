@@ -28,6 +28,7 @@ class NewsContentElementsTest extends FunctionalTestCase
     {
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
+        $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->setUpBackendUser(1);
     }
 
@@ -95,7 +96,7 @@ class NewsContentElementsTest extends FunctionalTestCase
         $this->assertArrayHasKey('content', $resultData);
         $this->assertNotEmpty($resultData['content']);
         
-        $decodedContent = json_decode($resultData['content'][0]->text, true);
+        $decodedContent = json_decode((string) $resultData['content'][0]->text, true);
         $this->assertNotNull($decodedContent, 'Content should be valid JSON');
         
         // Debug output

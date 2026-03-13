@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
+use InvalidArgumentException;
+use Throwable;
 use Mcp\Server\Server;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
@@ -16,10 +18,10 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 /**
  * Factory for creating and configuring MCP Server instances
  */
-final class McpServerFactory
+final readonly class McpServerFactory
 {
     public function __construct(
-        private readonly ToolRegistry $toolRegistry
+        private ToolRegistry $toolRegistry
     ) {}
 
     /**
@@ -57,7 +59,19 @@ final class McpServerFactory
      */
     public function getServerName(): string
     {
-        return $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ?? 'TYPO3 MCP Server';
+        $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($configuration)) {
+            return 'TYPO3 MCP Server';
+        }
+
+        $sysConfig = $configuration['SYS'] ?? null;
+        if (!is_array($sysConfig)) {
+            return 'TYPO3 MCP Server';
+        }
+
+        return is_string($sysConfig['sitename'] ?? null) && $sysConfig['sitename'] !== ''
+            ? $sysConfig['sitename']
+            : 'TYPO3 MCP Server';
     }
 
     /**
@@ -104,12 +118,12 @@ final class McpServerFactory
 
             $tool = $toolRegistry->getTool($toolName);
             if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
+                throw new InvalidArgumentException('Tool not found: ' . $toolName);
             }
 
             try {
                 return $tool->execute($arguments);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $debug('Error executing tool ' . $toolName . ': ' . $e->getMessage());
                 return new CallToolResult(
                     [new TextContent($e->getMessage())],

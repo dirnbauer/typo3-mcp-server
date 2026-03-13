@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use TYPO3\CMS\Core\Http\Response;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Trait for adding CORS headers to HTTP responses
@@ -18,7 +20,7 @@ trait CorsHeadersTrait
     {
         // Get the actual origin from the request, or use a safe default
         $allowedOrigin = $origin ?: $this->getAllowedOrigin();
-        
+
         return $response
             ->withHeader('Access-Control-Allow-Origin', $allowedOrigin)
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -33,7 +35,7 @@ trait CorsHeadersTrait
     private function getAllowedOrigin(): string
     {
         $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
-        if ($request && $request->hasHeader('Origin')) {
+        if ($request instanceof ServerRequestInterface && $request->hasHeader('Origin')) {
             return $request->getHeaderLine('Origin');
         }
 
@@ -46,7 +48,7 @@ trait CorsHeadersTrait
      */
     private function handlePreflightRequest(): ResponseInterface
     {
-        $response = new \TYPO3\CMS\Core\Http\Response();
+        $response = new Response();
         return $this->addCorsHeaders($response->withStatus(200));
     }
 }

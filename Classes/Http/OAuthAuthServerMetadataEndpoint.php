@@ -33,6 +33,9 @@ final class OAuthAuthServerMetadataEndpoint
         return $this->createJsonResponse($metadata);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function createJsonResponse(array $data): ResponseInterface
     {
         $response = new JsonResponse($data);
@@ -51,7 +54,12 @@ final class OAuthAuthServerMetadataEndpoint
     private function getBaseUrl(ServerRequestInterface $request): string
     {
         // Try to get from TYPO3 configuration first
-        $baseUrl = $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] ?? '';
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+            : null;
+        $baseUrl = is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
         
         if (empty($baseUrl)) {
             // Build from request

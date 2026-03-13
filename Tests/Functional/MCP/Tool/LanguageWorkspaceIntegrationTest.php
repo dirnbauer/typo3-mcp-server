@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -50,7 +51,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
         
         // Initialize language service globals
-        $languageServiceFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class);
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
         $GLOBALS['LANG'] = $languageServiceFactory->create('default');
         
         // Initialize tools
@@ -171,12 +172,8 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
         $allData = json_decode($allResult->content[0]->text, true);
         
         // Should find content in multiple languages
-        $englishRecords = array_filter($allData['records'], function($r) {
-            return $r['sys_language_uid'] == 0;
-        });
-        $germanRecords = array_filter($allData['records'], function($r) {
-            return $r['sys_language_uid'] == 1;
-        });
+        $englishRecords = array_filter($allData['records'], fn($r) => $r['sys_language_uid'] == 0);
+        $germanRecords = array_filter($allData['records'], fn($r) => $r['sys_language_uid'] == 1);
         
         $this->assertNotEmpty($englishRecords, 'Should find English content');
         $this->assertNotEmpty($germanRecords, 'Should find German content');
@@ -248,11 +245,11 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
     {
         // Import content with translations
         $this->importCSVDataSet(__DIR__ . '/Fixtures/tt_content_translations.csv');
-        
+
         // Find a German translation record
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
-            
+
         $germanRecord = $queryBuilder
             ->select('uid', 'header', 'l18n_parent')
             ->from('tt_content')
@@ -263,9 +260,9 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchAssociative();
-            
+
         $this->assertIsArray($germanRecord, 'Should find German translation');
-        
+
         // Update the German translation
         $updateResult = $this->writeTool->execute([
             'action' => 'update',
@@ -275,18 +272,18 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
                 'header' => 'Aktualisierte deutsche Überschrift'
             ]
         ]);
-        
+
         $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
-        
+
         // Read it back to verify
         $readResult = $this->readTool->execute([
             'table' => 'tt_content',
             'uid' => $germanRecord['uid']
         ]);
-        
+
         $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = json_decode($readResult->content[0]->text, true);
-        
+
         $this->assertCount(1, $readData['records']);
         // Verify we got the record back
         $this->assertCount(1, $readData['records']);
@@ -396,7 +393,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
                 'table' => 'tt_content',
                 'uid' => $germanRecord['uid']
             ]);
-            
+
             $this->assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize()));
             $germanData = json_decode($germanRead->content[0]->text, true);
             // The translation might have a placeholder text initially

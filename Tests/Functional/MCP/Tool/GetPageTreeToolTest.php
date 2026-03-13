@@ -154,7 +154,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
         // But verify subpage count for pages that have deeper children
         $lines = explode("\n", $content);
         foreach ($lines as $line) {
-            if (strpos($line, '[1003] Level 2 - Page A1') !== false) {
+            if (str_contains($line, '[1003] Level 2 - Page A1')) {
                 $this->assertStringContainsString('(1 subpages)', $line, 'Page A1 should show it has 1 subpage');
             }
         }
@@ -327,18 +327,18 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tools = [new GetPageTreeTool($siteInformationService, $languageService)];
         $registry = new ToolRegistry($tools);
-        
+
         // Get tool from registry
         $tool = $registry->getTool('GetPageTree');
         $this->assertNotNull($tool);
         $this->assertInstanceOf(GetPageTreeTool::class, $tool);
-        
+
         // Execute through registry
         $result = $tool->execute([
             'startPage' => 0,
             'depth' => 1
         ]);
-        
+
         $content = $result->content[0]->text;
         $this->assertStringContainsString('[1] Home', $content);
         $this->assertStringNotContainsString('[6] Contact', $content); // Contact is now a subpage of Home

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 
+use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
@@ -302,7 +303,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         $this->assertEquals('German Content', $data['records'][0]['header'], 'Should be the German content');
         
         // Test that multi-language site configuration is working
-        $languageService = GeneralUtility::makeInstance(\Hn\McpServer\Service\LanguageService::class);
+        $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $availableLanguages = $languageService->getAvailableIsoCodes();
         
         $this->assertContains('en', $availableLanguages, 'English should be available');
@@ -613,25 +614,15 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
      */
     protected function createPageOutsideMountPoint(): int
     {
-        // Create page at root level (outside typical mount points)
-        $result = $this->writeTool->execute([
-            'action' => 'create',
-            'table' => 'pages',
-            'pid' => 999, // High PID that's not in mount points
-            'data' => ['title' => 'Outside Mount Point']
-        ]);
-        
-        if (!$result->isError) {
-            $data = json_decode($result->content[0]->text, true);
-            return $data['uid'];
-        }
-        
-        // If that failed, create at root
+        // Create a root-level sibling page that sits outside the user's mount point tree.
         $result = $this->writeTool->execute([
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
-            'data' => ['title' => 'Outside Mount Point']
+            'data' => [
+                'title' => 'Outside Mount Point',
+                'doktype' => 1,
+            ],
         ]);
         
         $data = json_decode($result->content[0]->text, true);

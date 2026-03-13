@@ -272,19 +272,19 @@ class ListTablesToolTest extends FunctionalTestCase
     public function testOutputFormat(): void
     {
         $tool = new ListTablesTool();
-        
+
         $result = $tool->execute([]);
-        
+
         $this->assertFalse($result->isError);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Verify proper formatting
         $this->assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
         $this->assertStringContainsString('=====================================', $content);
         $this->assertStringContainsString('CORE TABLES:', $content);
         $this->assertStringContainsString('EXTENSION:', $content);
-        
+
         // Verify table entries are properly formatted
         $this->assertMatchesRegularExpression('/^- \w+/m', $content);
         $this->assertStringContainsString('(', $content); // Table labels in parentheses

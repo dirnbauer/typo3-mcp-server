@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,13 +18,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class OAuthAuthorizeEndpoint
 {
-    
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $queryParams = $request->getQueryParams();
-            $postParams = $request->getParsedBody() ?: [];
+            $postParams = $this->getRequestData($request->getParsedBody());
             
             // Initialize backend user context for eID
             $this->initializeBackendUserContext($request);
@@ -33,7 +32,10 @@ final class OAuthAuthorizeEndpoint
                 return $this->redirectToLogin($request);
             }
 
-            $beUser = $GLOBALS['BE_USER'];
+            $beUser = $GLOBALS['BE_USER'] ?? null;
+            if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+                return $this->createErrorResponse('server_error', 'Backend user context could not be initialized');
+            }
             $beUserId = (int)$beUser->user['uid'];
 
             // Handle authorization approval
@@ -44,7 +46,7 @@ final class OAuthAuthorizeEndpoint
             // Show consent form
             return $this->showConsentForm($request);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->createErrorResponse('server_error', $e->getMessage());
         }
     }
@@ -72,10 +74,10 @@ final class OAuthAuthorizeEndpoint
      */
     private function resolveClientName(ServerRequestInterface $request): string
     {
-        $queryParams = $request->getQueryParams();
+        $queryParams = $this->getRequestData($request->getQueryParams());
         
         // Check query params
-        if (!empty($queryParams['client_name'])) {
+        if (isset($queryParams['client_name']) && is_string($queryParams['client_name']) && $queryParams['client_name'] !== '') {
             return $queryParams['client_name'];
         }
         
@@ -110,13 +112,17 @@ final class OAuthAuthorizeEndpoint
         $parsed = parse_url($url);
         
         // Return hostname or empty string if parsing failed
-        return $parsed['host'] ?? $url;
+        if (is_array($parsed) && isset($parsed['host']) && is_string($parsed['host'])) {
+            return $parsed['host'];
+        }
+
+        return $url;
     }
 
 
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
+        $queryParams = $this->getRequestData($request->getQueryParams());
         
         // Store OAuth parameters in cookie
         $oauthData = [
@@ -128,7 +134,7 @@ final class OAuthAuthorizeEndpoint
             'state' => $queryParams['state'] ?? ''
         ];
         
-        $oauthDataEncoded = base64_encode(json_encode($oauthData));
+        $oauthDataEncoded = base64_encode($this->encodeJson($oauthData));
         $loginUrl = '/typo3/index.php?loginProvider=1450629977&login_status=login';
         
         // Build cookie string with environment-aware security flags
@@ -154,8 +160,8 @@ final class OAuthAuthorizeEndpoint
 
     private function handleApproval(ServerRequestInterface $request, int $beUserId): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
-        $postParams = $request->getParsedBody() ?: [];
+        $queryParams = $this->getRequestData($request->getQueryParams());
+        $postParams = $this->getRequestData($request->getParsedBody());
 
         $clientName = $postParams['client_name'] ?? $this->resolveClientName($request);
         $redirectUri = $queryParams['redirect_uri'] ?? '';
@@ -209,7 +215,7 @@ final class OAuthAuthorizeEndpoint
 
     private function showConsentForm(ServerRequestInterface $request): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
+        $queryParams = $this->getRequestData($request->getQueryParams());
         
         $clientId = $queryParams['client_id'] ?? '';
         $clientName = $this->resolveClientName($request);
@@ -223,7 +229,10 @@ final class OAuthAuthorizeEndpoint
             return $this->createErrorResponse('invalid_client', 'Invalid client_id');
         }
 
-        $beUser = $GLOBALS['BE_USER'];
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+            return $this->createErrorResponse('server_error', 'Backend user context missing');
+        }
         $username = $beUser->user['username'] ?? 'Unknown';
 
         $html = $this->generateConsentTemplate([
@@ -267,7 +276,7 @@ final class OAuthAuthorizeEndpoint
         ];
 
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode($errorData));
+        $stream->write($this->encodeJson($errorData));
         $stream->rewind();
 
         return new Response(
@@ -278,6 +287,18 @@ final class OAuthAuthorizeEndpoint
     }
 
 
+    /**
+     * @param array{
+     *   username: string,
+     *   client_name: string,
+     *   client_id: string,
+     *   redirect_uri: string,
+     *   code_challenge: string,
+     *   code_challenge_method: string,
+     *   state: string,
+     *   user_id: int
+     * } $data
+     */
     private function generateConsentTemplate(array $data): string
     {
         return '<!DOCTYPE html>
@@ -521,5 +542,35 @@ final class OAuthAuthorizeEndpoint
     </script>
 </body>
 </html>';
+    }
+
+    /**
+     * @param mixed $source
+     * @return array<string, string|null>
+     */
+    private function getRequestData(mixed $source): array
+    {
+        if (!is_array($source)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($source as $key => $value) {
+            if (!is_string($key) || (!is_string($value) && $value !== null)) {
+                continue;
+            }
+            $result[$key] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data);
+        return is_string($json) ? $json : '{}';
     }
 }

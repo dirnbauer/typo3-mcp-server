@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Throwable;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service for handling language mappings between ISO codes and UIDs
  */
-final class LanguageService implements SingletonInterface
+final class LanguageService
 {
     protected SiteFinder $siteFinder;
     
@@ -100,13 +100,11 @@ final class LanguageService implements SingletonInterface
         // 2. Try to get language code from Locale object
         try {
             $locale = $language->getLocale();
-            if ($locale !== null) {
-                $languageCode = $locale->getLanguageCode();
-                if (!empty($languageCode) && strlen($languageCode) === 2) {
-                    return strtolower($languageCode);
-                }
+            $languageCode = $locale->getLanguageCode();
+            if ($languageCode !== '' && strlen($languageCode) === 2) {
+                return strtolower($languageCode);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable) {
             // Locale might not be properly configured
         }
         
@@ -121,7 +119,7 @@ final class LanguageService implements SingletonInterface
         
         // 4. Try to parse locale string as fallback
         if (isset($languageConfig['locale']) && !empty($languageConfig['locale'])) {
-            $parts = preg_split('/[_\-\.]/', $languageConfig['locale']);
+            $parts = preg_split('/[_\-\.]/', (string) $languageConfig['locale']);
             if (!empty($parts[0]) && strlen($parts[0]) === 2) {
                 return strtolower($parts[0]);
             }
@@ -160,7 +158,7 @@ final class LanguageService implements SingletonInterface
     /**
      * Get all available language ISO codes
      * 
-     * @return array Array of ISO codes
+     * @return list<string> Array of ISO codes
      */
     public function getAvailableIsoCodes(): array
     {
@@ -184,7 +182,7 @@ final class LanguageService implements SingletonInterface
     /**
      * Get all language mappings
      * 
-     * @return array Array with ISO codes as keys and UIDs as values
+     * @return array<string, int> Array with ISO codes as keys and UIDs as values
      */
     public function getAllMappings(): array
     {
@@ -211,7 +209,7 @@ final class LanguageService implements SingletonInterface
      * This considers the site configuration for the given page
      * 
      * @param int $pageId
-     * @return array Array of language information
+     * @return list<array{uid: int, isoCode: string, title: string, locale: string, enabled: bool}> Array of language information
      */
     public function getLanguagesForPage(int $pageId): array
     {
@@ -233,7 +231,7 @@ final class LanguageService implements SingletonInterface
             }
             
             return $languages;
-        } catch (SiteNotFoundException $e) {
+        } catch (SiteNotFoundException) {
             // Return all available languages if site not found
             return $this->getAllLanguageInfo();
         }
@@ -242,7 +240,7 @@ final class LanguageService implements SingletonInterface
     /**
      * Get information about all available languages
      * 
-     * @return array
+     * @return list<array{uid: int, isoCode: string, title: string, locale: string, enabled: bool}>
      */
     public function getAllLanguageInfo(): array
     {
@@ -266,7 +264,7 @@ final class LanguageService implements SingletonInterface
                         'uid' => $uid,
                         'isoCode' => $isoCode,
                         'title' => $language->getTitle(),
-                        'locale' => $language->getLocale(),
+                        'locale' => (string)$language->getLocale(),
                         'enabled' => $language->isEnabled(),
                     ];
                     $seen[$uid] = true;
@@ -275,9 +273,7 @@ final class LanguageService implements SingletonInterface
         }
         
         // Sort by UID to have consistent ordering
-        usort($languages, function ($a, $b) {
-            return $a['uid'] <=> $b['uid'];
-        });
+        usort($languages, fn(array $a, array $b): int => $a['uid'] <=> $b['uid']);
         
         return $languages;
     }

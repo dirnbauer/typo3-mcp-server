@@ -137,7 +137,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
         
         // sys_category may have language support but not in visible fields
         // So we just check that if sys_language_uid appears, it has ISO codes
-        if (strpos($output, '- sys_language_uid') !== false) {
+        if (str_contains($output, '- sys_language_uid')) {
             $this->assertStringContainsString('[ISO codes accepted:', $output);
         } else {
             // If no sys_language_uid in fields, that's also fine
@@ -162,7 +162,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
         
         // Extract the ISO codes from the output
         if (preg_match('/\[ISO codes accepted: ([^\]]+)\]/', $output, $matches)) {
-            $isoCodes = array_map('trim', explode(',', $matches[1]));
+            $isoCodes = array_map(trim(...), explode(',', $matches[1]));
             
             // Should have exactly the configured languages
             $this->assertCount(3, $isoCodes);

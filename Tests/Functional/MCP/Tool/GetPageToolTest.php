@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use TYPO3\CMS\Core\Cache\CacheManager;
+use Throwable;
 use Hn\McpServer\MCP\Tool\GetPageTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\ToolRegistry;
@@ -122,16 +124,16 @@ class GetPageToolTest extends FunctionalTestCase
         }
 
         // Clear global caches if available
-        if (class_exists('TYPO3\\CMS\\Core\\Cache\\CacheManager')) {
+        if (class_exists(CacheManager::class)) {
             try {
-                $cacheManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
+                $cacheManager = GeneralUtility::makeInstance(CacheManager::class);
                 if ($cacheManager->hasCache('core')) {
                     $cacheManager->getCache('core')->remove('sites-configuration');
                 }
                 if ($cacheManager->hasCache('runtime')) {
                     $cacheManager->getCache('runtime')->remove('sites-configuration');
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable) {
                 // Ignore cache errors during tests
             }
         }
@@ -150,7 +152,7 @@ class GetPageToolTest extends FunctionalTestCase
             $this->assertEquals('test-site', $site->getIdentifier());
             $this->assertEquals(1, $site->getRootPageId());
             $this->assertEquals('https://example.com/', $site->getBase()->__toString());
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->fail('Site configuration not found or invalid: ' . $e->getMessage());
         }
     }
@@ -173,7 +175,7 @@ class GetPageToolTest extends FunctionalTestCase
             
             $this->assertStringContainsString('https://example.com', $url);
             $this->assertStringContainsString('/contact', $url);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->fail('Direct URL generation failed: ' . $e->getMessage());
         }
     }
@@ -417,9 +419,9 @@ class GetPageToolTest extends FunctionalTestCase
         // Verify page information
         $this->assertStringContainsString('Title: Contact', $content);
         
-        // Verify list content element (old plugin system)
+        // Verify plugin content element output
         $this->assertStringContainsString('[105] Contact Form', $content);
-        $this->assertStringContainsString('list', $content);
+        $this->assertStringContainsString('news_pi1', $content);
     }
 
     /**

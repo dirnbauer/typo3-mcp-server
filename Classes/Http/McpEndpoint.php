@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use RuntimeException;
+use Throwable;
+use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Mcp\Server\HttpServerRunner;
 use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Mcp\Server\Transport\Http\FileSessionStore;
@@ -27,10 +31,10 @@ use Hn\McpServer\Service\SiteInformationService;
 /**
  * MCP HTTP Endpoint for remote access
  */
-final class McpEndpoint
+final readonly class McpEndpoint
 {
     public function __construct(
-        private readonly LoggerInterface $logger,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -42,6 +46,9 @@ final class McpEndpoint
             // Get services through DI container
             $container = GeneralUtility::getContainer();
             $serverFactory = $container->get(McpServerFactory::class);
+            if (!$serverFactory instanceof McpServerFactory) {
+                throw new RuntimeException('MCP server factory is not available');
+            }
 
             // Debug: Log all request details
             $headers = [];
@@ -74,7 +81,7 @@ final class McpEndpoint
             $oauthService = GeneralUtility::makeInstance(OAuthService::class);
             $tokenInfo = $oauthService->validateToken($token, $request);
 
-            if (!$tokenInfo) {
+            if (!$this->isValidTokenInfo($tokenInfo)) {
                 $this->logger->warning('Token validation failed', ['tokenPrefix' => substr($token, 0, 20)]);
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
@@ -133,9 +140,15 @@ final class McpEndpoint
             }
 
             $output = ob_get_clean();
+            if ($output === false) {
+                $output = '';
+            }
 
             // Get the status code set by the adapter
-            $statusCode = http_response_code() ?: 200;
+            $statusCode = http_response_code();
+            if (!is_int($statusCode) || $statusCode < 100) {
+                $statusCode = 200;
+            }
 
             // Try to decode as JSON, fallback to plain text
             $decodedOutput = json_decode($output, true);
@@ -152,10 +165,10 @@ final class McpEndpoint
                 ['Content-Type' => $contentType]
             );
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->error('MCP request failed', ['exception' => $e]);
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode([
+            $stream->write($this->encodeJson([
                 'error' => 'Internal Server Error',
             ]));
             $stream->rewind();
@@ -175,14 +188,14 @@ final class McpEndpoint
     {
         // Try Authorization header first (preferred method)
         $authHeader = $request->getHeaderLine('Authorization');
-        if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+        if ($authHeader !== '' && preg_match('/Bearer\s+(.+)/', $authHeader, $matches) === 1) {
             return $matches[1];
         }
 
         // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
         $serverParams = $request->getServerParams();
         $httpAuth = $serverParams['HTTP_AUTHORIZATION'] ?? '';
-        if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
+        if (is_string($httpAuth) && $httpAuth !== '' && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches) === 1) {
             return $matches[1];
         }
 
@@ -192,7 +205,8 @@ final class McpEndpoint
         if ($queryToken !== null) {
             $this->logger->warning('Token passed via query parameter is deprecated. Use the Authorization header instead.');
         }
-        return $queryToken;
+
+        return is_string($queryToken) && $queryToken !== '' ? $queryToken : null;
     }
 
     /**
@@ -201,7 +215,7 @@ final class McpEndpoint
     private function createUnauthorizedResponse(string $message): ResponseInterface
     {
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode([
+        $stream->write($this->encodeJson([
             'error' => 'Unauthorized',
             'message' => $message
         ]));
@@ -233,7 +247,7 @@ final class McpEndpoint
             ->executeQuery()
             ->fetchAssociative();
 
-        if ($userData) {
+        if (is_array($userData)) {
             $beUser->user = $userData;
             $GLOBALS['BE_USER'] = $beUser;
 
@@ -258,8 +272,10 @@ final class McpEndpoint
         }
 
         // Ensure TCA is loaded using proper TYPO3 core method
-        $tcaFactory = GeneralUtility::getContainer()->get(\TYPO3\CMS\Core\Configuration\Tca\TcaFactory::class);
-        $GLOBALS['TCA'] = $tcaFactory->get();
+        $tcaFactory = GeneralUtility::getContainer()->get(TcaFactory::class);
+        if ($tcaFactory instanceof TcaFactory) {
+            $GLOBALS['TCA'] = $tcaFactory->get();
+        }
     }
 
     /**
@@ -267,11 +283,8 @@ final class McpEndpoint
      */
     private function initializeLanguageService(BackendUserAuthentication $beUser): void
     {
-        // Get user's preferred language or fall back to default
-        $userLanguage = $beUser->user['lang'] ?? 'default';
-
         // Create language service
-        $languageServiceFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class);
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
         $languageService = $languageServiceFactory->createFromUserPreferences($beUser);
 
         // Set global language service
@@ -296,13 +309,13 @@ final class McpEndpoint
         // Check server params for HTTP_AUTHORIZATION
         $serverParams = $request->getServerParams();
         if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
+            $headers['http_authorization'] = is_string($serverParams['HTTP_AUTHORIZATION']) ? $serverParams['HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
         // Also check for redirect env variable (Apache specific)
         if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
+            $headers['redirect_http_authorization'] = is_string($serverParams['REDIRECT_HTTP_AUTHORIZATION']) ? $serverParams['REDIRECT_HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
@@ -316,13 +329,35 @@ final class McpEndpoint
             'test' => 'auth',
             'headers_received' => $headers,
             'auth_header_detected' => $receivedAuthHeader,
-            'server_software' => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
+            'server_software' => is_string($serverParams['SERVER_SOFTWARE'] ?? null) ? $serverParams['SERVER_SOFTWARE'] : 'unknown',
             'hint' => !$receivedAuthHeader ? 'Authorization header not received. See module page for solutions.' : 'Authorization header received successfully.'
         ];
 
         $body = GeneralUtility::makeInstance(Stream::class, 'php://temp', 'rw');
-        $body->write(json_encode($responseData, JSON_PRETTY_PRINT));
+        $body->write($this->encodeJson($responseData, JSON_PRETTY_PRINT));
 
         return $response->withBody($body);
+    }
+
+    /**
+     * @param array<string, mixed>|null $tokenInfo
+     * @phpstan-assert-if-true array{be_user_uid: int, client_name: string, token_uid: int} $tokenInfo
+     */
+    private function isValidTokenInfo(?array $tokenInfo): bool
+    {
+        return is_array($tokenInfo)
+            && isset($tokenInfo['be_user_uid'], $tokenInfo['client_name'], $tokenInfo['token_uid'])
+            && is_int($tokenInfo['be_user_uid'])
+            && is_string($tokenInfo['client_name'])
+            && is_int($tokenInfo['token_uid']);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data, int $flags = 0): string
+    {
+        $json = json_encode($data, $flags);
+        return is_string($json) ? $json : '{}';
     }
 }

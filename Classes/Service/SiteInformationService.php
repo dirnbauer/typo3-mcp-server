@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Throwable;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\Site;
@@ -34,7 +37,7 @@ final class SiteInformationService
     /**
      * Get all configured domains from TYPO3 sites
      * 
-     * @return array Array of unique domain names
+     * @return list<string> Array of unique domain names
      */
     public function getAllDomains(): array
     {
@@ -69,7 +72,10 @@ final class SiteInformationService
             }
         }
 
-        return array_unique($domains);
+        $stringDomains = array_values(array_filter($domains, static fn(mixed $domain): bool => is_string($domain) && $domain !== ''));
+        /** @var list<string> $uniqueDomains */
+        $uniqueDomains = array_values(array_unique($stringDomains));
+        return $uniqueDomains;
     }
 
     /**
@@ -84,64 +90,63 @@ final class SiteInformationService
         try {
             $site = $this->siteFinder->getSiteByPageId($pageId);
             
-            if ($site instanceof Site) {
-                // Get the appropriate language
-                try {
-                    $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
-                } catch (\Throwable $e) {
-                    // Fall back to default language if specified language not found
-                    $language = $site->getDefaultLanguage();
-                }
-                
-                // Generate the URI
-                $uri = $site->getRouter()->generateUri($pageId, ['_language' => $language]);
-                $generatedUrl = (string)$uri;
-                
-                // Check if the generated URL is missing a host (e.g., just a path like "/page")
-                if (!empty($generatedUrl) && !str_starts_with($generatedUrl, 'http')) {
-                    // Try to add host from site configuration
-                    $host = $site->getBase()->getHost();
-                    
-                    // If site base is just "/" or empty, try to get host from current request
-                    if (empty($host) || $host === '/') {
-                        $host = $this->getHostFromRequest();
-                    }
-                    
-                    if (!empty($host)) {
-                        // Determine scheme
-                        $scheme = 'https';
-                        if ($this->currentRequest !== null) {
-                            $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
-                        }
-                        
-                        // Build full URL
-                        $generatedUrl = $scheme . '://' . $host . $generatedUrl;
-                    }
-                }
-                
-                return $generatedUrl;
+            // Get the appropriate language
+            try {
+                $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
+            } catch (Throwable $e) {
+                // Fall back to default language if specified language not found
+                $language = $site->getDefaultLanguage();
             }
-        } catch (\Throwable $e) {
+            
+            // Generate the URI
+            $uri = $site->getRouter()->generateUri($pageId, ['_language' => $language]);
+            $generatedUrl = (string)$uri;
+            
+            // Check if the generated URL is missing a host (e.g., just a path like "/page")
+            if ($generatedUrl !== '' && !str_starts_with($generatedUrl, 'http')) {
+                // Try to add host from site configuration
+                $host = $site->getBase()->getHost();
+                
+                // If site base is just "/" or empty, try to get host from current request
+                if ($host === '' || $host === '/') {
+                    $host = $this->getHostFromRequest();
+                }
+                
+                if (!empty($host)) {
+                    // Determine scheme
+                    $scheme = 'https';
+                    if ($this->currentRequest !== null) {
+                        $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
+                    }
+                    
+                    // Build full URL
+                    $generatedUrl = $scheme . '://' . $host . $generatedUrl;
+                }
+            }
+
+            return $generatedUrl;
+        } catch (Throwable $e) {
             // Continue to fallback strategies
         }
         
         // Fallback: Try to get page record and build URL from slug
         try {
             $page = $this->getPageRecord($pageId);
-            if ($page && !empty($page['slug'])) {
+            $slug = is_scalar($page['slug'] ?? null) ? (string)$page['slug'] : '';
+            if ($page !== null && $slug !== '') {
                 $host = $this->getHostFromRequest();
                 if (!empty($host)) {
                     $scheme = 'https';
                     if ($this->currentRequest !== null) {
                         $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
                     }
-                    return $scheme . '://' . $host . $page['slug'];
+                    return $scheme . '://' . $host . $slug;
                 }
                 
                 // If no host available, return just the slug
-                return $page['slug'];
+                return $slug;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable) {
             // Ignore and return null
         }
         
@@ -199,18 +204,18 @@ final class SiteInformationService
      * Get page record by ID
      * 
      * @param int $pageId
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     protected function getPageRecord(int $pageId): ?array
     {
-        $connectionPool = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class);
+        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
         
         $page = $queryBuilder
             ->select('uid', 'slug', 'title')
             ->from('pages')
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($pageId, \Doctrine\DBAL\ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER))
             )
             ->executeQuery()
             ->fetchAssociative();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Fixtures\TestDataBuilder;
@@ -87,11 +88,11 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'bodytext' => 'Updated content text'
         ];
         $pid = $this->getRootPageUid();
-        
+
         // Initialize tools
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        
+
         // Create record
         $createResult = $writeTool->execute([
             'action' => 'create',
@@ -102,10 +103,10 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $this->assertSuccessfulToolResult($createResult);
         $createResponse = $this->extractJsonFromResult($createResult);
         $this->assertArrayHasKey('uid', $createResponse);
-        
+
         $uid = $createResponse['uid'];
         $this->assertGreaterThan(0, $uid);
-        
+
         // Read record
         $readResult = $readTool->execute([
             'table' => $table,
@@ -117,7 +118,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $this->assertCount(1, $readData['records']);
         // Compare the original createData with the read record
         $this->assertRecordEquals($createData, $readData['records'][0]);
-        
+
         // Update record
         $updateResult = $writeTool->execute([
             'action' => 'update',
@@ -126,7 +127,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'data' => $updateData
         ]);
         $this->assertSuccessfulToolResult($updateResult);
-        
+
         // Verify update
         $verifyResult = $readTool->execute([
             'table' => $table,
@@ -135,7 +136,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $this->assertSuccessfulToolResult($verifyResult);
         $verifyData = $this->extractJsonFromResult($verifyResult);
         $this->assertRecordEquals($updateData, $verifyData['records'][0]);
-        
+
         // Delete record
         $deleteResult = $writeTool->execute([
             'action' => 'delete',
@@ -143,7 +144,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'uid' => $uid
         ]);
         $this->assertSuccessfulToolResult($deleteResult);
-        
+
         // Verify deletion - record should still be readable but marked as deleted
         $deletedResult = $readTool->execute([
             'table' => $table,
@@ -452,11 +453,11 @@ class WriteTableToolTest extends AbstractFunctionalTest
     public function testDeleteContentElement(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Verify record exists before deletion
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
-        
+
         $beforeDelete = $queryBuilder->select('uid', 'deleted')
             ->from('tt_content')
             ->where(
@@ -464,30 +465,30 @@ class WriteTableToolTest extends AbstractFunctionalTest
             )
             ->executeQuery()
             ->fetchAssociative();
-        
+
         $this->assertIsArray($beforeDelete, 'Record should exist before deletion');
         $this->assertEquals(0, $beforeDelete['deleted'], 'Record should not be deleted initially');
-        
+
         // Perform the deletion
         $result = $tool->execute([
             'action' => 'delete',
             'table' => 'tt_content',
             'uid' => 101
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->content));
-        
+
         $data = json_decode($result->content[0]->text, true);
         $this->assertEquals('delete', $data['action']);
         $this->assertEquals('tt_content', $data['table']);
         $this->assertEquals(101, $data['uid']);
-        
+
         // VERIFY THE RECORD WAS ACTUALLY MARKED AS DELETED
         // In TYPO3 workspaces, deletion creates a delete placeholder
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
         $queryBuilder->getRestrictions()->removeAll();
-        
+
         // Check for delete placeholder in workspace
         $deletePlaceholder = $queryBuilder->select('*')
             ->from('tt_content')
@@ -498,12 +499,12 @@ class WriteTableToolTest extends AbstractFunctionalTest
             )
             ->executeQuery()
             ->fetchAssociative();
-        
+
         $this->assertIsArray($deletePlaceholder, 'Delete placeholder should be created in workspace');
         $this->assertEquals(2, $deletePlaceholder['t3ver_state'], 'Should have delete placeholder state');
         // Note: In TYPO3, delete placeholders may not always have deleted=1, the t3ver_state=2 is what matters
         $this->assertGreaterThan(0, $deletePlaceholder['t3ver_wsid'], 'Delete placeholder should be in workspace');
-        
+
         // Verify original record is still in live workspace (unchanged)
         $liveRecord = $queryBuilder->select('*')
             ->from('tt_content')
@@ -513,17 +514,17 @@ class WriteTableToolTest extends AbstractFunctionalTest
             )
             ->executeQuery()
             ->fetchAssociative();
-        
+
         $this->assertIsArray($liveRecord, 'Live record should still exist');
         $this->assertEquals(0, $liveRecord['deleted'], 'Live record should not be deleted yet');
-        
+
         // Verify record appears deleted when queried with restrictions
         $restrictedQueryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
         $restrictedQueryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-        
+
         $visibleRecord = $restrictedQueryBuilder->select('uid')
             ->from('tt_content')
             ->where(
@@ -531,7 +532,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             )
             ->executeQuery()
             ->fetchOne();
-        
+
         // In workspace context, the record should appear deleted
         // Note: This might still return the record depending on workspace overlay logic
         // The important verification is that the delete placeholder was created above
@@ -961,15 +962,53 @@ class WriteTableToolTest extends AbstractFunctionalTest
     public function testFlexFormFieldHandling(): void
     {
         $tool = new WriteTableTool();
-        
-        // Test creating content with FlexForm data
-        // Use list content element which has a pi_flexform field
-        $result = $tool->execute([
-            'action' => 'create',
-            'table' => 'tt_content',
-            'pid' => 1,
-            'data' => [
-                'CType' => 'list',
+        $pluginType = 'mcp_test_flexform_plugin';
+        $flexFormDataStructure = <<<'XML'
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3DataStructure>
+  <ROOT>
+    <type>array</type>
+    <el>
+      <settings.caption>
+        <label>Caption</label>
+        <config>
+          <type>input</type>
+        </config>
+      </settings.caption>
+      <settings.headerPosition>
+        <label>Header Position</label>
+        <config>
+          <type>input</type>
+        </config>
+      </settings.headerPosition>
+    </el>
+  </ROOT>
+</T3DataStructure>
+XML;
+
+        $originalItems = $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'] ?? [];
+        $originalType = $GLOBALS['TCA']['tt_content']['types'][$pluginType] ?? null;
+
+        try {
+            $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'][] = [
+                'label' => 'MCP Test FlexForm Plugin',
+                'value' => $pluginType,
+            ];
+            $GLOBALS['TCA']['tt_content']['types'][$pluginType] = [
+                'showitem' => 'header,pi_flexform',
+                'columnsOverrides' => [
+                    'pi_flexform' => [
+                        'config' => [
+                            'ds' => [
+                                '*,' . $pluginType => $flexFormDataStructure,
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            $pluginData = [
+                'CType' => $pluginType,
                 'header' => 'Plugin with FlexForm',
                 'pi_flexform' => [
                     'settings' => [
@@ -977,35 +1016,51 @@ class WriteTableToolTest extends AbstractFunctionalTest
                         'headerPosition' => 'top'
                     ]
                 ]
-            ]
-        ]);
+            ];
         
-        // Check for errors first
-        $this->assertFalse($result->isError, json_encode($result->content));
+            // Test creating content with FlexForm data
+            // Use a plugin content element which has a pi_flexform field
+            $result = $tool->execute([
+                'action' => 'create',
+                'table' => 'tt_content',
+                'pid' => 1,
+                'data' => $pluginData
+            ]);
         
-        // Check the result
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertIsArray($data);
-        $this->assertEquals('create', $data['action']);
+            // Check for errors first
+            $this->assertFalse($result->isError, json_encode($result->content));
         
-        // If creation succeeded, verify FlexForm was converted to XML
-        if (isset($data['uid'])) {
-            $newUid = $data['uid'];
-            
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable('tt_content');
-            
-            $record = $queryBuilder->select('pi_flexform')
-                ->from('tt_content')
-                ->where(
-                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($newUid, ParameterType::INTEGER))
-                )
-                ->executeQuery()
-                ->fetchAssociative();
-            
-            if ($record && !empty($record['pi_flexform'])) {
-                $this->assertStringContainsString('<?xml', $record['pi_flexform']);
-                $this->assertStringContainsString('T3FlexForms', $record['pi_flexform']);
+            // Check the result
+            $data = json_decode($result->content[0]->text, true);
+            $this->assertIsArray($data);
+            $this->assertEquals('create', $data['action']);
+        
+            // If creation succeeded, verify FlexForm was converted to XML
+            if (isset($data['uid'])) {
+                $newUid = $data['uid'];
+                
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getQueryBuilderForTable('tt_content');
+                
+                $record = $queryBuilder->select('pi_flexform')
+                    ->from('tt_content')
+                    ->where(
+                        $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($newUid, ParameterType::INTEGER))
+                    )
+                    ->executeQuery()
+                    ->fetchAssociative();
+                
+                if ($record && !empty($record['pi_flexform'])) {
+                    $this->assertStringContainsString('<?xml', $record['pi_flexform']);
+                    $this->assertStringContainsString('T3FlexForms', $record['pi_flexform']);
+                }
+            }
+        } finally {
+            $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'] = $originalItems;
+            if (is_array($originalType)) {
+                $GLOBALS['TCA']['tt_content']['types'][$pluginType] = $originalType;
+            } else {
+                unset($GLOBALS['TCA']['tt_content']['types'][$pluginType]);
             }
         }
     }
@@ -1042,7 +1097,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
     public function testMultipleSelectFieldHandling(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Test with the actual categories field which is available for textmedia
         $result = $tool->execute([
             'action' => 'create',
@@ -1054,15 +1109,15 @@ class WriteTableToolTest extends AbstractFunctionalTest
                 'categories' => '1,2' // Use comma-separated string for category UIDs
             ]
         ]);
-        
+
         // Check for errors first
         $this->assertFalse($result->isError, json_encode($result->content));
-        
+
         // This test is now just checking that the tool handles data correctly
         $data = json_decode($result->content[0]->text, true);
         $this->assertIsArray($data);
         $this->assertEquals('create', $data['action']);
-        
+
         // If the field doesn't exist, we'll get an error from DataHandler but that's OK
         // The important thing is that the tool doesn't crash
     }
@@ -1234,7 +1289,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
     /**
      * @see https://github.com/hauptsacheNet/typo3-mcp-server/issues/6
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('slugNormalizationDataProvider')]
+    #[DataProvider('slugNormalizationDataProvider')]
     public function testCreatePageNormalizesSlug(string $inputSlug, string $expectedSlug): void
     {
         $tool = new WriteTableTool();

@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class PageBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'title' => 'Test Page',
@@ -54,9 +52,8 @@ class PageBuilder
         'rowDescription' => null,
     ];
     
-    public function __construct(ConnectionPool $connectionPool)
+    public function __construct(private readonly ConnectionPool $connectionPool)
     {
-        $this->connectionPool = $connectionPool;
     }
     
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use Hn\McpServer\MCP\Tool\GetPageTool;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
 use Hn\McpServer\Service\SiteInformationService;
@@ -49,7 +50,7 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
         
         // Set up language service
-        $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class)->create('en');
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('en');
         
         // Set up site configuration
         $this->setUpFrontendRootPage(

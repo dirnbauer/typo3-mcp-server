@@ -1,0 +1,14 @@
+name: typo3-mcp-server
+type: php
+docroot: ""
+php_version: "8.3"
+webserver_type: nginx-fpm
+database:
+  type: mariadb
+  version: "10.11"
+router_http_port: "8080"
+router_https_port: "8443"
+host_db_port: "33060"
+mailpit_http_port: "8025"
+web_environment:
+  - TYPO3_CONTEXT=Development/DDEV

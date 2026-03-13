@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
+use Throwable;
+
 /**
  * Exception for database-related errors
  * 
@@ -16,9 +18,9 @@ class DatabaseException extends McpException
     /**
      * @param string $operation The database operation that failed (e.g., select, insert, update, delete)
      * @param string $table The table name involved in the operation
-     * @param \Throwable|null $previous Previous exception for chaining (often a Doctrine DBAL exception)
+     * @param Throwable|null $previous Previous exception for chaining (often a Doctrine DBAL exception)
      */
-    public function __construct(string $operation, string $table, ?\Throwable $previous = null)
+    public function __construct(string $operation, string $table, ?Throwable $previous = null)
     {
         parent::__construct(
             "Database error during {$operation} on table {$table}: " . ($previous ? $previous->getMessage() : 'Unknown error'),

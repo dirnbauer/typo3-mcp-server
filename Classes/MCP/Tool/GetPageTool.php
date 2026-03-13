@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use InvalidArgumentException;
+use Throwable;
+use RuntimeException;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Http\ServerRequest;
+use TYPO3\CMS\Core\Http\NormalizedParams;
+use Exception;
 use Doctrine\DBAL\ParameterType;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
@@ -30,23 +38,89 @@ use Hn\McpServer\Service\TableAccessService;
 
 /**
  * Tool for retrieving detailed information about a TYPO3 page
+ *
+ * @phpstan-type PageRow array<string, mixed>
+ * @phpstan-type TranslationInfo array{languageId: int, isoCode: string, title: string}
+ * @phpstan-type TableRecordsInfo array{total: int, records: list<PageRow>}
+ * @phpstan-type PageRecordsInfo array<string, TableRecordsInfo>
  */
 final class GetPageTool extends AbstractRecordTool
 {
-    protected SiteInformationService $siteInformationService;
-    protected McpLanguageService $languageService;
-    
     public function __construct(
-        SiteInformationService $siteInformationService,
-        McpLanguageService $languageService
+        protected SiteInformationService $siteInformationService,
+        protected McpLanguageService $languageService
     ) {
         parent::__construct();
-        $this->siteInformationService = $siteInformationService;
-        $this->languageService = $languageService;
+    }
+
+    protected function getCurrentWorkspaceId(): int
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        return $backendUser instanceof BackendUserAuthentication ? ($backendUser->workspace ?? 0) : 0;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getTableCtrl(string $table): array
+    {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca)) {
+            return [];
+        }
+
+        $tableConfig = $globalTca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return [];
+        }
+
+        $ctrl = $tableConfig['ctrl'] ?? null;
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    protected function getSelectItems(string $table, string $fieldName): array
+    {
+        $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
+        if ($fieldConfig === null) {
+            return [];
+        }
+
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        $items = $config['items'] ?? null;
+        return is_array($items) ? array_values($items) : [];
+    }
+
+    protected function resolveSelectItemLabel(string $table, string $fieldName, string $value): ?string
+    {
+        foreach ($this->getSelectItems($table, $fieldName) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $itemValue = $item['value'] ?? $item[1] ?? null;
+            if (!is_scalar($itemValue) || (string)$itemValue !== $value) {
+                continue;
+            }
+
+            $label = $item['label'] ?? $item[0] ?? null;
+            if (!is_scalar($label)) {
+                return null;
+            }
+
+            return TableAccessService::translateLabel((string)$label);
+        }
+
+        return null;
     }
 
     /**
      * Get the tool schema
+     */
+    /**
+     * @return array<string, mixed>
      */
     protected function getToolSchema(): array
     {
@@ -100,44 +174,48 @@ final class GetPageTool extends AbstractRecordTool
     /**
      * Execute the tool logic
      */
+    /**
+     * @param array<string, mixed> $params
+     */
     protected function doExecute(array $params): CallToolResult
     {
         
         // Handle language parameter
         $languageId = 0;
-        if (isset($params['language'])) {
+        if (isset($params['language']) && is_string($params['language'])) {
             // Convert ISO code to language UID
             $languageId = $this->languageService->getUidFromIsoCode($params['language']);
             if ($languageId === null) {
-                throw new \InvalidArgumentException('Unknown language code: ' . $params['language']);
+                throw new InvalidArgumentException('Unknown language code: ' . $params['language']);
             }
-        } elseif (isset($params['languageId'])) {
+        } elseif (isset($params['languageId']) && is_numeric($params['languageId'])) {
             // Backward compatibility with numeric languageId
             $languageId = (int)$params['languageId'];
         }
 
         // Determine page UID from either uid parameter or url parameter
         $uid = 0;
-        if (isset($params['uid'])) {
+        if (isset($params['uid']) && is_numeric($params['uid'])) {
             $uid = (int)$params['uid'];
-        } elseif (isset($params['url'])) {
+        } elseif (isset($params['url']) && is_string($params['url'])) {
             try {
                 $uid = $this->resolveUrlToPageUid($params['url'], $languageId);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // Re-throw as InvalidArgumentException to preserve the message in error handling
-                throw new \InvalidArgumentException($e->getMessage(), 0, $e);
+                throw new InvalidArgumentException($e->getMessage(), 0, $e);
             }
         }
 
         if ($uid <= 0) {
-            throw new \InvalidArgumentException('Invalid page UID or URL. Please provide a valid page ID or URL.');
+            throw new InvalidArgumentException('Invalid page UID or URL. Please provide a valid page ID or URL.');
         }
 
         // Get page data (with language overlay if applicable)
         $pageData = $this->getPageData($uid, $languageId);
         
         // Get page URL using SiteInformationService
-        $pageUrl = $this->siteInformationService->generatePageUrl((int)$pageData['uid'], $languageId);
+        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int)$pageData['uid'] : 0;
+        $pageUrl = $this->siteInformationService->generatePageUrl($pageUid, $languageId);
         
         // Get records on this page (filtered by language if specified)
         $recordsInfo = $this->getPageRecords($uid, $languageId);
@@ -157,13 +235,16 @@ final class GetPageTool extends AbstractRecordTool
      * This method uses direct QueryBuilder instead of PageRepository to properly
      * handle workspace-only pages (pages that exist only in a workspace, not yet live).
      */
+    /**
+     * @return PageRow
+     */
     protected function getPageData(int $uid, int $languageId = 0): array
     {
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
 
         // Apply proper workspace restrictions
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
@@ -191,13 +272,14 @@ final class GetPageTool extends AbstractRecordTool
         $page = $queryBuilder->executeQuery()->fetchAssociative();
 
         if (!$page) {
-            throw new \RuntimeException('Page not found: ' . $uid);
+            throw new RuntimeException('Page not found: ' . $uid);
         }
 
         // Apply workspace transparency - return live UID for consistency
         // For workspace versions of existing records, use the live UID
-        if (isset($page['t3ver_oid']) && $page['t3ver_oid'] > 0) {
-            $page['uid'] = (int)$page['t3ver_oid'];
+        $originalUid = is_numeric($page['t3ver_oid'] ?? null) ? (int)$page['t3ver_oid'] : 0;
+        if ($originalUid > 0) {
+            $page['uid'] = $originalUid;
         }
 
         // Apply language overlay if language is specified
@@ -232,8 +314,8 @@ final class GetPageTool extends AbstractRecordTool
         }
 
         // Convert some values to their proper types
-        $page['uid'] = (int)$page['uid'];
-        $page['pid'] = (int)$page['pid'];
+        $page['uid'] = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+        $page['pid'] = is_numeric($page['pid'] ?? null) ? (int)$page['pid'] : 0;
         $page['hidden'] = (bool)$page['hidden'];
         $page['deleted'] = (bool)($page['deleted'] ?? false);
 
@@ -245,13 +327,16 @@ final class GetPageTool extends AbstractRecordTool
     /**
      * Get available translations for a page
      */
+    /**
+     * @return list<TranslationInfo>
+     */
     protected function getPageTranslations(int $pageUid): array
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
 
         // Apply proper workspace restrictions
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
@@ -269,13 +354,13 @@ final class GetPageTool extends AbstractRecordTool
 
         $result = [];
         foreach ($translations as $translation) {
-            $languageId = (int)$translation['sys_language_uid'];
+            $languageId = is_numeric($translation['sys_language_uid'] ?? null) ? (int)$translation['sys_language_uid'] : 0;
             $isoCode = $this->languageService->getIsoCodeFromUid($languageId);
             if ($isoCode) {
                 $result[] = [
                     'languageId' => $languageId,
                     'isoCode' => $isoCode,
-                    'title' => $translation['title'],
+                    'title' => is_string($translation['title'] ?? null) ? $translation['title'] : '',
                 ];
             }
         }
@@ -285,6 +370,9 @@ final class GetPageTool extends AbstractRecordTool
     
     /**
      * Get records on the page grouped by table
+     */
+    /**
+     * @return PageRecordsInfo
      */
     protected function getPageRecords(int $pageId, int $languageId = 0): array
     {
@@ -313,6 +401,9 @@ final class GetPageTool extends AbstractRecordTool
     /**
      * Get a list of content tables that can be on a page using TableAccessService
      */
+    /**
+     * @return list<string>
+     */
     protected function getContentTables(): array
     {
         // Get all accessible tables from TableAccessService (include read-only tables)
@@ -324,7 +415,7 @@ final class GetPageTool extends AbstractRecordTool
         foreach (array_keys($accessibleTables) as $table) {
             // Check if the table has a pid column in its TCA configuration
             // This means it can be associated with a page
-            if (isset($GLOBALS['TCA'][$table]['ctrl'])) {
+            if ($this->getTableCtrl($table) !== []) {
                 $contentTables[] = $table;
             }
         }
@@ -334,6 +425,9 @@ final class GetPageTool extends AbstractRecordTool
     
     /**
      * Get information about records from a specific table on a page
+     */
+    /**
+     * @return TableRecordsInfo
      */
     protected function getTableRecordsInfo(string $table, int $pageId): array
     {
@@ -349,7 +443,7 @@ final class GetPageTool extends AbstractRecordTool
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply proper workspace restrictions
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
@@ -379,11 +473,14 @@ final class GetPageTool extends AbstractRecordTool
         $query->setMaxResults(20);
 
         // Order by uid as default, but use TCA sorting field if available
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['sortby'])) {
-            $query->orderBy($GLOBALS['TCA'][$table]['ctrl']['sortby']);
-        } elseif (!empty($GLOBALS['TCA'][$table]['ctrl']['default_sortby'])) {
+        $tableCtrl = $this->getTableCtrl($table);
+        $sortbyField = is_string($tableCtrl['sortby'] ?? null) ? $tableCtrl['sortby'] : '';
+        $defaultSortby = is_string($tableCtrl['default_sortby'] ?? null) ? $tableCtrl['default_sortby'] : '';
+        if ($sortbyField !== '') {
+            $query->orderBy($sortbyField);
+        } elseif ($defaultSortby !== '') {
             // Parse the default_sortby field which might contain ORDER BY statements
-            $sortbyFields = GeneralUtility::trimExplode(',', str_replace('ORDER BY', '', $GLOBALS['TCA'][$table]['ctrl']['default_sortby']));
+            $sortbyFields = GeneralUtility::trimExplode(',', str_replace('ORDER BY', '', $defaultSortby), true);
             foreach ($sortbyFields as $sortbyField) {
                 $sortbyFieldAndDirection = GeneralUtility::trimExplode(' ', $sortbyField);
                 $query->addOrderBy(
@@ -399,13 +496,14 @@ final class GetPageTool extends AbstractRecordTool
 
         // Apply workspace transparency - use live UID for workspace versions
         foreach ($records as &$record) {
-            if (isset($record['t3ver_oid']) && $record['t3ver_oid'] > 0) {
-                $record['uid'] = (int)$record['t3ver_oid'];
+            $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int)$record['t3ver_oid'] : 0;
+            if ($originalUid > 0) {
+                $record['uid'] = $originalUid;
             }
         }
 
         return [
-            'total' => (int)$totalCount,
+            'total' => is_numeric($totalCount) ? (int)$totalCount : 0,
             'records' => $records
         ];
     }
@@ -415,7 +513,9 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function tableHasHiddenField(string $table): bool
     {
-        return isset($GLOBALS['TCA'][$table]['ctrl']['enablecolumns']['disabled']);
+        $ctrl = $this->getTableCtrl($table);
+        $enablecolumns = $ctrl['enablecolumns'] ?? null;
+        return is_array($enablecolumns) && isset($enablecolumns['disabled']);
     }
     
     /**
@@ -423,18 +523,22 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function tableHasLanguageSupport(string $table): bool
     {
-        return isset($GLOBALS['TCA'][$table]['ctrl']['languageField']);
+        return $this->tableAccessService->getLanguageFieldName($table) !== null;
     }
     
     /**
      * Filter records by language
+     */
+    /**
+     * @param TableRecordsInfo $tableInfo
+     * @return TableRecordsInfo
      */
     protected function filterRecordsByLanguage(array $tableInfo, int $languageId): array
     {
         $filteredRecords = [];
         
         foreach ($tableInfo['records'] as $record) {
-            $recordLang = (int)($record['sys_language_uid'] ?? 0);
+            $recordLang = is_numeric($record['sys_language_uid'] ?? null) ? (int)$record['sys_language_uid'] : 0;
             
             if ($languageId === 0) {
                 // Default language: only show records with sys_language_uid = 0
@@ -458,32 +562,47 @@ final class GetPageTool extends AbstractRecordTool
     /**
      * Format page information as readable text
      */
+    /**
+     * @param PageRow $pageData
+     * @param PageRecordsInfo $recordsInfo
+     * @param list<TranslationInfo> $translations
+     */
     protected function formatPageInfo(array $pageData, array $recordsInfo, ?string $pageUrl = null, int $languageId = 0, array $translations = []): string
     {
         $result = "PAGE INFORMATION\n";
         $result .= "================\n\n";
+
+        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int)$pageData['uid'] : 0;
+        $pageTitle = is_scalar($pageData['title'] ?? null) ? (string)$pageData['title'] : '';
+        $pageNavTitle = is_scalar($pageData['nav_title'] ?? null) ? (string)$pageData['nav_title'] : '';
+        $pageSubtitle = is_scalar($pageData['subtitle'] ?? null) ? (string)$pageData['subtitle'] : '';
+        $pagePid = is_numeric($pageData['pid'] ?? null) ? (int)$pageData['pid'] : 0;
+        $pageDoktype = is_scalar($pageData['doktype'] ?? null) ? (string)$pageData['doktype'] : '';
+        $pageHidden = (bool)($pageData['hidden'] ?? false);
+        $pageCrdate = is_numeric($pageData['crdate'] ?? null) ? (int)$pageData['crdate'] : 0;
+        $pageTstamp = is_numeric($pageData['tstamp'] ?? null) ? (int)$pageData['tstamp'] : 0;
         
         // Basic page info
-        $result .= "UID: " . $pageData['uid'] . "\n";
-        $result .= "Title: " . $pageData['title'] . "\n";
+        $result .= "UID: " . $pageUid . "\n";
+        $result .= "Title: " . $pageTitle . "\n";
         
         if ($pageUrl !== null) {
             $result .= "URL: " . $pageUrl . "\n";
         }
         
-        if (!empty($pageData['nav_title'])) {
-            $result .= "Navigation Title: " . $pageData['nav_title'] . "\n";
+        if ($pageNavTitle !== '') {
+            $result .= "Navigation Title: " . $pageNavTitle . "\n";
         }
         
-        if (!empty($pageData['subtitle'])) {
-            $result .= "Subtitle: " . $pageData['subtitle'] . "\n";
+        if ($pageSubtitle !== '') {
+            $result .= "Subtitle: " . $pageSubtitle . "\n";
         }
         
-        $result .= "Parent Page (PID): " . $pageData['pid'] . "\n";
-        $result .= "Doktype: " . $pageData['doktype'] . "\n";
-        $result .= "Hidden: " . ($pageData['hidden'] ? 'Yes' : 'No') . "\n";
-        $result .= "Created: " . date('Y-m-d H:i:s', (int)$pageData['crdate']) . "\n";
-        $result .= "Last Modified: " . date('Y-m-d H:i:s', (int)$pageData['tstamp']) . "\n";
+        $result .= "Parent Page (PID): " . $pagePid . "\n";
+        $result .= "Doktype: " . $pageDoktype . "\n";
+        $result .= "Hidden: " . ($pageHidden ? 'Yes' : 'No') . "\n";
+        $result .= "Created: " . date('Y-m-d H:i:s', $pageCrdate) . "\n";
+        $result .= "Last Modified: " . date('Y-m-d H:i:s', $pageTstamp) . "\n";
         
         // Add language/translation information
         if ($languageId > 0) {
@@ -510,17 +629,14 @@ final class GetPageTool extends AbstractRecordTool
         
         // Handle tt_content specially - group by column position
         if (isset($recordsInfo['tt_content'])) {
-            $result .= $this->formatContentElements($recordsInfo['tt_content'], (int)$pageData['uid']);
+            $result .= $this->formatContentElements($recordsInfo['tt_content'], $pageUid);
             // Remove tt_content from the recordsInfo so we don't process it again below
             unset($recordsInfo['tt_content']);
         }
         
         // Process other tables
         foreach ($recordsInfo as $table => $tableInfo) {
-            $tableLabel = $table;
-            if (!empty($GLOBALS['TCA'][$table]['ctrl']['title'])) {
-                $tableLabel = TableAccessService::translateLabel($GLOBALS['TCA'][$table]['ctrl']['title']);
-            }
+            $tableLabel = TableAccessService::translateLabel($this->tableAccessService->getTableTitle($table));
             $totalCount = $tableInfo['total'];
             $records = $tableInfo['records'];
             $displayCount = count($records);
@@ -529,7 +645,8 @@ final class GetPageTool extends AbstractRecordTool
             if ($displayCount > 0) {
                 foreach ($records as $record) {
                     $title = RecordFormattingUtility::getRecordTitle($table, $record);
-                    $result .= "- [" . $record['uid'] . "] " . $title . "\n";
+                    $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
+                    $result .= "- [" . $recordUid . "] " . $title . "\n";
                 }
                 
                 if ($displayCount < $totalCount) {
@@ -548,6 +665,9 @@ final class GetPageTool extends AbstractRecordTool
     /**
      * Format content elements grouped by column position
      */
+    /**
+     * @param TableRecordsInfo $contentInfo
+     */
     protected function formatContentElements(array $contentInfo, int $pageId): string
     {
         $result = "Content Elements (tt_content)\n";
@@ -564,7 +684,7 @@ final class GetPageTool extends AbstractRecordTool
         // Group content elements by column position
         $groupedElements = [];
         foreach ($contentInfo['records'] as $record) {
-            $colPos = (int)($record['colPos'] ?? 0);
+            $colPos = is_numeric($record['colPos'] ?? null) ? (int)$record['colPos'] : 0;
             if (!isset($groupedElements[$colPos])) {
                 $groupedElements[$colPos] = [];
             }
@@ -587,58 +707,44 @@ final class GetPageTool extends AbstractRecordTool
             
             foreach ($elements as $element) {
                 $title = RecordFormattingUtility::getRecordTitle('tt_content', $element);
-                $cType = $element['CType'] ?? 'unknown';
+                $cType = is_scalar($element['CType'] ?? null) ? (string)$element['CType'] : 'unknown';
                 $cTypeLabel = RecordFormattingUtility::getContentTypeLabel($cType);
-                $result .= "- [" . $element['uid'] . "] " . $title . " (Type: " . $cTypeLabel . " [" . $cType . "])\n";
+                $elementUid = is_numeric($element['uid'] ?? null) ? (int)$element['uid'] : 0;
+                $result .= "- [" . $elementUid . "] " . $title . " (Type: " . $cTypeLabel . " [" . $cType . "])\n";
                 
-                // Show important fields based on content type
-                switch ($cType) {
-                    case 'text':
-                    case 'textpic':
-                    case 'textmedia':
-                        if (!empty($element['bodytext'])) {
-                            $bodytext = strip_tags($element['bodytext']);
-                            $bodytext = mb_substr($bodytext, 0, 100) . (mb_strlen($bodytext) > 100 ? '...' : '');
-                            $result .= "  Text: " . $bodytext . "\n";
-                        }
-                        break;
-                        
-                    case 'image':
-                    case 'textpic':
-                    case 'textmedia':
-                        if (!empty($element['assets'])) {
-                            $result .= "  Images: " . $element['assets'] . "\n";
-                        }
-                        break;
-                        
-                    case 'html':
-                        if (!empty($element['bodytext'])) {
-                            $result .= "  Contains HTML code\n";
-                        }
-                        break;
-                        
-                    case 'list':
-                        // Show plugin information
-                        if (!empty($element['list_type'])) {
-                            $pluginName = $this->getPluginLabel($element['list_type']);
-                            $result .= "  Plugin: " . $pluginName . " [" . $element['list_type'] . "]\n";
-                            
-                            // Check if the plugin's table is workspace capable
-                            $pluginTable = $this->getPluginDataTable($element['list_type']);
-                            if ($pluginTable) {
-                                $isWorkspaceCapable = $this->isTableWorkspaceCapable($pluginTable);
-                                if (!$isWorkspaceCapable) {
-                                    $result .= "  ⚠️  Note: This plugin's data table (" . $pluginTable . ") is not workspace-capable\n";
-                                    $result .= "  💡 Tip: Look for record storage folders (doktype=254) to find and edit the actual records\n";
-                                }
-                            }
-                            
-                            // Show flexform config if available
-                            if (!empty($element['pi_flexform'])) {
-                                $result .= "  Has configuration (FlexForm)\n";
+                if (in_array($cType, ['text', 'textpic', 'textmedia'], true) && is_string($element['bodytext'] ?? null) && $element['bodytext'] !== '') {
+                    $bodytext = strip_tags($element['bodytext']);
+                    $bodytext = mb_substr($bodytext, 0, 100) . (mb_strlen($bodytext) > 100 ? '...' : '');
+                    $result .= "  Text: " . $bodytext . "\n";
+                }
+
+                if (in_array($cType, ['image', 'textpic', 'textmedia'], true) && is_scalar($element['assets'] ?? null) && (string)$element['assets'] !== '') {
+                    $result .= "  Images: " . (string)$element['assets'] . "\n";
+                }
+
+                if ($cType === 'html' && is_string($element['bodytext'] ?? null) && $element['bodytext'] !== '') {
+                    $result .= "  Contains HTML code\n";
+                }
+
+                if (!in_array($cType, ['text', 'textpic', 'textmedia', 'image', 'html'], true)) {
+                    $pluginIdentifier = $this->getPluginIdentifier($element);
+                    if ($pluginIdentifier !== null) {
+                        $pluginName = $this->getPluginLabel($pluginIdentifier);
+                        $result .= "  Plugin: " . $pluginName . " [" . $pluginIdentifier . "]\n";
+
+                        $pluginTable = $this->getPluginDataTable($pluginIdentifier);
+                        if ($pluginTable) {
+                            $isWorkspaceCapable = $this->isTableWorkspaceCapable($pluginTable);
+                            if (!$isWorkspaceCapable) {
+                                $result .= "  ⚠️  Note: This plugin's data table (" . $pluginTable . ") is not workspace-capable\n";
+                                $result .= "  💡 Tip: Look for record storage folders (doktype=254) to find and edit the actual records\n";
                             }
                         }
-                        break;
+
+                        if (!empty($element['pi_flexform'])) {
+                            $result .= "  Has configuration (FlexForm)\n";
+                        }
+                    }
                 }
             }
             
@@ -650,11 +756,11 @@ final class GetPageTool extends AbstractRecordTool
     
     /**
      * Resolve a URL to a page UID
-     * 
+     *
      * @param string $url The URL to resolve (can be full URL, path, or slug)
      * @param int $languageId The language ID to use for resolution
      * @return int The resolved page UID
-     * @throws \Exception If the URL cannot be resolved
+     * @throws Exception If the URL cannot be resolved
      */
     protected function resolveUrlToPageUid(string $url, int $languageId = 0): int
     {
@@ -662,7 +768,7 @@ final class GetPageTool extends AbstractRecordTool
         
         // Try to parse as full URL first
         $parsedUrl = parse_url($url);
-        $path = $parsedUrl['path'] ?? $url;
+        $path = is_array($parsedUrl) && is_string($parsedUrl['path'] ?? null) ? $parsedUrl['path'] : $url;
         
         // Normalize the path - ensure it starts with /
         if (!str_starts_with($path, '/')) {
@@ -674,7 +780,7 @@ final class GetPageTool extends AbstractRecordTool
             // Try to find the root page from any site
             foreach ($siteFinder->getAllSites() as $site) {
                 // Check if this URL belongs to this site (if host is specified)
-                if (isset($parsedUrl['host'])) {
+                if (is_array($parsedUrl) && isset($parsedUrl['host']) && is_string($parsedUrl['host'])) {
                     $siteHost = $site->getBase()->getHost();
                     // If site has no host (base is just "/"), skip host check
                     if (!empty($siteHost) && $siteHost !== $parsedUrl['host']) {
@@ -692,7 +798,7 @@ final class GetPageTool extends AbstractRecordTool
         foreach ($allSites as $site) {
             try {
                 // Check if this URL belongs to this site (if host is specified)
-                if (isset($parsedUrl['host'])) {
+                if (is_array($parsedUrl) && isset($parsedUrl['host']) && is_string($parsedUrl['host'])) {
                     $siteHost = $site->getBase()->getHost();
                     // If site has no host (base is just "/"), skip host check
                     if (!empty($siteHost) && $siteHost !== $parsedUrl['host']) {
@@ -709,15 +815,15 @@ final class GetPageTool extends AbstractRecordTool
                 if ($pageArguments instanceof PageArguments) {
                     return $pageArguments->getPageId();
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable) {
                 // Continue to next site
                 continue;
             }
         }
         
         // If host was specified and didn't match any site, don't try generic fallback
-        if (isset($parsedUrl['host']) && !$matchedAnySite) {
-            throw new \RuntimeException('Could not resolve URL "' . $url . '" to a page. The domain does not match any configured site.');
+        if (is_array($parsedUrl) && isset($parsedUrl['host']) && is_string($parsedUrl['host']) && !$matchedAnySite) {
+            throw new RuntimeException('Could not resolve URL "' . $url . '" to a page. The domain does not match any configured site.');
         }
         
         // If no match found via router AND no host was specified, try to find by slug directly in the database
@@ -737,17 +843,17 @@ final class GetPageTool extends AbstractRecordTool
             ->executeQuery()
             ->fetchAssociative();
         
-        if ($page) {
+        if (is_array($page) && is_numeric($page['uid'] ?? null)) {
             return (int)$page['uid'];
         }
         
-        throw new \RuntimeException('Could not resolve URL "' . $url . '" to a page. The path does not match any page.');
+        throw new RuntimeException('Could not resolve URL "' . $url . '" to a page. The path does not match any page.');
     }
 
     /**
      * Create a server request for URL resolution
      */
-    protected function createServerRequest(Site $site, string $path, int $languageId): \Psr\Http\Message\ServerRequestInterface
+    protected function createServerRequest(Site $site, string $path, int $languageId): ServerRequestInterface
     {
         // Ensure path starts with /
         if (!str_starts_with($path, '/')) {
@@ -768,21 +874,21 @@ final class GetPageTool extends AbstractRecordTool
             'SERVER_PORT' => $baseUri->getPort() ?: ($baseUri->getScheme() === 'https' ? 443 : 80),
         ];
         
-        $request = new \TYPO3\CMS\Core\Http\ServerRequest($uri, 'GET', 'php://input', [], $serverParams);
+        $request = new ServerRequest($uri, 'GET', 'php://input', [], $serverParams);
         $request = $request->withAttribute('site', $site);
         
         // Set language attribute
         try {
             $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
             $request = $request->withAttribute('language', $language);
-        } catch (\Throwable $e) {
+        } catch (Throwable) {
             // If language not found, use default
             $request = $request->withAttribute('language', $site->getDefaultLanguage());
         }
         
         // Add normalizedParams which might be needed by the router
-        $normalizedParams = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
-            \TYPO3\CMS\Core\Http\NormalizedParams::class,
+        $normalizedParams = GeneralUtility::makeInstance(
+            NormalizedParams::class,
             $serverParams
         );
         $request = $request->withAttribute('normalizedParams', $normalizedParams);
@@ -791,29 +897,26 @@ final class GetPageTool extends AbstractRecordTool
     }
     
     /**
-     * Get a human-readable label for a plugin list_type
+     * Get a human-readable label for a plugin identifier.
      * 
-     * @param string $listType
+     * @param string $pluginIdentifier
      * @return string
      */
-    protected function getPluginLabel(string $listType): string
+    protected function getPluginLabel(string $pluginIdentifier): string
     {
+        $contentTypeLabel = $this->resolveSelectItemLabel('tt_content', 'CType', $pluginIdentifier);
+        if ($contentTypeLabel !== null) {
+            return $contentTypeLabel;
+        }
+
         // Check TCA for plugin label
-        if (isset($GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'])) {
-            foreach ($GLOBALS['TCA']['tt_content']['columns']['list_type']['config']['items'] as $item) {
-                // Handle both old and new TCA formats
-                if ((isset($item['value']) && $item['value'] === $listType) ||
-                    (isset($item[1]) && $item[1] === $listType)) {
-                    $label = $item['label'] ?? $item[0] ?? '';
-                    if ($label) {
-                        return TableAccessService::translateLabel($label);
-                    }
-                }
-            }
+        $pluginTypeLabel = $this->resolveSelectItemLabel('tt_content', 'list_type', $pluginIdentifier);
+        if ($pluginTypeLabel !== null) {
+            return $pluginTypeLabel;
         }
         
-        // Fallback: humanize the list_type
-        $parts = explode('_', $listType);
+        // Fallback: humanize the identifier
+        $parts = explode('_', $pluginIdentifier);
         if (count($parts) > 1) {
             // Remove common prefixes like 'tx_'
             if ($parts[0] === 'tx') {
@@ -822,7 +925,7 @@ final class GetPageTool extends AbstractRecordTool
             return ucfirst(implode(' ', $parts));
         }
         
-        return $listType;
+        return $pluginIdentifier;
     }
     
     /**
@@ -856,11 +959,35 @@ final class GetPageTool extends AbstractRecordTool
         
         // Check which tables actually exist
         foreach ($possibleTables as $table) {
-            if (isset($GLOBALS['TCA'][$table])) {
+            if ($this->getTableCtrl($table) !== []) {
                 return $table;
             }
         }
         
+        return null;
+    }
+
+    /**
+     * Determine the logical plugin identifier for a tt_content record.
+     */
+    /**
+     * @param PageRow $element
+     */
+    protected function getPluginIdentifier(array $element): ?string
+    {
+        $cType = is_scalar($element['CType'] ?? null) ? (string)$element['CType'] : '';
+        if ($cType === '') {
+            return null;
+        }
+
+        if ($cType === 'list' && !empty($element['list_type'])) {
+            return is_scalar($element['list_type']) ? (string)$element['list_type'] : null;
+        }
+
+        if (!empty($element['pi_flexform'])) {
+            return $cType;
+        }
+
         return null;
     }
     
@@ -872,7 +999,6 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function isTableWorkspaceCapable(string $table): bool
     {
-        return isset($GLOBALS['TCA'][$table]['ctrl']['versioningWS']) && 
-               $GLOBALS['TCA'][$table]['ctrl']['versioningWS'] === true;
+        return $this->tableAccessService->getTableAccessInfo($table, false)['workspace_capable'];
     }
 }

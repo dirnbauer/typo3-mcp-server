@@ -36,20 +36,20 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'pid' => 1,
             'includeRelations' => false
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
+
         $this->assertEquals('tt_content', $data['table']);
         $this->assertArrayHasKey('records', $data);
-        
+
         // Should have 3 content elements including hidden one (100, 101, 104)
         $this->assertCount(3, $data['records']);
-        
+
         // Verify record structure
         $firstRecord = $data['records'][0];
         $this->assertHasEssentialFields($firstRecord, ['header', 'CType']);
-        
+
         // Verify specific content - now includes hidden records
         $uids = array_column($data['records'], 'uid');
         $this->assertContains(100, $uids);
@@ -262,19 +262,19 @@ class ReadTableToolTest extends AbstractFunctionalTest
     public function testReadWithSorting(): void
     {
         $tool = new ReadTableTool();
-        
+
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
             'includeRelations' => false
         ]);
-        
+
         $this->assertFalse($result->isError);
         $data = json_decode($result->content[0]->text, true);
-        
+
         // Records should be sorted by sorting field (ascending) - now includes hidden
         $this->assertCount(3, $data['records']);
-        
+
         $sortingValues = array_column($data['records'], 'sorting');
         $this->assertEquals(256, $sortingValues[0]);
         $this->assertEquals(512, $sortingValues[1]);
@@ -353,8 +353,8 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $data = json_decode($result->content[0]->text, true);
         $listRecord = $data['records'][0];
         
-        // Verify this is a list record (old plugin system)
-        $this->assertEquals('list', $listRecord['CType']);
+        // Verify this is a plugin record.
+        $this->assertContains($listRecord['CType'], ['list', 'news_pi1']);
         
         // Essential fields should always be present
         $this->assertArrayHasKey('uid', $listRecord);
@@ -387,11 +387,15 @@ class ReadTableToolTest extends AbstractFunctionalTest
         // Both records should return type-specific fields based on TCA configuration
         // In a proper type-based filtering system:
         // - textmedia should have: bodytext, assets, but not pi_flexform
-        // - list should have: list_type, pages, recursive, and potentially pi_flexform for plugins
+        // - plugin records should expose their plugin-specific fields and potential FlexForm data
         
         // Verify that type-specific fields are present
         $this->assertContains('bodytext', $textmediaFields, "Textmedia should have bodytext");
-        $this->assertContains('list_type', $listFields, "List should have list_type field");
+        if (isset($listRecord['list_type'])) {
+            $this->assertContains('list_type', $listFields, "Legacy plugin records should have list_type field");
+        } else {
+            $this->assertContains('pi_flexform', $listFields, "Plugin CTypes should expose pi_flexform");
+        }
         
         // Count fields to ensure we're not getting too many unnecessary fields
         $this->assertLessThan(100, count($textmediaFields), "Too many fields returned for textmedia");

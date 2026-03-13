@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional;
 
+use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Database\Connection;
 use Hn\McpServer\Service\LanguageService;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
@@ -151,16 +153,16 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     protected function switchToWorkspace(int $workspaceId): void
     {
         $GLOBALS['BE_USER']->workspace = $workspaceId;
-        $this->context->setAspect('workspace', new \TYPO3\CMS\Core\Context\WorkspaceAspect($workspaceId));
+        $this->context->setAspect('workspace', new WorkspaceAspect($workspaceId));
     }
     
     /**
      * Get a database connection for a table
-     * 
+     *
      * @param string $table
-     * @return \TYPO3\CMS\Core\Database\Connection
+     * @return Connection
      */
-    protected function getConnectionForTable(string $table): \TYPO3\CMS\Core\Database\Connection
+    protected function getConnectionForTable(string $table): Connection
     {
         return $this->connectionPool->getConnectionForTable($table);
     }

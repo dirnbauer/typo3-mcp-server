@@ -210,31 +210,31 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testGetPageGermanLanguage(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'uid' => 2,
             'language' => 'de'
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show German page title and subtitle
         $this->assertStringContainsString('Title: Über uns', $output);
         $this->assertStringContainsString('Subtitle: Erfahren Sie mehr über unser Unternehmen', $output);
-        
+
         // Should show language information
         $this->assertStringContainsString('Language: DE (ID: 1)', $output);
         $this->assertStringContainsString('Translated: Yes', $output);
-        
+
         // Should show German content
         $this->assertStringContainsString('Willkommen auf der Über uns Seite', $output);
         $this->assertStringContainsString('Nur auf Deutsch verfügbar', $output);
-        
+
         // Should show both German content and fallback default content
         // This is intended behavior - untranslated content falls back to default language
     }

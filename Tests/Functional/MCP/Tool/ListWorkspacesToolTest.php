@@ -6,13 +6,12 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\ListWorkspacesTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class ListWorkspacesToolTest extends AbstractFunctionalTest
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function listWorkspacesShowsAvailableWorkspaces(): void
     {
         $this->createAndSwitchToWorkspace('WS Alpha');
@@ -26,9 +25,7 @@ final class ListWorkspacesToolTest extends AbstractFunctionalTest
         $this->assertStringContainsString('WS Alpha', $text);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function listWorkspacesShowsEmptyWhenNoneExist(): void
     {
         $tool = GeneralUtility::makeInstance(ListWorkspacesTool::class);

@@ -17,6 +17,9 @@ final class ToolRegistry
      */
     protected array $tools = [];
 
+    /**
+     * @param iterable<ToolInterface> $tools
+     */
     public function __construct(
         #[AutowireIterator('mcp.tool')]
         iterable $tools

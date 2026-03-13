@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Exception;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -77,6 +78,8 @@ final class OAuthService
 
     /**
      * Exchange authorization code for access token
+     *
+     * @return array{access_token: string, token_type: string, expires_in: int}|null
      */
     public function exchangeCodeForToken(string $code, ?string $codeVerifier = null, ?ServerRequestInterface $request = null): ?array
     {
@@ -99,12 +102,13 @@ final class OAuthService
             return null;
         }
 
-        if (!empty($authCode['pkce_challenge'])) {
+        $pkceChallenge = is_array($authCode) && is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
+        if ($pkceChallenge !== '') {
             if ($codeVerifier === null || $codeVerifier === '') {
                 return null;
             }
             $computedChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-            if (!hash_equals($authCode['pkce_challenge'], $computedChallenge)) {
+            if (!hash_equals($pkceChallenge, $computedChallenge)) {
                 return null;
             }
         }
@@ -116,7 +120,7 @@ final class OAuthService
         // Get client IP
         $clientIp = '';
         if ($request !== null) {
-            $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
+            $clientIp = $this->getRemoteAddress($request);
         }
 
         $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -153,6 +157,8 @@ final class OAuthService
 
     /**
      * Validate access token and return user info
+     *
+     * @return array{be_user_uid: int, client_name: string, token_uid: int}|null
      */
     public function validateToken(string $token, ?ServerRequestInterface $request = null): ?array
     {
@@ -180,7 +186,7 @@ final class OAuthService
         // Update last used timestamp and IP
         $clientIp = '';
         if ($request !== null) {
-            $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
+            $clientIp = $this->getRemoteAddress($request);
         }
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -192,14 +198,16 @@ final class OAuthService
             ->executeStatement();
 
         return [
-            'be_user_uid' => (int)$tokenRecord['be_user_uid'],
-            'client_name' => $tokenRecord['client_name'],
-            'token_uid' => (int)$tokenRecord['uid'],
+            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int)$tokenRecord['be_user_uid'] : 0,
+            'client_name' => is_string($tokenRecord['client_name'] ?? null) ? $tokenRecord['client_name'] : '',
+            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int)$tokenRecord['uid'] : 0,
         ];
     }
 
     /**
      * Get all active tokens for a user
+     *
+     * @return list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}>
      */
     public function getUserTokens(int $beUserId): array
     {
@@ -219,7 +227,26 @@ final class OAuthService
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return $tokens ?: [];
+        if (!is_array($tokens)) {
+            return [];
+        }
+
+        $normalizedTokens = [];
+        foreach ($tokens as $token) {
+            if (!is_array($token)) {
+                continue;
+            }
+            $normalizedTokens[] = [
+                'uid' => is_numeric($token['uid'] ?? null) ? (int)$token['uid'] : 0,
+                'client_name' => is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
+                'token' => is_string($token['token'] ?? null) ? $token['token'] : '',
+                'crdate' => is_numeric($token['crdate'] ?? null) ? (int)$token['crdate'] : 0,
+                'expires' => is_numeric($token['expires'] ?? null) ? (int)$token['expires'] : 0,
+                'last_used' => is_numeric($token['last_used'] ?? null) ? (int)$token['last_used'] : 0,
+            ];
+        }
+
+        return $normalizedTokens;
     }
 
     /**
@@ -286,6 +313,9 @@ final class OAuthService
 
     /**
      * Register a new OAuth client dynamically
+     *
+     * @param array<string, mixed> $clientData
+     * @return array<string, mixed>
      */
     public function registerClient(array $clientData): array
     {
@@ -308,12 +338,12 @@ final class OAuthService
                     'client_id' => $clientId,
                     'client_secret' => $clientSecret,
                     'client_name' => $clientData['client_name'] ?? 'MCP Client',
-                    'redirect_uris' => json_encode($clientData['redirect_uris'] ?? []),
-                    'grant_types' => json_encode($clientData['grant_types'] ?? ['authorization_code']),
+                    'redirect_uris' => $this->encodeJsonValue($clientData['redirect_uris'] ?? []),
+                    'grant_types' => $this->encodeJsonValue($clientData['grant_types'] ?? ['authorization_code']),
                     'scope' => $clientData['scope'] ?? 'mcp_access',
                 ]
             );
-        } catch (\Exception $e) {
+        } catch (Exception) {
             // If table doesn't exist, we'll use the fixed client approach for now
             return [
                 'client_id' => self::CLIENT_ID,
@@ -338,6 +368,8 @@ final class OAuthService
 
     /**
      * Get OAuth metadata for discovery
+     *
+     * @return array<string, mixed>
      */
     public function getMetadata(string $baseUrl): array
     {
@@ -367,7 +399,7 @@ final class OAuthService
         // Get client IP
         $clientIp = '';
         if ($request !== null) {
-            $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
+            $clientIp = $this->getRemoteAddress($request);
         }
 
         // Create access token
@@ -399,5 +431,17 @@ final class OAuthService
     private function generateSecureToken(): string
     {
         return bin2hex(random_bytes(32));
+    }
+
+    private function getRemoteAddress(ServerRequestInterface $request): string
+    {
+        $serverParams = $request->getServerParams();
+        return is_string($serverParams['REMOTE_ADDR'] ?? null) ? $serverParams['REMOTE_ADDR'] : '';
+    }
+
+    private function encodeJsonValue(mixed $value): string
+    {
+        $json = json_encode($value);
+        return is_string($json) ? $json : '[]';
     }
 }

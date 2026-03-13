@@ -1,8 +1,5 @@
-includes:
-    - vendor/saschaegerer/phpstan-typo3/extension.neon
-
 parameters:
-    level: 8
+    level: 9
     paths:
         - Classes
     excludePaths:

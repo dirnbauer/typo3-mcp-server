@@ -9,3 +9,4 @@
 
 # other
 *.local
+.DS_Store

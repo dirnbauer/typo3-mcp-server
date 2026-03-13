@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class ContentBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'CType' => 'textmedia',
@@ -27,9 +25,8 @@ class ContentBuilder
         'deleted' => 0,
     ];
     
-    public function __construct(ConnectionPool $connectionPool)
+    public function __construct(private readonly ConnectionPool $connectionPool)
     {
-        $this->connectionPool = $connectionPool;
     }
     
     /**
@@ -106,9 +103,15 @@ class ContentBuilder
      */
     public function asPlugin(string $listType, string $header = ''): self
     {
-        $this->data['CType'] = 'list';
+        $usesLegacyListType = isset($GLOBALS['TCA']['tt_content']['columns']['list_type']);
+        $this->data['CType'] = $usesLegacyListType ? 'list' : $listType;
         $this->data['header'] = $header ?: $listType;
-        return $this->with('list_type', $listType);
+        if ($usesLegacyListType) {
+            return $this->with('list_type', $listType);
+        }
+
+        unset($this->data['list_type']);
+        return $this;
     }
     
     /**

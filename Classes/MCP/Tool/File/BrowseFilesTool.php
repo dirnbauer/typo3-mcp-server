@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
+use InvalidArgumentException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Mcp\Types\CallToolResult;
@@ -23,6 +24,9 @@ final class BrowseFilesTool extends AbstractTool
         private readonly ResourceFactory $resourceFactory,
     ) {}
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getSchema(): array
     {
         return [
@@ -51,9 +55,12 @@ final class BrowseFilesTool extends AbstractTool
         ];
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     protected function doExecute(array $params): CallToolResult
     {
-        $path = $params['path'] ?? null;
+        $path = is_string($params['path'] ?? null) ? $params['path'] : null;
         $recursive = (bool)($params['recursive'] ?? false);
 
         if ($path === null || $path === '') {
@@ -96,7 +103,7 @@ final class BrowseFilesTool extends AbstractTool
             $folder = $this->resourceFactory->getFolderObjectFromCombinedIdentifier($path);
         } catch (FolderDoesNotExistException) {
             throw new ValidationException(["Folder not found: {$path}"]);
-        } catch (\InvalidArgumentException) {
+        } catch (InvalidArgumentException) {
             throw new ValidationException(["Invalid path format: {$path}. Use \"<storageId>:/<folder/path/>\" (e.g. \"1:/user_upload/\")"]);
         }
 
@@ -134,6 +141,9 @@ final class BrowseFilesTool extends AbstractTool
         return new CallToolResult([new TextContent(implode("\n", $lines))]);
     }
 
+    /**
+     * @param list<string> $lines
+     */
     private function listSubfolderContents(Folder $folder, ResourceStorage $storage, array &$lines, string $indent): void
     {
         foreach ($folder->getSubfolders() as $sub) {
@@ -153,8 +163,8 @@ final class BrowseFilesTool extends AbstractTool
 
         if (str_starts_with($file->getMimeType(), 'image/')) {
             $props = $file->getProperties();
-            $w = (int)($props['width'] ?? 0);
-            $h = (int)($props['height'] ?? 0);
+            $w = is_numeric($props['width'] ?? null) ? (int)$props['width'] : 0;
+            $h = is_numeric($props['height'] ?? null) ? (int)$props['height'] : 0;
             if ($w > 0 && $h > 0) {
                 $meta = sprintf(' [%dx%d]', $w, $h);
             }

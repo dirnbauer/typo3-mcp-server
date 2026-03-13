@@ -9,15 +9,8 @@ namespace Hn\McpServer\Tests\Llm\Client;
  */
 class LlmResponse
 {
-    private string $content;
-    private array $toolCalls;
-    private array $rawResponse;
-
-    public function __construct(string $content, array $toolCalls, array $rawResponse)
+    public function __construct(private readonly string $content, private readonly array $toolCalls, private readonly array $rawResponse)
     {
-        $this->content = $content;
-        $this->toolCalls = $toolCalls;
-        $this->rawResponse = $rawResponse;
     }
 
     /**

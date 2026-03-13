@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -172,7 +173,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testTranslateRecord(): void
     {
         $tool = new WriteTableTool();
-        
+
         // First create a record in default language
         $createResult = $tool->execute([
             'action' => 'create',
@@ -184,11 +185,11 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'bodytext' => 'This is the original content',
             ]
         ]);
-        
+
         $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $createData = json_decode($createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
-        
+
         // Now translate it to German
         $translateResult = $tool->execute([
             'action' => 'translate',
@@ -198,27 +199,27 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'sys_language_uid' => 'de'
             ]
         ]);
-        
+
         $this->assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
         $translateData = json_decode($translateResult->content[0]->text, true);
-        
+
         $this->assertEquals('translate', $translateData['action']);
         $this->assertEquals('tt_content', $translateData['table']);
         $this->assertEquals($originalUid, $translateData['sourceUid']);
         $this->assertEquals('de', $translateData['targetLanguage']);
         $this->assertNotEmpty($translateData['translationUid']);
-        
+
         // Check if translation UID was found
         if (!is_int($translateData['translationUid'])) {
             $this->fail('Translation failed: ' . $translateData['translationUid']);
         }
-        
+
         // Verify the translation was created - need to use BackendUtility to get workspace overlay
-        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translateData['translationUid']);
-        
+        $translation = BackendUtility::getRecord('tt_content', $translateData['translationUid']);
+
         $this->assertNotFalse($translation, 'Translation record not found. UID was: ' . $translateData['translationUid']);
         $this->assertIsArray($translation, 'Translation should be an array');
-        
+
         $this->assertEquals(1, $translation['sys_language_uid']); // German
         $this->assertEquals($originalUid, $translation['l18n_parent']); // TYPO3 uses l18n_parent for tt_content
         $this->assertStringContainsString('Original English Content', $translation['header']); // May have translation prefix
@@ -368,7 +369,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testUpdateTranslationMaintainsLanguage(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Create original and translate
         $createResult = $tool->execute([
             'action' => 'create',
@@ -379,10 +380,10 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'header' => 'Original',
             ]
         ]);
-        
+
         $createData = json_decode($createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
-        
+
         $translateResult = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
@@ -391,10 +392,10 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'sys_language_uid' => 'de'
             ]
         ]);
-        
+
         $translateData = json_decode($translateResult->content[0]->text, true);
         $germanUid = $translateData['translationUid'];
-        
+
         // Update the German translation
         $updateResult = $tool->execute([
             'action' => 'update',
@@ -405,12 +406,12 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'bodytext' => 'Aktualisierter deutscher Inhalt'
             ]
         ]);
-        
+
         $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
-        
+
         // Verify the update - need to use BackendUtility to get workspace overlay
-        $record = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $germanUid);
-        
+        $record = BackendUtility::getRecord('tt_content', $germanUid);
+
         $this->assertNotFalse($record, 'German translation record not found');
         $this->assertEquals('Aktualisierter deutscher Titel', $record['header']);
         $this->assertEquals('Aktualisierter deutscher Inhalt', $record['bodytext']);

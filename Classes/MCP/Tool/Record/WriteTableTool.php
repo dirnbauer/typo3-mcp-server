@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use RuntimeException;
+use LogicException;
+use DateTime;
+use Exception;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Mcp\Types\CallToolResult;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -18,9 +24,18 @@ use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 
 /**
  * Tool for writing records to TYPO3 tables
+ *
+ * @phpstan-type RecordData array<string, mixed>
+ * @phpstan-type InlineRelation array{config: array<string, mixed>, value: mixed}
+ * @phpstan-type InlineRelations array<string, InlineRelation>
+ * @phpstan-type SearchReplaceOperation array{search: string, replace: string, replaceAll?: bool}
+ * @phpstan-type SearchReplaceMap array<string, list<SearchReplaceOperation>>
+ * @phpstan-type DataMap array<string, array<int|string, array<string, mixed>>>
  */
 final class WriteTableTool extends AbstractRecordTool
 {
+    private const DEFAULT_PAGE_DOKTYPE = 1;
+
     protected LanguageService $languageService;
 
     public function __construct()
@@ -29,8 +44,76 @@ final class WriteTableTool extends AbstractRecordTool
         $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
     }
 
+    protected function getBackendUser(): BackendUserAuthentication
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new RuntimeException('Backend user context not initialized');
+        }
+
+        return $backendUser;
+    }
+
+    protected function assignBackendUser(DataHandler $dataHandler): void
+    {
+        $dataHandler->BE_USER = $this->getBackendUser();
+    }
+
+    protected function getCurrentWorkspaceId(): int
+    {
+        return $this->getBackendUser()->workspace ?? 0;
+    }
+
+    /**
+     * @param array<int|string, mixed> $data
+     * @return RecordData
+     */
+    protected function normalizeRecordData(array $data): array
+    {
+        $normalized = [];
+        foreach ($data as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
+    }
+
+    protected function getNullableInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_numeric($value) ? (int)$value : null;
+    }
+
+    protected function isHiddenTcaTable(string $table): bool
+    {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca)) {
+            return false;
+        }
+
+        $tableConfig = $globalTca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return false;
+        }
+
+        $ctrl = $tableConfig['ctrl'] ?? null;
+        if (!is_array($ctrl)) {
+            return false;
+        }
+
+        return ($ctrl['hideTable'] ?? false) === true;
+    }
+
     /**
      * Get the tool schema
+     */
+    /**
+     * @return array<string, mixed>
      */
     protected function getToolSchema(): array
     {
@@ -101,16 +184,20 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Execute the tool logic
      */
+    /**
+     * @param array<string, mixed> $params
+     */
     protected function doExecute(array $params): CallToolResult
     {
         
         // Get parameters
-        $action = $params['action'] ?? '';
-        $table = $params['table'] ?? '';
-        $pid = isset($params['pid']) ? (int)$params['pid'] : null;
-        $uid = isset($params['uid']) ? (int)$params['uid'] : null;
-        $data = $params['data'] ?? [];
-        $position = $params['position'] ?? 'bottom';
+        $action = is_string($params['action'] ?? null) ? $params['action'] : '';
+        $table = is_string($params['table'] ?? null) ? $params['table'] : '';
+        $pid = $this->getNullableInt($params['pid'] ?? null);
+        $uid = $this->getNullableInt($params['uid'] ?? null);
+        $rawData = $params['data'] ?? [];
+        $data = is_array($rawData) ? $this->normalizeRecordData($rawData) : [];
+        $position = is_string($params['position'] ?? null) ? $params['position'] : 'bottom';
 
         // Validate parameters
         if (empty($action)) {
@@ -211,9 +298,15 @@ final class WriteTableTool extends AbstractRecordTool
         // Execute the action
         switch ($action) {
             case 'create':
+                if ($pid === null) {
+                    throw new LogicException('PID must be validated before create');
+                }
                 return $this->createRecord($table, $pid, $data, $position);
                 
             case 'update':
+                if ($uid === null) {
+                    throw new LogicException('UID must be validated before update');
+                }
                 // Resolve search_replace into concrete field values and merge into data
                 if (!empty($searchReplace)) {
                     $resolvedFields = $this->resolveSearchReplace($table, $uid, $searchReplace);
@@ -222,21 +315,30 @@ final class WriteTableTool extends AbstractRecordTool
                 return $this->updateRecord($table, $uid, $data);
                 
             case 'delete':
+                if ($uid === null) {
+                    throw new LogicException('UID must be validated before delete');
+                }
                 return $this->deleteRecord($table, $uid);
 
             case 'translate':
+                if ($uid === null) {
+                    throw new LogicException('UID must be validated before translate');
+                }
                 // The language UID has already been converted from ISO code if needed
-                $targetLanguageUid = (int)$data['sys_language_uid'];
+                $targetLanguageUid = is_numeric($data['sys_language_uid'] ?? null) ? (int)$data['sys_language_uid'] : 0;
                 return $this->translateRecord($table, $uid, $targetLanguageUid);
                 
             default:
                 // This should never happen due to earlier validation
-                throw new \LogicException('Invalid action: ' . $action);
+                throw new LogicException('Invalid action: ' . $action);
         }
     }
     
     /**
      * Create a new record
+     */
+    /**
+     * @param RecordData $data
      */
     protected function createRecord(string $table, int $pid, array $data, string $position): CallToolResult
     {
@@ -244,6 +346,10 @@ final class WriteTableTool extends AbstractRecordTool
         $pageAccessError = $this->validatePageAccess($pid);
         if ($pageAccessError !== null) {
             return $this->createErrorResult($pageAccessError);
+        }
+
+        if ($table === 'pages' && !isset($data['doktype'])) {
+            $data['doktype'] = self::DEFAULT_PAGE_DOKTYPE;
         }
 
         // Ensure language field is set for language-aware tables (needed for non-admin permission checks)
@@ -290,7 +396,7 @@ final class WriteTableTool extends AbstractRecordTool
                 ->executeQuery()
                 ->fetchOne();
 
-            if ($maxSorting !== false) {
+            if ($maxSorting !== false && is_numeric($maxSorting)) {
                 $newRecordData[$sortingField] = (int)$maxSorting + 128; // Add some space for future insertions
             }
         }
@@ -300,7 +406,7 @@ final class WriteTableTool extends AbstractRecordTool
         
         // Initialize DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+        $this->assignBackendUser($dataHandler);
         
         // First, create the parent record without inline relations
         $dataMap = [];
@@ -334,7 +440,7 @@ final class WriteTableTool extends AbstractRecordTool
             if (!empty($childDataMap)) {
                 // Create a new DataHandler instance for child records
                 $childDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $childDataHandler->BE_USER = $GLOBALS['BE_USER'];
+                $this->assignBackendUser($childDataHandler);
                 $childDataHandler->start($childDataMap, []);
                 $childDataHandler->process_datamap();
                 
@@ -351,23 +457,22 @@ final class WriteTableTool extends AbstractRecordTool
                 // Update foreign fields for embedded relations
                 foreach ($inlineRelations as $fieldName => $relationData) {
                     $config = $relationData['config'];
-                    $foreignTable = $config['foreign_table'] ?? '';
-                    $foreignField = $config['foreign_field'] ?? '';
+                    $foreignTable = is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
+                    $foreignField = is_string($config['foreign_field'] ?? null) ? $config['foreign_field'] : '';
                     
                     if (empty($foreignTable) || empty($foreignField)) {
                         continue;
                     }
                     
                     // Check if this is an embedded table
-                    $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-                    $isHiddenTable = ($foreignTableTCA['ctrl']['hideTable'] ?? false) === true;
+                    $isHiddenTable = $this->isHiddenTcaTable($foreignTable);
                     
                     if ($isHiddenTable) {
                         // Collect the UIDs of created child records
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId])) {
-                                $childUids[] = $realId;
+                            if (is_string($newId) && str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId]) && is_numeric($realId)) {
+                                $childUids[] = (int)$realId;
                             }
                         }
                         
@@ -392,9 +497,9 @@ final class WriteTableTool extends AbstractRecordTool
         
         
         // Handle after/before positioning if needed
-        if (str_starts_with($position, 'after:') || str_starts_with($position, 'before:')) {
-            $positionType = substr($position, 0, strpos($position, ':'));
-            $referenceUid = (int)substr($position, strpos($position, ':') + 1);
+        if (preg_match('/^(after|before):(\d+)$/', $position, $positionMatches) === 1) {
+            $positionType = $positionMatches[1];
+            $referenceUid = (int)$positionMatches[2];
             
             // Set up the command map for moving the record
             $cmdMap = [];
@@ -405,7 +510,7 @@ final class WriteTableTool extends AbstractRecordTool
             
             // Initialize a new DataHandler for the move operation
             $moveDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $moveDataHandler->BE_USER = $GLOBALS['BE_USER'];
+            $this->assignBackendUser($moveDataHandler);
             $moveDataHandler->start([], $cmdMap);
             $moveDataHandler->process_cmdmap();
             
@@ -436,6 +541,9 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Update an existing record
      */
+    /**
+     * @param RecordData $data
+     */
     protected function updateRecord(string $table, int $uid, array $data): CallToolResult
     {
         // Validate the data
@@ -458,7 +566,7 @@ final class WriteTableTool extends AbstractRecordTool
         
         // Update the record using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+        $this->assignBackendUser($dataHandler);
         $dataHandler->start($dataMap, []);
         $dataHandler->process_datamap();
         
@@ -479,7 +587,7 @@ final class WriteTableTool extends AbstractRecordTool
             if (!empty($childDataMap)) {
                 // Create a new DataHandler instance for child records
                 $childDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $childDataHandler->BE_USER = $GLOBALS['BE_USER'];
+                $this->assignBackendUser($childDataHandler);
                 $childDataHandler->start($childDataMap, []);
                 $childDataHandler->process_datamap();
                 
@@ -491,23 +599,22 @@ final class WriteTableTool extends AbstractRecordTool
                 // Update foreign fields for embedded relations
                 foreach ($inlineRelations as $fieldName => $relationData) {
                     $config = $relationData['config'];
-                    $foreignTable = $config['foreign_table'] ?? '';
-                    $foreignField = $config['foreign_field'] ?? '';
+                    $foreignTable = is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
+                    $foreignField = is_string($config['foreign_field'] ?? null) ? $config['foreign_field'] : '';
                     
                     if (empty($foreignTable) || empty($foreignField)) {
                         continue;
                     }
                     
                     // Check if this is an embedded table
-                    $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-                    $isHiddenTable = ($foreignTableTCA['ctrl']['hideTable'] ?? false) === true;
+                    $isHiddenTable = $this->isHiddenTcaTable($foreignTable);
                     
                     if ($isHiddenTable) {
                         // Collect the UIDs of created child records
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId])) {
-                                $childUids[] = $realId;
+                            if (is_string($newId) && str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId]) && is_numeric($realId)) {
+                                $childUids[] = (int)$realId;
                             }
                         }
                         
@@ -549,7 +656,7 @@ final class WriteTableTool extends AbstractRecordTool
         
         // Delete the record using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+        $this->assignBackendUser($dataHandler);
         $dataHandler->start([], [$table => [$workspaceUid => ['delete' => 1]]]);
         $dataHandler->process_cmdmap();
         
@@ -617,13 +724,14 @@ final class WriteTableTool extends AbstractRecordTool
 
         if ($existingTranslation) {
             $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
+            $existingTranslationUid = is_numeric($existingTranslation['uid'] ?? null) ? (int)$existingTranslation['uid'] : 0;
             return $this->createErrorResult(
-                'Translation already exists for language "' . $targetIsoCode . '" (uid=' . $existingTranslation['uid'] . ')'
+                'Translation already exists for language "' . $targetIsoCode . '" (uid=' . $existingTranslationUid . ')'
             );
         }
 
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+        $this->assignBackendUser($dataHandler);
 
         $cmdMap = [
             $table => [
@@ -633,8 +741,15 @@ final class WriteTableTool extends AbstractRecordTool
             ],
         ];
 
-        $dataHandler->start([], $cmdMap);
-        $dataHandler->process_cmdmap();
+        try {
+            $dataHandler->start([], $cmdMap);
+            $dataHandler->process_cmdmap();
+        } catch (UniqueConstraintViolationException) {
+            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
+            return $this->createErrorResult(
+                'Translation already exists for language "' . $targetIsoCode . '"'
+            );
+        }
 
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating translation: ' . implode(', ', $dataHandler->errorLog));
@@ -675,6 +790,7 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Validate record data against TCA
      * 
+     * @param RecordData $data
      * @param int|null $uid Record UID (required for update actions)
      * @return true|string True if valid, error message if invalid
      */
@@ -700,7 +816,8 @@ final class WriteTableTool extends AbstractRecordTool
 
             // Check if field is accessible (filters out file fields and inaccessible inline relations)
             if (!$this->tableAccessService->canAccessField($table, $fieldName)) {
-                $fieldType = $fieldConfig['config']['type'] ?? '';
+                $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+                $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
                 if ($fieldType === 'file') {
                     return "Field '{$fieldName}': File fields are not supported. Please use TYPO3 backend for file operations.";
                 }
@@ -714,14 +831,16 @@ final class WriteTableTool extends AbstractRecordTool
             }
             
             // Handle date/time fields - convert ISO 8601 to timestamp for TYPO3
-            if (!empty($fieldConfig['config']['eval'])) {
-                $evalRules = GeneralUtility::trimExplode(',', $fieldConfig['config']['eval'], true);
+            $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $eval = is_string($fieldOptions['eval'] ?? null) ? $fieldOptions['eval'] : '';
+            if ($eval !== '') {
+                $evalRules = GeneralUtility::trimExplode(',', $eval, true);
                 if (array_intersect(['date', 'datetime', 'time'], $evalRules)) {
                     if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $value)) {
                         try {
-                            $dateTime = new \DateTime($value);
+                            $dateTime = new DateTime($value);
                             $data[$fieldName] = $dateTime->getTimestamp();
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             // Log the error but let DataHandler handle the invalid date
                             $this->logException($e, 'parsing date value');
                         }
@@ -730,7 +849,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
             
             // Validate inline field type
-            if ($fieldConfig['config']['type'] === 'inline') {
+            if (($fieldOptions['type'] ?? null) === 'inline') {
                 // Validate inline relation data
                 $validationError = $this->validateInlineRelationData($fieldConfig, $value);
                 if ($validationError !== null) {
@@ -740,11 +859,18 @@ final class WriteTableTool extends AbstractRecordTool
             }
             // Convert arrays to comma-separated strings for multi-value fields
             elseif (is_array($value)) {
-                $fieldType = $fieldConfig['config']['type'] ?? '';
+                $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
                 if (in_array($fieldType, ['select', 'category']) || 
-                    ($fieldType === 'group' && !empty($fieldConfig['config']['multiple']))) {
-                    $data[$fieldName] = implode(',', array_map('strval', $value));
+                    ($fieldType === 'group' && !empty($fieldOptions['multiple']))) {
+                    $data[$fieldName] = implode(',', array_map(static fn(mixed $item): string => is_scalar($item) ? (string)$item : '', $value));
+                    continue;
                 }
+
+                if ($fieldType === 'flex') {
+                    continue;
+                }
+
+                return "Field '{$fieldName}' does not accept array values";
             }
         }
         
@@ -757,15 +883,15 @@ final class WriteTableTool extends AbstractRecordTool
                 // For updates, fetch the current record type
                 $currentRecord = BackendUtility::getRecord($table, $uid, $typeField);
                 if ($currentRecord && isset($currentRecord[$typeField])) {
-                    $recordType = (string)$currentRecord[$typeField];
+                    $recordType = is_scalar($currentRecord[$typeField]) ? (string)$currentRecord[$typeField] : '';
                 }
                 // If type is being changed in the update, use the new type
                 if (isset($data[$typeField])) {
-                    $recordType = (string)$data[$typeField];
+                    $recordType = is_scalar($data[$typeField]) ? (string)$data[$typeField] : '';
                 }
             } else {
                 // For creates, get type from data
-                $recordType = isset($data[$typeField]) ? (string)$data[$typeField] : '';
+                $recordType = isset($data[$typeField]) && is_scalar($data[$typeField]) ? (string)$data[$typeField] : '';
             }
         }
         
@@ -797,7 +923,8 @@ final class WriteTableTool extends AbstractRecordTool
                 
                 // Special handling for passthrough fields (often used for inline relations)
                 $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-                if ($fieldConfig && isset($fieldConfig['config']['type']) && $fieldConfig['config']['type'] === 'passthrough') {
+                $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+                if (($fieldOptions['type'] ?? null) === 'passthrough') {
                     // Passthrough fields are valid if they exist in TCA, even if not in showitem
                     // Example: tx_news_related_news stores the foreign key for inline relations
                     continue;
@@ -818,19 +945,20 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Extract inline relations from data array
      */
+    /**
+     * @param RecordData $data
+     * @return InlineRelations
+     */
     protected function extractInlineRelations(string $table, array &$data): array
     {
         $inlineRelations = [];
         
-        if (!isset($GLOBALS['TCA'][$table]['columns'])) {
-            return $inlineRelations;
-        }
-        
         foreach ($data as $fieldName => $value) {
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'inline') {
+            $fieldOptions = $fieldConfig !== null && isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            if (($fieldOptions['type'] ?? null) === 'inline') {
                 $inlineRelations[$fieldName] = [
-                    'config' => $fieldConfig['config'],
+                    'config' => $fieldOptions,
                     'value' => $value
                 ];
                 // Remove from data array as we'll process it separately
@@ -843,11 +971,14 @@ final class WriteTableTool extends AbstractRecordTool
     
     /**
      * Process inline relations for DataHandler
+     *
+     * @param DataMap $dataMap
+     * @param InlineRelations $inlineRelations
      */
     protected function processInlineRelations(
         array &$dataMap,
         string $parentTable,
-        $parentUid,
+        int $parentUid,
         int $pid,
         array $inlineRelations,
         ?int $liveUid = null
@@ -855,21 +986,26 @@ final class WriteTableTool extends AbstractRecordTool
         foreach ($inlineRelations as $fieldName => $relationData) {
             $config = $relationData['config'];
             $value = $relationData['value'];
-            $foreignTable = $config['foreign_table'] ?? '';
-            $foreignField = $config['foreign_field'] ?? '';
+            $foreignTable = is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
+            $foreignField = is_string($config['foreign_field'] ?? null) ? $config['foreign_field'] : '';
             
             if (empty($foreignTable) || empty($foreignField)) {
                 continue;
             }
             
             // Check if foreign table is hidden (embedded records)
-            $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-            $isHiddenTable = ($foreignTableTCA['ctrl']['hideTable'] ?? false) === true;
+            $isHiddenTable = $this->isHiddenTcaTable($foreignTable);
             
             if ($isHiddenTable) {
+                if (!is_array($value)) {
+                    continue;
+                }
                 // Process embedded inline relations (e.g., tx_news_domain_model_link)
                 $this->processEmbeddedInlineRelations($dataMap, $foreignTable, $foreignField, $parentUid, $pid, $value, $config, $liveUid);
             } else {
+                if (!is_array($value)) {
+                    continue;
+                }
                 // Process independent inline relations (e.g., tt_content)
                 $this->processIndependentInlineRelations($foreignTable, $foreignField, $parentUid, $value, $liveUid);
             }
@@ -878,12 +1014,16 @@ final class WriteTableTool extends AbstractRecordTool
     
     /**
      * Process embedded inline relations (hideTable=true)
+     *
+     * @param DataMap $dataMap
+     * @param array<mixed, mixed> $records
+     * @param array<string, mixed> $config
      */
     protected function processEmbeddedInlineRelations(
         array &$dataMap,
         string $foreignTable,
         string $foreignField,
-        $parentUid,
+        int $parentUid,
         int $pid,
         array $records,
         array $config,
@@ -898,6 +1038,7 @@ final class WriteTableTool extends AbstractRecordTool
             if (!is_array($recordData)) {
                 continue;
             }
+            $recordData = $this->normalizeRecordData($recordData);
             
             // Create new ID for the inline record
             $newId = 'NEW' . uniqid() . '_' . $index;
@@ -908,8 +1049,8 @@ final class WriteTableTool extends AbstractRecordTool
             $recordData['pid'] = $pid;
             
             // If we have a sorting field, set it
-            if (isset($config['foreign_sortby'])) {
-                $recordData[$config['foreign_sortby']] = ($index + 1) * 256;
+            if (is_string($config['foreign_sortby'] ?? null) && $config['foreign_sortby'] !== '') {
+                $recordData[$config['foreign_sortby']] = ((int)$index + 1) * 256;
             }
             
             // Add to data map
@@ -922,11 +1063,13 @@ final class WriteTableTool extends AbstractRecordTool
     
     /**
      * Process independent inline relations (UIDs only)
+     *
+     * @param array<mixed, mixed> $uids
      */
     protected function processIndependentInlineRelations(
         string $foreignTable,
         string $foreignField,
-        $parentUid,
+        int $parentUid,
         array $uids,
         ?int $liveUid = null
     ): void {
@@ -939,12 +1082,13 @@ final class WriteTableTool extends AbstractRecordTool
         // Update foreign field on specified records
         if (!empty($uids)) {
             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+            $this->assignBackendUser($dataHandler);
             
             $updateMap = [];
             foreach ($uids as $uid) {
                 if (is_numeric($uid) && $uid > 0) {
-                    $updateMap[$foreignTable][$uid] = [
+                    $normalizedUid = (int)$uid;
+                    $updateMap[$foreignTable][$normalizedUid] = [
                         $foreignField => $liveUid ?? $parentUid
                     ];
                 }
@@ -969,7 +1113,7 @@ final class WriteTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()));
         
         $existingRecords = $queryBuilder
             ->select('uid')
@@ -983,16 +1127,20 @@ final class WriteTableTool extends AbstractRecordTool
         if (!empty($existingRecords)) {
             // Use DataHandler to clear relations to respect workspaces
             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+            $this->assignBackendUser($dataHandler);
             
             $updateMap = [];
             foreach ($existingRecords as $record) {
-                $updateMap[$foreignTable][$record['uid']] = [
+                $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
+                if ($recordUid <= 0) {
+                    continue;
+                }
+                $updateMap[$foreignTable][$recordUid] = [
                     $foreignField => 0
                 ];
             }
             
-            if (!empty($updateMap)) {
+            if ($updateMap !== []) {
                 $dataHandler->start($updateMap, []);
                 $dataHandler->process_datamap();
             }
@@ -1001,6 +1149,8 @@ final class WriteTableTool extends AbstractRecordTool
     
     /**
      * Handle existing embedded relations during updates
+     *
+     * @param array<mixed> $newRecords
      */
     protected function handleExistingEmbeddedRelations(
         string $foreignTable,
@@ -1015,7 +1165,7 @@ final class WriteTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()));
         
         $existingRecords = $queryBuilder
             ->select('uid')
@@ -1038,15 +1188,16 @@ final class WriteTableTool extends AbstractRecordTool
             // Delete records that are not in the new set
             $deleteUids = [];
             foreach ($existingRecords as $existingRecord) {
-                if (!in_array((int)$existingRecord['uid'], $keepUids, true)) {
-                    $deleteUids[] = (int)$existingRecord['uid'];
+                $existingUid = is_numeric($existingRecord['uid'] ?? null) ? (int)$existingRecord['uid'] : 0;
+                if ($existingUid > 0 && !in_array($existingUid, $keepUids, true)) {
+                    $deleteUids[] = $existingUid;
                 }
             }
             
             if (!empty($deleteUids)) {
                 // Use DataHandler to delete records (respects workspaces)
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+                $this->assignBackendUser($dataHandler);
                 
                 $cmdMap = [];
                 foreach ($deleteUids as $deleteUid) {
@@ -1062,7 +1213,10 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Validate inline relation data
      */
-    protected function validateInlineRelationData(array $fieldConfig, $value): ?string
+    /**
+     * @param array<string, mixed> $fieldConfig
+     */
+    protected function validateInlineRelationData(array $fieldConfig, mixed $value): ?string
     {
         // Check if value is an array
         if (!is_array($value)) {
@@ -1070,14 +1224,14 @@ final class WriteTableTool extends AbstractRecordTool
         }
         
         // Get foreign table
-        $foreignTable = $fieldConfig['config']['foreign_table'] ?? '';
+        $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        $foreignTable = is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
         if (empty($foreignTable)) {
             return 'Invalid inline relation configuration: missing foreign_table';
         }
         
         // Check if foreign table is hidden (embedded records)
-        $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-        $isHiddenTable = ($foreignTableTCA['ctrl']['hideTable'] ?? false) === true;
+        $isHiddenTable = $this->isHiddenTcaTable($foreignTable);
         
         // Validate each item
         foreach ($value as $index => $item) {
@@ -1117,9 +1271,9 @@ final class WriteTableTool extends AbstractRecordTool
      * These are extracted from the data array and returned separately.
      *
      * @param string $table Table name
-     * @param array &$data Data array (modified in place to remove search/replace entries)
+     * @param RecordData $data Data array (modified in place to remove search/replace entries)
      * @param string $action Current action (search/replace only valid for 'update')
-     * @return array Map of field name => array of search/replace operations
+     * @return SearchReplaceMap Map of field name => array of search/replace operations
      * @throws ValidationException If search/replace used in non-update action or operations are invalid
      */
     protected function extractSearchReplaceFromData(string $table, array &$data, string $action): array
@@ -1133,7 +1287,8 @@ final class WriteTableTool extends AbstractRecordTool
 
             // Check if this is an inline relation field — those genuinely use arrays
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'inline') {
+            $fieldOptions = $fieldConfig !== null && isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            if (($fieldOptions['type'] ?? null) === 'inline') {
                 continue;
             }
 
@@ -1167,6 +1322,10 @@ final class WriteTableTool extends AbstractRecordTool
      *
      * Returns true if the value is a non-empty sequential array where every item
      * is an associative array with at least 'search' (string) and 'replace' (string) keys.
+     */
+    /**
+     * @param array<mixed, mixed> $value
+     * @phpstan-assert-if-true list<SearchReplaceOperation> $value
      */
     protected function isSearchReplaceArray(array $value): bool
     {
@@ -1203,8 +1362,8 @@ final class WriteTableTool extends AbstractRecordTool
      *
      * @param string $table Table name
      * @param int $uid Live record UID
-     * @param array $searchReplace Map of field name => array of operations
-     * @return array Resolved field values (field name => new value)
+     * @param SearchReplaceMap $searchReplace Map of field name => array of operations
+     * @return RecordData Resolved field values (field name => new value)
      * @throws ValidationException If a field is not a string type or search string is not found/ambiguous
      */
     protected function resolveSearchReplace(string $table, int $uid, array $searchReplace): array
@@ -1226,7 +1385,8 @@ final class WriteTableTool extends AbstractRecordTool
             if (!$this->tableAccessService->canAccessField($table, $fieldName)) {
                 throw new ValidationException(["Field '{$fieldName}' is not accessible"]);
             }
-            $fieldType = $fieldConfig['config']['type'] ?? '';
+            $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
             if (!in_array($fieldType, $stringFieldTypes, true)) {
                 throw new ValidationException(["search_replace is not supported for field '{$fieldName}' (type: {$fieldType}). Only string fields (text, input, etc.) are supported."]);
             }
@@ -1265,6 +1425,9 @@ final class WriteTableTool extends AbstractRecordTool
                 } else {
                     // Replace only the first (and only) occurrence
                     $pos = strpos($currentValue, $search);
+                    if ($pos === false) {
+                        throw new ValidationException(["search_replace field '{$fieldName}' operation {$index}: Search string not found in current field value"]);
+                    }
                     $currentValue = substr_replace($currentValue, $replace, $pos, strlen($search));
                 }
             }
@@ -1277,6 +1440,10 @@ final class WriteTableTool extends AbstractRecordTool
 
     /**
      * Convert data for storage
+     */
+    /**
+     * @param RecordData $data
+     * @return RecordData
      */
     protected function convertDataForStorage(string $table, array $data): array
     {
@@ -1293,7 +1460,8 @@ final class WriteTableTool extends AbstractRecordTool
             // with trailing slashes or missing leading slashes, so we normalize here.
             // The root page slug "/" is handled correctly: trim('/', '/') = '' → '/' + '' = '/'.
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'slug' && is_string($value)) {
+            $fieldOptions = $fieldConfig !== null && isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            if (($fieldOptions['type'] ?? null) === 'slug' && is_string($value)) {
                 $data[$fieldName] = '/' . trim($value, '/');
             }
 
@@ -1305,7 +1473,8 @@ final class WriteTableTool extends AbstractRecordTool
                 }
                 
                 // If the value is an array or JSON string, convert it to XML
-                $flexFormArray = is_array($value) ? $value : (is_string($value) && str_starts_with($value, '{') ? json_decode($value, true) : null);
+                $decodedFlexForm = is_string($value) && str_starts_with($value, '{') ? json_decode($value, true) : null;
+                $flexFormArray = is_array($value) ? $value : (is_array($decodedFlexForm) ? $decodedFlexForm : null);
                 
                 if (is_array($flexFormArray)) {
                     // Prepare the data structure for TYPO3's XML conversion
@@ -1351,7 +1520,7 @@ final class WriteTableTool extends AbstractRecordTool
     protected function getLiveUid(string $table, int $workspaceUid): int
     {
         // If we're in live workspace, the UID is already the live UID
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         if ($currentWorkspace === 0) {
             return $workspaceUid;
         }
@@ -1377,13 +1546,14 @@ final class WriteTableTool extends AbstractRecordTool
         }
         
         // If this is a workspace record with an original, return the original UID
-        if ($record['t3ver_oid'] > 0) {
-            return (int)$record['t3ver_oid'];
+        $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int)$record['t3ver_oid'] : 0;
+        if ($originalUid > 0) {
+            return $originalUid;
         }
         
         // For new records (t3ver_state = 1), the workspace UID IS the UID we should use
         // New records don't have a live counterpart until published
-        if ($record['t3ver_state'] == 1) {
+        if (is_numeric($record['t3ver_state'] ?? null) && (int)$record['t3ver_state'] === 1) {
             return $workspaceUid;
         }
         
@@ -1397,7 +1567,7 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function resolveToWorkspaceUid(string $table, int $liveUid): int
     {
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         
         // If we're in live workspace, no resolution needed
         if ($currentWorkspace === 0) {
@@ -1430,13 +1600,13 @@ final class WriteTableTool extends AbstractRecordTool
      * available for the specific record type.
      *
      * @param string $table Table name
-     * @param array $data Record data
-     * @return array Modified data with sys_language_uid if needed
+     * @param RecordData $data Record data
+     * @return RecordData Modified data with sys_language_uid if needed
      */
     protected function ensureLanguageField(string $table, array $data): array
     {
         // Only modify data for non-admin users who need this for permission checks
-        $beUser = $GLOBALS['BE_USER'];
+        $beUser = $this->getBackendUser();
         if ($beUser->isAdmin()) {
             return $data;
         }
@@ -1457,7 +1627,7 @@ final class WriteTableTool extends AbstractRecordTool
         $typeFieldName = $this->tableAccessService->getTypeFieldName($table);
         $type = '';
         if ($typeFieldName !== null && isset($data[$typeFieldName])) {
-            $type = (string)$data[$typeFieldName];
+            $type = is_scalar($data[$typeFieldName]) ? (string)$data[$typeFieldName] : '';
         }
 
         // Check if the language field is actually available for this record type
@@ -1481,7 +1651,17 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function validatePageAccess(int $pid): ?string
     {
-        $beUser = $GLOBALS['BE_USER'];
+        $beUser = $this->getBackendUser();
+
+        if ($pid > 0) {
+            $pageRecord = BackendUtility::getRecord('pages', $pid, 'uid');
+            if (!is_array($pageRecord) || !isset($pageRecord['uid'])) {
+                return sprintf(
+                    'Invalid parent page: Page %d does not exist or is not accessible.',
+                    $pid
+                );
+            }
+        }
 
         // Admin users have access to all pages
         if ($beUser->isAdmin()) {
@@ -1505,27 +1685,25 @@ final class WriteTableTool extends AbstractRecordTool
      * Non-admin users need explicit permissions for certain field values.
      *
      * @param string $table Table name
-     * @param array $data Record data
+     * @param RecordData $data Record data
      * @return string|null Error message if permission denied, null if all permissions granted
      */
     protected function validateAuthModePermissions(string $table, array $data): ?string
     {
-        $beUser = $GLOBALS['BE_USER'];
+        $beUser = $this->getBackendUser();
 
         // Admin users bypass authMode checks
         if ($beUser->isAdmin()) {
             return null;
         }
 
-        $tca = $GLOBALS['TCA'][$table] ?? [];
-        $columns = $tca['columns'] ?? [];
-
         foreach ($data as $fieldName => $value) {
-            if (!isset($columns[$fieldName])) {
+            $field = $this->tableAccessService->getFieldConfig($table, $fieldName);
+            if ($field === null) {
                 continue;
             }
 
-            $fieldConfig = $columns[$fieldName]['config'] ?? [];
+            $fieldConfig = isset($field['config']) && is_array($field['config']) ? $field['config'] : [];
             $authMode = $fieldConfig['authMode'] ?? null;
 
             // Only check fields with authMode configured
@@ -1533,10 +1711,12 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
+            $authValue = is_scalar($value) || $value === null ? (string)$value : '';
+
             // Check if user has permission for this value
-            if (!$beUser->checkAuthMode($table, $fieldName, $value)) {
+            if (!$beUser->checkAuthMode($table, $fieldName, $authValue)) {
                 $fieldLabel = $this->tableAccessService->translateLabel(
-                    $columns[$fieldName]['label'] ?? $fieldName
+                    is_string($field['label'] ?? null) ? $field['label'] : $fieldName
                 );
 
                 // Collect allowed values for this field
@@ -1545,7 +1725,7 @@ final class WriteTableTool extends AbstractRecordTool
                 $errorMsg = sprintf(
                     'You do not have permission to use %s="%s" for field "%s".',
                     $fieldName,
-                    $value,
+                    $authValue,
                     $fieldLabel
                 );
 
@@ -1567,16 +1747,16 @@ final class WriteTableTool extends AbstractRecordTool
      *
      * @param string $table Table name
      * @param string $fieldName Field name
-     * @param array $fieldConfig Field configuration
-     * @return array List of allowed values
+     * @param array<string, mixed> $fieldConfig Field configuration
+     * @return list<string> List of allowed values
      */
     protected function getAllowedAuthModeValues(string $table, string $fieldName, array $fieldConfig): array
     {
-        $beUser = $GLOBALS['BE_USER'];
+        $beUser = $this->getBackendUser();
         $allowedValues = [];
 
         // Get all possible values from the field config
-        $items = $fieldConfig['items'] ?? [];
+        $items = isset($fieldConfig['items']) && is_array($fieldConfig['items']) ? $fieldConfig['items'] : [];
         $parsed = $this->tableAccessService->parseSelectItems($items, true); // Skip dividers
 
         foreach ($parsed['values'] as $itemValue) {
@@ -1593,7 +1773,7 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Format DataHandler error messages into user-friendly messages.
      *
-     * @param array $errorLog DataHandler error log
+     * @param array<int, mixed> $errorLog DataHandler error log
      * @return string Formatted error message
      */
     protected function formatDataHandlerErrors(array $errorLog): string
@@ -1601,6 +1781,9 @@ final class WriteTableTool extends AbstractRecordTool
         $errors = [];
 
         foreach ($errorLog as $error) {
+            if (!is_string($error)) {
+                continue;
+            }
             // Parse common TYPO3 DataHandler error patterns
             if (str_contains($error, 'Attempt to insert record on pages:')) {
                 if (str_contains($error, 'not allowed')) {

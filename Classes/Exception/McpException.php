@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
+use RuntimeException;
+use Throwable;
+
 /**
  * Base exception for all MCP Server exceptions
  * 
@@ -11,28 +14,26 @@ namespace Hn\McpServer\Exception;
  * across the MCP Server extension, including user-friendly messages
  * and context information for logging.
  */
-class McpException extends \RuntimeException
+class McpException extends RuntimeException
 {
     protected string $userMessage;
-    protected array $context = [];
     
     /**
      * @param string $message Internal message for logging
      * @param string $userMessage User-friendly message for display
      * @param int $code Error code (HTTP status code conventions)
-     * @param \Throwable|null $previous Previous exception for chaining
-     * @param array $context Additional context for logging
+     * @param Throwable|null $previous Previous exception for chaining
+     * @param array<string, mixed> $context Additional context for logging
      */
     public function __construct(
         string $message,
         string $userMessage = '',
         int $code = 0,
-        ?\Throwable $previous = null,
-        array $context = []
+        ?Throwable $previous = null,
+        protected array $context = []
     ) {
         parent::__construct($message, $code, $previous);
         $this->userMessage = $userMessage ?: $message;
-        $this->context = $context;
     }
     
     /**
@@ -48,7 +49,7 @@ class McpException extends \RuntimeException
     /**
      * Get additional context information
      * 
-     * @return array Context data for logging
+     * @return array<string, mixed> Context data for logging
      */
     public function getContext(): array
     {

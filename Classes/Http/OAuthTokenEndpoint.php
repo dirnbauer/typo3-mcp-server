@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,12 +16,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth token endpoint for exchanging authorization codes for access tokens
  */
-final class OAuthTokenEndpoint
+final readonly class OAuthTokenEndpoint
 {
     use CorsHeadersTrait;
 
     public function __construct(
-        private readonly LoggerInterface $logger,
+        private LoggerInterface $logger,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -36,7 +37,7 @@ final class OAuthTokenEndpoint
                 return $this->createErrorResponse('invalid_request', 'Method not allowed', 405);
             }
 
-            $parsedBody = $request->getParsedBody() ?: [];
+            $parsedBody = $this->getParsedBodyArray($request);
             
             // Extract parameters (support both form data and JSON)
             $grantType = $parsedBody['grant_type'] ?? '';
@@ -71,7 +72,7 @@ final class OAuthTokenEndpoint
 
             // Return token response
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($tokenData));
+            $stream->write($this->encodeJson($tokenData));
             $stream->rewind();
 
             $response = new Response(
@@ -82,7 +83,7 @@ final class OAuthTokenEndpoint
             
             return $this->addCorsHeaders($response);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->createErrorResponse('server_error', $e->getMessage(), 500);
         }
     }
@@ -95,7 +96,7 @@ final class OAuthTokenEndpoint
         ];
 
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode($errorData));
+        $stream->write($this->encodeJson($errorData));
         $stream->rewind();
 
         $response = new Response(
@@ -105,5 +106,37 @@ final class OAuthTokenEndpoint
         );
         
         return $this->addCorsHeaders($response);
+    }
+
+    /**
+     * @return array<string, string|null>
+     */
+    private function getParsedBodyArray(ServerRequestInterface $request): array
+    {
+        $parsedBody = $request->getParsedBody();
+        if (!is_array($parsedBody)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($parsedBody as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+            if (is_string($value) || $value === null) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data);
+        return is_string($json) ? $json : '{}';
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -117,7 +118,21 @@ class InlineRelationWriteTest extends FunctionalTestCase
      */
     public function testWriteHiddenTableInlineRelation(): void
     {
-        $this->markTestSkipped('sys_file_reference is intentionally restricted due to workspace limitations');
+        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $result = $writeTool->execute([
+            'action' => 'create',
+            'table' => 'sys_file_reference',
+            'pid' => 1,
+            'data' => [
+                'uid_local' => 1,
+                'uid_foreign' => 1,
+                'tablenames' => 'tt_content',
+                'fieldname' => 'assets',
+            ],
+        ]);
+
+        $this->assertTrue($result->isError, 'sys_file_reference writes should be rejected');
+        $this->assertStringContainsString('restricted', strtolower($result->content[0]->text));
     }
 
     /**
@@ -333,7 +348,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
         $sortingInfo = [];
         foreach ($news['content_elements'] as $uid) {
             // Get sorting value from database for debugging
-            $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable('tt_content');
             $queryBuilder->getRestrictions()->removeAll();
             $record = $queryBuilder->select('header', 'sorting')
@@ -436,7 +451,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             // Check if the foreign field is returned
             if (!array_key_exists('tx_news_related_news', $content)) {
                 // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('tt_content');
                 $queryBuilder->getRestrictions()->removeAll();
                 $dbRecord = $queryBuilder->select('tx_news_related_news')
@@ -466,7 +481,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             // Check if the foreign field is returned
             if (!array_key_exists('tx_news_related_news', $content)) {
                 // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('tt_content');
                 $queryBuilder->getRestrictions()->removeAll();
                 $dbRecord = $queryBuilder->select('tx_news_related_news')
@@ -489,12 +504,26 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testInlineRelationValidationErrors(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+
+        $pageResult = $writeTool->execute([
+            'table' => 'pages',
+            'action' => 'create',
+            'pid' => 0,
+            'data' => [
+                'title' => 'Validation Parent Page',
+                'doktype' => 1,
+            ],
+        ]);
+        $this->assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()) ?: '');
+        $pageData = json_decode($pageResult->content[0]->text, true);
+        $pageUid = is_array($pageData) && isset($pageData['uid']) ? (int)$pageData['uid'] : 0;
+        $this->assertGreaterThan(0, $pageUid);
         
         // Create a news record first
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
-            'pid' => 1,
+            'pid' => $pageUid,
             'data' => [
                 'title' => 'News for validation test',
             ],

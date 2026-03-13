@@ -1,11 +1,20 @@
 # TYPO3 MCP Server Extension
 
-> **New in this release:** Fileadmin browsing and file metadata access, flexible workspace
-> selection, and hardened content translation are now available. These features have been
-> implemented and tested but have not yet been validated in production environments.
-> We recommend testing in a staging setup before relying on them for critical workflows.
+> [!WARNING]
+> This fork includes experimental support for `fileadmin` access and explicit workspace
+> selection. The capabilities are promising and covered by automated tests, but they should
+> be validated in a staging environment before being introduced into production editorial or
+> file-management workflows.
+>
 > Feedback is welcome via [GitHub Issues](https://github.com/hauptsacheNet/typo3-mcp-server/issues)
 > or the [#typo3-core-ai Slack channel](https://typo3.slack.com/archives/C091M0M7BL6).
+
+> [!NOTE]
+> This repository is a public fork of [hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server).
+> Special thanks to `hauptsacheNet` for the original project and for the implementation and
+> testing work behind the newer capabilities in this codebase. If you need additional feature
+> development, production hardening, or project-specific validation, the work should ideally
+> be commissioned from and compensated to `hauptsacheNet`.
 
 This extension provides a Model Context Protocol (MCP) server implementation for TYPO3 that allows
 AI assistants to safely view and manipulate TYPO3 pages and records through TYPO3's workspace system.

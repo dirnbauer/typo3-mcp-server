@@ -114,7 +114,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         // Count which MM tables are present
         $foundMmTables = [];
         foreach ($possibleMmTables as $mmTable) {
-            if (strpos($content, $mmTable) !== false) {
+            if (str_contains($content, $mmTable)) {
                 $foundMmTables[] = $mmTable;
             }
         }

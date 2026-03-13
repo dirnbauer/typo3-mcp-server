@@ -1,16 +1,20 @@
 <?php
 
+use Hn\McpServer\Command\McpServerCommand;
+use Hn\McpServer\Command\McpTestCommand;
+use Hn\McpServer\Command\OAuthManageCommand;
+
 return [
     'mcp:server' => [
-        'class' => \Hn\McpServer\Command\McpServerCommand::class,
+        'class' => McpServerCommand::class,
         'schedulable' => false,
     ],
     'mcp:test' => [
-        'class' => \Hn\McpServer\Command\McpTestCommand::class,
+        'class' => McpTestCommand::class,
         'schedulable' => false,
     ],
     'mcp:oauth' => [
-        'class' => \Hn\McpServer\Command\OAuthManageCommand::class,
+        'class' => OAuthManageCommand::class,
         'schedulable' => false,
     ],
 ];

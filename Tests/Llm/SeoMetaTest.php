@@ -163,9 +163,9 @@ class SeoMetaTest extends LlmTestCase
         // Should set OG fields (og_title, og_description) or similar social media fields
         $hasOgFields = false;
         foreach ($writeCall['data'] as $field => $value) {
-            if (str_contains(strtolower($field), 'og_') || 
-                str_contains(strtolower($field), 'twitter_') ||
-                str_contains(strtolower($field), 'social')) {
+            if (str_contains(strtolower((string) $field), 'og_') || 
+                str_contains(strtolower((string) $field), 'twitter_') ||
+                str_contains(strtolower((string) $field), 'social')) {
                 $hasOgFields = true;
                 break;
             }

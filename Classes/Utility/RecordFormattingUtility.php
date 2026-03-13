@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Utility;
 
+use Throwable;
+use Exception;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayout\DataProviderContext;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Log\LogManager;
@@ -16,16 +19,86 @@ use Hn\McpServer\Service\TableAccessService;
 
 /**
  * Utility class for formatting TYPO3 records consistently across MCP tools
+ *
+ * @phpstan-type RecordRow array<string, mixed>
  */
 final class RecordFormattingUtility
 {
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function getTableCtrl(string $table): array
+    {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca)) {
+            return [];
+        }
+
+        $tableConfig = $globalTca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return [];
+        }
+
+        $ctrl = $tableConfig['ctrl'] ?? null;
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    protected static function getSelectItems(string $table, string $fieldName): array
+    {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca)) {
+            return [];
+        }
+
+        $tableConfig = $globalTca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return [];
+        }
+
+        $columns = $tableConfig['columns'] ?? null;
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        $fieldConfig = $columns[$fieldName] ?? null;
+        if (!is_array($fieldConfig)) {
+            return [];
+        }
+
+        $config = $fieldConfig['config'] ?? null;
+        if (!is_array($config)) {
+            return [];
+        }
+
+        $items = $config['items'] ?? null;
+        return is_array($items) ? array_values($items) : [];
+    }
+
+    protected static function getDefaultPageTsconfig(): string
+    {
+        $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($configuration)) {
+            return '';
+        }
+
+        $beConfig = $configuration['BE'] ?? null;
+        if (!is_array($beConfig)) {
+            return '';
+        }
+
+        return is_string($beConfig['defaultPageTSconfig'] ?? null) ? $beConfig['defaultPageTSconfig'] : '';
+    }
     /**
      * Get table label from TCA
      */
     public static function getTableLabel(string $table): string
     {
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['title'])) {
-            return TableAccessService::translateLabel($GLOBALS['TCA'][$table]['ctrl']['title']);
+        $title = self::getTableCtrl($table)['title'] ?? null;
+        if (is_string($title) && $title !== '') {
+            return TableAccessService::translateLabel($title);
         }
         
         // Fallback to humanized table name
@@ -34,6 +107,8 @@ final class RecordFormattingUtility
 
     /**
      * Get a meaningful title for a record
+     *
+     * @param RecordRow $record
      */
     public static function getRecordTitle(string $table, array $record): string
     {
@@ -43,13 +118,14 @@ final class RecordFormattingUtility
             if (!empty($title)) {
                 return $title;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable) {
             // Fall back to manual title detection
         }
         
         // Use the TCA label field if defined
-        if (isset($GLOBALS['TCA'][$table]['ctrl']['label']) && !empty($record[$GLOBALS['TCA'][$table]['ctrl']['label']])) {
-            return $record[$GLOBALS['TCA'][$table]['ctrl']['label']];
+        $labelField = self::getTableCtrl($table)['label'] ?? null;
+        if (is_string($labelField) && !empty($record[$labelField]) && is_scalar($record[$labelField])) {
+            return (string)$record[$labelField];
         }
         
         // Common title fields in TYPO3
@@ -57,12 +133,13 @@ final class RecordFormattingUtility
         
         foreach ($titleFields as $field) {
             if (!empty($record[$field])) {
-                return $record[$field];
+                return is_scalar($record[$field]) ? (string)$record[$field] : 'Record';
             }
         }
         
         // Last resort, just return the UID
-        return 'Record #' . $record['uid'];
+        $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
+        return 'Record #' . $recordUid;
     }
 
     /**
@@ -70,15 +147,12 @@ final class RecordFormattingUtility
      */
     public static function getContentTypeLabel(string $cType): string
     {
-        if (isset($GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'])) {
-            $items = $GLOBALS['TCA']['tt_content']['columns']['CType']['config']['items'];
-            foreach ($items as $item) {
-                // Handle both old and new TCA item formats
-                if (is_array($item) && isset($item['value']) && $item['value'] === $cType) {
-                    return TableAccessService::translateLabel($item['label']);
-                } elseif (is_array($item) && isset($item[1]) && $item[1] === $cType) {
-                    return TableAccessService::translateLabel($item[0]);
-                }
+        foreach (self::getSelectItems('tt_content', 'CType') as $item) {
+            if (is_array($item) && isset($item['value']) && $item['value'] === $cType && is_scalar($item['label'] ?? null)) {
+                return TableAccessService::translateLabel((string)$item['label']);
+            }
+            if (is_array($item) && isset($item[1]) && $item[1] === $cType && is_scalar($item[0] ?? null)) {
+                return TableAccessService::translateLabel((string)$item[0]);
             }
         }
         
@@ -91,7 +165,7 @@ final class RecordFormattingUtility
      * 
      * @param int|null $pageId The page ID to get backend layout for (optional)
      * @param bool &$hasCustomLayout Output parameter to indicate if a custom layout is in use
-     * @return array
+     * @return array<int, string>
      */
     public static function getColumnPositionDefinitions(?int $pageId = null, bool &$hasCustomLayout = false): array
     {
@@ -110,45 +184,44 @@ final class RecordFormattingUtility
         if ($pageId !== null) {
             try {
                 $backendLayout = self::getBackendLayoutForPage($pageId);
-                if ($backendLayout && !empty($backendLayout['__config']['backend_layout.']['rows.'])) {
-                    $layoutColumns = self::extractColumnsFromBackendLayout($backendLayout['__config']['backend_layout.']['rows.']);
+                $backendLayoutConfig = is_array($backendLayout['__config'] ?? null) ? $backendLayout['__config'] : [];
+                $backendLayoutSection = is_array($backendLayoutConfig['backend_layout.'] ?? null) ? $backendLayoutConfig['backend_layout.'] : [];
+                $rows = is_array($backendLayoutSection['rows.'] ?? null) ? $backendLayoutSection['rows.'] : [];
+                if ($rows !== []) {
+                    $layoutColumns = self::extractColumnsFromBackendLayout($rows);
                     if (!empty($layoutColumns)) {
                         $hasCustomLayout = true;
                         return $layoutColumns;
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception) {
                 // Fall back to defaults on error
             }
         }
         
         // Try to get column positions from page TSconfig
-        if (isset($GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'])) {
-            $tsconfigString = $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig'];
-            if (preg_match_all('/mod\.wizards\.newContentElement\.wizardItems\..*?\.elements\..*?\.tt_content_defValues\.colPos\s*=\s*(\d+)/', $tsconfigString, $matches)) {
+        $tsconfigString = self::getDefaultPageTsconfig();
+        if ($tsconfigString !== '' && preg_match_all('/mod\.wizards\.newContentElement\.wizardItems\..*?\.elements\..*?\.tt_content_defValues\.colPos\s*=\s*(\d+)/', $tsconfigString, $matches)) {
                 foreach ($matches[1] as $colPos) {
-                    if (!isset($colPosDefs[$colPos])) {
+                    $colPosInt = (int)$colPos;
+                    if (!isset($colPosDefs[$colPosInt])) {
                         // Try to find the label for this column position
                         if (preg_match('/mod\.wizards\.newContentElement\.wizardItems\..*?\.elements\..*?\.title\s*=\s*(.+)/', $tsconfigString, $labelMatches)) {
-                            $colPosDefs[$colPos] = $labelMatches[1];
+                            $colPosDefs[$colPosInt] = $labelMatches[1];
                         } else {
-                            $colPosDefs[$colPos] = 'Column ' . $colPos;
+                            $colPosDefs[$colPosInt] = 'Column ' . $colPosInt;
                         }
                     }
                 }
-            }
         }
         
         // Check for backend layouts
-        if (isset($GLOBALS['TCA']['backend_layout']['columns']['config']['config']['items'])) {
-            $items = $GLOBALS['TCA']['backend_layout']['columns']['config']['config']['items'];
-            foreach ($items as $item) {
-                if (is_array($item) && isset($item[1]) && preg_match('/colPos=(\d+)/', $item[1], $matches)) {
+        foreach (self::getSelectItems('backend_layout', 'config') as $item) {
+            if (is_array($item) && isset($item[1]) && is_scalar($item[1]) && preg_match('/colPos=(\d+)/', (string)$item[1], $matches)) {
                     $colPos = (int)$matches[1];
-                    if (!isset($colPosDefs[$colPos])) {
-                        $colPosDefs[$colPos] = TableAccessService::translateLabel($item[0]);
+                    if (!isset($colPosDefs[$colPos]) && is_scalar($item[0] ?? null)) {
+                        $colPosDefs[$colPos] = TableAccessService::translateLabel((string)$item[0]);
                     }
-                }
             }
         }
         
@@ -173,23 +246,24 @@ final class RecordFormattingUtility
     /**
      * Apply default sorting from TCA to a query builder
      */
-    public static function applyDefaultSorting($queryBuilder, string $table): void
+    public static function applyDefaultSorting(QueryBuilder $queryBuilder, string $table): void
     {
-        if (!isset($GLOBALS['TCA'][$table]['ctrl'])) {
+        $ctrl = self::getTableCtrl($table);
+        if ($ctrl === []) {
             return;
         }
 
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'];
-
         // Check for sortby field
-        if (!empty($ctrl['sortby'])) {
-            $queryBuilder->orderBy($ctrl['sortby'], 'ASC');
+        $sortby = is_string($ctrl['sortby'] ?? null) ? $ctrl['sortby'] : '';
+        if ($sortby !== '') {
+            $queryBuilder->orderBy($sortby, 'ASC');
             return;
         }
 
         // Check for default_sortby
-        if (!empty($ctrl['default_sortby'])) {
-            $sortParts = GeneralUtility::trimExplode(',', str_replace('ORDER BY', '', $ctrl['default_sortby']), true);
+        $defaultSortby = is_string($ctrl['default_sortby'] ?? null) ? $ctrl['default_sortby'] : '';
+        if ($defaultSortby !== '') {
+            $sortParts = GeneralUtility::trimExplode(',', str_replace('ORDER BY', '', $defaultSortby), true);
             foreach ($sortParts as $sortPart) {
                 $sortPart = trim($sortPart);
                 if (preg_match('/^(.*?)\s+(ASC|DESC)$/i', $sortPart, $matches)) {
@@ -220,7 +294,7 @@ final class RecordFormattingUtility
         $content = strip_tags($content);
         
         // Normalize whitespace
-        $content = preg_replace('/\s+/', ' ', $content);
+        $content = preg_replace('/\s+/', ' ', $content) ?? $content;
         $content = trim($content);
         
         // Truncate if too long
@@ -264,7 +338,7 @@ final class RecordFormattingUtility
      * Get backend layout for a specific page
      * 
      * @param int $pageId
-     * @return array|null
+     * @return array<string, mixed>|null
      */
     protected static function getBackendLayoutForPage(int $pageId): ?array
     {
@@ -276,21 +350,22 @@ final class RecordFormattingUtility
             }
             
             // First, try the simpler approach: check if backend_layout is set directly
-            $backendLayoutIdentifier = $pageRecord['backend_layout'] ?? '';
+            $backendLayoutIdentifier = is_scalar($pageRecord['backend_layout'] ?? null) ? (string)$pageRecord['backend_layout'] : '';
             
             // If not set on this page, check parent pages for backend_layout_next_level
-            if (empty($backendLayoutIdentifier) && $pageRecord['pid'] > 0) {
-                $backendLayoutIdentifier = self::getInheritedBackendLayout($pageRecord['pid']);
+            $parentPid = is_numeric($pageRecord['pid'] ?? null) ? (int)$pageRecord['pid'] : 0;
+            if ($backendLayoutIdentifier === '' && $parentPid > 0) {
+                $backendLayoutIdentifier = self::getInheritedBackendLayout($parentPid);
             }
             
             if (!empty($backendLayoutIdentifier)) {
                 // Check if it's a numeric ID (database record)
                 if (is_numeric($backendLayoutIdentifier)) {
                     $layoutRecord = BackendUtility::getRecord('backend_layout', (int)$backendLayoutIdentifier);
-                    if ($layoutRecord && !empty($layoutRecord['config'])) {
+                    if ($layoutRecord && is_string($layoutRecord['config'] ?? null) && $layoutRecord['config'] !== '') {
                         // Parse the backend layout config directly
                         $config = self::parseBackendLayoutConfig($layoutRecord['config']);
-                        if ($config) {
+                        if ($config !== []) {
                             return ['__config' => $config];
                         }
                     }
@@ -315,12 +390,12 @@ final class RecordFormattingUtility
                 if ($backendLayout) {
                     return $backendLayout->getStructure();
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 // BackendLayoutView might not work in all contexts
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(static::class)
+                ->getLogger(self::class)
                 ->warning('Backend layout detection failed', ['exception' => $e]);
         }
         
@@ -339,13 +414,14 @@ final class RecordFormattingUtility
         
         if ($parentRecord) {
             // Check if parent has backend_layout_next_level set
-            if (!empty($parentRecord['backend_layout_next_level'])) {
-                return $parentRecord['backend_layout_next_level'];
+            if (!empty($parentRecord['backend_layout_next_level']) && is_scalar($parentRecord['backend_layout_next_level'])) {
+                return (string)$parentRecord['backend_layout_next_level'];
             }
             
             // If parent has a parent, check recursively
-            if ($parentRecord['pid'] > 0) {
-                return self::getInheritedBackendLayout($parentRecord['pid']);
+            $parentPid = is_numeric($parentRecord['pid'] ?? null) ? (int)$parentRecord['pid'] : 0;
+            if ($parentPid > 0) {
+                return self::getInheritedBackendLayout($parentPid);
             }
         }
         
@@ -355,15 +431,15 @@ final class RecordFormattingUtility
     /**
      * Extract column definitions from backend layout configuration
      * 
-     * @param array $rows
-     * @return array
+     * @param array<int|string, mixed> $rows
+     * @return array<int, string>
      */
     protected static function extractColumnsFromBackendLayout(array $rows): array
     {
         $columns = [];
         
         foreach ($rows as $row) {
-            if (!isset($row['columns.'])) {
+            if (!is_array($row) || !isset($row['columns.']) || !is_array($row['columns.'])) {
                 continue;
             }
             
@@ -372,8 +448,8 @@ final class RecordFormattingUtility
                     continue;
                 }
                 
-                $colPos = (int) $column['colPos'];
-                $name = $column['name'] ?? 'Column ' . $colPos;
+                $colPos = is_numeric($column['colPos']) ? (int)$column['colPos'] : 0;
+                $name = is_scalar($column['name'] ?? null) ? (string)$column['name'] : 'Column ' . $colPos;
                 
                 // Translate the name if it's a language label
                 if (str_starts_with($name, 'LLL:')) {
@@ -391,9 +467,9 @@ final class RecordFormattingUtility
      * Parse backend layout configuration from TypoScript-like format
      * 
      * @param string $config
-     * @return array|null
+     * @return array<string, mixed>
      */
-    protected static function parseBackendLayoutConfig(string $config): ?array
+    protected static function parseBackendLayoutConfig(string $config): array
     {
         // Simple parser for backend layout config
         // We're looking for rows.X.columns.Y structure
@@ -403,7 +479,9 @@ final class RecordFormattingUtility
         
         foreach ($lines as $line) {
             $line = trim($line);
-            if (empty($line)) continue;
+            if ($line === '') {
+                continue;
+            }
             
             // Handle closing brace
             if ($line === '}') {
@@ -425,29 +503,39 @@ final class RecordFormattingUtility
                 // Build the full path
                 $fullPath = implode('', $currentPath) . $key;
                 
-                // Set value in result array using the path
-                $pathParts = explode('.', $fullPath);
-                $current = &$result;
-                foreach ($pathParts as $part) {
-                    if (empty($part)) continue;
-                    if (!isset($current[$part . '.'])) {
-                        $current[$part . '.'] = [];
-                    }
-                    $current = &$current[$part . '.'];
-                }
-                // Remove the last '.' and set the value
-                $lastKey = array_pop($pathParts);
-                if ($lastKey) {
-                    $current = &$result;
-                    foreach ($pathParts as $part) {
-                        if (empty($part)) continue;
-                        $current = &$current[$part . '.'];
-                    }
-                    $current[$lastKey] = $value;
-                }
+                self::assignNestedValue($result, explode('.', $fullPath), $value);
             }
         }
         
         return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     * @param list<string> $pathParts
+     */
+    protected static function assignNestedValue(array &$result, array $pathParts, string $value): void
+    {
+        $filteredParts = array_values(array_filter($pathParts, static fn(string $part): bool => $part !== ''));
+        if ($filteredParts === []) {
+            return;
+        }
+
+        $current = &$result;
+        $lastIndex = count($filteredParts) - 1;
+        foreach ($filteredParts as $index => $part) {
+            if ($index === $lastIndex) {
+                $current[$part] = $value;
+                return;
+            }
+
+            $key = $part . '.';
+            if (!array_key_exists($key, $current) || !is_array($current[$key])) {
+                $current[$key] = [];
+            }
+            /** @var array<string, mixed> $next */
+            $next = &$current[$key];
+            $current = &$next;
+        }
     }
 }

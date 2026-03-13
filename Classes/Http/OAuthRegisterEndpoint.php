@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -35,12 +36,12 @@ final class OAuthRegisterEndpoint
             $body = $request->getBody()->getContents();
             $clientData = json_decode($body, true);
 
-            if (!$clientData) {
+            if (!is_array($clientData)) {
                 return $this->createErrorResponse('invalid_request', 'Invalid JSON in request body');
             }
 
             // Validate required fields (minimal validation for MCP)
-            if (empty($clientData['client_name'])) {
+            if (!isset($clientData['client_name']) || !is_string($clientData['client_name']) || $clientData['client_name'] === '') {
                 $clientData['client_name'] = 'MCP Client';
             }
 
@@ -50,9 +51,10 @@ final class OAuthRegisterEndpoint
             }
 
             // Set default values for MCP clients
-            $clientData['grant_types'] = $clientData['grant_types'] ?? ['authorization_code'];
-            $clientData['response_types'] = $clientData['response_types'] ?? ['code'];
-            $clientData['scope'] = $clientData['scope'] ?? 'mcp_access';
+            $clientData['grant_types'] ??= ['authorization_code'];
+            $clientData['response_types'] ??= ['code'];
+            $clientData['scope'] ??= 'mcp_access';
+            /** @var array{client_name: string, redirect_uris: list<string>, grant_types: list<string>, response_types: list<string>, scope: string} $clientData */
 
             // Register the client
             $oauthService = GeneralUtility::makeInstance(OAuthService::class);
@@ -60,7 +62,7 @@ final class OAuthRegisterEndpoint
 
             // Return client registration response
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($clientInfo));
+            $stream->write($this->encodeJson($clientInfo));
             $stream->rewind();
 
             $response = new Response(
@@ -75,7 +77,7 @@ final class OAuthRegisterEndpoint
             
             return $this->addCorsHeaders($response);
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $this->createErrorResponse('server_error', $e->getMessage(), 500);
         }
     }
@@ -88,7 +90,7 @@ final class OAuthRegisterEndpoint
         ];
 
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode($errorData));
+        $stream->write($this->encodeJson($errorData));
         $stream->rewind();
 
         $response = new Response(
@@ -98,5 +100,14 @@ final class OAuthRegisterEndpoint
         );
         
         return $this->addCorsHeaders($response);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data);
+        return is_string($json) ? $json : '{}';
     }
 }

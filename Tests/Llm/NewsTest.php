@@ -92,7 +92,7 @@ class NewsTest extends LlmTestCase
         if (isset($data['datetime'])) {
             $datetime = is_numeric($data['datetime']) 
                 ? (int)$data['datetime'] 
-                : strtotime($data['datetime']);
+                : strtotime((string) $data['datetime']);
             
             // Just verify a date was set (LLM might use current date)
             $this->assertGreaterThan(0, $datetime, "News should have a valid date");
@@ -157,9 +157,7 @@ class NewsTest extends LlmTestCase
         
         // Check if LLM attempted category handling
         $hasCategories = isset($data['categories']) && !empty($data['categories']);
-        $createdCategories = array_filter($writeCalls, function($call) {
-            return $call['arguments']['table'] === 'sys_category';
-        });
+        $createdCategories = array_filter($writeCalls, fn($call) => $call['arguments']['table'] === 'sys_category');
         
         // Category handling is optional - the LLM was asked to "categorize appropriately"
         // which it might interpret as:

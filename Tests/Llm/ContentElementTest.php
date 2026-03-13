@@ -67,7 +67,7 @@ class ContentElementTest extends LlmTestCase
         
         // Since we removed data from the response, we need to verify the content was created/updated
         // by checking the tool call arguments instead
-        $writeData = json_decode($writeResult['content'], true);
+        $writeData = json_decode((string) $writeResult['content'], true);
         $this->assertEquals($writeCall['action'], $writeData['action']);
         $this->assertEquals('tt_content', $writeData['table']);
         $this->assertArrayHasKey('uid', $writeData);

@@ -377,7 +377,11 @@ class InvalidDataTest extends AbstractFunctionalTest
         
         // TYPO3 might convert array to string
         if ($result->isError) {
-            $this->assertStringContainsString('Invalid', $result->content[0]->text);
+            $errorText = $result->content[0]->text;
+            $this->assertTrue(
+                str_contains($errorText, 'Invalid') || str_contains($errorText, 'does not accept array values'),
+                'Unexpected validation error: ' . $errorText
+            );
         } else {
             // If it succeeded, check what was stored
             $data = json_decode($result->content[0]->text, true);

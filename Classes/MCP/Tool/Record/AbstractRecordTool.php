@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use stdClass;
+use InvalidArgumentException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 abstract class AbstractRecordTool extends AbstractTool
@@ -29,10 +33,12 @@ abstract class AbstractRecordTool extends AbstractTool
 
     /**
      * Override execute to extract workspace_id before initialize() runs.
+     *
+     * @param array<string, mixed> $params
      */
     final public function execute(array $params): CallToolResult
     {
-        if (isset($params['workspace_id']) && $params['workspace_id'] !== null) {
+        if (isset($params['workspace_id']) && is_numeric($params['workspace_id'])) {
             $this->requestedWorkspaceId = (int)$params['workspace_id'];
             unset($params['workspace_id']);
         } else {
@@ -43,15 +49,18 @@ abstract class AbstractRecordTool extends AbstractTool
 
     /**
      * Wraps the concrete schema with the optional workspace_id property.
+     *
+     * @return array<string, mixed>
      */
     public function getSchema(): array
     {
         $schema = $this->getToolSchema();
+        $inputSchema = isset($schema['inputSchema']) && is_array($schema['inputSchema']) ? $schema['inputSchema'] : [];
 
-        if (isset($schema['inputSchema']['properties']) && $schema['inputSchema']['properties'] instanceof \stdClass) {
-            $props = (array)$schema['inputSchema']['properties'];
-        } elseif (isset($schema['inputSchema']['properties']) && is_array($schema['inputSchema']['properties'])) {
-            $props = $schema['inputSchema']['properties'];
+        if (isset($inputSchema['properties']) && $inputSchema['properties'] instanceof stdClass) {
+            $props = (array)$inputSchema['properties'];
+        } elseif (isset($inputSchema['properties']) && is_array($inputSchema['properties'])) {
+            $props = $inputSchema['properties'];
         } else {
             $props = [];
         }
@@ -60,13 +69,16 @@ abstract class AbstractRecordTool extends AbstractTool
             'type' => 'integer',
             'description' => 'Optional workspace ID. Use list_workspaces to see available workspaces. Omit to use the default workspace.',
         ];
-        $schema['inputSchema']['properties'] = empty($props) ? new \stdClass() : $props;
+        $inputSchema['properties'] = $props;
+        $schema['inputSchema'] = $inputSchema;
 
         return $schema;
     }
 
     /**
      * Concrete tools implement this instead of getSchema().
+     *
+     * @return array<string, mixed>
      */
     abstract protected function getToolSchema(): array;
 
@@ -74,23 +86,27 @@ abstract class AbstractRecordTool extends AbstractTool
     {
         parent::initialize();
 
-        if (!isset($GLOBALS['BE_USER'])) {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
             return;
         }
 
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
+        $GLOBALS['LANG'] = $languageServiceFactory->createFromUserPreferences($backendUser);
+
         if ($this->requestedWorkspaceId !== null) {
-            $this->workspaceContextService->switchToWorkspace($GLOBALS['BE_USER'], $this->requestedWorkspaceId);
+            $this->workspaceContextService->switchToWorkspace($backendUser, $this->requestedWorkspaceId);
         } else {
-            $this->workspaceContextService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+            $this->workspaceContextService->switchToOptimalWorkspace($backendUser);
         }
     }
     
     /**
      * Ensure a table can be accessed for the given operation
-     * 
+     *
      * @param string $table Table name
      * @param string $operation Operation type (read, write, delete)
-     * @throws \InvalidArgumentException If access is denied
+     * @throws InvalidArgumentException If access is denied
      */
     protected function ensureTableAccess(string $table, string $operation = 'read'): void
     {
@@ -106,10 +122,13 @@ abstract class AbstractRecordTool extends AbstractTool
 
     /**
      * Create a successful result with JSON content
+     *
+     * @param array<string, mixed> $data
      */
     protected function createJsonResult(array $data): CallToolResult
     {
-        return new CallToolResult([new TextContent(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))]);
+        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
+        return new CallToolResult([new TextContent($json)]);
     }
 
     /**
@@ -160,6 +179,8 @@ abstract class AbstractRecordTool extends AbstractTool
     
     /**
      * Get workspace capability information for a table
+     *
+     * @return array{workspace_capable: bool, reason: string}
      */
     protected function getWorkspaceCapabilityInfo(string $table): array
     {

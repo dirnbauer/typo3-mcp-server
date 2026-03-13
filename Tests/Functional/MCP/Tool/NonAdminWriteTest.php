@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -334,7 +335,7 @@ class NonAdminWriteTest extends AbstractFunctionalTest
         $this->switchToWorkspace(50);
 
         // Create a ReadTableTool and try to read
-        $readTool = GeneralUtility::makeInstance(\Hn\McpServer\MCP\Tool\Record\ReadTableTool::class);
+        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'pages',
             'uid' => 100

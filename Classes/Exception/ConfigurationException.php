@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
+use Throwable;
+
 /**
  * Exception for configuration errors
  * 
@@ -16,9 +18,9 @@ class ConfigurationException extends McpException
     /**
      * @param string $config The configuration element that caused the error (e.g., "TCA", "site configuration")
      * @param string $reason Detailed reason for the configuration error
-     * @param \Throwable|null $previous Previous exception for chaining
+     * @param Throwable|null $previous Previous exception for chaining
      */
-    public function __construct(string $config, string $reason, ?\Throwable $previous = null)
+    public function __construct(string $config, string $reason, ?Throwable $previous = null)
     {
         parent::__construct(
             "Configuration error for {$config}: {$reason}",

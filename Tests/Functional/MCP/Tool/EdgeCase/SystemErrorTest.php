@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
-use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -125,12 +124,6 @@ class SystemErrorTest extends AbstractFunctionalTest
      */
     public function testTableAccessServiceFailure(): void
     {
-        // Mock table access service
-        $mockTableAccess = $this->createMock(TableAccessService::class);
-        $mockTableAccess->method('canAccessTable')
-            ->willThrowException(new \RuntimeException('Permission check failed'));
-        
-        // Since service is injected, we need to test differently
         // Test with edge case table names
         $edgeCaseTables = [
             '',  // Empty table name

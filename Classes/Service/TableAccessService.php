@@ -4,19 +4,47 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use RuntimeException;
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use Throwable;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
-use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Central service for determining table access permissions and capabilities
  * This service acts as the single source of truth for which tables can be accessed
  * through the MCP tools, considering workspace capability, user permissions, and other restrictions.
+ *
+ * @phpstan-type TablePermissions array{read: bool, write: bool, delete: bool}
+ * @phpstan-type TableAccessInfo array{
+ *   accessible: bool,
+ *   reasons: list<string>,
+ *   restrictions: list<string>,
+ *   workspace_capable: bool,
+ *   read_only: bool,
+ *   permissions: TablePermissions
+ * }
+ * @phpstan-type SelectItemsResult array{values: list<string>, labels: array<string, string>}
  */
-final class TableAccessService implements SingletonInterface
+final class TableAccessService
 {
+    /** @var array<string, string> */
+    private const DEPRECATED_LABEL_FALLBACKS = [
+        'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:header_formlabel' => 'Header',
+        'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:bodytext_formlabel' => 'Text',
+        'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.palettes.editorial' => 'Editorial',
+        'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.palettes.metatags' => 'Meta tags',
+        'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent' => 'Translation parent',
+        'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.fe_group' => 'Frontend user group',
+        'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.hide_at_login' => 'Hide at login',
+        'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.any_login' => 'Any login',
+        'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.doktype.I.8' => 'Mount point',
+    ];
+
     protected ?BackendUserAuthentication $backendUser = null;
     protected WorkspaceContextService $workspaceContextService;
     protected TcaSchemaFactory $tcaSchemaFactory;
@@ -26,6 +54,99 @@ final class TableAccessService implements SingletonInterface
         $this->workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
         $this->tcaSchemaFactory = GeneralUtility::makeInstance(TcaSchemaFactory::class);
     }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected function getAllTcaTables(): array
+    {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca)) {
+            return [];
+        }
+
+        $tables = [];
+        foreach ($globalTca as $table => $tableConfig) {
+            if (is_string($table) && is_array($tableConfig)) {
+                $tables[$table] = $tableConfig;
+            }
+        }
+
+        return $tables;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getTableTca(string $table): array
+    {
+        return $this->getAllTcaTables()[$table] ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getTableCtrl(string $table): array
+    {
+        $ctrl = $this->getTableTca($table)['ctrl'] ?? [];
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected function getTableColumns(string $table): array
+    {
+        $columns = $this->getTableTca($table)['columns'] ?? [];
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        $normalizedColumns = [];
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (is_string($fieldName) && is_array($fieldConfig)) {
+                $normalizedColumns[$fieldName] = $fieldConfig;
+            }
+        }
+
+        return $normalizedColumns;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getFieldTca(string $table, string $fieldName): array
+    {
+        return $this->getTableColumns($table)[$fieldName] ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getTableTypeConfig(string $table, string $type): array
+    {
+        $types = $this->getTableTca($table)['types'] ?? [];
+        if (!is_array($types)) {
+            return [];
+        }
+
+        $typeConfig = $types[$type] ?? [];
+        return is_array($typeConfig) ? $typeConfig : [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getConfigurationSection(string $section): array
+    {
+        $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($configuration)) {
+            return [];
+        }
+
+        $sectionConfiguration = $configuration[$section] ?? [];
+        return is_array($sectionConfiguration) ? $sectionConfiguration : [];
+    }
     
     /**
      * Get the current backend user, ensuring it's properly initialized
@@ -34,7 +155,7 @@ final class TableAccessService implements SingletonInterface
     {
         if ($this->backendUser === null) {
             if (!isset($GLOBALS['BE_USER']) || !$GLOBALS['BE_USER'] instanceof BackendUserAuthentication) {
-                throw new \RuntimeException('Backend user context not properly initialized. Make sure authentication is set up.');
+                throw new RuntimeException('Backend user context not properly initialized. Make sure authentication is set up.');
             }
             $this->backendUser = $GLOBALS['BE_USER'];
         }
@@ -46,13 +167,13 @@ final class TableAccessService implements SingletonInterface
      * Get all tables that are accessible to the current user
      * 
      * @param bool $includeReadOnly Include read-only tables
-     * @return array Array of table names with access information
+     * @return array<string, TableAccessInfo> Array of table names with access information
      */
     public function getAccessibleTables(bool $includeReadOnly = false): array
     {
         $accessibleTables = [];
         
-        foreach (array_keys($GLOBALS['TCA']) as $table) {
+        foreach (array_keys($this->getAllTcaTables()) as $table) {
             $accessInfo = $this->getTableAccessInfo($table);
             
             if ($accessInfo['accessible']) {
@@ -71,13 +192,13 @@ final class TableAccessService implements SingletonInterface
     /**
      * Get all tables that are readable (less restrictive - no workspace capability required)
      * 
-     * @return array Array of table names with access information
+     * @return array<string, TableAccessInfo> Array of table names with access information
      */
     public function getReadableTables(): array
     {
         $readableTables = [];
         
-        foreach (array_keys($GLOBALS['TCA']) as $table) {
+        foreach (array_keys($this->getAllTcaTables()) as $table) {
             $accessInfo = $this->getTableAccessInfo($table, false); // Don't require workspace capability
             
             if ($accessInfo['accessible']) {
@@ -117,7 +238,7 @@ final class TableAccessService implements SingletonInterface
      * 
      * @param string $table Table name
      * @param bool $requireWorkspaceCapability Whether workspace capability is required (default: true)
-     * @return array Detailed access information
+     * @return TableAccessInfo Detailed access information
      */
     public function getTableAccessInfo(string $table, bool $requireWorkspaceCapability = true): array
     {
@@ -136,7 +257,7 @@ final class TableAccessService implements SingletonInterface
         ];
         
         // Check if table exists in TCA
-        if (!isset($GLOBALS['TCA'][$table])) {
+        if ($this->getTableTca($table) === []) {
             $info['reasons'][] = 'Table does not exist in TCA';
             return $info;
         }
@@ -148,7 +269,8 @@ final class TableAccessService implements SingletonInterface
         }
         
         // Check workspace capability (required for write operations)
-        $info['workspace_capable'] = BackendUtility::isTableWorkspaceEnabled($table);
+        $workspaceCapability = $this->getTableCtrl($table)['versioningWS'] ?? false;
+        $info['workspace_capable'] = $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
         if ($requireWorkspaceCapability && !$info['workspace_capable']) {
             $info['reasons'][] = 'Table is not workspace-capable (required for write operations)';
             return $info;
@@ -185,10 +307,10 @@ final class TableAccessService implements SingletonInterface
     
     /**
      * Validate that a table can be accessed, throwing an exception if not
-     * 
+     *
      * @param string $table Table name
      * @param string $operation Optional operation being attempted (read, write, delete)
-     * @throws \InvalidArgumentException If table cannot be accessed
+     * @throws InvalidArgumentException If table cannot be accessed
      */
     public function validateTableAccess(string $table, string $operation = 'read'): void
     {
@@ -196,14 +318,14 @@ final class TableAccessService implements SingletonInterface
         
         if (!$accessInfo['accessible']) {
             $reasons = implode(', ', $accessInfo['reasons']);
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Cannot access table '{$table}': {$reasons}"
             );
         }
         
         // Check specific operation permission
         if ($operation !== 'read' && !$accessInfo['permissions'][$operation]) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "Operation '{$operation}' not permitted on table '{$table}'"
             );
         }
@@ -211,11 +333,11 @@ final class TableAccessService implements SingletonInterface
     
     /**
      * Get the schema for an accessible table
-     * 
+     *
      * @param string $table Table name
      * @param string $type Record type (optional)
-     * @return array Schema information
-     * @throws \InvalidArgumentException If table is not accessible
+     * @return array{table: string, type: string, fields: array<string, array<string, mixed>>, ctrl: array<string, mixed>} Schema information
+     * @throws InvalidArgumentException If table is not accessible
      */
     public function getTableSchema(string $table, string $type = ''): array
     {
@@ -236,7 +358,7 @@ final class TableAccessService implements SingletonInterface
      * 
      * @param string $table Table name
      * @param string $type Record type (optional)
-     * @return array Field configuration
+     * @return array<string, array<string, mixed>> Field configuration
      */
     public function getAvailableFields(string $table, string $type = ''): array
     {
@@ -249,14 +371,18 @@ final class TableAccessService implements SingletonInterface
         
         $schema = $this->tcaSchemaFactory->get($table);
         $fields = [];
-        $subtypeField = null;
+        $subtypeFieldName = null;
         
         // If a specific type is provided and the schema supports sub-schemas
         if (!empty($type) && $schema->hasSubSchema($type)) {
             $subSchema = $schema->getSubSchema($type);
             
-            // Check if this type uses subtypes (e.g., plugins using list_type)
-            $subtypeField = $subSchema->getSubTypeDivisorField();
+            // TYPO3 v14 no longer exposes subtype handling via TcaSchema.
+            // Fall back to the raw TCA config when a type still declares subtype fields.
+            $typeConfig = $this->getTableTypeConfig($table, $type);
+            $subtypeFieldName = isset($typeConfig['subtype_value_field']) && is_string($typeConfig['subtype_value_field'])
+                ? $typeConfig['subtype_value_field']
+                : null;
             
             // Get fields from the sub-schema
             foreach ($subSchema->getFields() as $field) {
@@ -268,8 +394,9 @@ final class TableAccessService implements SingletonInterface
             // Try to fall back to a reasonable default type
             if (empty($type) && $schema->supportsSubSchema()) {
                 // Get the default type from TCA configuration
-                $tca = $GLOBALS['TCA'][$table] ?? [];
-                $defaultType = $tca['columns'][$schema->getSubSchemaTypeInformation()->getFieldName()]['config']['default'] ?? '';
+                $typeFieldConfig = $this->getFieldTca($table, $schema->getSubSchemaTypeInformation()->getFieldName());
+                $typeFieldOptions = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
+                $defaultType = isset($typeFieldOptions['default']) && is_string($typeFieldOptions['default']) ? $typeFieldOptions['default'] : '';
                 
                 if (!empty($defaultType) && $schema->hasSubSchema($defaultType)) {
                     $subSchema = $schema->getSubSchema($defaultType);
@@ -295,8 +422,7 @@ final class TableAccessService implements SingletonInterface
         
         // Handle subtypes pattern: If a type uses subtypes and has FlexForm configurations,
         // ensure FlexForm fields are included even if not explicitly in showitem
-        if ($subtypeField !== null) {
-            $subtypeFieldName = $subtypeField->getName();
+        if (is_string($subtypeFieldName) && $subtypeFieldName !== '') {
             $this->addSubtypeFields($table, $type, $subtypeFieldName, $fields);
         }
         
@@ -317,54 +443,64 @@ final class TableAccessService implements SingletonInterface
      * @param string $table Table name
      * @param string $type Record type
      * @param string $subtypeField The subtype field name (e.g., 'list_type')
-     * @param array &$fields Reference to fields array to modify
+     * @param array<string, array<string, mixed>> &$fields Reference to fields array to modify
      */
     protected function addSubtypeFields(string $table, string $type, string $subtypeField, array &$fields): void
     {
-        $tca = $GLOBALS['TCA'][$table] ?? [];
+        $columns = $this->getTableColumns($table);
+        $typeConfig = $this->getTableTypeConfig($table, $type);
         
         // Check if there are FlexForm fields configured
         $flexFormFields = [];
-        foreach ($tca['columns'] ?? [] as $fieldName => $fieldConfig) {
-            if (($fieldConfig['config']['type'] ?? '') === 'flex') {
+        foreach ($columns as $fieldName => $fieldConfig) {
+            $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            if (($fieldOptions['type'] ?? '') === 'flex') {
                 $flexFormFields[] = $fieldName;
             }
         }
         
         // For each FlexForm field, check if there are DataStructures configured that use the subtype pattern
         foreach ($flexFormFields as $flexFormField) {
-            $dsConfig = $tca['columns'][$flexFormField]['config']['ds'] ?? [];
+            $flexFormConfig = $columns[$flexFormField] ?? [];
+            $flexFormOptions = isset($flexFormConfig['config']) && is_array($flexFormConfig['config']) ? $flexFormConfig['config'] : [];
+            $dsConfig = $flexFormOptions['ds'] ?? [];
             
             if (!empty($dsConfig)) {
                 // Check if any DS key uses the subtype pattern (e.g., "*,list_type_value")
                 $hasSubtypeDS = false;
-                foreach (array_keys($dsConfig) as $dsKey) {
-                    // Common patterns: "*,plugin_key" or "type,plugin_key" or just "plugin_key"
-                    if (str_contains($dsKey, ',') || isset($tca['columns'][$subtypeField]['config']['items'])) {
-                        $hasSubtypeDS = true;
-                        break;
+                if (is_array($dsConfig)) {
+                    foreach (array_keys($dsConfig) as $dsKey) {
+                        // Common patterns: "*,plugin_key" or "type,plugin_key" or just "plugin_key"
+                        $subtypeFieldConfig = $columns[$subtypeField] ?? [];
+                        $subtypeFieldOptions = isset($subtypeFieldConfig['config']) && is_array($subtypeFieldConfig['config']) ? $subtypeFieldConfig['config'] : [];
+                        if (str_contains((string)$dsKey, ',') || isset($subtypeFieldOptions['items'])) {
+                            $hasSubtypeDS = true;
+                            break;
+                        }
                     }
+                } elseif (is_string($dsConfig)) {
+                    $hasSubtypeDS = true;
                 }
                 
                 // If there are subtype-based DataStructures, include the FlexForm field
                 if ($hasSubtypeDS && !isset($fields[$flexFormField])) {
                     // Add the FlexForm field configuration if it's not already present
-                    $fields[$flexFormField] = $tca['columns'][$flexFormField] ?? [];
+                    $fields[$flexFormField] = $columns[$flexFormField] ?? [];
                 }
             }
         }
         
         // Handle traditional subtypes_addlist (deprecated but still supported)
-        $subtypesAddlist = $tca['types'][$type]['subtypes_addlist'] ?? [];
+        $subtypesAddlist = $typeConfig['subtypes_addlist'] ?? [];
         if (!empty($subtypesAddlist) && is_array($subtypesAddlist)) {
             // This would require knowing the actual subtype value, which we don't have here
             // For general schema purposes, we could include all possible fields from all subtypes
             foreach ($subtypesAddlist as $subtypeValue => $addFields) {
                 if (!empty($addFields)) {
-                    $addFieldsList = GeneralUtility::trimExplode(',', $addFields, true);
+                    $addFieldsList = GeneralUtility::trimExplode(',', is_scalar($addFields) ? (string)$addFields : '', true);
                     foreach ($addFieldsList as $fieldName) {
-                        if (isset($tca['columns'][$fieldName]) && !isset($fields[$fieldName])) {
-                            $fields[$fieldName] = $tca['columns'][$fieldName];
+                        if (isset($columns[$fieldName]) && !isset($fields[$fieldName])) {
+                            $fields[$fieldName] = $columns[$fieldName];
                         }
                     }
                 }
@@ -377,7 +513,7 @@ final class TableAccessService implements SingletonInterface
      * 
      * @param string $table Table name
      * @param string $type Record type (optional)
-     * @return array List of field names
+     * @return list<string> List of field names
      */
     public function getFieldNamesForType(string $table, string $type = ''): array
     {
@@ -389,7 +525,7 @@ final class TableAccessService implements SingletonInterface
      * Get restrictions for a table
      * 
      * @param string $table Table name
-     * @return array List of restrictions
+     * @return list<string> List of restrictions
      */
     public function getTableRestrictions(string $table): array
     {
@@ -414,12 +550,13 @@ final class TableAccessService implements SingletonInterface
     protected function isRestrictedSystemTable(string $table): bool
     {
         // Admin-only tables (only restrict if user is not admin)
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['adminOnly']) && !$this->getBackendUser()->isAdmin()) {
+        $ctrl = $this->getTableCtrl($table);
+        if (!empty($ctrl['adminOnly']) && !$this->getBackendUser()->isAdmin()) {
             return true;
         }
         
         // Root-level tables that are dangerous to modify
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['rootLevel'])) {
+        if (!empty($ctrl['rootLevel'])) {
             // Allow some safe root-level tables
             $allowedRootTables = [
                 'sys_file_storage', // File storage configuration
@@ -456,8 +593,8 @@ final class TableAccessService implements SingletonInterface
         
         // Check for system group tables with workspace support
         // This is likely a misconfiguration as system configuration tables shouldn't support workspaces
-        $groupName = $GLOBALS['TCA'][$table]['ctrl']['groupName'] ?? '';
-        $isWorkspaceCapable = !empty($GLOBALS['TCA'][$table]['ctrl']['versioningWS']);
+        $groupName = is_string($ctrl['groupName'] ?? null) ? $ctrl['groupName'] : '';
+        $isWorkspaceCapable = !empty($ctrl['versioningWS']);
         
         if ($groupName === 'system' && $isWorkspaceCapable) {
             // System tables with workspace support are suspicious
@@ -475,7 +612,8 @@ final class TableAccessService implements SingletonInterface
     protected function isTableReadOnly(string $table): bool
     {
         // Check TCA configuration
-        if (!empty($GLOBALS['TCA'][$table]['ctrl']['readOnly'])) {
+        $ctrl = $this->getTableCtrl($table);
+        if (!empty($ctrl['readOnly'])) {
             return true;
         }
         
@@ -492,9 +630,6 @@ final class TableAccessService implements SingletonInterface
         }
         
         // Tables without essential fields are typically read-only
-        $tca = $GLOBALS['TCA'][$table] ?? [];
-        $ctrl = $tca['ctrl'] ?? [];
-        
         // If table has no label field and no type field, it's likely a pure relation table
         // But relation tables like sys_file_reference should still be writable
         $hasLabel = !empty($ctrl['label']);
@@ -518,6 +653,8 @@ $isRelationTable = str_contains($table, '_mm') ||
     
     /**
      * Check user permissions for a table
+     *
+     * @return TablePermissions
      */
     protected function checkUserPermissions(string $table): array
     {
@@ -561,17 +698,19 @@ $isRelationTable = str_contains($table, '_mm') ||
     
     /**
      * Get field restrictions for a table
+     *
+     * @return list<string>
      */
     protected function getFieldRestrictions(string $table): array
     {
         $restrictions = [];
-        $tca = $GLOBALS['TCA'][$table] ?? [];
+        $columns = $this->getTableColumns($table);
         
-        if (empty($tca['columns'])) {
+        if ($columns === []) {
             return $restrictions;
         }
         
-        foreach ($tca['columns'] as $fieldName => $fieldConfig) {
+        foreach ($columns as $fieldName => $fieldConfig) {
             // Check exclude fields
             if (!empty($fieldConfig['exclude']) && !$this->getBackendUser()->check('non_exclude_fields', $table . ':' . $fieldName)) {
                 $restrictions[] = "Field '{$fieldName}' is excluded for current user";
@@ -597,10 +736,14 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function canAccessField(string $table, string $fieldName, string $type = ''): bool
     {
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$fieldName] ?? [];
+        $fieldConfig = $this->getFieldConfig($table, $fieldName);
+        if ($fieldConfig === null) {
+            return false;
+        }
 
         // Block file fields - file handling not supported yet
-        $fieldType = $fieldConfig['config']['type'] ?? '';
+        $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
         if ($fieldType === 'file') {
             return false;
         }
@@ -611,7 +754,7 @@ $isRelationTable = str_contains($table, '_mm') ||
         // - Read-only tables (sys_file, sys_file_metadata, etc.)
         // - Tables with no user access
         if ($fieldType === 'inline') {
-            $foreignTable = $fieldConfig['config']['foreign_table'] ?? '';
+            $foreignTable = is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
             if ($foreignTable && !$this->canAccessTable($foreignTable)) {
                 return false;
             }
@@ -626,32 +769,124 @@ $isRelationTable = str_contains($table, '_mm') ||
         }
 
         // Check TSconfig field visibility (applies to all users including admins)
-        $TSconfig = BackendUtility::getPagesTSconfig(0);
+        $TSconfig = $this->getRelevantPageTsconfig();
 
         // Check if field is globally disabled via TCEFORM.[table].[field].disabled
-        $fieldDisabled = $TSconfig['TCEFORM.'][$table . '.'][$fieldName . '.']['disabled'] ?? '';
+        $fieldDisabled = $this->getTsConfigFieldSetting($TSconfig, $table, $fieldName, 'disabled');
         if ($fieldDisabled === '1' || $fieldDisabled === 1 || $fieldDisabled === true) {
+            return false;
+        }
+
+        if ($this->isFieldDisabledByDefaultPageTsconfig($table, $fieldName)) {
             return false;
         }
 
         // Check if field is disabled for specific type via TCEFORM.[table].[field].types.[type].disabled
         if (!empty($type)) {
-            $typeDisabled = $TSconfig['TCEFORM.'][$table . '.'][$fieldName . '.']['types.'][$type . '.']['disabled'] ?? '';
+            $typeDisabled = $this->getTsConfigFieldSetting($TSconfig, $table, $fieldName, 'disabled', $type);
             if ($typeDisabled === '1' || $typeDisabled === 1 || $typeDisabled === true) {
+                return false;
+            }
+
+            if ($this->isFieldDisabledByDefaultPageTsconfig($table, $fieldName, $type)) {
                 return false;
             }
         }
 
         return true;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getRelevantPageTsconfig(): array
+    {
+        $tsConfig = BackendUtility::getPagesTSconfig(0);
+        if (($tsConfig['TCEFORM.'] ?? null) !== null || ($tsConfig['TCEMAIN.'] ?? null) !== null) {
+            return $tsConfig;
+        }
+
+        // In functional tests and root-level schema lookups, page uid 0 often has no rootline.
+        // Fall back to the site root page so default Page TSconfig is still respected.
+        $fallbackTsConfig = BackendUtility::getPagesTSconfig(1);
+        if (($fallbackTsConfig['TCEFORM.'] ?? null) !== null || ($fallbackTsConfig['TCEMAIN.'] ?? null) !== null) {
+            return $fallbackTsConfig;
+        }
+
+        return $tsConfig;
+    }
+
+    protected function isFieldDisabledByDefaultPageTsconfig(string $table, string $fieldName, string $type = ''): bool
+    {
+        $beConfiguration = $this->getConfigurationSection('BE');
+        $defaultPageTsconfig = is_string($beConfiguration['defaultPageTSconfig'] ?? null) ? $beConfiguration['defaultPageTSconfig'] : '';
+        if ($defaultPageTsconfig === '') {
+            return false;
+        }
+
+        $patterns = [
+            '/^\s*TCEFORM\.' . preg_quote($table, '/') . '\.' . preg_quote($fieldName, '/') . '\.disabled\s*=\s*1\s*$/m',
+        ];
+
+        if ($type !== '') {
+            $patterns[] = '/^\s*TCEFORM\.' . preg_quote($table, '/') . '\.' . preg_quote($fieldName, '/') . '\.types\.' . preg_quote($type, '/') . '\.disabled\s*=\s*1\s*$/m';
+        }
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $defaultPageTsconfig) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $tsConfig
+     */
+    protected function getTsConfigFieldSetting(array $tsConfig, string $table, string $fieldName, string $setting, string $type = ''): mixed
+    {
+        $tceForm = $tsConfig['TCEFORM.'] ?? [];
+        if (!is_array($tceForm)) {
+            return null;
+        }
+
+        $tableConfig = $tceForm[$table . '.'] ?? [];
+        if (!is_array($tableConfig)) {
+            return null;
+        }
+
+        $fieldConfig = $tableConfig[$fieldName . '.'] ?? [];
+        if (!is_array($fieldConfig)) {
+            return null;
+        }
+
+        if ($type !== '') {
+            $typesConfig = $fieldConfig['types.'] ?? [];
+            if (!is_array($typesConfig)) {
+                return null;
+            }
+
+            $typeConfig = $typesConfig[$type . '.'] ?? [];
+            if (!is_array($typeConfig)) {
+                return null;
+            }
+
+            return $typeConfig[$setting] ?? null;
+        }
+
+        return $fieldConfig[$setting] ?? null;
+    }
     
     
     /**
      * Get control information for a table
+     *
+     * @return array<string, mixed>
      */
     protected function getTableControlInfo(string $table): array
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
+        $ctrl = $this->getTableCtrl($table);
         
         // Extract only relevant control fields
         $relevantFields = [
@@ -682,8 +917,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getTableTitle(string $table): string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['title'] ?? $table;
+        $title = $this->getTableCtrl($table)['title'] ?? null;
+        return is_string($title) && $title !== '' ? $title : $table;
     }
     
     /**
@@ -691,8 +926,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getTypeFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['type'] ?? null;
+        $typeField = $this->getTableCtrl($table)['type'] ?? null;
+        return is_string($typeField) && $typeField !== '' ? $typeField : null;
     }
     
     /**
@@ -700,8 +935,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getLabelFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['label'] ?? null;
+        $labelField = $this->getTableCtrl($table)['label'] ?? null;
+        return is_string($labelField) && $labelField !== '' ? $labelField : null;
     }
     
     /**
@@ -709,9 +944,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getSortingFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        $sortby = $ctrl['sortby'] ?? null;
-        return ($sortby !== null && $sortby !== '') ? $sortby : null;
+        $sortby = $this->getTableCtrl($table)['sortby'] ?? null;
+        return is_string($sortby) && $sortby !== '' ? $sortby : null;
     }
     
     /**
@@ -719,8 +953,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getDefaultSorting(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['default_sortby'] ?? null;
+        $defaultSorting = $this->getTableCtrl($table)['default_sortby'] ?? null;
+        return is_string($defaultSorting) && $defaultSorting !== '' ? $defaultSorting : null;
     }
     
     /**
@@ -728,8 +962,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getTimestampFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['tstamp'] ?? null;
+        $timestampField = $this->getTableCtrl($table)['tstamp'] ?? null;
+        return is_string($timestampField) && $timestampField !== '' ? $timestampField : null;
     }
     
     /**
@@ -737,8 +971,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getCreationDateFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['crdate'] ?? null;
+        $creationDateField = $this->getTableCtrl($table)['crdate'] ?? null;
+        return is_string($creationDateField) && $creationDateField !== '' ? $creationDateField : null;
     }
     
     /**
@@ -746,8 +980,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getLanguageFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['languageField'] ?? null;
+        $languageField = $this->getTableCtrl($table)['languageField'] ?? null;
+        return is_string($languageField) && $languageField !== '' ? $languageField : null;
     }
     
     /**
@@ -755,8 +989,12 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getHiddenFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['enablecolumns']['disabled'] ?? null;
+        $enableColumns = $this->getTableCtrl($table)['enablecolumns'] ?? [];
+        if (!is_array($enableColumns)) {
+            return null;
+        }
+        $hiddenField = $enableColumns['disabled'] ?? null;
+        return is_string($hiddenField) && $hiddenField !== '' ? $hiddenField : null;
     }
     
     /**
@@ -764,8 +1002,8 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getTranslationParentFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['transOrigPointerField'] ?? null;
+        $parentField = $this->getTableCtrl($table)['transOrigPointerField'] ?? null;
+        return is_string($parentField) && $parentField !== '' ? $parentField : null;
     }
     
     /**
@@ -773,17 +1011,20 @@ $isRelationTable = str_contains($table, '_mm') ||
      */
     public function getTranslationSourceFieldName(string $table): ?string
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        return $ctrl['translationSource'] ?? null;
+        $sourceField = $this->getTableCtrl($table)['translationSource'] ?? null;
+        return is_string($sourceField) && $sourceField !== '' ? $sourceField : null;
     }
     
     /**
      * Get fields that are excluded in translations (l10n_mode = 'exclude')
      */
+    /**
+     * @return list<string>
+     */
     public function getExcludedFieldsInTranslation(string $table): array
     {
         $excludedFields = [];
-        $columns = $GLOBALS['TCA'][$table]['columns'] ?? [];
+        $columns = $this->getTableColumns($table);
         
         foreach ($columns as $fieldName => $fieldConfig) {
             $l10nMode = $fieldConfig['l10n_mode'] ?? '';
@@ -805,26 +1046,47 @@ $isRelationTable = str_contains($table, '_mm') ||
             return false;
         }
         
-        return (bool)($fieldConfig['config']['behaviour']['allowLanguageSynchronization'] ?? false);
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        $behaviour = isset($config['behaviour']) && is_array($config['behaviour']) ? $config['behaviour'] : [];
+        return (bool)($behaviour['allowLanguageSynchronization'] ?? false);
     }
     
     /**
      * Get the search fields for a table
+     *
+     * @return list<string>
      */
     public function getSearchFields(string $table): array
     {
-        $ctrl = $GLOBALS['TCA'][$table]['ctrl'] ?? [];
-        $searchFields = $ctrl['searchFields'] ?? '';
+        $searchFields = $this->getTableCtrl($table)['searchFields'] ?? '';
         
-        if (empty($searchFields)) {
-            return [];
+        if (is_string($searchFields) && $searchFields !== '') {
+            return GeneralUtility::trimExplode(',', $searchFields, true);
         }
-        
-        return GeneralUtility::trimExplode(',', $searchFields, true);
+
+        $fallbackFields = [];
+        foreach ($this->getTableColumns($table) as $fieldName => $fieldConfig) {
+            $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
+
+            if (!in_array($fieldType, ['input', 'text', 'slug', 'email', 'link'], true)) {
+                continue;
+            }
+
+            if (!$this->canAccessField($table, $fieldName)) {
+                continue;
+            }
+
+            $fallbackFields[] = $fieldName;
+        }
+
+        return array_values(array_unique($fallbackFields));
     }
     
     /**
      * Get essential fields for a table (fields that should always be included)
+     *
+     * @return list<string>
      */
     public function getEssentialFields(string $table): array
     {
@@ -864,11 +1126,13 @@ $isRelationTable = str_contains($table, '_mm') ||
             $essentialFields[] = $sortingField;
         }
         
-        return array_unique($essentialFields);
+        return array_values(array_unique($essentialFields));
     }
     
     /**
      * Get available types for a table
+     *
+     * @return array<array-key, string>
      */
     public function getAvailableTypes(string $table): array
     {
@@ -877,8 +1141,9 @@ $isRelationTable = str_contains($table, '_mm') ||
             return ['1' => 'Default'];
         }
         
-        $typeConfig = $GLOBALS['TCA'][$table]['columns'][$typeField]['config'] ?? [];
-        $items = $typeConfig['items'] ?? [];
+        $typeFieldConfig = $this->getFieldTca($table, $typeField);
+        $typeConfig = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
+        $items = (isset($typeConfig['items']) && is_array($typeConfig['items'])) ? $typeConfig['items'] : [];
         
         // Use the shared parseSelectItems method
         $parsed = $this->parseSelectItems($items);
@@ -886,7 +1151,7 @@ $isRelationTable = str_contains($table, '_mm') ||
         // Convert to the expected format (value => label)
         $types = [];
         foreach ($parsed['values'] as $value) {
-            $types[$value] = $parsed['labels'][$value] ?? $value;
+            $types[(string)$value] = $parsed['labels'][$value] ?? $value;
         }
         
         return $types;
@@ -895,9 +1160,13 @@ $isRelationTable = str_contains($table, '_mm') ||
     /**
      * Get the field configuration for a specific field
      */
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getFieldConfig(string $table, string $fieldName): ?array
     {
-        return $GLOBALS['TCA'][$table]['columns'][$fieldName] ?? null;
+        $fieldConfig = $this->getFieldTca($table, $fieldName);
+        return $fieldConfig === [] ? null : $fieldConfig;
     }
     
     /**
@@ -918,18 +1187,19 @@ $isRelationTable = str_contains($table, '_mm') ||
             return false;
         }
         
-        $config = $fieldConfig['config'] ?? [];
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         
         // Check eval rules
-        if (!empty($config['eval'])) {
-            $evalRules = GeneralUtility::trimExplode(',', $config['eval'], true);
+        $eval = is_string($config['eval'] ?? null) ? $config['eval'] : '';
+        if ($eval !== '') {
+            $evalRules = GeneralUtility::trimExplode(',', $eval, true);
             if (in_array('date', $evalRules) || in_array('datetime', $evalRules) || in_array('time', $evalRules)) {
                 return true;
             }
         }
         
         // Check renderType for inputDateTime
-        if (($config['renderType'] ?? '') === 'inputDateTime') {
+        if (($config['renderType'] ?? null) === 'inputDateTime') {
             return true;
         }
         
@@ -946,7 +1216,7 @@ $isRelationTable = str_contains($table, '_mm') ||
             return false;
         }
         
-        $config = $fieldConfig['config'] ?? [];
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         if (!empty($config['type']) && $config['type'] === 'flex') {
             return true;
         }
@@ -971,6 +1241,8 @@ $isRelationTable = str_contains($table, '_mm') ||
     
     /**
      * Parse default sorting configuration into field/direction pairs
+     *
+     * @return list<array{field: string, direction: string}>
      */
     public function parseDefaultSorting(string $table): array
     {
@@ -1002,9 +1274,9 @@ $isRelationTable = str_contains($table, '_mm') ||
     /**
      * Parse select field items from TCA configuration
      * 
-     * @param array $items TCA items array
+     * @param array<int|string, mixed> $items TCA items array
      * @param bool $skipDividers Whether to skip divider items
-     * @return array Array with 'values' and 'labels' keys
+     * @return SelectItemsResult Array with 'values' and 'labels' keys
      */
     public function parseSelectItems(array $items, bool $skipDividers = true): array
     {
@@ -1044,8 +1316,9 @@ $isRelationTable = str_contains($table, '_mm') ||
             }
             
             if ($itemValue !== '') {
-                $result['values'][] = (string)$itemValue;
-                $result['labels'][$itemValue] = $itemLabel;
+                $normalizedValue = (string)$itemValue;
+                $result['values'][] = $normalizedValue;
+                $result['labels'][$normalizedValue] = is_scalar($itemLabel) ? (string)$itemLabel : '';
             }
         }
         
@@ -1057,7 +1330,7 @@ $isRelationTable = str_contains($table, '_mm') ||
      * 
      * @param string $table Table name
      * @param string $fieldName Field name
-     * @return array|null Array of allowed values or null if not a select field
+     * @return list<string>|null Array of allowed values or null if not a select field
      */
     public function getSelectFieldAllowedValues(string $table, string $fieldName): ?array
     {
@@ -1066,7 +1339,7 @@ $isRelationTable = str_contains($table, '_mm') ||
             return null;
         }
         
-        $config = $fieldConfig['config'] ?? [];
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         
         // Only process select fields
         if (($config['type'] ?? '') !== 'select') {
@@ -1102,12 +1375,12 @@ $isRelationTable = str_contains($table, '_mm') ||
             return "Field '{$fieldName}' does not exist in table '{$table}'";
         }
         
-        $config = $fieldConfig['config'] ?? [];
-        $fieldType = $config['type'] ?? '';
+        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
         
         // Check max length for string fields
         if (in_array($fieldType, ['input', 'text', 'email', 'link', 'slug', 'color']) && is_string($value)) {
-            $maxLength = $config['max'] ?? 0;
+            $maxLength = is_numeric($config['max'] ?? null) ? (int)$config['max'] : 0;
             if ($maxLength > 0 && mb_strlen($value) > $maxLength) {
                 return "Field '{$fieldName}' value exceeds maximum length of {$maxLength} characters";
             }
@@ -1121,18 +1394,21 @@ $isRelationTable = str_contains($table, '_mm') ||
                 $values = is_string($value) ? GeneralUtility::trimExplode(',', $value, true) : [$value];
                 
                 foreach ($values as $val) {
-                    if (!in_array((string)$val, $allowedValues, true)) {
-                        $allowedList = implode(', ', array_map(function($v) { return "'{$v}'"; }, $allowedValues));
-                        return "Field '{$fieldName}' value '{$val}' must be one of: {$allowedList}";
+                    $normalizedValue = is_scalar($val) ? (string)$val : '';
+                    if (!in_array($normalizedValue, $allowedValues, true)) {
+                        $allowedList = implode(', ', array_map(static fn(string $v): string => "'{$v}'", $allowedValues));
+                        return "Field '{$fieldName}' value '{$normalizedValue}' must be one of: {$allowedList}";
                     }
                 }
             }
         }
         
         // Validate required fields
-        if (!empty($config['required']) || !empty($config['eval'])) {
-            $evalRules = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
-            if (!empty($config['required']) || in_array('required', $evalRules)) {
+        $required = (bool)($config['required'] ?? false);
+        $eval = is_string($config['eval'] ?? null) ? $config['eval'] : '';
+        if ($required || $eval !== '') {
+            $evalRules = GeneralUtility::trimExplode(',', $eval, true);
+            if ($required || in_array('required', $evalRules, true)) {
                 if ($value === null || $value === '' || (is_array($value) && empty($value))) {
                     return "Field '{$fieldName}' is required";
                 }
@@ -1144,6 +1420,8 @@ $isRelationTable = str_contains($table, '_mm') ||
     
     /**
      * Get record title/label using TYPO3's BackendUtility
+     *
+     * @param array<string, mixed> $record
      */
     public function getRecordTitle(string $table, array $record): string
     {
@@ -1156,12 +1434,16 @@ $isRelationTable = str_contains($table, '_mm') ||
     public static function translateLabel(string $label): string
     {
         if (str_starts_with($label, 'LLL:')) {
+            if (isset(self::DEPRECATED_LABEL_FALLBACKS[$label])) {
+                return self::DEPRECATED_LABEL_FALLBACKS[$label];
+            }
+
             // Check if language service is available, initialize if not
             if (!isset($GLOBALS['LANG'])) {
                 try {
-                    $languageServiceFactory = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class);
+                    $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
                     $GLOBALS['LANG'] = $languageServiceFactory->create('default');
-                } catch (\Throwable $e) {
+                } catch (Throwable) {
                     // If initialization fails, return a fallback
                     // Extract the last part of the LLL path as fallback
                     if (preg_match('/\.([^:]+):?$/', $label, $matches)) {
@@ -1171,7 +1453,12 @@ $isRelationTable = str_contains($table, '_mm') ||
                 }
             }
             
-            $translated = $GLOBALS['LANG']->sL($label);
+            $languageService = $GLOBALS['LANG'] ?? null;
+            if (!$languageService instanceof LanguageService) {
+                return $label;
+            }
+
+            $translated = $languageService->sL($label);
             
             // If translation failed, try to extract a meaningful fallback
             if (empty($translated)) {

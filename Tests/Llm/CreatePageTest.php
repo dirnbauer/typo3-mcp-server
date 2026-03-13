@@ -56,7 +56,7 @@ class CreatePageTest extends LlmTestCase
                 'WriteTable failed: ' . $writeResult['content']);
             
             // Verify page was created
-            $writeResultData = json_decode($writeResult['content'], true);
+            $writeResultData = json_decode((string) $writeResult['content'], true);
             $this->assertEquals('create', $writeResultData['action']);
             $this->assertEquals('pages', $writeResultData['table']);
             $this->assertArrayHasKey('uid', $writeResultData);
@@ -123,7 +123,7 @@ class CreatePageTest extends LlmTestCase
             }
             
             // Verify the page was created (check the WriteTable result)
-            $writeResultData = json_decode($writeResult['content'], true);
+            $writeResultData = json_decode((string) $writeResult['content'], true);
             $this->assertEquals('create', $writeResultData['action']);
             $this->assertEquals('pages', $writeResultData['table']);
             $this->assertArrayHasKey('uid', $writeResultData);

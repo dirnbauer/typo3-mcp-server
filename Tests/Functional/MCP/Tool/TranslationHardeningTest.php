@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -15,12 +16,9 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
     {
         parent::setUp();
         $this->createMultiLanguageSiteConfiguration();
-        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function translateIntoDefaultLanguageReturnsError(): void
     {
         $this->createAndSwitchToWorkspace('Translation WS');
@@ -29,7 +27,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         $result = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
-            'uid' => 1,
+            'uid' => 100,
             'data' => ['sys_language_uid' => 0],
         ]);
 
@@ -38,9 +36,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         $this->assertStringContainsString('default language', $text);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function translateAlreadyTranslatedRecordReturnsError(): void
     {
         $this->createAndSwitchToWorkspace('Translation WS');
@@ -50,7 +46,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         $first = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
-            'uid' => 1,
+            'uid' => 100,
             'data' => ['sys_language_uid' => 'de'],
         ]);
         $this->assertFalse($first->isError, json_encode($first->jsonSerialize()));
@@ -58,7 +54,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         $duplicate = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
-            'uid' => 1,
+            'uid' => 100,
             'data' => ['sys_language_uid' => 'de'],
         ]);
         $this->assertTrue($duplicate->isError, 'Expected error for duplicate translation');

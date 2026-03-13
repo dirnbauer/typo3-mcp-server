@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class TestDataBuilder
 {
-    private ConnectionPool $connectionPool;
+    private readonly ConnectionPool $connectionPool;
     
     public function __construct()
     {

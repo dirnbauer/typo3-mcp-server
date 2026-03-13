@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
+use Throwable;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -31,8 +32,10 @@ final class OAuthManageCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $action = $input->getArgument('action');
-        $username = $input->getArgument('username');
+        $actionArgument = $input->getArgument('action');
+        $usernameArgument = $input->getArgument('username');
+        $action = is_string($actionArgument) ? $actionArgument : '';
+        $username = is_string($usernameArgument) ? $usernameArgument : null;
         
         try {
             switch ($action) {
@@ -48,7 +51,7 @@ final class OAuthManageCommand extends Command
                     $output->writeln("<error>Invalid action. Use: url, list, revoke, or cleanup</error>");
                     return Command::FAILURE;
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $output->writeln("<error>Error: {$e->getMessage()}</error>");
             return Command::FAILURE;
         }
@@ -68,8 +71,9 @@ final class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $clientName = $input->getOption('client-name');
-        $baseUrl = $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] ?? 'https://your-domain.com';
+        $clientNameOption = $input->getOption('client-name');
+        $clientName = is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
+        $baseUrl = $this->getConfiguredBaseUrl();
 
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $authUrl = $oauthService->generateAuthorizationUrl($baseUrl, $clientName);
@@ -100,6 +104,7 @@ final class OAuthManageCommand extends Command
         }
 
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
+        /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
         $tokens = $oauthService->getUserTokens($user['uid']);
 
         if (empty($tokens)) {
@@ -142,7 +147,8 @@ final class OAuthManageCommand extends Command
 
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $revokeAll = $input->getOption('all');
-        $tokenId = $input->getOption('token-id');
+        $tokenIdOption = $input->getOption('token-id');
+        $tokenId = is_string($tokenIdOption) || is_int($tokenIdOption) ? (string)$tokenIdOption : null;
 
         if ($revokeAll) {
             $count = $oauthService->revokeAllUserTokens($user['uid']);
@@ -172,6 +178,9 @@ final class OAuthManageCommand extends Command
         return Command::SUCCESS;
     }
 
+    /**
+     * @return array{uid: int, username: string}|null
+     */
     private function findUser(string $username): ?array
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -188,6 +197,30 @@ final class OAuthManageCommand extends Command
             ->executeQuery()
             ->fetchAssociative();
 
-        return $user ?: null;
+        if (!is_array($user)) {
+            return null;
+        }
+
+        $uid = $user['uid'] ?? 0;
+        $resolvedUsername = $user['username'] ?? '';
+
+        return [
+            'uid' => is_int($uid) ? $uid : (is_numeric($uid) ? (int)$uid : 0),
+            'username' => is_string($resolvedUsername) ? $resolvedUsername : '',
+        ];
+    }
+
+    private function getConfiguredBaseUrl(): string
+    {
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+            : null;
+        if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
+            return $configuredBaseUrl;
+        }
+
+        return 'https://your-domain.com';
     }
 }

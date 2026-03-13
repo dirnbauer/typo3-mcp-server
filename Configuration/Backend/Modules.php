@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Hn\McpServer\Controller\McpServerModuleController;
+
 /**
  * Backend module configuration for MCP Server
  */
@@ -16,7 +18,7 @@ return [
         'labels' => 'LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf',
         'routes' => [
             '_default' => [
-                'target' => \Hn\McpServer\Controller\McpServerModuleController::class . '::mainAction',
+                'target' => McpServerModuleController::class . '::mainAction',
             ],
         ],
     ],

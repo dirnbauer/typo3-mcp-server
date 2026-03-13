@@ -20,11 +20,10 @@
     "require-dev": {
         "typo3/testing-framework": "^9.2.0",
         "typo3/cms-install": "^13.4 || ^14.0",
-        "georgringer/news": "^12.0",
-        "brianium/paratest": "^7.11",
-        "phpstan/phpstan": "^2.0",
-        "saschaegerer/phpstan-typo3": "^2.0",
-        "ssch/typo3-rector": "^2.0",
+        "georgringer/news": "^14.0",
+        "brianium/paratest": "^7.8.5",
+        "phpstan/phpstan": "^2.1",
+        "ssch/typo3-rector": "^3.0",
         "a9f/typo3-fractor": "^0.4"
     },
     "autoload": {
@@ -79,6 +78,7 @@
     },
     "config": {
         "allow-plugins": {
+            "a9f/fractor-extension-installer": true,
             "typo3/class-alias-loader": true,
             "typo3/cms-composer-installers": true
         }

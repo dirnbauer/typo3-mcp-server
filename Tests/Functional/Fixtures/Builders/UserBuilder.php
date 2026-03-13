@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class UserBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'username' => 'testuser',
@@ -42,9 +40,8 @@ class UserBuilder
         'file_permissions' => '',
     ];
     
-    public function __construct(ConnectionPool $connectionPool)
+    public function __construct(private readonly ConnectionPool $connectionPool)
     {
-        $this->connectionPool = $connectionPool;
     }
     
     /**

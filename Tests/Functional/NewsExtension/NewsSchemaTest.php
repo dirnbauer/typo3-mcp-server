@@ -230,9 +230,12 @@ class NewsSchemaTest extends FunctionalTestCase
         $this->assertStringContainsString('Use GetFlexFormSchema tool with these identifiers', $content, 
             'Should provide instruction to use GetFlexFormSchema tool');
         
-        // Check for ds_pointerField information
-        $this->assertStringContainsString('[ds_pointerField: list_type,CType]', $content, 
-            'Should show ds_pointerField configuration');
+        // Check for ds_pointerField information (legacy + v14-compatible variants)
+        $this->assertTrue(
+            str_contains($content, '[ds_pointerField: list_type,CType]') ||
+            str_contains($content, '[ds_pointerField: CType]'),
+            'Should show ds_pointerField configuration'
+        );
     }
 
     /**
@@ -254,28 +257,21 @@ class NewsSchemaTest extends FunctionalTestCase
         if (preg_match('/AVAILABLE TYPES:(.+?)(?=\n\n|$)/s', $content, $matches)) {
             $typesSection = $matches[1];
             
-            // News typically registers as list_type "news_pi1" rather than a direct CType
-            if (strpos($typesSection, 'list') !== false) {
-                // List type exists, which is what News uses
-                $this->assertStringContainsString('list', $typesSection, 'List type should be available for plugins');
+            if (str_contains($typesSection, 'news_pi1')) {
+                $this->assertStringContainsString('news_pi1', $typesSection, 'News plugin CType should be available');
             }
         }
-        
-        // Also check if the schema mentions list_type field for list content
+
+        // Also check the specific News plugin schema output.
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'list'
+            'type' => 'news_pi1'
         ]);
         
         if (!$result->isError) {
             $content = $result->content[0]->text;
-            
-            // List content should have list_type field
-            if (strpos($content, 'list_type') !== false) {
-                // Check that list_type is properly typed
-                $this->assertMatchesRegularExpression('/list_type\s*\([^)]*\):\s*select/i', $content, 
-                    'list_type should be a select field');
-            }
+            $this->assertStringContainsString('news_pi1', $content);
+            $this->assertStringContainsString('pi_flexform', $content);
         }
     }
 

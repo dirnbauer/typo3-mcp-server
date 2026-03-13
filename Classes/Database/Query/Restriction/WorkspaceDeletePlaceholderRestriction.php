@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Database\Query\Restriction;
 
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -23,17 +24,14 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  */
 final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInterface
 {
-    protected int $workspaceId;
-
-    public function __construct(int $workspaceId)
+    public function __construct(protected int $workspaceId)
     {
-        $this->workspaceId = $workspaceId;
     }
 
     /**
      * Main method to build expressions for given tables
      *
-     * @param array $queriedTables Array of tables, where array key is table alias and value is a table name
+     * @param array<string, string> $queriedTables Array of tables, where array key is table alias and value is a table name
      * @param ExpressionBuilder $expressionBuilder Expression builder instance to add restrictions with
      * @return CompositeExpression The result of query builder expression(s)
      */
@@ -48,7 +46,10 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
         
         foreach ($queriedTables as $tableAlias => $tableName) {
             // Only apply to workspace-enabled tables
-            if (empty($GLOBALS['TCA'][$tableName]['ctrl']['versioningWS'] ?? false)) {
+            $globalTca = $GLOBALS['TCA'] ?? null;
+            $tableConfig = is_array($globalTca) ? ($globalTca[$tableName] ?? null) : null;
+            $ctrl = is_array($tableConfig) && is_array($tableConfig['ctrl'] ?? null) ? $tableConfig['ctrl'] : [];
+            if (($ctrl['versioningWS'] ?? false) !== true) {
                 continue;
             }
             
@@ -79,7 +80,7 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
                     $tableAlias . '.uid',
                     $subQuery->getSQL()
                 );
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // If the subquery fails (e.g., table doesn't have workspace fields), skip this constraint
                 // This provides resilience for edge cases
             }

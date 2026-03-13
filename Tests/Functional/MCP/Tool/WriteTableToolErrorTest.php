@@ -366,14 +366,14 @@ class WriteTableToolErrorTest extends FunctionalTestCase
                 'header' => 'Test Content'
             ]
         ]);
-        
-        // DataHandler should handle this, but record shouldn't be created
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+
+        $this->assertTrue($result->isError, 'Invalid parent pages should be rejected before DataHandler runs');
+        $this->assertStringContainsString('Invalid parent page', $result->content[0]->text);
+
         // Verify no record was created
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
-        
+
         $count = $queryBuilder
             ->count('*')
             ->from('tt_content')
@@ -382,7 +382,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             )
             ->executeQuery()
             ->fetchOne();
-            
+
         // TYPO3 might still create the record with invalid parent
         // This is a DataHandler behavior, not a tool validation
     }

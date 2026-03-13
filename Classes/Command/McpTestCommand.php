@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
+use Throwable;
+use TYPO3\CMS\Core\Core\Environment;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -21,16 +23,10 @@ use Mcp\Types\TextContent;
 final class McpTestCommand extends Command
 {
     /**
-     * @var ToolRegistry
-     */
-    protected ToolRegistry $toolRegistry;
-
-    /**
      * Constructor
      */
-    public function __construct(ToolRegistry $toolRegistry)
+    public function __construct(protected ToolRegistry $toolRegistry)
     {
-        $this->toolRegistry = $toolRegistry;
         parent::__construct();
     }
 
@@ -70,13 +66,23 @@ final class McpTestCommand extends Command
             // Get command arguments
             $toolName = $input->getArgument('tool');
             $paramsJson = $input->getArgument('params');
+            if (!is_string($toolName) || $toolName === '') {
+                $output->writeln('<error>Tool argument must be a non-empty string.</error>');
+                return Command::FAILURE;
+            }
+            if (!is_string($paramsJson)) {
+                $output->writeln('<error>Parameters argument must be a JSON string.</error>');
+                return Command::FAILURE;
+            }
             
             // Parse parameters
-            $params = json_decode($paramsJson, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            $decodedParams = json_decode($paramsJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedParams)) {
                 $output->writeln('<error>Invalid JSON parameters: ' . json_last_error_msg() . '</error>');
                 return Command::FAILURE;
             }
+            /** @var array<string, mixed> $params */
+            $params = $decodedParams;
             
             // List all available tools if requested
             if ($toolName === 'list') {
@@ -119,7 +125,7 @@ final class McpTestCommand extends Command
             $output->writeln($this->getResultText($result));
             
             return Command::SUCCESS;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $output->writeln('<error>Error: ' . $e->getMessage() . '</error>');
             if ($output->isVerbose()) {
                 $output->writeln('<error>' . $e->getTraceAsString() . '</error>');
@@ -139,7 +145,8 @@ final class McpTestCommand extends Command
             if ($item instanceof TextContent) {
                 $text .= $item->text;
             } else {
-                $text .= json_encode($item, JSON_PRETTY_PRINT);
+                $json = json_encode($item, JSON_PRETTY_PRINT);
+                $text .= is_string($json) ? $json : '';
             }
         }
         
@@ -163,8 +170,8 @@ final class McpTestCommand extends Command
             
             // Set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
-        } else if (!$beUser->isAdmin()) {
+            $workspaceService->switchToOptimalWorkspace($beUser);
+        } elseif (!$beUser->isAdmin()) {
             // If user exists but is not admin, set admin flag directly
             $beUser->user['admin'] = 1;
             if (!isset($beUser->user['uid'])) {
@@ -173,11 +180,11 @@ final class McpTestCommand extends Command
             
             // Set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceService->switchToOptimalWorkspace($beUser);
         } else {
             // User exists and is admin, still set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceService->switchToOptimalWorkspace($beUser);
         }
     }
     
@@ -186,19 +193,29 @@ final class McpTestCommand extends Command
      */
     protected function ensureTcaLoaded(): void
     {
+        /** @var mixed $globalTca */
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        $tca = is_array($globalTca) ? $globalTca : [];
+        $ttContent = $tca['tt_content'] ?? null;
+        $ttContentColumns = is_array($ttContent) && is_array($ttContent['columns'] ?? null)
+            ? $ttContent['columns']
+            : [];
+
         // Check if TCA is already loaded
-        if (empty($GLOBALS['TCA']) || empty($GLOBALS['TCA']['tt_content']['columns']['pi_flexform'])) {
+        if ($tca === [] || !isset($ttContentColumns['pi_flexform'])) {
             // Load the TCA directly
-            $tcaPath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3/sysext/core/Configuration/TCA/';
+            $tcaPath = Environment::getPublicPath() . '/typo3/sysext/core/Configuration/TCA/';
             if (is_dir($tcaPath)) {
                 $files = glob($tcaPath . '*.php');
-                foreach ($files as $file) {
-                    require_once $file;
+                if (is_array($files)) {
+                    foreach ($files as $file) {
+                        require_once $file;
+                    }
                 }
             }
             
             // Load extension TCA
-            $extTcaPath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/';
+            $extTcaPath = Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/';
             $extFiles = glob($extTcaPath . '*.php');
             if (is_array($extFiles)) {
                 foreach ($extFiles as $file) {
@@ -207,7 +224,7 @@ final class McpTestCommand extends Command
             }
             
             // Load TCA overrides
-            $overridePath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/Overrides/';
+            $overridePath = Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/Overrides/';
             $overrideFiles = glob($overridePath . '*.php');
             if (is_array($overrideFiles)) {
                 foreach ($overrideFiles as $file) {

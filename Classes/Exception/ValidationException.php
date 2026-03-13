@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
+use Throwable;
+
 /**
  * Exception for validation errors
  * 
@@ -12,30 +14,27 @@ namespace Hn\McpServer\Exception;
  */
 class ValidationException extends McpException
 {
-    private array $errors;
-    
     /**
-     * @param array $errors Array of validation error messages
-     * @param \Throwable|null $previous Previous exception for chaining
+     * @param list<string> $errors Array of validation error messages
+     * @param Throwable|null $previous Previous exception for chaining
      */
-    public function __construct(array $errors, ?\Throwable $previous = null)
+    public function __construct(private readonly array $errors, ?Throwable $previous = null)
     {
-        $this->errors = $errors;
-        $errorList = implode(', ', $errors);
+        $errorList = implode(', ', $this->errors);
         
         parent::__construct(
             "Validation failed: {$errorList}",
             "Invalid input: {$errorList}",
             400,
             $previous,
-            ['errors' => $errors]
+            ['errors' => $this->errors]
         );
     }
     
     /**
      * Get the validation errors
      * 
-     * @return array Array of validation error messages
+     * @return list<string> Array of validation error messages
      */
     public function getErrors(): array
     {

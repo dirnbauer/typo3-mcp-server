@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use stdClass;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -15,6 +16,8 @@ final class ListTablesTool extends AbstractRecordTool
 {
     /**
      * Get the tool schema
+     *
+     * @return array<string, mixed>
      */
     protected function getToolSchema(): array
     {
@@ -22,7 +25,7 @@ final class ListTablesTool extends AbstractRecordTool
             'description' => 'List available tables in TYPO3 that can be accessed via MCP, organized by extension.',
             'inputSchema' => [
                 'type' => 'object',
-                'properties' => new \stdClass(),
+                'properties' => new stdClass(),
                 'required' => [],
             ],
             'annotations' => [
@@ -34,6 +37,8 @@ final class ListTablesTool extends AbstractRecordTool
 
     /**
      * Execute the tool logic
+     *
+     * @param array<string, mixed> $params
      */
     protected function doExecute(array $params): CallToolResult
     {
@@ -53,6 +58,9 @@ final class ListTablesTool extends AbstractRecordTool
     
     /**
      * Format accessible tables from TableAccessService to the expected format
+     *
+     * @param array<string, array<string, mixed>> $accessibleTables
+     * @return array<string, array{name: string, label: string, extension: string, description: string, readOnly: bool, type: string, workspace_capable: bool, workspace_info: string, restrictions: array<mixed>}>
      */
     protected function formatAccessibleTables(array $accessibleTables): array
     {
@@ -64,13 +72,13 @@ final class ListTablesTool extends AbstractRecordTool
                 'label' => $this->getTableLabel($table),
                 'extension' => $this->getExtensionFromTable($table),
                 'description' => $this->getTableDescription($table),
-                'readOnly' => $accessInfo['read_only'],
+                'readOnly' => (bool)($accessInfo['read_only'] ?? false),
                 'type' => $this->getTableType($table),
-                'workspace_capable' => $accessInfo['workspace_capable'],
-                'workspace_info' => $accessInfo['workspace_capable'] 
+                'workspace_capable' => (bool)($accessInfo['workspace_capable'] ?? false),
+                'workspace_info' => (bool)($accessInfo['workspace_capable'] ?? false)
                     ? 'Workspace-capable' 
                     : 'Not workspace-capable',
-                'restrictions' => $accessInfo['restrictions'],
+                'restrictions' => is_array($accessInfo['restrictions'] ?? null) ? $accessInfo['restrictions'] : [],
             ];
         }
         
@@ -79,6 +87,9 @@ final class ListTablesTool extends AbstractRecordTool
     
     /**
      * Group tables by extension
+     *
+     * @param array<string, array{name: string, label: string, extension: string, description: string, readOnly: bool, type: string, workspace_capable: bool, workspace_info: string, restrictions: array<mixed>}> $tables
+     * @return array<string, array{extension: string, extensionLabel: string, tables: array<string, array{name: string, label: string, extension: string, description: string, readOnly: bool, type: string, workspace_capable: bool, workspace_info: string, restrictions: array<mixed>}>}>
      */
     protected function groupTablesByExtension(array $tables): array
     {
@@ -106,6 +117,8 @@ final class ListTablesTool extends AbstractRecordTool
     
     /**
      * Format tables as text
+     *
+     * @param array<string, array{extension: string, extensionLabel: string, tables: array<string, array{name: string, label: string, extension: string, description: string, readOnly: bool, type: string, workspace_capable: bool, workspace_info: string, restrictions: array<mixed>}>}> $groupedTables
      */
     protected function formatTablesAsText(array $groupedTables): string
     {
