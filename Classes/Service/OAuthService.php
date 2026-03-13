@@ -99,10 +99,12 @@ final class OAuthService
             return null;
         }
 
-        // Verify PKCE challenge if provided
-        if (!empty($authCode['pkce_challenge']) && $codeVerifier !== null) {
+        if (!empty($authCode['pkce_challenge'])) {
+            if ($codeVerifier === null || $codeVerifier === '') {
+                return null;
+            }
             $computedChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-            if ($computedChallenge !== $authCode['pkce_challenge']) {
+            if (!hash_equals($authCode['pkce_challenge'], $computedChallenge)) {
                 return null;
             }
         }
@@ -117,7 +119,6 @@ final class OAuthService
             $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
         }
 
-        // Create access token
         $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
@@ -127,7 +128,7 @@ final class OAuthService
                 'pid' => 0,
                 'tstamp' => time(),
                 'crdate' => time(),
-                'token' => $accessToken,
+                'token' => hash('sha256', $accessToken),
                 'be_user_uid' => $authCode['be_user_uid'],
                 'client_name' => $authCode['client_name'],
                 'expires' => $expires,
@@ -155,6 +156,8 @@ final class OAuthService
      */
     public function validateToken(string $token, ?ServerRequestInterface $request = null): ?array
     {
+        $tokenHash = hash('sha256', $token);
+
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
@@ -163,7 +166,7 @@ final class OAuthService
             ->select('*')
             ->from('tx_mcpserver_access_tokens')
             ->where(
-                $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($token)),
+                $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($tokenHash)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
                 $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
             )

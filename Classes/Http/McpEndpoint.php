@@ -153,10 +153,10 @@ final class McpEndpoint
             );
 
         } catch (\Throwable $e) {
+            $this->logger->error('MCP request failed', ['exception' => $e]);
             $stream = new Stream('php://temp', 'rw');
             $stream->write(json_encode([
                 'error' => 'Internal Server Error',
-                'message' => $e->getMessage()
             ]));
             $stream->rewind();
 
@@ -186,9 +186,13 @@ final class McpEndpoint
             return $matches[1];
         }
 
-        // Fallback to query parameter for backward compatibility
+        // Fallback to query parameter (deprecated -- tokens in URLs are logged by proxies/web servers)
         $queryParams = $request->getQueryParams();
-        return $queryParams['token'] ?? null;
+        $queryToken = $queryParams['token'] ?? null;
+        if ($queryToken !== null) {
+            $this->logger->warning('Token passed via query parameter is deprecated. Use the Authorization header instead.');
+        }
+        return $queryToken;
     }
 
     /**
