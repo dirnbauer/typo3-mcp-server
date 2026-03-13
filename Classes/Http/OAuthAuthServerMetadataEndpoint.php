@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * OAuth Authorization Server Metadata endpoint
  * RFC 8414: https://tools.ietf.org/html/rfc8414
  */
-class OAuthAuthServerMetadataEndpoint
+final class OAuthAuthServerMetadataEndpoint
 {
     use CorsHeadersTrait;
 

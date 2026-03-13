@@ -13,7 +13,7 @@ use Hn\McpServer\Service\TableAccessService;
 /**
  * Tool for getting detailed schema information for a specific table
  */
-class GetTableSchemaTool extends AbstractRecordTool
+final class GetTableSchemaTool extends AbstractRecordTool
 {
     /**
      * Get the tool schema

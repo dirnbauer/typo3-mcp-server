@@ -21,7 +21,7 @@ use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 /**
  * Tool for retrieving the TYPO3 page tree
  */
-class GetPageTreeTool extends AbstractRecordTool
+final class GetPageTreeTool extends AbstractRecordTool
 {
     protected SiteInformationService $siteInformationService;
     protected LanguageService $languageService;

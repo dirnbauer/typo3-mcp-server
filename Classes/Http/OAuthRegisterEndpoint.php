@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth Dynamic Client Registration endpoint
  */
-class OAuthRegisterEndpoint
+final class OAuthRegisterEndpoint
 {
     use CorsHeadersTrait;
 

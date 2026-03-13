@@ -18,7 +18,7 @@ use Mcp\Types\TextContent;
 /**
  * MCP Test Command - For testing MCP tools directly
  */
-class McpTestCommand extends Command
+final class McpTestCommand extends Command
 {
     /**
      * @var ToolRegistry

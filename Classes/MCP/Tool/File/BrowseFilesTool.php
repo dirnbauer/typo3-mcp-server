@@ -16,7 +16,7 @@ use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class BrowseFilesTool extends AbstractTool
+final class BrowseFilesTool extends AbstractTool
 {
     public function __construct(
         private readonly StorageRepository $storageRepository,

@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 /**
  * Tool for writing records to TYPO3 tables
  */
-class WriteTableTool extends AbstractRecordTool
+final class WriteTableTool extends AbstractRecordTool
 {
     protected LanguageService $languageService;
 

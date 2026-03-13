@@ -12,7 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 /**
  * OAuth service for MCP server authentication
  */
-class OAuthService
+final class OAuthService
 {
     private const CLIENT_ID = 'typo3-mcp-server';
     private const CODE_EXPIRY_SECONDS = 600; // 10 minutes

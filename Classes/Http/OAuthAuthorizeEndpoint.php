@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth authorization endpoint
  */
-class OAuthAuthorizeEndpoint
+final class OAuthAuthorizeEndpoint
 {
     
 

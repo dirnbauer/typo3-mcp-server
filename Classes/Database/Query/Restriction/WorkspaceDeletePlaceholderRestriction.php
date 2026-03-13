@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  * 
  * Only applies to workspace-enabled tables.
  */
-class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInterface
+final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInterface
 {
     protected int $workspaceId;
 

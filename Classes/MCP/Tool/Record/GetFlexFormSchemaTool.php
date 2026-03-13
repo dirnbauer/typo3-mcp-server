@@ -13,7 +13,7 @@ use Hn\McpServer\Service\TableAccessService;
 /**
  * Tool for getting FlexForm schema information
  */
-class GetFlexFormSchemaTool extends AbstractRecordTool
+final class GetFlexFormSchemaTool extends AbstractRecordTool
 {
     /**
      * Get the tool schema

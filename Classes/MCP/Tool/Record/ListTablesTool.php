@@ -11,7 +11,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Tool for listing available tables in TYPO3
  */
-class ListTablesTool extends AbstractRecordTool
+final class ListTablesTool extends AbstractRecordTool
 {
     /**
      * Get the tool schema

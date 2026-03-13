@@ -12,7 +12,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 
-class ReadFileMetadataTool extends AbstractTool
+final class ReadFileMetadataTool extends AbstractTool
 {
     public function __construct(
         private readonly ResourceFactory $resourceFactory,

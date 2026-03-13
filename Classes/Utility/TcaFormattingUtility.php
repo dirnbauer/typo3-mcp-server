@@ -13,7 +13,7 @@ use Hn\McpServer\Service\LanguageService as McpLanguageService;
 /**
  * Utility for formatting TCA and FlexForm information
  */
-class TcaFormattingUtility
+final class TcaFormattingUtility
 {
 
     /**

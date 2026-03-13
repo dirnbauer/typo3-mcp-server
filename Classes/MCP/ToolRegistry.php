@@ -10,7 +10,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 /**
  * Registry for MCP tools
  */
-class ToolRegistry
+final class ToolRegistry
 {
     /**
      * @var ToolInterface[] Registered tools

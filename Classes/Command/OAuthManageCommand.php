@@ -16,7 +16,7 @@ use Hn\McpServer\Service\OAuthService;
 /**
  * OAuth token management for MCP server
  */
-class OAuthManageCommand extends Command
+final class OAuthManageCommand extends Command
 {
     protected function configure(): void
     {

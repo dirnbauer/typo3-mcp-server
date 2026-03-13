@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth metadata discovery endpoint
  */
-class OAuthMetadataEndpoint
+final class OAuthMetadataEndpoint
 {
     use CorsHeadersTrait;
 

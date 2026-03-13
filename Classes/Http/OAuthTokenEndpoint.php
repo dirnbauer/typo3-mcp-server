@@ -7,6 +7,7 @@ namespace Hn\McpServer\Http;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -14,9 +15,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth token endpoint for exchanging authorization codes for access tokens
  */
-class OAuthTokenEndpoint
+final class OAuthTokenEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
@@ -60,9 +65,10 @@ class OAuthTokenEndpoint
                 return $this->createErrorResponse('invalid_grant', 'Invalid or expired authorization code');
             }
 
-            // Log successful token exchange for debugging
-            error_log("OAuth: Successfully exchanged code for token: " . substr($tokenData['access_token'], 0, 20) . "...");
-            
+            $this->logger->debug('Token exchange successful', [
+                'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
+            ]);
+
             // Return token response
             $stream = new Stream('php://temp', 'rw');
             $stream->write(json_encode($tokenData));

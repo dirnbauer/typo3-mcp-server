@@ -31,7 +31,7 @@ use Hn\McpServer\Service\TableAccessService;
 /**
  * Tool for retrieving detailed information about a TYPO3 page
  */
-class GetPageTool extends AbstractRecordTool
+final class GetPageTool extends AbstractRecordTool
 {
     protected SiteInformationService $siteInformationService;
     protected McpLanguageService $languageService;

@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * This service acts as the single source of truth for which tables can be accessed
  * through the MCP tools, considering workspace capability, user permissions, and other restrictions.
  */
-class TableAccessService implements SingletonInterface
+final class TableAccessService implements SingletonInterface
 {
     protected ?BackendUserAuthentication $backendUser = null;
     protected WorkspaceContextService $workspaceContextService;

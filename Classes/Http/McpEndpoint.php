@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Hn\McpServer\MCP\McpServerFactory;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Service\OAuthService;
@@ -26,8 +27,12 @@ use Hn\McpServer\Service\SiteInformationService;
 /**
  * MCP HTTP Endpoint for remote access
  */
-class McpEndpoint
+final class McpEndpoint
 {
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    ) {}
+
     /**
      * eID entry point via __invoke method
      */
@@ -45,9 +50,11 @@ class McpEndpoint
             }
             $queryParams = $request->getQueryParams();
 
-            error_log("MCP: Request method: " . $request->getMethod());
-            error_log("MCP: Request headers: " . json_encode($headers));
-            error_log("MCP: Query params: " . json_encode($queryParams));
+            $this->logger->debug('MCP request received', [
+                'method' => $request->getMethod(),
+                'headers' => $headers,
+                'queryParams' => $queryParams,
+            ]);
 
             // Check if this is an auth header test request
             if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
@@ -58,22 +65,21 @@ class McpEndpoint
             $token = $this->extractToken($request);
 
             if (!$token) {
-                error_log("MCP: No token found in Authorization header or query params");
+                $this->logger->warning('No token found in Authorization header or query params');
                 return $this->createUnauthorizedResponse('Missing authentication token');
             }
 
-            // Log token for debugging (first 20 chars only for security)
-            error_log("MCP: Received token: " . substr($token, 0, 20) . "...");
+            $this->logger->debug('Token received', ['tokenPrefix' => substr($token, 0, 20)]);
 
             $oauthService = GeneralUtility::makeInstance(OAuthService::class);
             $tokenInfo = $oauthService->validateToken($token, $request);
 
             if (!$tokenInfo) {
-                error_log("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
+                $this->logger->warning('Token validation failed', ['tokenPrefix' => substr($token, 0, 20)]);
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
 
-            error_log("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
+            $this->logger->debug('Token validation successful', ['userId' => $tokenInfo['be_user_uid']]);
 
             // Set up TYPO3 backend context for the authenticated user
             $this->setupBackendUserContext($tokenInfo['be_user_uid']);
@@ -244,8 +250,7 @@ class McpEndpoint
             $context->setAspect('backend.user', new UserAspect($beUser));
             $context->setAspect('workspace', new WorkspaceAspect($workspaceId));
 
-            // Log workspace selection for debugging
-            error_log("MCP: User {$userId} switched to workspace {$workspaceId}");
+            $this->logger->debug('Workspace selected', ['userId' => $userId, 'workspaceId' => $workspaceId]);
         }
 
         // Ensure TCA is loaded using proper TYPO3 core method

@@ -16,7 +16,7 @@ use Hn\McpServer\MCP\McpServerFactory;
 /**
  * MCP Server Command - Uses logiscape/mcp-sdk-php
  */
-class McpServerCommand extends Command
+final class McpServerCommand extends Command
 {
     public function __construct(
         private readonly McpServerFactory $serverFactory

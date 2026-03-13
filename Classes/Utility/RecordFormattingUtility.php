@@ -10,13 +10,14 @@ use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Hn\McpServer\Service\TableAccessService;
 
 /**
  * Utility class for formatting TYPO3 records consistently across MCP tools
  */
-class RecordFormattingUtility
+final class RecordFormattingUtility
 {
     /**
      * Get table label from TCA
@@ -318,8 +319,9 @@ class RecordFormattingUtility
                 // BackendLayoutView might not work in all contexts
             }
         } catch (\Throwable $e) {
-            // Log error for debugging
-            error_log('Backend layout detection error: ' . $e->getMessage());
+            GeneralUtility::makeInstance(LogManager::class)
+                ->getLogger(static::class)
+                ->warning('Backend layout detection failed', ['exception' => $e]);
         }
         
         return null;

@@ -22,7 +22,7 @@ use Hn\McpServer\Service\LanguageService;
 /**
  * Tool for searching records across TYPO3 tables using TCA-based searchable fields
  */
-class SearchTool extends AbstractRecordTool
+final class SearchTool extends AbstractRecordTool
 {
     protected LanguageService $languageService;
 

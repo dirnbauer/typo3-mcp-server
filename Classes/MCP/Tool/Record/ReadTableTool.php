@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Tool for reading records from TYPO3 tables
  */
-class ReadTableTool extends AbstractRecordTool
+final class ReadTableTool extends AbstractRecordTool
 {
     protected LanguageService $languageService;
 

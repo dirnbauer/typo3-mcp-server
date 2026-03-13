@@ -8,7 +8,7 @@ use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 
-class ListWorkspacesTool extends AbstractTool
+final class ListWorkspacesTool extends AbstractTool
 {
     public function __construct(
         private readonly WorkspaceContextService $workspaceContextService,

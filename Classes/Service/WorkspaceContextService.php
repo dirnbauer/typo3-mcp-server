@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
-class WorkspaceContextService
+final class WorkspaceContextService
 {
     public function __construct(
         private readonly ConnectionPool $connectionPool,

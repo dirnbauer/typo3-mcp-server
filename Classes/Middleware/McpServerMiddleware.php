@@ -25,7 +25,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Unified PSR-15 Middleware to handle all MCP Server routes
  * Provides clean URLs for MCP protocol, OAuth flow, and discovery endpoints
  */
-class McpServerMiddleware implements MiddlewareInterface
+final class McpServerMiddleware implements MiddlewareInterface
 {
     private Context $context;
     

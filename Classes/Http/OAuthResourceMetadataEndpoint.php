@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Http\Stream;
  * OAuth Resource Server Metadata endpoint
  * RFC 8707: https://tools.ietf.org/html/rfc8707
  */
-class OAuthResourceMetadataEndpoint
+final class OAuthResourceMetadataEndpoint
 {
     use CorsHeadersTrait;
 

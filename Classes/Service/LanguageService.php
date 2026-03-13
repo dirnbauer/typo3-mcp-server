@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Service for handling language mappings between ISO codes and UIDs
  */
-class LanguageService implements SingletonInterface
+final class LanguageService implements SingletonInterface
 {
     protected SiteFinder $siteFinder;
     

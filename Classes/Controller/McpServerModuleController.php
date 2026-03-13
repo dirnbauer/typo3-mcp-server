@@ -21,7 +21,7 @@ use Hn\McpServer\Service\WorkspaceContextService;
 /**
  * Backend module controller for MCP Server configuration
  */
-class McpServerModuleController
+final class McpServerModuleController
 {
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,

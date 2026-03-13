@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Service for centralizing site and domain information
  */
-class SiteInformationService
+final class SiteInformationService
 {
     protected SiteFinder $siteFinder;
     protected ?ServerRequestInterface $currentRequest = null;
@@ -122,8 +122,7 @@ class SiteInformationService
                 return $generatedUrl;
             }
         } catch (\Throwable $e) {
-            // Log error but continue to fallback strategies
-            // error_log('SiteInformationService: Error generating URL for page ' . $pageId . ': ' . $e->getMessage());
+            // Continue to fallback strategies
         }
         
         // Fallback: Try to get page record and build URL from slug

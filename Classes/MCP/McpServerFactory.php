@@ -16,7 +16,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 /**
  * Factory for creating and configuring MCP Server instances
  */
-class McpServerFactory
+final class McpServerFactory
 {
     public function __construct(
         private readonly ToolRegistry $toolRegistry
