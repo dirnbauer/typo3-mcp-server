@@ -447,7 +447,7 @@ class TableAccessService implements SingletonInterface
             'cache_hash', // Cache tables - managed by system
             'sys_be_shortcuts', // User shortcuts - user-specific
             'sys_news', // System news - admin-only
-            'sys_file_reference', // FAL reference table - file handling not supported yet
+            // sys_file_reference intentionally NOT restricted -- workspace-versioned and needed for file attachments
         ];
         
         if (in_array($table, $restrictedTables)) {
