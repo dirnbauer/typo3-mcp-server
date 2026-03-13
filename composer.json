@@ -54,7 +54,11 @@
             "@setup"
         ],
         "test": [
+            "@test:unit",
             "@test:functional"
+        ],
+        "test:unit": [
+            "phpunit -c Tests/UnitTests.xml"
         ],
         "test:functional": [
             "paratest -c phpunit.xml.dist"
