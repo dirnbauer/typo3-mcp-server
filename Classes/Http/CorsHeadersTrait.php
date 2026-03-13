@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use TYPO3\CMS\Core\Http\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Http\Response;
 
 /**
  * Trait for adding CORS headers to HTTP responses
@@ -28,7 +28,7 @@ trait CorsHeadersTrait
             ->withHeader('Access-Control-Allow-Credentials', 'true')
             ->withHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
     }
-    
+
     /**
      * Get the allowed origin from the request
      */

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
-use InvalidArgumentException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException;
@@ -60,8 +60,8 @@ final class BrowseFilesTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $path = is_string($params['path'] ?? null) ? $params['path'] : null;
-        $recursive = (bool)($params['recursive'] ?? false);
+        $path = \is_string($params['path'] ?? null) ? $params['path'] : null;
+        $recursive = (bool) ($params['recursive'] ?? false);
 
         if ($path === null || $path === '') {
             return $this->listStorages();
@@ -80,17 +80,17 @@ final class BrowseFilesTool extends AbstractTool
                 continue;
             }
 
-            $lines[] = sprintf(
+            $lines[] = \sprintf(
                 "- Storage %d: %s (driver: %s, writable: %s)\n  Browse with path: \"%d:/\"",
                 $storage->getUid(),
                 $storage->getName(),
                 $storage->getDriverType(),
                 $storage->isWritable() ? 'yes' : 'no',
-                $storage->getUid()
+                $storage->getUid(),
             );
         }
 
-        if (count($lines) === 1) {
+        if (\count($lines) === 1) {
             $lines[] = '(No accessible storages found)';
         }
 
@@ -112,14 +112,14 @@ final class BrowseFilesTool extends AbstractTool
             throw new ValidationException(['Storage is not available or not browsable']);
         }
 
-        $lines = [sprintf("FOLDER: %s (Storage %d: %s)\n", $folder->getIdentifier(), $storage->getUid(), $storage->getName())];
+        $lines = [\sprintf("FOLDER: %s (Storage %d: %s)\n", $folder->getIdentifier(), $storage->getUid(), $storage->getName())];
 
         $subfolders = $folder->getSubfolders();
         if (!empty($subfolders)) {
             $lines[] = "SUBFOLDERS:";
             foreach ($subfolders as $subfolder) {
                 $combinedId = $storage->getUid() . ':' . $subfolder->getIdentifier();
-                $lines[] = sprintf("  [DIR] %s  -> \"%s\"", $subfolder->getName(), $combinedId);
+                $lines[] = \sprintf("  [DIR] %s  -> \"%s\"", $subfolder->getName(), $combinedId);
 
                 if ($recursive) {
                     $this->listSubfolderContents($subfolder, $storage, $lines, '    ');
@@ -130,7 +130,7 @@ final class BrowseFilesTool extends AbstractTool
 
         $files = $folder->getFiles();
         if (!empty($files)) {
-            $lines[] = sprintf("FILES (%d):", count($files));
+            $lines[] = \sprintf("FILES (%d):", \count($files));
             foreach ($files as $file) {
                 $lines[] = $this->formatFileInfo($file);
             }
@@ -148,11 +148,11 @@ final class BrowseFilesTool extends AbstractTool
     {
         foreach ($folder->getSubfolders() as $sub) {
             $combinedId = $storage->getUid() . ':' . $sub->getIdentifier();
-            $lines[] = sprintf("%s[DIR] %s  -> \"%s\"", $indent, $sub->getName(), $combinedId);
+            $lines[] = \sprintf("%s[DIR] %s  -> \"%s\"", $indent, $sub->getName(), $combinedId);
         }
         $fileCount = $folder->getFileCount();
         if ($fileCount > 0) {
-            $lines[] = sprintf("%s(%d files)", $indent, $fileCount);
+            $lines[] = \sprintf("%s(%d files)", $indent, $fileCount);
         }
     }
 
@@ -163,20 +163,20 @@ final class BrowseFilesTool extends AbstractTool
 
         if (str_starts_with($file->getMimeType(), 'image/')) {
             $props = $file->getProperties();
-            $w = is_numeric($props['width'] ?? null) ? (int)$props['width'] : 0;
-            $h = is_numeric($props['height'] ?? null) ? (int)$props['height'] : 0;
+            $w = is_numeric($props['width'] ?? null) ? (int) $props['width'] : 0;
+            $h = is_numeric($props['height'] ?? null) ? (int) $props['height'] : 0;
             if ($w > 0 && $h > 0) {
-                $meta = sprintf(' [%dx%d]', $w, $h);
+                $meta = \sprintf(' [%dx%d]', $w, $h);
             }
         }
 
-        return sprintf(
+        return \sprintf(
             "  %s  (%s, %s%s)  uid=%d",
             $file->getName(),
             $file->getMimeType(),
             $size,
             $meta,
-            $file->getUid()
+            $file->getUid(),
         );
     }
 }

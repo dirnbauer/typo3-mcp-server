@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTool;
-use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\SiteInformationService;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -17,7 +17,7 @@ class GetPageLanguageTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -25,15 +25,15 @@ class GetPageLanguageTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create multi-language site configuration
         $this->createMultiLanguageSiteConfiguration();
-        
+
         // Import test data
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);
     }
@@ -92,7 +92,7 @@ class GetPageLanguageTest extends FunctionalTestCase
         // Write the site configuration
         $configPath = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($configPath);
-        
+
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
     }
@@ -103,7 +103,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     protected function createTestTranslations(): void
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('pages');
-        
+
         // Create German translation for page 2 (About)
         $connection->insert('pages', [
             'uid' => 200,
@@ -115,7 +115,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'hidden' => 0,
             'doktype' => 1,
         ]);
-        
+
         // Create French translation for page 2
         $connection->insert('pages', [
             'uid' => 201,
@@ -127,7 +127,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'hidden' => 0,
             'doktype' => 1,
         ]);
-        
+
         // Create German content for page 2
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', [
@@ -141,7 +141,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'colPos' => 0,
             'sorting' => 256,
         ]);
-        
+
         // Create content that exists only in German (no parent)
         $connection->insert('tt_content', [
             'uid' => 1001,
@@ -163,16 +163,16 @@ class GetPageLanguageTest extends FunctionalTestCase
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $schema = $tool->getSchema();
-        
+
         // Should have language parameter with enum
         $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
         $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
         $this->assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
         $this->assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
         $this->assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
-        
+
         // Should have deprecated languageId parameter
         $this->assertArrayHasKey('languageId', $schema['inputSchema']['properties']);
         $this->assertTrue($schema['inputSchema']['properties']['languageId']['deprecated'] ?? false);
@@ -184,18 +184,18 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testGetPageDefaultLanguage(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
-            'uid' => 2
+            'uid' => 2,
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show default English content
         $this->assertStringContainsString('Title: About', $output);
         $this->assertStringContainsString('Team Introduction', $output);
@@ -217,7 +217,7 @@ class GetPageLanguageTest extends FunctionalTestCase
 
         $result = $tool->execute([
             'uid' => 2,
-            'language' => 'de'
+            'language' => 'de',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -245,27 +245,27 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testGetPageFrenchLanguage(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'uid' => 2,
-            'language' => 'fr'
+            'language' => 'fr',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show French page title and subtitle
         $this->assertStringContainsString('Title: À propos', $output);
         $this->assertStringContainsString('Subtitle: En savoir plus sur notre entreprise', $output);
-        
+
         // Should show language information
         $this->assertStringContainsString('Language: FR (ID: 2)', $output);
         $this->assertStringContainsString('Translated: Yes', $output);
-        
+
         // French has no content translations, should show default content
         $this->assertStringContainsString('Team Introduction', $output);
         $this->assertStringContainsString('Meet our team', $output);
@@ -277,19 +277,19 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testShowAvailableTranslations(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'uid' => 2,
-            'language' => 'en'
+            'language' => 'en',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show available translations
         $this->assertStringContainsString('Available Translations: DE, FR', $output);
     }
@@ -302,12 +302,12 @@ class GetPageLanguageTest extends FunctionalTestCase
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'uid' => 2,
-            'language' => 'xx'
+            'language' => 'xx',
         ]);
-        
+
         $this->assertTrue($result->isError);
         $errorMessage = $result->error ?? $result->content[0]->text;
         $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
@@ -319,19 +319,19 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testBackwardCompatibilityLanguageId(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'uid' => 2,
-            'languageId' => 1  // Using deprecated parameter
+            'languageId' => 1,  // Using deprecated parameter
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should work with numeric languageId
         $this->assertStringContainsString('Title: Über uns', $output);
         $this->assertStringContainsString('Language: DE (ID: 1)', $output);
@@ -343,19 +343,19 @@ class GetPageLanguageTest extends FunctionalTestCase
     public function testUrlResolutionWithLanguage(): void
     {
         $this->createTestTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTool($siteInformationService, $languageService);
-        
+
         $result = $tool->execute([
             'url' => '/about',
-            'language' => 'de'
+            'language' => 'de',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should resolve URL and show German version
         $this->assertStringContainsString('Title: Über uns', $output);
         $this->assertStringContainsString('URL: https://example.com/', $output);

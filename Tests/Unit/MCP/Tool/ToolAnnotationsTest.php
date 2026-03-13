@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Unit\MCP\Tool;
 
-use Hn\McpServer\MCP\Tool\GetPageTreeTool;
 use Hn\McpServer\MCP\Tool\GetPageTool;
-use Hn\McpServer\MCP\Tool\SearchTool;
+use Hn\McpServer\MCP\Tool\GetPageTreeTool;
+use Hn\McpServer\MCP\Tool\Record\GetFlexFormSchemaTool;
+use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
 use Hn\McpServer\MCP\Tool\Record\ListTablesTool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
-use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
-use Hn\McpServer\MCP\Tool\Record\GetFlexFormSchemaTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\MCP\Tool\SearchTool;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,7 +29,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $getPageTreeTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -40,7 +40,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $getPageTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -51,7 +51,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $searchTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -62,7 +62,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $listTablesTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -73,7 +73,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $readTableTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -84,7 +84,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $getTableSchemaTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -95,7 +95,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $getFlexFormSchemaTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertTrue($annotations['readOnlyHint']);
@@ -111,7 +111,7 @@ class ToolAnnotationsTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods([])
             ->getMock();
-        
+
         $annotations = $writeTableTool->getAnnotations();
         $this->assertIsArray($annotations);
         $this->assertFalse($annotations['readOnlyHint']);

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use stdClass;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class ListWorkspacesTool extends AbstractTool
 {
@@ -56,20 +56,20 @@ final class ListWorkspacesTool extends AbstractTool
         if (empty($workspaces)) {
             return new CallToolResult([new TextContent(
                 "No workspaces available.\n"
-                . "A workspace will be created automatically when you use a write tool."
+                . "A workspace will be created automatically when you use a write tool.",
             )]);
         }
 
         $lines = ["AVAILABLE WORKSPACES\n====================\n"];
         foreach ($workspaces as $ws) {
             $marker = $ws['active'] ? ' [ACTIVE]' : '';
-            $lines[] = sprintf(
+            $lines[] = \sprintf(
                 "- id=%d: %s (access: %s)%s%s",
                 $ws['id'],
                 $ws['title'],
                 $ws['access'],
                 $marker,
-                $ws['description'] ? "\n  " . $ws['description'] : ''
+                $ws['description'] ? "\n  " . $ws['description'] : '',
             );
         }
         $lines[] = "\nUse workspace_id parameter on any tool to switch workspace.";

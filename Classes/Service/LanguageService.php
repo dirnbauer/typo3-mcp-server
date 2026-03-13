@@ -17,24 +17,24 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class LanguageService
 {
     protected SiteFinder $siteFinder;
-    
+
     /**
      * Cached mapping of ISO codes to language UIDs
      * @var array<string, int>
      */
     protected array $isoToUidMap = [];
-    
+
     /**
      * Cached mapping of language UIDs to ISO codes
      * @var array<int, string>
      */
     protected array $uidToIsoMap = [];
-    
+
     /**
      * Default language ISO code
      */
     protected ?string $defaultIsoCode = null;
-    
+
     /**
      * Whether the mappings have been initialized
      */
@@ -55,14 +55,14 @@ final class LanguageService
         }
 
         $sites = $this->siteFinder->getAllSites();
-        
+
         foreach ($sites as $site) {
             $languages = $site->getAllLanguages();
-            
+
             foreach ($languages as $language) {
                 $uid = $language->getLanguageId();
                 $isoCode = $this->extractIsoCode($language);
-                
+
                 if ($isoCode !== null) {
                     // Store the mapping (first occurrence wins if there are conflicts)
                     if (!isset($this->isoToUidMap[$isoCode])) {
@@ -71,7 +71,7 @@ final class LanguageService
                     if (!isset($this->uidToIsoMap[$uid])) {
                         $this->uidToIsoMap[$uid] = $isoCode;
                     }
-                    
+
                     // Set default language ISO code
                     if ($uid === 0 && $this->defaultIsoCode === null) {
                         $this->defaultIsoCode = $isoCode;
@@ -79,7 +79,7 @@ final class LanguageService
                 }
             }
         }
-        
+
         $this->initialized = true;
     }
 
@@ -91,123 +91,123 @@ final class LanguageService
     {
         // Get the language configuration array
         $languageConfig = $language->toArray();
-        
+
         // 1. Try iso-639-1 configuration (two-letter code like 'en', 'de')
-        if (isset($languageConfig['iso-639-1']) && strlen($languageConfig['iso-639-1']) === 2) {
+        if (isset($languageConfig['iso-639-1']) && \strlen($languageConfig['iso-639-1']) === 2) {
             return strtolower($languageConfig['iso-639-1']);
         }
-        
+
         // 2. Try to get language code from Locale object
         try {
             $locale = $language->getLocale();
             $languageCode = $locale->getLanguageCode();
-            if ($languageCode !== '' && strlen($languageCode) === 2) {
+            if ($languageCode !== '' && \strlen($languageCode) === 2) {
                 return strtolower($languageCode);
             }
         } catch (Throwable) {
             // Locale might not be properly configured
         }
-        
+
         // 3. Try hreflang (might be like 'en-us', we take the first part)
         $hreflang = $language->getHreflang();
         if (!empty($hreflang)) {
             $parts = explode('-', $hreflang);
-            if (!empty($parts[0]) && strlen($parts[0]) === 2) {
+            if (!empty($parts[0]) && \strlen($parts[0]) === 2) {
                 return strtolower($parts[0]);
             }
         }
-        
+
         // 4. Try to parse locale string as fallback
         if (isset($languageConfig['locale']) && !empty($languageConfig['locale'])) {
             $parts = preg_split('/[_\-\.]/', (string) $languageConfig['locale']);
-            if (!empty($parts[0]) && strlen($parts[0]) === 2) {
+            if (!empty($parts[0]) && \strlen($parts[0]) === 2) {
                 return strtolower($parts[0]);
             }
         }
-        
+
         return null;
     }
 
     /**
      * Get language UID from ISO code
-     * 
+     *
      * @param string $isoCode Two-letter ISO code (e.g., 'en', 'de')
      * @return int|null Language UID or null if not found
      */
     public function getUidFromIsoCode(string $isoCode): ?int
     {
         $this->initialize();
-        
+
         $isoCode = strtolower($isoCode);
         return $this->isoToUidMap[$isoCode] ?? null;
     }
 
     /**
      * Get ISO code from language UID
-     * 
+     *
      * @param int $uid Language UID
      * @return string|null ISO code or null if not found
      */
     public function getIsoCodeFromUid(int $uid): ?string
     {
         $this->initialize();
-        
+
         return $this->uidToIsoMap[$uid] ?? null;
     }
 
     /**
      * Get all available language ISO codes
-     * 
+     *
      * @return list<string> Array of ISO codes
      */
     public function getAvailableIsoCodes(): array
     {
         $this->initialize();
-        
+
         return array_keys($this->isoToUidMap);
     }
 
     /**
      * Get default language ISO code
-     * 
+     *
      * @return string|null Default language ISO code
      */
     public function getDefaultIsoCode(): ?string
     {
         $this->initialize();
-        
+
         return $this->defaultIsoCode;
     }
 
     /**
      * Get all language mappings
-     * 
+     *
      * @return array<string, int> Array with ISO codes as keys and UIDs as values
      */
     public function getAllMappings(): array
     {
         $this->initialize();
-        
+
         return $this->isoToUidMap;
     }
 
     /**
      * Check if a language ISO code is available
-     * 
+     *
      * @param string $isoCode
      * @return bool
      */
     public function isIsoCodeAvailable(string $isoCode): bool
     {
         $this->initialize();
-        
+
         return isset($this->isoToUidMap[strtolower($isoCode)]);
     }
 
     /**
      * Get language information for a specific page
      * This considers the site configuration for the given page
-     * 
+     *
      * @param int $pageId
      * @return list<array{uid: int, isoCode: string, title: string, locale: string, enabled: bool}> Array of language information
      */
@@ -216,7 +216,7 @@ final class LanguageService
         try {
             $site = $this->siteFinder->getSiteByPageId($pageId);
             $languages = [];
-            
+
             foreach ($site->getAllLanguages() as $language) {
                 $isoCode = $this->extractIsoCode($language);
                 if ($isoCode !== null) {
@@ -224,12 +224,12 @@ final class LanguageService
                         'uid' => $language->getLanguageId(),
                         'isoCode' => $isoCode,
                         'title' => $language->getTitle(),
-                        'locale' => (string)$language->getLocale(),
+                        'locale' => (string) $language->getLocale(),
                         'enabled' => $language->isEnabled(),
                     ];
                 }
             }
-            
+
             return $languages;
         } catch (SiteNotFoundException) {
             // Return all available languages if site not found
@@ -239,42 +239,42 @@ final class LanguageService
 
     /**
      * Get information about all available languages
-     * 
+     *
      * @return list<array{uid: int, isoCode: string, title: string, locale: string, enabled: bool}>
      */
     public function getAllLanguageInfo(): array
     {
         $this->initialize();
-        
+
         $languages = [];
         $seen = [];
-        
+
         foreach ($this->siteFinder->getAllSites() as $site) {
             foreach ($site->getAllLanguages() as $language) {
                 $uid = $language->getLanguageId();
-                
+
                 // Skip if we've already processed this UID
                 if (isset($seen[$uid])) {
                     continue;
                 }
-                
+
                 $isoCode = $this->extractIsoCode($language);
                 if ($isoCode !== null) {
                     $languages[] = [
                         'uid' => $uid,
                         'isoCode' => $isoCode,
                         'title' => $language->getTitle(),
-                        'locale' => (string)$language->getLocale(),
+                        'locale' => (string) $language->getLocale(),
                         'enabled' => $language->isEnabled(),
                     ];
                     $seen[$uid] = true;
                 }
             }
         }
-        
+
         // Sort by UID to have consistent ordering
         usort($languages, fn(array $a, array $b): int => $a['uid'] <=> $b['uid']);
-        
+
         return $languages;
     }
 }

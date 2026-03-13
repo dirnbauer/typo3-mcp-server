@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * Base exception for all MCP Server exceptions
- * 
+ *
  * This exception provides a consistent interface for error handling
  * across the MCP Server extension, including user-friendly messages
  * and context information for logging.
@@ -17,7 +17,7 @@ use Throwable;
 class McpException extends RuntimeException
 {
     protected string $userMessage;
-    
+
     /**
      * @param string $message Internal message for logging
      * @param string $userMessage User-friendly message for display
@@ -30,25 +30,25 @@ class McpException extends RuntimeException
         string $userMessage = '',
         int $code = 0,
         ?Throwable $previous = null,
-        protected array $context = []
+        protected array $context = [],
     ) {
         parent::__construct($message, $code, $previous);
         $this->userMessage = $userMessage ?: $message;
     }
-    
+
     /**
      * Get the user-friendly error message
-     * 
+     *
      * @return string Message safe to display to end users
      */
     public function getUserMessage(): string
     {
         return $this->userMessage;
     }
-    
+
     /**
      * Get additional context information
-     * 
+     *
      * @return array<string, mixed> Context data for logging
      */
     public function getContext(): array

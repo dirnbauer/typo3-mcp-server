@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Symfony\Component\Yaml\Yaml;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -17,7 +16,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -25,14 +24,14 @@ class WriteTableLanguageTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create multi-language site configuration
         $this->createMultiLanguageSiteConfiguration();
-        
+
         // Import test data
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);
     }
@@ -91,7 +90,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         // Write the site configuration
         $configPath = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($configPath);
-        
+
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
     }
@@ -102,7 +101,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testCreateContentWithIsoLanguageCode(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Create content in German using ISO code
         $result = $tool->execute([
             'action' => 'create',
@@ -112,34 +111,34 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'CType' => 'text',
                 'header' => 'Deutscher Titel',
                 'bodytext' => 'Deutscher Inhalt',
-                'sys_language_uid' => 'de'  // ISO code instead of numeric ID
+                'sys_language_uid' => 'de',  // ISO code instead of numeric ID
                 /**
                  * IMPORTANT: This test demonstrates a key feature of the WriteTableTool.
-                 * 
+                 *
                  * Instead of using numeric language UIDs (which would require the LLM to know
                  * that German = 1, French = 2, etc.), the tool accepts ISO 639-1 language codes.
-                 * 
+                 *
                  * The WriteTableTool automatically converts these ISO codes to the correct
                  * numeric UIDs based on the site configuration. This makes the API much more
                  * intuitive for LLMs and reduces the need for them to maintain mappings.
-                 * 
+                 *
                  * Supported ISO codes are discovered from the site configuration and shown
                  * in the GetTableSchemaTool output for sys_language_uid fields.
                  */
-            ]
+            ],
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode($result->content[0]->text, true);
-        
+
         $this->assertEquals('create', $data['action']);
         $this->assertEquals('tt_content', $data['table']);
         $this->assertIsInt($data['uid']);
-        
+
         // Verify the created record has correct language UID
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $record = $connection->select(['*'], 'tt_content', ['uid' => $data['uid']])->fetchAssociative();
-        
+
         $this->assertNotFalse($record);
         $this->assertEquals(1, $record['sys_language_uid']); // German has UID 1
         $this->assertEquals('Deutscher Titel', $record['header']);
@@ -151,7 +150,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testCreateWithInvalidLanguageCode(): void
     {
         $tool = new WriteTableTool();
-        
+
         $result = $tool->execute([
             'action' => 'create',
             'table' => 'tt_content',
@@ -159,10 +158,10 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'data' => [
                 'CType' => 'text',
                 'header' => 'Test',
-                'sys_language_uid' => 'xx'  // Invalid ISO code
-            ]
+                'sys_language_uid' => 'xx',  // Invalid ISO code
+            ],
         ]);
-        
+
         $this->assertTrue($result->isError);
         $this->assertStringContainsString('Unknown language code: xx', $result->error ?? $result->content[0]->text);
     }
@@ -183,7 +182,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'CType' => 'text',
                 'header' => 'Original English Content',
                 'bodytext' => 'This is the original content',
-            ]
+            ],
         ]);
 
         $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
@@ -196,8 +195,8 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $originalUid,
             'data' => [
-                'sys_language_uid' => 'de'
-            ]
+                'sys_language_uid' => 'de',
+            ],
         ]);
 
         $this->assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
@@ -210,7 +209,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         $this->assertNotEmpty($translateData['translationUid']);
 
         // Check if translation UID was found
-        if (!is_int($translateData['translationUid'])) {
+        if (!\is_int($translateData['translationUid'])) {
             $this->fail('Translation failed: ' . $translateData['translationUid']);
         }
 
@@ -231,7 +230,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testTranslateWithInvalidLanguage(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Create a record first
         $createResult = $tool->execute([
             'action' => 'create',
@@ -240,22 +239,22 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'data' => [
                 'CType' => 'text',
                 'header' => 'Test',
-            ]
+            ],
         ]);
-        
+
         $createData = json_decode($createResult->content[0]->text, true);
         $uid = $createData['uid'];
-        
+
         // Try to translate to invalid language
         $result = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => $uid,
             'data' => [
-                'sys_language_uid' => 'xx'
-            ]
+                'sys_language_uid' => 'xx',
+            ],
         ]);
-        
+
         $this->assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
         $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
@@ -267,7 +266,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testTranslateAlreadyTranslatedRecord(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Create original record
         $createResult = $tool->execute([
             'action' => 'create',
@@ -276,35 +275,35 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'data' => [
                 'CType' => 'text',
                 'header' => 'Original',
-            ]
+            ],
         ]);
-        
+
         $createData = json_decode($createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
-        
+
         // Translate to German
         $translateResult = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => $originalUid,
             'data' => [
-                'sys_language_uid' => 'de'
-            ]
+                'sys_language_uid' => 'de',
+            ],
         ]);
-        
+
         $translateData = json_decode($translateResult->content[0]->text, true);
         $germanUid = $translateData['translationUid'];
-        
+
         // Try to translate the German translation (should fail)
         $result = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => $germanUid,
             'data' => [
-                'sys_language_uid' => 'fr'
-            ]
+                'sys_language_uid' => 'fr',
+            ],
         ]);
-        
+
         $this->assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
         $this->assertStringContainsString('Cannot translate a record that is already a translation', $errorMessage);
@@ -316,7 +315,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
     public function testPreventDuplicateTranslation(): void
     {
         $tool = new WriteTableTool();
-        
+
         // Create original record
         $createResult = $tool->execute([
             'action' => 'create',
@@ -325,41 +324,41 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'data' => [
                 'CType' => 'text',
                 'header' => 'Original',
-            ]
+            ],
         ]);
-        
+
         $createData = json_decode($createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
-        
+
         // Translate to German
         $translateResult = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => $originalUid,
             'data' => [
-                'sys_language_uid' => 'de'
-            ]
+                'sys_language_uid' => 'de',
+            ],
         ]);
-        
+
         $this->assertFalse($translateResult->isError);
-        
+
         // Try to translate to German again (should fail)
         $result = $tool->execute([
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => $originalUid,
             'data' => [
-                'sys_language_uid' => 'de'
-            ]
+                'sys_language_uid' => 'de',
+            ],
         ]);
-        
+
         $this->assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
         // TYPO3 returns a different error message when using DataHandler
         $this->assertTrue(
-            str_contains($errorMessage, 'Translation already exists') || 
-            str_contains($errorMessage, 'already are localizations'),
-            'Expected error about existing translation, got: ' . $errorMessage
+            str_contains($errorMessage, 'Translation already exists')
+            || str_contains($errorMessage, 'already are localizations'),
+            'Expected error about existing translation, got: ' . $errorMessage,
         );
     }
 
@@ -378,7 +377,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'data' => [
                 'CType' => 'text',
                 'header' => 'Original',
-            ]
+            ],
         ]);
 
         $createData = json_decode($createResult->content[0]->text, true);
@@ -389,8 +388,8 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $originalUid,
             'data' => [
-                'sys_language_uid' => 'de'
-            ]
+                'sys_language_uid' => 'de',
+            ],
         ]);
 
         $translateData = json_decode($translateResult->content[0]->text, true);
@@ -403,8 +402,8 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $germanUid,
             'data' => [
                 'header' => 'Aktualisierter deutscher Titel',
-                'bodytext' => 'Aktualisierter deutscher Inhalt'
-            ]
+                'bodytext' => 'Aktualisierter deutscher Inhalt',
+            ],
         ]);
 
         $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));

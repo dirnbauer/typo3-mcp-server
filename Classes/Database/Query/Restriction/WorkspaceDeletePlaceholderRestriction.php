@@ -14,19 +14,17 @@ use TYPO3\CMS\Core\Versioning\VersionState;
 
 /**
  * Query restriction to exclude live records that have delete placeholders in the current workspace.
- * 
+ *
  * This restriction ensures that when working in a workspace, records that have been "deleted"
  * (which creates a delete placeholder) are not shown in the results. This is different from
  * the standard WorkspaceRestriction which handles workspace record selection but doesn't
  * exclude live records that have delete placeholders.
- * 
+ *
  * Only applies to workspace-enabled tables.
  */
 final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInterface
 {
-    public function __construct(protected int $workspaceId)
-    {
-    }
+    public function __construct(protected int $workspaceId) {}
 
     /**
      * Main method to build expressions for given tables
@@ -38,54 +36,57 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
     public function buildExpression(array $queriedTables, ExpressionBuilder $expressionBuilder): CompositeExpression
     {
         $constraints = [];
-        
+
         // Only apply restriction when in a workspace (not in live)
         if ($this->workspaceId === 0) {
             return $expressionBuilder->and();
         }
-        
+
         foreach ($queriedTables as $tableAlias => $tableName) {
             // Only apply to workspace-enabled tables
             $globalTca = $GLOBALS['TCA'] ?? null;
-            $tableConfig = is_array($globalTca) ? ($globalTca[$tableName] ?? null) : null;
-            $ctrl = is_array($tableConfig) && is_array($tableConfig['ctrl'] ?? null) ? $tableConfig['ctrl'] : [];
+            $tableConfig = \is_array($globalTca) ? ($globalTca[$tableName] ?? null) : null;
+            $ctrl = \is_array($tableConfig) && \is_array($tableConfig['ctrl'] ?? null) ? $tableConfig['ctrl'] : [];
             if (($ctrl['versioningWS'] ?? false) !== true) {
                 continue;
             }
-            
+
             // Create a subquery to find UIDs of live records that have delete placeholders
             // in the current workspace
             try {
                 $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
                 $subQueryBuilder = $connectionPool->getQueryBuilderForTable($tableName);
                 $subQueryBuilder->getRestrictions()->removeAll();
-                
+
                 $subQuery = $subQueryBuilder
                     ->select('t3ver_oid')
                     ->from($tableName)
                     ->where(
-                        $subQueryBuilder->expr()->eq('t3ver_state', 
-                            $subQueryBuilder->expr()->literal((string)VersionState::DELETE_PLACEHOLDER->value)
+                        $subQueryBuilder->expr()->eq(
+                            't3ver_state',
+                            $subQueryBuilder->expr()->literal((string) VersionState::DELETE_PLACEHOLDER->value),
                         ),
-                        $subQueryBuilder->expr()->eq('t3ver_wsid', 
-                            $subQueryBuilder->expr()->literal((string)$this->workspaceId)
+                        $subQueryBuilder->expr()->eq(
+                            't3ver_wsid',
+                            $subQueryBuilder->expr()->literal((string) $this->workspaceId),
                         ),
-                        $subQueryBuilder->expr()->gt('t3ver_oid', 
-                            $subQueryBuilder->expr()->literal('0')
-                        )
+                        $subQueryBuilder->expr()->gt(
+                            't3ver_oid',
+                            $subQueryBuilder->expr()->literal('0'),
+                        ),
                     );
-                
+
                 // Exclude live records that have delete placeholders in current workspace
                 $constraints[] = $expressionBuilder->notIn(
                     $tableAlias . '.uid',
-                    $subQuery->getSQL()
+                    $subQuery->getSQL(),
                 );
             } catch (Throwable) {
                 // If the subquery fails (e.g., table doesn't have workspace fields), skip this constraint
                 // This provides resilience for edge cases
             }
         }
-        
+
         return $expressionBuilder->and(...$constraints);
     }
 }

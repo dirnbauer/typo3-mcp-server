@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Exception;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * OAuth service for MCP server authentication
@@ -70,7 +69,7 @@ final class OAuthService
                 'pkce_challenge_method' => $challengeMethod,
                 'redirect_uri' => $redirectUri,
                 'expires' => $expires,
-            ]
+            ],
         );
 
         return $code;
@@ -93,7 +92,7 @@ final class OAuthService
             ->where(
                 $queryBuilder->expr()->eq('code', $queryBuilder->createNamedParameter($code)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
@@ -102,7 +101,7 @@ final class OAuthService
             return null;
         }
 
-        $pkceChallenge = is_array($authCode) && is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
+        $pkceChallenge = \is_array($authCode) && \is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
         if ($pkceChallenge !== '') {
             if ($codeVerifier === null || $codeVerifier === '') {
                 return null;
@@ -139,13 +138,13 @@ final class OAuthService
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,
-            ]
+            ],
         );
 
         // Delete the authorization code (one-time use)
         $connection->delete(
             'tx_mcpserver_oauth_codes',
-            ['uid' => $authCode['uid']]
+            ['uid' => $authCode['uid']],
         );
 
         return [
@@ -174,7 +173,7 @@ final class OAuthService
             ->where(
                 $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($tokenHash)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
@@ -198,9 +197,9 @@ final class OAuthService
             ->executeStatement();
 
         return [
-            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int)$tokenRecord['be_user_uid'] : 0,
-            'client_name' => is_string($tokenRecord['client_name'] ?? null) ? $tokenRecord['client_name'] : '',
-            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int)$tokenRecord['uid'] : 0,
+            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int) $tokenRecord['be_user_uid'] : 0,
+            'client_name' => \is_string($tokenRecord['client_name'] ?? null) ? $tokenRecord['client_name'] : '',
+            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int) $tokenRecord['uid'] : 0,
         ];
     }
 
@@ -221,28 +220,28 @@ final class OAuthService
             ->where(
                 $queryBuilder->expr()->eq('be_user_uid', $queryBuilder->createNamedParameter($beUserId)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->orderBy('crdate', 'DESC')
             ->executeQuery()
             ->fetchAllAssociative();
 
-        if (!is_array($tokens)) {
+        if (!\is_array($tokens)) {
             return [];
         }
 
         $normalizedTokens = [];
         foreach ($tokens as $token) {
-            if (!is_array($token)) {
+            if (!\is_array($token)) {
                 continue;
             }
             $normalizedTokens[] = [
-                'uid' => is_numeric($token['uid'] ?? null) ? (int)$token['uid'] : 0,
-                'client_name' => is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
-                'token' => is_string($token['token'] ?? null) ? $token['token'] : '',
-                'crdate' => is_numeric($token['crdate'] ?? null) ? (int)$token['crdate'] : 0,
-                'expires' => is_numeric($token['expires'] ?? null) ? (int)$token['expires'] : 0,
-                'last_used' => is_numeric($token['last_used'] ?? null) ? (int)$token['last_used'] : 0,
+                'uid' => is_numeric($token['uid'] ?? null) ? (int) $token['uid'] : 0,
+                'client_name' => \is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
+                'token' => \is_string($token['token'] ?? null) ? $token['token'] : '',
+                'crdate' => is_numeric($token['crdate'] ?? null) ? (int) $token['crdate'] : 0,
+                'expires' => is_numeric($token['expires'] ?? null) ? (int) $token['expires'] : 0,
+                'last_used' => is_numeric($token['last_used'] ?? null) ? (int) $token['last_used'] : 0,
             ];
         }
 
@@ -263,7 +262,7 @@ final class OAuthService
             [
                 'uid' => $tokenUid,
                 'be_user_uid' => $beUserId,
-            ]
+            ],
         );
 
         return $affectedRows > 0;
@@ -280,7 +279,7 @@ final class OAuthService
         return $connection->update(
             'tx_mcpserver_access_tokens',
             ['deleted' => 1, 'tstamp' => time()],
-            ['be_user_uid' => $beUserId]
+            ['be_user_uid' => $beUserId],
         );
     }
 
@@ -297,7 +296,7 @@ final class OAuthService
 
         $codeConnection->delete(
             'tx_mcpserver_oauth_codes',
-            ['expires' => $codeConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
+            ['expires' => $codeConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)],
         );
 
         // Mark expired tokens as deleted
@@ -307,7 +306,7 @@ final class OAuthService
         $tokenConnection->update(
             'tx_mcpserver_access_tokens',
             ['deleted' => 1, 'tstamp' => $currentTime],
-            ['expires' => $tokenConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
+            ['expires' => $tokenConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)],
         );
     }
 
@@ -322,7 +321,7 @@ final class OAuthService
         // Generate client credentials
         $clientId = 'mcp_client_' . bin2hex(random_bytes(16));
         $clientSecret = bin2hex(random_bytes(32));
-        
+
         // For now, store in database (could be enhanced later)
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_oauth_clients');
@@ -341,7 +340,7 @@ final class OAuthService
                     'redirect_uris' => $this->encodeJsonValue($clientData['redirect_uris'] ?? []),
                     'grant_types' => $this->encodeJsonValue($clientData['grant_types'] ?? ['authorization_code']),
                     'scope' => $clientData['scope'] ?? 'mcp_access',
-                ]
+                ],
             );
         } catch (Exception) {
             // If table doesn't exist, we'll use the fixed client approach for now
@@ -374,7 +373,7 @@ final class OAuthService
     public function getMetadata(string $baseUrl): array
     {
         $baseUrl = rtrim($baseUrl, '/');
-        
+
         return [
             'issuer' => $baseUrl,
             'authorization_endpoint' => $baseUrl . '/mcp_oauth/authorize',
@@ -419,7 +418,7 @@ final class OAuthService
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,
-            ]
+            ],
         );
 
         return $accessToken;
@@ -436,12 +435,12 @@ final class OAuthService
     private function getRemoteAddress(ServerRequestInterface $request): string
     {
         $serverParams = $request->getServerParams();
-        return is_string($serverParams['REMOTE_ADDR'] ?? null) ? $serverParams['REMOTE_ADDR'] : '';
+        return \is_string($serverParams['REMOTE_ADDR'] ?? null) ? $serverParams['REMOTE_ADDR'] : '';
     }
 
     private function encodeJsonValue(mixed $value): string
     {
         $json = json_encode($value);
-        return is_string($json) ? $json : '[]';
+        return \is_string($json) ? $json : '[]';
     }
 }

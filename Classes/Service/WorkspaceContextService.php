@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use TYPO3\CMS\Core\Database\Connection;
-use Throwable;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -60,8 +60,8 @@ final readonly class WorkspaceContextService
         $workspaceRecord = $beUser->checkWorkspace($workspaceId);
         if (!$workspaceRecord || !$this->hasWriteAccess($workspaceRecord)) {
             throw new AccessDeniedException(
-                sprintf('workspace %d (%s)', $workspaceId, $this->formatAvailableWorkspaces($beUser)),
-                'write'
+                \sprintf('workspace %d (%s)', $workspaceId, $this->formatAvailableWorkspaces($beUser)),
+                'write',
             );
         }
 
@@ -99,15 +99,15 @@ final readonly class WorkspaceContextService
                         ->where($qb->expr()->eq('uid', $qb->createNamedParameter($wsId, Connection::PARAM_INT)))
                         ->executeQuery()
                         ->fetchAssociative();
-                    $description = is_array($row) && is_string($row['description'] ?? null) ? $row['description'] : '';
+                    $description = \is_array($row) && \is_string($row['description'] ?? null) ? $row['description'] : '';
                 } catch (Throwable) {
                 }
 
                 $result[] = [
-                    'id' => is_int($wsId) ? $wsId : (int)$wsId,
-                    'title' => is_string($title) ? $title : '',
+                    'id' => \is_int($wsId) ? $wsId : (int) $wsId,
+                    'title' => \is_string($title) ? $title : '',
                     'description' => $description,
-                    'access' => is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : 'unknown',
+                    'access' => \is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : 'unknown',
                     'active' => $wsId === $currentWs,
                 ];
             }
@@ -144,15 +144,15 @@ final readonly class WorkspaceContextService
      */
     protected function hasWriteAccess(array $workspaceRecord): bool
     {
-        $access = is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : '';
-        return in_array($access, ['admin', 'owner', 'member'], true);
+        $access = \is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : '';
+        return \in_array($access, ['admin', 'owner', 'member'], true);
     }
 
     protected function getWorkspaceFromDatabase(BackendUserAuthentication $beUser): int
     {
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
-            $userId = (int)($beUser->user['uid'] ?? 0);
+            $userId = (int) ($beUser->user['uid'] ?? 0);
 
             $workspace = $queryBuilder
                 ->select('uid')
@@ -162,8 +162,8 @@ final readonly class WorkspaceContextService
                         $queryBuilder->expr()->eq('adminusers', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
                         $queryBuilder->expr()->like('adminusers', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
                         $queryBuilder->expr()->eq('members', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
-                        $queryBuilder->expr()->like('members', $queryBuilder->createNamedParameter('%,' . $userId . ',%'))
-                    )
+                        $queryBuilder->expr()->like('members', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
+                    ),
                 )
                 ->andWhere($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
                 ->orderBy('uid', 'ASC')
@@ -171,9 +171,9 @@ final readonly class WorkspaceContextService
                 ->executeQuery()
                 ->fetchAssociative();
 
-            if (is_array($workspace)) {
+            if (\is_array($workspace)) {
                 $workspaceUid = $workspace['uid'] ?? 0;
-                return is_numeric($workspaceUid) ? (int)$workspaceUid : 0;
+                return is_numeric($workspaceUid) ? (int) $workspaceUid : 0;
             }
         } catch (Throwable) {
         }
@@ -232,7 +232,7 @@ final readonly class WorkspaceContextService
             $newUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
 
             if ($newUid && !$dataHandler->errorLog) {
-                return (int)$newUid;
+                return (int) $newUid;
             }
         } catch (Throwable $e) {
             $this->logger->error('MCP Workspace creation failed', ['exception' => $e]);
@@ -278,12 +278,12 @@ final readonly class WorkspaceContextService
                 ->executeQuery()
                 ->fetchAssociative();
 
-            if (is_array($workspace)) {
+            if (\is_array($workspace)) {
                 $workspaceUid = $workspace['uid'] ?? $workspaceId;
                 return [
-                    'id' => is_numeric($workspaceUid) ? (int)$workspaceUid : $workspaceId,
-                    'title' => is_string($workspace['title'] ?? null) ? $workspace['title'] : 'Unknown Workspace',
-                    'description' => is_string($workspace['description'] ?? null) ? $workspace['description'] : '',
+                    'id' => is_numeric($workspaceUid) ? (int) $workspaceUid : $workspaceId,
+                    'title' => \is_string($workspace['title'] ?? null) ? $workspace['title'] : 'Unknown Workspace',
+                    'description' => \is_string($workspace['description'] ?? null) ? $workspace['description'] : '',
                     'is_live' => false,
                 ];
             }
@@ -306,8 +306,8 @@ final readonly class WorkspaceContextService
         }
 
         return implode(', ', array_map(
-            static fn(array $ws): string => sprintf('%d (%s)', $ws['id'], $ws['title']),
-            $workspaces
+            static fn(array $ws): string => \sprintf('%d (%s)', $ws['id'], $ws['title']),
+            $workspaces,
         ));
     }
 }

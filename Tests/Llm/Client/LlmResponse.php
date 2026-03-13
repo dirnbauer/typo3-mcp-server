@@ -9,9 +9,7 @@ namespace Hn\McpServer\Tests\Llm\Client;
  */
 class LlmResponse
 {
-    public function __construct(private readonly string $content, private readonly array $toolCalls, private readonly array $rawResponse)
-    {
-    }
+    public function __construct(private readonly string $content, private readonly array $toolCalls, private readonly array $rawResponse) {}
 
     /**
      * Get the text content of the response
@@ -23,7 +21,7 @@ class LlmResponse
 
     /**
      * Get tool calls made by the LLM
-     * 
+     *
      * @return array Array of tool calls with 'name' and 'arguments' keys
      */
     public function getToolCalls(): array
@@ -49,7 +47,7 @@ class LlmResponse
 
     /**
      * Get tool calls by name
-     * 
+     *
      * @param string $toolName
      * @return array Array of matching tool calls
      */

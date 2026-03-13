@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Hn\McpServer\Command\McpServerCommand;
 use Hn\McpServer\Command\McpTestCommand;
 use Hn\McpServer\Command\OAuthManageCommand;

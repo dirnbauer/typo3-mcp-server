@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -38,7 +38,7 @@ final readonly class OAuthTokenEndpoint
             }
 
             $parsedBody = $this->getParsedBodyArray($request);
-            
+
             // Extract parameters (support both form data and JSON)
             $grantType = $parsedBody['grant_type'] ?? '';
             $code = $parsedBody['code'] ?? '';
@@ -78,9 +78,9 @@ final readonly class OAuthTokenEndpoint
             $response = new Response(
                 $stream,
                 200,
-                ['Content-Type' => 'application/json']
+                ['Content-Type' => 'application/json'],
             );
-            
+
             return $this->addCorsHeaders($response);
 
         } catch (Throwable $e) {
@@ -92,7 +92,7 @@ final readonly class OAuthTokenEndpoint
     {
         $errorData = [
             'error' => $error,
-            'error_description' => $description
+            'error_description' => $description,
         ];
 
         $stream = new Stream('php://temp', 'rw');
@@ -102,9 +102,9 @@ final readonly class OAuthTokenEndpoint
         $response = new Response(
             $stream,
             $statusCode,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         );
-        
+
         return $this->addCorsHeaders($response);
     }
 
@@ -114,16 +114,16 @@ final readonly class OAuthTokenEndpoint
     private function getParsedBodyArray(ServerRequestInterface $request): array
     {
         $parsedBody = $request->getParsedBody();
-        if (!is_array($parsedBody)) {
+        if (!\is_array($parsedBody)) {
             return [];
         }
 
         $result = [];
         foreach ($parsedBody as $key => $value) {
-            if (!is_string($key)) {
+            if (!\is_string($key)) {
                 continue;
             }
-            if (is_string($value) || $value === null) {
+            if (\is_string($value) || $value === null) {
                 $result[$key] = $value;
             }
         }
@@ -137,6 +137,6 @@ final readonly class OAuthTokenEndpoint
     private function encodeJson(array $data): string
     {
         $json = json_encode($data);
-        return is_string($json) ? $json : '{}';
+        return \is_string($json) ? $json : '{}';
     }
 }

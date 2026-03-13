@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
-use Mcp\Types\TextContent;
 use Exception;
-use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Llm\Client\LlmClientInterface;
 use Hn\McpServer\Tests\Llm\Client\LlmResponse;
 use Hn\McpServer\Tests\Llm\Client\OpenRouterClient;
+use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 
 /**
  * Base class for LLM-based tests
@@ -118,27 +117,27 @@ abstract class LlmTestCase extends FunctionalTestCase
 
     /**
      * Convert MCP tool schemas to OpenAI-compatible function format
-     * 
+     *
      * @return array
      */
     protected function getMcpToolsAsLlmFunctions(): array
     {
         $toolRegistry = GeneralUtility::makeInstance(ToolRegistry::class);
         $functions = [];
-        
+
         foreach ($toolRegistry->getTools() as $tool) {
             $schema = $tool->getSchema();
-            
+
             $functions[] = [
                 'type' => 'function',
                 'function' => [
                     'name' => $tool->getName(),
                     'description' => $schema['description'],
                     'parameters' => $schema['inputSchema'],
-                ]
+                ],
             ];
         }
-        
+
         return $functions;
     }
 
@@ -167,7 +166,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         $this->lastResponse = $this->llmClient->complete(
             $prompt,
             $tools,
-            array_merge($defaults, $options)
+            array_merge($defaults, $options),
         );
 
         return $this->lastResponse;
@@ -175,7 +174,7 @@ abstract class LlmTestCase extends FunctionalTestCase
 
     /**
      * Assert that a specific tool was called in the response
-     * 
+     *
      * @param LlmResponse $response
      * @param string $toolName
      * @param array|null $expectedParams Partial params to match (null to skip param checking)
@@ -183,23 +182,23 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected function assertToolCalled(LlmResponse $response, string $toolName, ?array $expectedParams = null): void
     {
         $toolCalls = $response->getToolCalls();
-        
+
         $found = false;
         foreach ($toolCalls as $toolCall) {
             if ($toolCall['name'] === $toolName) {
                 $found = true;
-                
+
                 if ($expectedParams !== null) {
                     $actualParams = $toolCall['arguments'] ?? [];
-                    
+
                     // Check if expected params are present in actual params
                     foreach ($expectedParams as $key => $value) {
                         $this->assertArrayHasKey($key, $actualParams, "Expected parameter '$key' not found in tool call '$toolName'");
-                        
+
                         // For nested arrays, do partial matching
-                        if (is_array($value) && is_array($actualParams[$key])) {
+                        if (\is_array($value) && \is_array($actualParams[$key])) {
                             foreach ($value as $nestedKey => $nestedValue) {
-                                if (is_string($nestedKey)) {
+                                if (\is_string($nestedKey)) {
                                     $this->assertArrayHasKey($nestedKey, $actualParams[$key]);
                                     $this->assertEquals($nestedValue, $actualParams[$key][$nestedKey]);
                                 }
@@ -209,23 +208,23 @@ abstract class LlmTestCase extends FunctionalTestCase
                         }
                     }
                 }
-                
+
                 break;
             }
         }
-        
+
         if (!$found) {
             $this->fail(
-                "Expected tool '$toolName' was not called.\n\n" .
-                "Prompt: " . $this->lastPrompt . "\n\n" .
-                $this->getToolCallsDebugString($response)
+                "Expected tool '$toolName' was not called.\n\n"
+                . "Prompt: " . $this->lastPrompt . "\n\n"
+                . $this->getToolCallsDebugString($response),
             );
         }
     }
 
     /**
      * Assert that tools were called in a specific order (with flexibility)
-     * 
+     *
      * @param LlmResponse $response
      * @param array $expectedSequence Array of tool names
      * @param bool $strict If true, no other tools allowed between expected ones
@@ -234,7 +233,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     {
         $toolCalls = $response->getToolCalls();
         $actualSequence = array_map(fn($call) => $call['name'], $toolCalls);
-        
+
         if ($strict) {
             $this->assertEquals($expectedSequence, $actualSequence);
         } else {
@@ -242,7 +241,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $lastIndex = -1;
             foreach ($expectedSequence as $expectedTool) {
                 $found = false;
-                for ($i = $lastIndex + 1; $i < count($actualSequence); $i++) {
+                for ($i = $lastIndex + 1; $i < \count($actualSequence); $i++) {
                     if ($actualSequence[$i] === $expectedTool) {
                         $lastIndex = $i;
                         $found = true;
@@ -256,7 +255,7 @@ abstract class LlmTestCase extends FunctionalTestCase
 
     /**
      * Get a formatted string of actual tool calls for debugging
-     * 
+     *
      * @param LlmResponse $response
      * @return string
      */
@@ -264,22 +263,22 @@ abstract class LlmTestCase extends FunctionalTestCase
     {
         $toolCalls = $response->getToolCalls();
         $debug = "Tool calls made:\n";
-        
+
         foreach ($toolCalls as $i => $call) {
-            $debug .= sprintf(
+            $debug .= \sprintf(
                 "%d. %s(%s)\n",
                 $i + 1,
                 $call['name'],
-                json_encode($call['arguments'] ?? [], JSON_PRETTY_PRINT)
+                json_encode($call['arguments'] ?? [], JSON_PRETTY_PRINT),
             );
         }
-        
+
         return $debug;
     }
 
     /**
      * Assert that the response follows one of the acceptable patterns
-     * 
+     *
      * @param LlmResponse $response
      * @param array $acceptablePatterns Array of tool sequences, each can be partial
      * @param string $description Description of what patterns are expected
@@ -287,21 +286,21 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected function assertFollowsPattern(LlmResponse $response, array $acceptablePatterns, string $description = ''): void
     {
         $actualSequence = array_map(fn($call) => $call['name'], $response->getToolCalls());
-        
+
         foreach ($acceptablePatterns as $pattern) {
             if ($this->matchesPattern($actualSequence, $pattern)) {
                 return; // Pattern matched!
             }
         }
-        
+
         // No pattern matched
         $this->fail(
-            "Response does not follow any acceptable pattern" . ($description ? " ($description)" : "") . ".\n\n" .
-            "Expected patterns:\n" . 
-            implode("\n", array_map(fn($p) => '  - ' . implode(' → ', $p), $acceptablePatterns)) . "\n\n" .
-            "Actual sequence: " . implode(' → ', $actualSequence) . "\n\n" .
-            "Prompt: " . $this->lastPrompt . "\n\n" .
-            $this->getToolCallsDebugString($response)
+            "Response does not follow any acceptable pattern" . ($description ? " ($description)" : "") . ".\n\n"
+            . "Expected patterns:\n"
+            . implode("\n", array_map(fn($p) => '  - ' . implode(' → ', $p), $acceptablePatterns)) . "\n\n"
+            . "Actual sequence: " . implode(' → ', $actualSequence) . "\n\n"
+            . "Prompt: " . $this->lastPrompt . "\n\n"
+            . $this->getToolCallsDebugString($response),
         );
     }
 
@@ -311,19 +310,19 @@ abstract class LlmTestCase extends FunctionalTestCase
     private function matchesPattern(array $actualSequence, array $pattern): bool
     {
         $patternIndex = 0;
-        
+
         foreach ($actualSequence as $tool) {
-            if ($patternIndex < count($pattern) && $tool === $pattern[$patternIndex]) {
+            if ($patternIndex < \count($pattern) && $tool === $pattern[$patternIndex]) {
                 $patternIndex++;
             }
         }
-        
-        return $patternIndex === count($pattern);
+
+        return $patternIndex === \count($pattern);
     }
 
     /**
      * Execute a tool call using the real MCP tool
-     * 
+     *
      * @param array $toolCall Tool call from LLM response
      * @return array Tool result with 'content' and optionally 'error' keys
      */
@@ -331,17 +330,17 @@ abstract class LlmTestCase extends FunctionalTestCase
     {
         $toolRegistry = GeneralUtility::makeInstance(ToolRegistry::class);
         $tool = $toolRegistry->getTool($toolCall['name']);
-        
+
         if (!$tool) {
             return [
                 'error' => "Tool '{$toolCall['name']}' not found",
-                'content' => "Error: Tool not found"
+                'content' => "Error: Tool not found",
             ];
         }
-        
+
         try {
             $result = $tool->execute($toolCall['arguments'] ?? []);
-            
+
             // Convert CallToolResult to simple array
             $content = '';
             foreach ($result->content as $contentItem) {
@@ -351,27 +350,27 @@ abstract class LlmTestCase extends FunctionalTestCase
                     $content .= json_encode($contentItem);
                 }
             }
-            
+
             // Check if content indicates an error even if isError is false
-            $hasErrorContent = str_starts_with($content, 'Error:') || 
-                              str_contains($content, 'authentication') ||
-                              str_contains($content, 'not properly initialized');
-            
+            $hasErrorContent = str_starts_with($content, 'Error:')
+                              || str_contains($content, 'authentication')
+                              || str_contains($content, 'not properly initialized');
+
             return [
                 'content' => $content,
-                'isError' => $result->isError || $hasErrorContent
+                'isError' => $result->isError || $hasErrorContent,
             ];
         } catch (Exception $e) {
             return [
                 'error' => $e->getMessage(),
-                'content' => "Error: " . $e->getMessage()
+                'content' => "Error: " . $e->getMessage(),
             ];
         }
     }
 
     /**
      * Continue conversation with tool results
-     * 
+     *
      * @param LlmResponse $previousResponse Previous LLM response
      * @param array $toolResults Array of tool results (from executeToolCall)
      * @param array $options Additional options for the LLM call
@@ -380,7 +379,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected function continueWithToolResult(
         LlmResponse $previousResponse,
         array $toolResults,
-        array $options = []
+        array $options = [],
     ): LlmResponse {
         // Wrap single result in array if needed
         if (isset($toolResults['content'])) {
@@ -402,7 +401,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $previousResponse,
             $toolResults,
             $this->getMcpToolsAsLlmFunctions(),
-            array_merge($defaults, $options)
+            array_merge($defaults, $options),
         );
 
         return $this->lastResponse;
@@ -410,7 +409,7 @@ abstract class LlmTestCase extends FunctionalTestCase
 
     /**
      * Execute all tool calls from a response and continue the conversation
-     * 
+     *
      * @param LlmResponse $response Response containing tool calls
      * @param array $options Additional options for the LLM call
      * @return LlmResponse
@@ -418,17 +417,17 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected function executeAndContinue(LlmResponse $response, array $options = []): LlmResponse
     {
         $toolResults = [];
-        
+
         foreach ($response->getToolCalls() as $toolCall) {
             $toolResults[] = $this->executeToolCall($toolCall);
         }
-        
+
         return $this->continueWithToolResult($response, $toolResults, $options);
     }
-    
+
     /**
      * Execute all tool calls and continue, handling multiple tool calls properly
-     * 
+     *
      * @param LlmResponse $response
      * @return LlmResponse
      */
@@ -437,57 +436,57 @@ abstract class LlmTestCase extends FunctionalTestCase
         if (!$response->hasToolCalls()) {
             return $response;
         }
-        
+
         return $this->executeAndContinue($response);
     }
-    
+
     /**
      * Execute tool calls until a specific tool is found or max iterations reached
-     * 
+     *
      * @param LlmResponse $response Initial response
      * @param string $targetToolName Tool name to search for
      * @param int $maxIterations Maximum iterations before giving up
      * @return LlmResponse Response containing the target tool or final response
      */
     protected function executeUntilToolFound(
-        LlmResponse $response, 
-        string $targetToolName, 
-        int $maxIterations = 5
+        LlmResponse $response,
+        string $targetToolName,
+        int $maxIterations = 5,
     ): LlmResponse {
         $currentResponse = $response;
         $this->toolCallHistory = [];
-        
+
         for ($i = 0; $i < $maxIterations && $currentResponse->hasToolCalls(); $i++) {
             // Track all tool calls for history
             foreach ($currentResponse->getToolCalls() as $toolCall) {
                 $this->toolCallHistory[] = $toolCall['name'];
             }
-            
+
             // Check if target tool is found
             if ($currentResponse->getToolCallsByName($targetToolName)) {
                 return $currentResponse;
             }
-            
+
             // Execute all tools and continue
             $currentResponse = $this->executeAndContinue($currentResponse);
         }
-        
+
         return $currentResponse;
     }
-    
+
     /**
      * Get all tool names that were called during exploration
-     * 
+     *
      * @return array
      */
     protected function getToolCallHistory(): array
     {
         return $this->toolCallHistory ?? [];
     }
-    
+
     /**
      * Assert that a specific tool was called before another tool
-     * 
+     *
      * @param string $firstTool Tool that should be called first
      * @param string $secondTool Tool that should be called after
      * @param string $message Optional failure message
@@ -497,29 +496,35 @@ abstract class LlmTestCase extends FunctionalTestCase
         $history = $this->getToolCallHistory();
         $firstIndex = array_search($firstTool, $history);
         $secondIndex = array_search($secondTool, $history);
-        
+
         if ($firstIndex === false) {
             $this->fail($message ?: "Expected tool '$firstTool' was not called");
         }
-        
+
         if ($secondIndex === false) {
             $this->fail($message ?: "Expected tool '$secondTool' was not called");
         }
-        
-        $this->assertLessThan($secondIndex, $firstIndex, 
-            $message ?: "Expected '$firstTool' to be called before '$secondTool'");
+
+        $this->assertLessThan(
+            $secondIndex,
+            $firstIndex,
+            $message ?: "Expected '$firstTool' to be called before '$secondTool'",
+        );
     }
-    
+
     /**
      * Assert that a specific tool was called during exploration
-     * 
+     *
      * @param string $toolName Tool name to check
      * @param string $message Optional failure message
      */
     protected function assertToolWasCalled(string $toolName, string $message = ''): void
     {
         $history = $this->getToolCallHistory();
-        $this->assertContains($toolName, $history, 
-            $message ?: "Expected tool '$toolName' to be called during exploration");
+        $this->assertContains(
+            $toolName,
+            $history,
+            $message ?: "Expected tool '$toolName' to be called during exploration",
+        );
     }
 }

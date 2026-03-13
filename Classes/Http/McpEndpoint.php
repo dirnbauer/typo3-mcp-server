@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use RuntimeException;
-use Throwable;
-use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use Hn\McpServer\MCP\McpServerFactory;
+use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Server\HttpServerRunner;
-use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Mcp\Server\Transport\Http\FileSessionStore;
-use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\UserAspect;
-use TYPO3\CMS\Core\Context\WorkspaceAspect;
-use TYPO3\CMS\Core\Http\Response;
-use TYPO3\CMS\Core\Http\Stream;
+use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Hn\McpServer\MCP\McpServerFactory;
-use Hn\McpServer\Service\WorkspaceContextService;
-use Hn\McpServer\Service\OAuthService;
-use Hn\McpServer\Service\SiteInformationService;
+use RuntimeException;
+use Throwable;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\UserAspect;
+use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Http\Stream;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP HTTP Endpoint for remote access
@@ -110,7 +110,7 @@ final readonly class McpEndpoint
 
             // Create session store in TYPO3's var directory
             $sessionStore = new FileSessionStore(
-                Environment::getVarPath() . '/mcp_sessions'
+                Environment::getVarPath() . '/mcp_sessions',
             );
 
             // Create initialization options using the factory
@@ -122,7 +122,7 @@ final readonly class McpEndpoint
                 $initOptions,
                 $httpOptions,
                 null,
-                $sessionStore
+                $sessionStore,
             );
 
             // Handle the request and capture output
@@ -146,7 +146,7 @@ final readonly class McpEndpoint
 
             // Get the status code set by the adapter
             $statusCode = http_response_code();
-            if (!is_int($statusCode) || $statusCode < 100) {
+            if (!\is_int($statusCode) || $statusCode < 100) {
                 $statusCode = 200;
             }
 
@@ -162,7 +162,7 @@ final readonly class McpEndpoint
             return new Response(
                 $stream,
                 $statusCode,
-                ['Content-Type' => $contentType]
+                ['Content-Type' => $contentType],
             );
 
         } catch (Throwable $e) {
@@ -176,7 +176,7 @@ final readonly class McpEndpoint
             return new Response(
                 $stream,
                 500,
-                ['Content-Type' => 'application/json']
+                ['Content-Type' => 'application/json'],
             );
         }
     }
@@ -195,7 +195,7 @@ final readonly class McpEndpoint
         // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
         $serverParams = $request->getServerParams();
         $httpAuth = $serverParams['HTTP_AUTHORIZATION'] ?? '';
-        if (is_string($httpAuth) && $httpAuth !== '' && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches) === 1) {
+        if (\is_string($httpAuth) && $httpAuth !== '' && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches) === 1) {
             return $matches[1];
         }
 
@@ -206,7 +206,7 @@ final readonly class McpEndpoint
             $this->logger->warning('Token passed via query parameter is deprecated. Use the Authorization header instead.');
         }
 
-        return is_string($queryToken) && $queryToken !== '' ? $queryToken : null;
+        return \is_string($queryToken) && $queryToken !== '' ? $queryToken : null;
     }
 
     /**
@@ -217,14 +217,14 @@ final readonly class McpEndpoint
         $stream = new Stream('php://temp', 'rw');
         $stream->write($this->encodeJson([
             'error' => 'Unauthorized',
-            'message' => $message
+            'message' => $message,
         ]));
         $stream->rewind();
 
         return new Response(
             $stream,
             401,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         );
     }
 
@@ -247,7 +247,7 @@ final readonly class McpEndpoint
             ->executeQuery()
             ->fetchAssociative();
 
-        if (is_array($userData)) {
+        if (\is_array($userData)) {
             $beUser->user = $userData;
             $GLOBALS['BE_USER'] = $beUser;
 
@@ -309,13 +309,13 @@ final readonly class McpEndpoint
         // Check server params for HTTP_AUTHORIZATION
         $serverParams = $request->getServerParams();
         if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = is_string($serverParams['HTTP_AUTHORIZATION']) ? $serverParams['HTTP_AUTHORIZATION'] : '';
+            $headers['http_authorization'] = \is_string($serverParams['HTTP_AUTHORIZATION']) ? $serverParams['HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
         // Also check for redirect env variable (Apache specific)
         if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = is_string($serverParams['REDIRECT_HTTP_AUTHORIZATION']) ? $serverParams['REDIRECT_HTTP_AUTHORIZATION'] : '';
+            $headers['redirect_http_authorization'] = \is_string($serverParams['REDIRECT_HTTP_AUTHORIZATION']) ? $serverParams['REDIRECT_HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
@@ -329,8 +329,8 @@ final readonly class McpEndpoint
             'test' => 'auth',
             'headers_received' => $headers,
             'auth_header_detected' => $receivedAuthHeader,
-            'server_software' => is_string($serverParams['SERVER_SOFTWARE'] ?? null) ? $serverParams['SERVER_SOFTWARE'] : 'unknown',
-            'hint' => !$receivedAuthHeader ? 'Authorization header not received. See module page for solutions.' : 'Authorization header received successfully.'
+            'server_software' => \is_string($serverParams['SERVER_SOFTWARE'] ?? null) ? $serverParams['SERVER_SOFTWARE'] : 'unknown',
+            'hint' => !$receivedAuthHeader ? 'Authorization header not received. See module page for solutions.' : 'Authorization header received successfully.',
         ];
 
         $body = GeneralUtility::makeInstance(Stream::class, 'php://temp', 'rw');
@@ -345,11 +345,11 @@ final readonly class McpEndpoint
      */
     private function isValidTokenInfo(?array $tokenInfo): bool
     {
-        return is_array($tokenInfo)
+        return \is_array($tokenInfo)
             && isset($tokenInfo['be_user_uid'], $tokenInfo['client_name'], $tokenInfo['token_uid'])
-            && is_int($tokenInfo['be_user_uid'])
-            && is_string($tokenInfo['client_name'])
-            && is_int($tokenInfo['token_uid']);
+            && \is_int($tokenInfo['be_user_uid'])
+            && \is_string($tokenInfo['client_name'])
+            && \is_int($tokenInfo['token_uid']);
     }
 
     /**
@@ -358,6 +358,6 @@ final readonly class McpEndpoint
     private function encodeJson(array $data, int $flags = 0): string
     {
         $json = json_encode($data, $flags);
-        return is_string($json) ? $json : '{}';
+        return \is_string($json) ? $json : '{}';
     }
 }

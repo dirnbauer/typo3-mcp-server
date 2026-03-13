@@ -22,7 +22,7 @@ final class ToolRegistry
      */
     public function __construct(
         #[AutowireIterator('mcp.tool')]
-        iterable $tools
+        iterable $tools,
     ) {
         foreach ($tools as $tool) {
             $this->tools[$tool->getName()] = $tool;
@@ -31,7 +31,7 @@ final class ToolRegistry
 
     /**
      * Get all registered tools
-     * 
+     *
      * @return ToolInterface[]
      */
     public function getTools(): array

@@ -8,7 +8,7 @@ use Throwable;
 
 /**
  * Exception for configuration errors
- * 
+ *
  * Thrown when system configuration is missing, invalid,
  * or incompatible. Maps to HTTP 500 Internal Server Error
  * status as these are system-level issues.
@@ -27,7 +27,7 @@ class ConfigurationException extends McpException
             "System configuration error",
             500,
             $previous,
-            ['config' => $config, 'reason' => $reason]
+            ['config' => $config, 'reason' => $reason],
         );
     }
 }

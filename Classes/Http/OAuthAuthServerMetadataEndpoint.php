@@ -27,9 +27,9 @@ final class OAuthAuthServerMetadataEndpoint
 
         $baseUrl = $this->getBaseUrl($request);
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        
+
         $metadata = $oauthService->getMetadata($baseUrl);
-        
+
         return $this->createJsonResponse($metadata);
     }
 
@@ -39,15 +39,15 @@ final class OAuthAuthServerMetadataEndpoint
     private function createJsonResponse(array $data): ResponseInterface
     {
         $response = new JsonResponse($data);
-        
+
         // Add CORS headers
         $response = $this->addCorsHeaders($response);
-        
+
         // Add cache headers (short cache for dynamic content)
         $response = $response
             ->withHeader('Cache-Control', 'public, max-age=300') // 5 minutes
             ->withHeader('Vary', 'Origin');
-        
+
         return $response;
     }
 
@@ -56,24 +56,24 @@ final class OAuthAuthServerMetadataEndpoint
         // Try to get from TYPO3 configuration first
         /** @var mixed $confVars */
         $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+        $configuredBaseUrl = \is_array($confVars) && \is_array($confVars['SYS'] ?? null)
             ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
             : null;
-        $baseUrl = is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
-        
+        $baseUrl = \is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
+
         if (empty($baseUrl)) {
             // Build from request
             $uri = $request->getUri();
             $scheme = $uri->getScheme();
             $host = $uri->getHost();
             $port = $uri->getPort();
-            
+
             $baseUrl = $scheme . '://' . $host;
-            if ($port && !in_array($port, [80, 443])) {
+            if ($port && !\in_array($port, [80, 443])) {
                 $baseUrl .= ':' . $port;
             }
         }
-        
+
         return rtrim($baseUrl, '/');
     }
 }

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use ReflectionClass;
-use Throwable;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use ReflectionClass;
+use Throwable;
 
 /**
  * Abstract base class for MCP tools
- * 
+ *
  * Implements the Template Method pattern for consistent error handling
  * across all tools. The execute() method is final and handles all
  * exceptions, while subclasses implement doExecute() for their logic.
@@ -20,7 +20,7 @@ use Mcp\Types\TextContent;
 abstract class AbstractTool implements ToolInterface
 {
     use ExceptionHandlerTrait;
-    
+
     /**
      * Get the tool name based on the class name
      */
@@ -29,7 +29,7 @@ abstract class AbstractTool implements ToolInterface
         $className = (new ReflectionClass($this))->getShortName();
         return str_replace('Tool', '', $className);
     }
-    
+
     /**
      * @param array<string, mixed> $params
      */
@@ -54,15 +54,13 @@ abstract class AbstractTool implements ToolInterface
         }
     }
 
-    protected function initialize(): void
-    {
-    }
+    protected function initialize(): void {}
 
     /**
      * @param array<string, mixed> $params
      */
     abstract protected function doExecute(array $params): CallToolResult;
-    
+
     /**
      * Create an error result (required by ExceptionHandlerTrait)
      */

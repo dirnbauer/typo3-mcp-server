@@ -64,22 +64,22 @@ class WriteTableSearchReplaceTest extends LlmTestCase
 
         // Verify exploration happened
         $history = $this->getToolCallHistory();
-        $hasExploration = in_array('GetPage', $history)
-            || in_array('GetPageTree', $history)
-            || in_array('ReadTable', $history)
-            || in_array('Search', $history);
+        $hasExploration = \in_array('GetPage', $history)
+            || \in_array('GetPageTree', $history)
+            || \in_array('ReadTable', $history)
+            || \in_array('Search', $history);
         $this->assertTrue(
             $hasExploration,
-            "[$modelKey] Expected LLM to explore content before fixing. Tools used: " . implode(', ', $history)
+            "[$modelKey] Expected LLM to explore content before fixing. Tools used: " . implode(', ', $history),
         );
 
         // Verify WriteTable was called
         $writeCalls = $response->getToolCallsByName('WriteTable');
         $this->assertGreaterThan(
             0,
-            count($writeCalls),
+            \count($writeCalls),
             "[$modelKey] Expected WriteTable call. History: " . implode(' -> ', $this->getToolCallHistory())
-                . "\nFinal response: " . $response->getContent()
+                . "\nFinal response: " . $response->getContent(),
         );
 
         $writeCall = $writeCalls[0]['arguments'];
@@ -87,33 +87,45 @@ class WriteTableSearchReplaceTest extends LlmTestCase
         $this->assertEquals(
             'update',
             $writeCall['action'],
-            "[$modelKey] Expected update action"
+            "[$modelKey] Expected update action",
         );
 
-        $this->assertArrayHasKey('data', $writeCall,
-            "[$modelKey] Expected data parameter in WriteTable call");
+        $this->assertArrayHasKey(
+            'data',
+            $writeCall,
+            "[$modelKey] Expected data parameter in WriteTable call",
+        );
 
         // Execute the tool call and verify success
         $writeResult = $this->executeToolCall($writeCalls[0]);
         $this->assertFalse(
             $writeResult['isError'] ?? false,
-            "[$modelKey] WriteTable failed: " . $writeResult['content']
+            "[$modelKey] WriteTable failed: " . $writeResult['content'],
         );
 
         // Check that the header field was addressed
         $data = $writeCall['data'];
-        $this->assertArrayHasKey('header', $data,
-            "[$modelKey] Expected header field in data");
+        $this->assertArrayHasKey(
+            'header',
+            $data,
+            "[$modelKey] Expected header field in data",
+        );
 
         $headerValue = $data['header'];
 
-        if (is_string($headerValue)) {
+        if (\is_string($headerValue)) {
             // Full replacement — verify it contains the corrected words
-            $this->assertStringContainsString('Welcome', $headerValue,
-                "[$modelKey] Updated header should contain 'Welcome'");
-            $this->assertStringContainsString('Company', $headerValue,
-                "[$modelKey] Updated header should contain 'Company'");
-        } elseif (is_array($headerValue)) {
+            $this->assertStringContainsString(
+                'Welcome',
+                $headerValue,
+                "[$modelKey] Updated header should contain 'Welcome'",
+            );
+            $this->assertStringContainsString(
+                'Company',
+                $headerValue,
+                "[$modelKey] Updated header should contain 'Company'",
+            );
+        } elseif (\is_array($headerValue)) {
             // Search-and-replace operations
             $fixedWelcome = false;
             $fixedCompany = false;
@@ -129,15 +141,15 @@ class WriteTableSearchReplaceTest extends LlmTestCase
             $this->assertTrue(
                 $fixedWelcome,
                 "[$modelKey] Expected 'Welcom' -> 'Welcome' correction. Got: "
-                    . json_encode($headerValue)
+                    . json_encode($headerValue),
             );
             $this->assertTrue(
                 $fixedCompany,
                 "[$modelKey] Expected 'Compnay' -> 'Company' correction. Got: "
-                    . json_encode($headerValue)
+                    . json_encode($headerValue),
             );
         } else {
-            $this->fail("[$modelKey] header field value is neither string nor array: " . gettype($headerValue));
+            $this->fail("[$modelKey] header field value is neither string nor array: " . \gettype($headerValue));
         }
     }
 
@@ -165,56 +177,67 @@ class WriteTableSearchReplaceTest extends LlmTestCase
         $writeCalls = $response->getToolCallsByName('WriteTable');
         $this->assertGreaterThan(
             0,
-            count($writeCalls),
+            \count($writeCalls),
             "[$modelKey] Expected WriteTable call. History: " . implode(' -> ', $this->getToolCallHistory())
-                . "\nFinal response: " . $response->getContent()
+                . "\nFinal response: " . $response->getContent(),
         );
 
         $writeCall = $writeCalls[0]['arguments'];
         $this->assertEquals(
             'update',
             $writeCall['action'],
-            "[$modelKey] Expected update action"
+            "[$modelKey] Expected update action",
         );
 
         // Execute and verify success
         $writeResult = $this->executeToolCall($writeCalls[0]);
         $this->assertFalse(
             $writeResult['isError'] ?? false,
-            "[$modelKey] WriteTable failed: " . $writeResult['content']
+            "[$modelKey] WriteTable failed: " . $writeResult['content'],
         );
 
         $data = $writeCall['data'] ?? [];
 
         // Verify header was addressed (either as string or search/replace)
         if (isset($data['header'])) {
-            if (is_string($data['header'])) {
-                $this->assertStringContainsString('Services', $data['header'],
-                    "[$modelKey] Updated header should contain 'Services'");
-            } elseif (is_array($data['header'])) {
+            if (\is_string($data['header'])) {
+                $this->assertStringContainsString(
+                    'Services',
+                    $data['header'],
+                    "[$modelKey] Updated header should contain 'Services'",
+                );
+            } elseif (\is_array($data['header'])) {
                 $headerFixed = false;
                 foreach ($data['header'] as $op) {
                     if (stripos($op['replace'] ?? '', 'Services') !== false) {
                         $headerFixed = true;
                     }
                 }
-                $this->assertTrue($headerFixed,
-                    "[$modelKey] Expected header to be corrected to 'Services'");
+                $this->assertTrue(
+                    $headerFixed,
+                    "[$modelKey] Expected header to be corrected to 'Services'",
+                );
             }
         }
 
         // Verify bodytext was addressed
         if (isset($data['bodytext'])) {
-            if (is_string($data['bodytext'])) {
-                $this->assertStringNotContainsString('devlopment', $data['bodytext'],
-                    "[$modelKey] Should fix 'devlopment' typo");
-                $this->assertStringNotContainsString('dixital', $data['bodytext'],
-                    "[$modelKey] Should fix 'dixital' typo");
-            } elseif (is_array($data['bodytext'])) {
+            if (\is_string($data['bodytext'])) {
+                $this->assertStringNotContainsString(
+                    'devlopment',
+                    $data['bodytext'],
+                    "[$modelKey] Should fix 'devlopment' typo",
+                );
+                $this->assertStringNotContainsString(
+                    'dixital',
+                    $data['bodytext'],
+                    "[$modelKey] Should fix 'dixital' typo",
+                );
+            } elseif (\is_array($data['bodytext'])) {
                 $this->assertGreaterThan(
                     0,
-                    count($data['bodytext']),
-                    "[$modelKey] Expected at least one bodytext replacement"
+                    \count($data['bodytext']),
+                    "[$modelKey] Expected at least one bodytext replacement",
                 );
             }
         }
@@ -243,29 +266,29 @@ class WriteTableSearchReplaceTest extends LlmTestCase
 
         // The LLM should have explored and found content with typos
         $history = $this->getToolCallHistory();
-        $hasExploration = in_array('GetPage', $history)
-            || in_array('GetPageTree', $history)
-            || in_array('ReadTable', $history);
+        $hasExploration = \in_array('GetPage', $history)
+            || \in_array('GetPageTree', $history)
+            || \in_array('ReadTable', $history);
         $this->assertTrue(
             $hasExploration,
-            "[$modelKey] Expected LLM to explore page content. Tools used: " . implode(', ', $history)
+            "[$modelKey] Expected LLM to explore page content. Tools used: " . implode(', ', $history),
         );
 
         // Should have called WriteTable to fix something
         $writeCalls = $response->getToolCallsByName('WriteTable');
         $this->assertGreaterThan(
             0,
-            count($writeCalls),
+            \count($writeCalls),
             "[$modelKey] Expected at least one WriteTable call to fix spelling errors. "
                 . "History: " . implode(' -> ', $this->getToolCallHistory())
-                . "\nFinal response: " . $response->getContent()
+                . "\nFinal response: " . $response->getContent(),
         );
 
         // Execute the first write call and verify success
         $writeResult = $this->executeToolCall($writeCalls[0]);
         $this->assertFalse(
             $writeResult['isError'] ?? false,
-            "[$modelKey] WriteTable failed: " . $writeResult['content']
+            "[$modelKey] WriteTable failed: " . $writeResult['content'],
         );
     }
 }

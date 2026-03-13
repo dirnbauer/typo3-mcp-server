@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
@@ -18,25 +18,24 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class OAuthAuthorizeEndpoint
 {
-
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         try {
             $postParams = $this->getRequestData($request->getParsedBody());
-            
+
             // Initialize backend user context for eID
             $this->initializeBackendUserContext($request);
-            
+
             // Check if user is authenticated
             if (!$this->isBackendUserAuthenticated()) {
                 return $this->redirectToLogin($request);
             }
 
             $beUser = $GLOBALS['BE_USER'] ?? null;
-            if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+            if (!$beUser instanceof BackendUserAuthentication || !\is_array($beUser->user)) {
                 return $this->createErrorResponse('server_error', 'Backend user context could not be initialized');
             }
-            $beUserId = (int)$beUser->user['uid'];
+            $beUserId = (int) $beUser->user['uid'];
 
             // Handle authorization approval
             if ($request->getMethod() === 'POST' && isset($postParams['approve'])) {
@@ -59,14 +58,14 @@ final class OAuthAuthorizeEndpoint
             $GLOBALS['BE_USER']->start($request);
         }
     }
-    
+
     private function isBackendUserAuthenticated(): bool
     {
         $beUser = $GLOBALS['BE_USER'] ?? null;
-        return $beUser instanceof BackendUserAuthentication && 
-               is_array($beUser->user) && 
-               isset($beUser->user['uid']) && 
-               $beUser->user['uid'] > 0;
+        return $beUser instanceof BackendUserAuthentication
+               && \is_array($beUser->user)
+               && isset($beUser->user['uid'])
+               && $beUser->user['uid'] > 0;
     }
 
     /**
@@ -75,12 +74,12 @@ final class OAuthAuthorizeEndpoint
     private function resolveClientName(ServerRequestInterface $request): string
     {
         $queryParams = $this->getRequestData($request->getQueryParams());
-        
+
         // Check query params
-        if (isset($queryParams['client_name']) && is_string($queryParams['client_name']) && $queryParams['client_name'] !== '') {
+        if (isset($queryParams['client_name']) && \is_string($queryParams['client_name']) && $queryParams['client_name'] !== '') {
             return $queryParams['client_name'];
         }
-        
+
         // Fall back to hostname from Referer header
         $referer = $request->getHeaderLine('Referer');
         if (!empty($referer)) {
@@ -89,7 +88,7 @@ final class OAuthAuthorizeEndpoint
                 return $hostname;
             }
         }
-        
+
         // Ultimate fallback
         return 'MCP Client';
     }
@@ -103,16 +102,16 @@ final class OAuthAuthorizeEndpoint
         if (empty($url)) {
             return '';
         }
-        
+
         // Add protocol if missing to make parse_url work properly
         if (!preg_match('/^https?:\/\//', $url)) {
             $url = 'http://' . $url;
         }
-        
+
         $parsed = parse_url($url);
-        
+
         // Return hostname or empty string if parsing failed
-        if (is_array($parsed) && isset($parsed['host']) && is_string($parsed['host'])) {
+        if (\is_array($parsed) && isset($parsed['host']) && \is_string($parsed['host'])) {
             return $parsed['host'];
         }
 
@@ -123,7 +122,7 @@ final class OAuthAuthorizeEndpoint
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
     {
         $queryParams = $this->getRequestData($request->getQueryParams());
-        
+
         // Store OAuth parameters in cookie
         $oauthData = [
             'client_id' => $queryParams['client_id'] ?? '',
@@ -131,19 +130,19 @@ final class OAuthAuthorizeEndpoint
             'redirect_uri' => $queryParams['redirect_uri'] ?? '',
             'code_challenge' => $queryParams['code_challenge'] ?? '',
             'code_challenge_method' => $queryParams['code_challenge_method'] ?? '',
-            'state' => $queryParams['state'] ?? ''
+            'state' => $queryParams['state'] ?? '',
         ];
-        
+
         $oauthDataEncoded = base64_encode($this->encodeJson($oauthData));
         $loginUrl = '/typo3/index.php?loginProvider=1450629977&login_status=login';
-        
+
         // Build cookie string with environment-aware security flags
         $isHttps = $request->getUri()->getScheme() === 'https';
         $cookieFlags = 'Max-Age=600; Path=/; HttpOnly; SameSite=Lax';
         if ($isHttps) {
             $cookieFlags .= '; Secure';
         }
-        
+
         $stream = new Stream('php://temp', 'rw');
         $stream->write('');
         $stream->rewind();
@@ -153,8 +152,8 @@ final class OAuthAuthorizeEndpoint
             302,
             [
                 'Location' => $loginUrl,
-                'Set-Cookie' => 'tx_mcpserver_oauth=' . $oauthDataEncoded . '; ' . $cookieFlags
-            ]
+                'Set-Cookie' => 'tx_mcpserver_oauth=' . $oauthDataEncoded . '; ' . $cookieFlags,
+            ],
         );
     }
 
@@ -175,19 +174,19 @@ final class OAuthAuthorizeEndpoint
             $clientName,
             $redirectUri,
             $pkceChallenge,
-            $challengeMethod
+            $challengeMethod,
         );
 
         // If redirect_uri is provided, redirect there with the code
         if (!empty($redirectUri)) {
             $separator = str_contains($redirectUri, '?') ? '&' : '?';
             $redirectUrl = $redirectUri . $separator . 'code=' . urlencode($code);
-            
+
             // Add state parameter if provided
             if (!empty($state)) {
                 $redirectUrl .= '&state=' . urlencode($state);
             }
-            
+
             $stream = new Stream('php://temp', 'rw');
             $stream->write('');
             $stream->rewind();
@@ -195,13 +194,13 @@ final class OAuthAuthorizeEndpoint
             return new Response(
                 $stream,
                 302,
-                ['Location' => $redirectUrl]
+                ['Location' => $redirectUrl],
             );
         }
 
         // Otherwise, show the code to the user
         $html = $this->generateCodeDisplayTemplate($code, $clientName);
-        
+
         $stream = new Stream('php://temp', 'rw');
         $stream->write($html);
         $stream->rewind();
@@ -209,14 +208,14 @@ final class OAuthAuthorizeEndpoint
         return new Response(
             $stream,
             200,
-            ['Content-Type' => 'text/html; charset=utf-8']
+            ['Content-Type' => 'text/html; charset=utf-8'],
         );
     }
 
     private function showConsentForm(ServerRequestInterface $request): ResponseInterface
     {
         $queryParams = $this->getRequestData($request->getQueryParams());
-        
+
         $clientId = $queryParams['client_id'] ?? '';
         $clientName = $this->resolveClientName($request);
         $redirectUri = $queryParams['redirect_uri'] ?? '';
@@ -230,7 +229,7 @@ final class OAuthAuthorizeEndpoint
         }
 
         $beUser = $GLOBALS['BE_USER'] ?? null;
-        if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+        if (!$beUser instanceof BackendUserAuthentication || !\is_array($beUser->user)) {
             return $this->createErrorResponse('server_error', 'Backend user context missing');
         }
         $username = $beUser->user['username'] ?? 'Unknown';
@@ -262,8 +261,8 @@ final class OAuthAuthorizeEndpoint
             200,
             [
                 'Content-Type' => 'text/html; charset=utf-8',
-                'Set-Cookie' => 'tx_mcpserver_oauth=; ' . $cookieCleanupFlags
-            ]
+                'Set-Cookie' => 'tx_mcpserver_oauth=; ' . $cookieCleanupFlags,
+            ],
         );
     }
 
@@ -272,7 +271,7 @@ final class OAuthAuthorizeEndpoint
     {
         $errorData = [
             'error' => $error,
-            'error_description' => $description
+            'error_description' => $description,
         ];
 
         $stream = new Stream('php://temp', 'rw');
@@ -282,7 +281,7 @@ final class OAuthAuthorizeEndpoint
         return new Response(
             $stream,
             400,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         );
     }
 
@@ -550,13 +549,13 @@ final class OAuthAuthorizeEndpoint
      */
     private function getRequestData(mixed $source): array
     {
-        if (!is_array($source)) {
+        if (!\is_array($source)) {
             return [];
         }
 
         $result = [];
         foreach ($source as $key => $value) {
-            if (!is_string($key) || (!is_string($value) && $value !== null)) {
+            if (!\is_string($key) || (!\is_string($value) && $value !== null)) {
                 continue;
             }
             $result[$key] = $value;
@@ -571,6 +570,6 @@ final class OAuthAuthorizeEndpoint
     private function encodeJson(array $data): string
     {
         $json = json_encode($data);
-        return is_string($json) ? $json : '{}';
+        return \is_string($json) ? $json : '{}';
     }
 }

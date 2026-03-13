@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
-use InvalidArgumentException;
-use RuntimeException;
-use Mcp\Types\CallToolResult;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Utility\TcaFormattingUtility;
 use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Utility\TcaFormattingUtility;
+use InvalidArgumentException;
+use Mcp\Types\CallToolResult;
+use RuntimeException;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for getting FlexForm schema information
@@ -28,22 +28,22 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     protected function getColumnConfig(string $table, string $field): array
     {
         $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
+        if (!\is_array($globalTca)) {
             return [];
         }
 
         $tableConfig = $globalTca[$table] ?? null;
-        if (!is_array($tableConfig)) {
+        if (!\is_array($tableConfig)) {
             return [];
         }
 
         $columns = $tableConfig['columns'] ?? null;
-        if (!is_array($columns)) {
+        if (!\is_array($columns)) {
             return [];
         }
 
         $columnConfig = $columns[$field] ?? null;
-        return is_array($columnConfig) ? $columnConfig : [];
+        return \is_array($columnConfig) ? $columnConfig : [];
     }
 
     /**
@@ -52,22 +52,22 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     protected function getTypeConfig(string $table, string $type): array
     {
         $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
+        if (!\is_array($globalTca)) {
             return [];
         }
 
         $tableConfig = $globalTca[$table] ?? null;
-        if (!is_array($tableConfig)) {
+        if (!\is_array($tableConfig)) {
             return [];
         }
 
         $types = $tableConfig['types'] ?? null;
-        if (!is_array($types)) {
+        if (!\is_array($types)) {
             return [];
         }
 
         $typeConfig = $types[$type] ?? null;
-        return is_array($typeConfig) ? $typeConfig : [];
+        return \is_array($typeConfig) ? $typeConfig : [];
     }
 
     /**
@@ -78,7 +78,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     {
         $normalized = [];
         foreach ($array as $key => $value) {
-            if (is_string($key)) {
+            if (\is_string($key)) {
                 $normalized[$key] = $value;
             }
         }
@@ -121,8 +121,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
-                'idempotentHint' => true
-            ]
+                'idempotentHint' => true,
+            ],
         ];
     }
 
@@ -133,11 +133,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
+
         // Get parameters
-        $table = is_string($params['table'] ?? null) ? $params['table'] : 'tt_content';
-        $field = is_string($params['field'] ?? null) ? $params['field'] : 'pi_flexform';
-        $identifier = is_string($params['identifier'] ?? null) ? $params['identifier'] : '';
+        $table = \is_string($params['table'] ?? null) ? $params['table'] : 'tt_content';
+        $field = \is_string($params['field'] ?? null) ? $params['field'] : 'pi_flexform';
+        $identifier = \is_string($params['identifier'] ?? null) ? $params['identifier'] : '';
 
         // Validate parameters
         if (empty($identifier)) {
@@ -154,7 +154,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         }
 
         // Check if the field is a FlexForm field
-        $flexFormConfig = isset($columnConfig['config']) && is_array($columnConfig['config']) ? $columnConfig['config'] : [];
+        $flexFormConfig = isset($columnConfig['config']) && \is_array($columnConfig['config']) ? $columnConfig['config'] : [];
         if (($flexFormConfig['type'] ?? null) !== 'flex') {
             throw new InvalidArgumentException("Field '$field' in table '$table' is not a FlexForm field");
         }
@@ -179,7 +179,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $header .= "Field: $field\n\n";
 
         // Handle FILE: references
-        if (is_string($dsValue) && str_starts_with($dsValue, 'FILE:')) {
+        if (\is_string($dsValue) && str_starts_with($dsValue, 'FILE:')) {
             $file = substr($dsValue, 5);
             $file = GeneralUtility::getFileAbsFileName($file);
             $prefix = "Schema defined in file: " . $file . "\n\n";
@@ -189,8 +189,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                 if (!empty($content)) {
                     // Parse the XML content using TYPO3's built-in method
                     $xmlArray = GeneralUtility::xml2array($content);
-                    
-                    if (is_array($xmlArray)) {
+
+                    if (\is_array($xmlArray)) {
                         $processedData = $this->processFlexFormXml($xmlArray);
                         $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                         return $this->createSuccessResult($result);
@@ -202,13 +202,13 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             throw new RuntimeException("FlexForm file not found: $file");
         }
 
-        if (is_string($dsValue)) {
+        if (\is_string($dsValue)) {
             $prefix = "Schema defined inline as XML\n\n";
 
             // Parse the XML content using TYPO3's built-in method
             $xmlArray = GeneralUtility::xml2array($dsValue);
-            
-            if (is_array($xmlArray)) {
+
+            if (\is_array($xmlArray)) {
                 $processedData = $this->processFlexFormXml($xmlArray);
                 $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                 return $this->createSuccessResult($result);
@@ -216,7 +216,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             throw new RuntimeException("Failed to parse inline XML schema");
         }
 
-        if (is_array($dsValue)) {
+        if (\is_array($dsValue)) {
             // PHP array format - process directly
             $processedData = $this->processFlexFormXml($dsValue);
             $prefix = "Schema defined as PHP array\n\n";
@@ -232,11 +232,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function resolveFlexFormIdentifier(mixed $dsConfig, string $identifier, ?string $type = null): ?string
     {
-        if (is_string($dsConfig) && $dsConfig !== '') {
+        if (\is_string($dsConfig) && $dsConfig !== '') {
             return $type !== null ? $this->formatTypeScopedIdentifier($identifier, $type) : null;
         }
 
-        if (!is_array($dsConfig) || $dsConfig === []) {
+        if (!\is_array($dsConfig) || $dsConfig === []) {
             return null;
         }
 
@@ -248,10 +248,10 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             $identifierValue !== '' ? '*,' . $identifierValue : null,
             $type,
             $type !== null ? '*,' . $type : null,
-        ], static fn(mixed $candidate): bool => is_string($candidate) && $candidate !== '')));
+        ], static fn(mixed $candidate): bool => \is_string($candidate) && $candidate !== '')));
 
         foreach ($candidates as $candidate) {
-            if (array_key_exists($candidate, $dsConfig)) {
+            if (\array_key_exists($candidate, $dsConfig)) {
                 return $candidate;
             }
         }
@@ -270,7 +270,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             $resolvedIdentifier = $this->resolveFlexFormIdentifier(
                 $candidate['config']['ds'] ?? null,
                 $identifier,
-                $candidate['type']
+                $candidate['type'],
             );
 
             if ($resolvedIdentifier === null) {
@@ -299,14 +299,14 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     {
         $candidates = [];
         $columnConfig = $this->getColumnConfig($table, $field);
-        $baseConfig = isset($columnConfig['config']) && is_array($columnConfig['config']) ? $columnConfig['config'] : [];
+        $baseConfig = isset($columnConfig['config']) && \is_array($columnConfig['config']) ? $columnConfig['config'] : [];
 
         foreach ($this->getTypeCandidatesFromIdentifier($identifier) as $type) {
             $typeConfig = $this->getTypeConfig($table, $type);
             $columnsOverrides = $typeConfig['columnsOverrides'] ?? null;
-            $overrideFieldConfig = is_array($columnsOverrides) ? ($columnsOverrides[$field] ?? null) : null;
-            $overrideConfig = is_array($overrideFieldConfig) && is_array($overrideFieldConfig['config'] ?? null) ? $overrideFieldConfig['config'] : null;
-            if (is_array($overrideConfig)) {
+            $overrideFieldConfig = \is_array($columnsOverrides) ? ($columnsOverrides[$field] ?? null) : null;
+            $overrideConfig = \is_array($overrideFieldConfig) && \is_array($overrideFieldConfig['config'] ?? null) ? $overrideFieldConfig['config'] : null;
+            if (\is_array($overrideConfig)) {
                 $candidates[] = [
                     'type' => $type,
                     'config' => array_replace_recursive($baseConfig, $overrideConfig),
@@ -340,11 +340,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
     protected function extractFlexFormDataStructure(mixed $dsConfig, string $resolvedIdentifier): mixed
     {
-        if (is_string($dsConfig) && $dsConfig !== '') {
+        if (\is_string($dsConfig) && $dsConfig !== '') {
             return $dsConfig;
         }
 
-        if (is_array($dsConfig) && array_key_exists($resolvedIdentifier, $dsConfig)) {
+        if (\is_array($dsConfig) && \array_key_exists($resolvedIdentifier, $dsConfig)) {
             return $dsConfig[$resolvedIdentifier];
         }
 
@@ -373,10 +373,10 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     {
         $parts = array_values(array_filter(
             array_map(trim(...), explode(',', $identifier)),
-            static fn(string $part): bool => $part !== '' && $part !== '*'
+            static fn(string $part): bool => $part !== '' && $part !== '*',
         ));
 
-        return $parts[count($parts) - 1] ?? $identifier;
+        return $parts[\count($parts) - 1] ?? $identifier;
     }
 
     /**
@@ -408,26 +408,26 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             'label' => $fieldName,
             'description' => '',
             'config' => [],
-            'jsonPath' => $this->getJsonPath($fieldName)
+            'jsonPath' => $this->getJsonPath($fieldName),
         ];
 
         // Check if field uses TCEforms structure (older format) or direct configuration (newer format)
-        $fieldConfig = isset($field['TCEforms']) && is_array($field['TCEforms']) ? $field['TCEforms'] : $field;
+        $fieldConfig = isset($field['TCEforms']) && \is_array($field['TCEforms']) ? $field['TCEforms'] : $field;
 
         // Get field label
-        if (is_string($fieldConfig['label'] ?? null)) {
+        if (\is_string($fieldConfig['label'] ?? null)) {
             $fieldData['label'] = TableAccessService::translateLabel($fieldConfig['label']);
         }
 
         // Get field type and config
-        $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
-        if (is_string($config['type'] ?? null)) {
+        $config = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+        if (\is_string($config['type'] ?? null)) {
             $fieldData['type'] = $config['type'];
             $fieldData['config'] = $config;
         }
 
         // Get field description
-        if (is_string($fieldConfig['description'] ?? null)) {
+        if (\is_string($fieldConfig['description'] ?? null)) {
             $fieldData['description'] = TableAccessService::translateLabel($fieldConfig['description']);
         }
 
@@ -445,7 +445,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $processedFields = [];
 
         foreach ($fields as $fieldName => $field) {
-            if (!is_string($fieldName) || !is_array($field)) {
+            if (!\is_string($fieldName) || !\is_array($field)) {
                 continue;
             }
             $processedFields[] = $this->processField($fieldName, $this->normalizeAssocArray($field));
@@ -465,16 +465,16 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $processedSheets = [];
 
         foreach ($sheets as $sheetName => $sheet) {
-            if (!is_string($sheetName) || !is_array($sheet)) {
+            if (!\is_string($sheetName) || !\is_array($sheet)) {
                 continue;
             }
             $sheetData = [
                 'name' => $sheetName,
-                'fields' => []
+                'fields' => [],
             ];
 
-            $root = isset($sheet['ROOT']) && is_array($sheet['ROOT']) ? $sheet['ROOT'] : [];
-            $elements = isset($root['el']) && is_array($root['el']) ? $root['el'] : [];
+            $root = isset($sheet['ROOT']) && \is_array($sheet['ROOT']) ? $sheet['ROOT'] : [];
+            $elements = isset($root['el']) && \is_array($root['el']) ? $root['el'] : [];
             if ($elements !== []) {
                 $sheetData['fields'] = $this->processFields($this->normalizeAssocArray($elements));
             }
@@ -497,10 +497,10 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $data = [
             'sheets' => [],
             'fields' => [],
-            'hasSheets' => false
+            'hasSheets' => false,
         ];
 
-        if (isset($xmlArray['sheets']) && is_array($xmlArray['sheets'])) {
+        if (isset($xmlArray['sheets']) && \is_array($xmlArray['sheets'])) {
             // Multi-sheet FlexForm
             $data['hasSheets'] = true;
             $data['sheets'] = $this->processSheets($this->normalizeAssocArray($xmlArray['sheets']));
@@ -512,8 +512,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                 }
             }
         } else {
-            $root = isset($xmlArray['ROOT']) && is_array($xmlArray['ROOT']) ? $xmlArray['ROOT'] : [];
-            $elements = isset($root['el']) && is_array($root['el']) ? $root['el'] : [];
+            $root = isset($xmlArray['ROOT']) && \is_array($xmlArray['ROOT']) ? $xmlArray['ROOT'] : [];
+            $elements = isset($root['el']) && \is_array($root['el']) ? $root['el'] : [];
             if ($elements === []) {
                 return $data;
             }
@@ -524,7 +524,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             // Store as single unnamed sheet for consistency
             $data['sheets'][] = [
                 'name' => null,
-                'fields' => $processedFields
+                'fields' => $processedFields,
             ];
         }
 
@@ -630,7 +630,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $example = ['pi_flexform' => []];
 
         foreach ($fieldNames as $fieldName) {
-            if (!is_string($fieldName)) {
+            if (!\is_string($fieldName)) {
                 continue;
             }
             // Skip non-field entries
@@ -658,14 +658,14 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         }
 
         $current = &$root;
-        $lastIndex = count($parts) - 1;
+        $lastIndex = \count($parts) - 1;
         foreach ($parts as $index => $part) {
             if ($index === $lastIndex) {
                 $current[$part] = '<' . $part . ' value>';
                 return;
             }
 
-            if (!isset($current[$part]) || !is_array($current[$part])) {
+            if (!isset($current[$part]) || !\is_array($current[$part])) {
                 $current[$part] = [];
             }
             /** @var array<string, mixed> $next */

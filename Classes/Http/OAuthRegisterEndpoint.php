@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use Throwable;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -36,17 +36,17 @@ final class OAuthRegisterEndpoint
             $body = $request->getBody()->getContents();
             $clientData = json_decode($body, true);
 
-            if (!is_array($clientData)) {
+            if (!\is_array($clientData)) {
                 return $this->createErrorResponse('invalid_request', 'Invalid JSON in request body');
             }
 
             // Validate required fields (minimal validation for MCP)
-            if (!isset($clientData['client_name']) || !is_string($clientData['client_name']) || $clientData['client_name'] === '') {
+            if (!isset($clientData['client_name']) || !\is_string($clientData['client_name']) || $clientData['client_name'] === '') {
                 $clientData['client_name'] = 'MCP Client';
             }
 
             // redirect_uris is required by RFC 7591, but for MCP clients we can provide a default
-            if (empty($clientData['redirect_uris']) || !is_array($clientData['redirect_uris'])) {
+            if (empty($clientData['redirect_uris']) || !\is_array($clientData['redirect_uris'])) {
                 $clientData['redirect_uris'] = ['http://localhost']; // Default for local MCP clients
             }
 
@@ -71,10 +71,10 @@ final class OAuthRegisterEndpoint
                 [
                     'Content-Type' => 'application/json',
                     'Cache-Control' => 'no-store',
-                    'Pragma' => 'no-cache'
-                ]
+                    'Pragma' => 'no-cache',
+                ],
             );
-            
+
             return $this->addCorsHeaders($response);
 
         } catch (Throwable $e) {
@@ -86,7 +86,7 @@ final class OAuthRegisterEndpoint
     {
         $errorData = [
             'error' => $error,
-            'error_description' => $description
+            'error_description' => $description,
         ];
 
         $stream = new Stream('php://temp', 'rw');
@@ -96,9 +96,9 @@ final class OAuthRegisterEndpoint
         $response = new Response(
             $stream,
             $statusCode,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         );
-        
+
         return $this->addCorsHeaders($response);
     }
 
@@ -108,6 +108,6 @@ final class OAuthRegisterEndpoint
     private function encodeJson(array $data): string
     {
         $json = json_encode($data);
-        return is_string($json) ? $json : '{}';
+        return \is_string($json) ? $json : '{}';
     }
 }

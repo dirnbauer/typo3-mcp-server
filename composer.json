@@ -24,7 +24,9 @@
         "brianium/paratest": "^7.8.5",
         "phpstan/phpstan": "^2.1",
         "ssch/typo3-rector": "^3.0",
-        "a9f/typo3-fractor": "^0.4"
+        "a9f/typo3-fractor": "^0.4",
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpat/phpat": "^0.12.3"
     },
     "autoload": {
         "psr-4": {
@@ -62,6 +64,12 @@
         ],
         "phpstan": [
             "phpstan analyse --no-progress"
+        ],
+        "php-cs-fixer": [
+            "php-cs-fixer fix --dry-run --diff"
+        ],
+        "php-cs-fixer:fix": [
+            "php-cs-fixer fix"
         ],
         "rector": [
             "rector process --dry-run"

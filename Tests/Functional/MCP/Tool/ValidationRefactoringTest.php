@@ -6,9 +6,9 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\TableAccessService;
-use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Test that validation refactoring works correctly
@@ -29,24 +29,24 @@ class ValidationRefactoringTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Import test data first
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);        // Set up language service
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('en');
-        
+
         $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
         $this->tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
     }
-    
+
     protected function getRecordByUid(string $table, int $uid): array
     {
         $queryBuilder = $this->getConnectionPool()->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()->removeAll();
-        
+
         return $queryBuilder
             ->select('*')
             ->from($table)
@@ -71,10 +71,10 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'pid' => 1,
             'data' => [
                 'title' => '', // Empty title should fail
-                'doktype' => 1
-            ]
+                'doktype' => 1,
+            ],
         ];
-        
+
         $result = $this->writeTool->execute($params);
         $this->assertTrue($result->isError);
         $resultData = $result->jsonSerialize();
@@ -92,7 +92,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
         $this->assertNotEmpty($allowedValues);
         $this->assertContains('text', $allowedValues);
         $this->assertContains('textmedia', $allowedValues);
-        
+
         // Test validation with invalid value
         $result = $this->tableAccessService->validateFieldValue('tt_content', 'CType', 'invalid_ctype_xyz');
         $this->assertNotNull($result);
@@ -116,10 +116,10 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'pid' => 1,
             'data' => [
                 'CType' => 'invalid_type_xyz',
-                'header' => 'Test'
-            ]
+                'header' => 'Test',
+            ],
         ];
-        
+
         $result = $this->writeTool->execute($params);
         $this->assertTrue($result->isError);
         $resultData = $result->jsonSerialize();
@@ -138,8 +138,8 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'pid' => 0,
             'data' => [
                 'title' => 'Test Page with Date',
-                'starttime' => '2024-01-01T10:00:00Z'
-            ]
+                'starttime' => '2024-01-01T10:00:00Z',
+            ],
         ];
 
         $result = $this->writeTool->execute($params);
@@ -162,58 +162,58 @@ class ValidationRefactoringTest extends FunctionalTestCase
     {
         // Test array to CSV conversion for multi-value fields
         // We'll test the conversion logic by creating a page with multiple categories
-        
+
         // Create categories first
         $cat1Result = $this->writeTool->execute([
             'action' => 'create',
             'table' => 'sys_category',
             'pid' => 0,
-            'data' => ['title' => 'Category 1']
+            'data' => ['title' => 'Category 1'],
         ]);
         $this->assertFalse($cat1Result->isError);
         $cat1Data = json_decode((string) $cat1Result->jsonSerialize()['content'][0]->text, true);
-        
+
         $cat2Result = $this->writeTool->execute([
             'action' => 'create',
             'table' => 'sys_category',
             'pid' => 0,
-            'data' => ['title' => 'Category 2']
+            'data' => ['title' => 'Category 2'],
         ]);
         $this->assertFalse($cat2Result->isError);
         $cat2Data = json_decode((string) $cat2Result->jsonSerialize()['content'][0]->text, true);
-        
+
         // Test that the array conversion happens in validateRecordData
         // For this test, we'll use pages.categories field if available, or just test the validation logic
-        
+
         // Create a test record to verify array to CSV conversion logic
         // The conversion happens in validateRecordData before passing to DataHandler
-        
+
         // Test with a mock field that would support multiple values
         // The key test is that validateRecordData converts arrays to CSV for appropriate field types
-        
+
         // Since we can't easily test with real multi-value fields due to restrictions,
         // let's at least verify the validation logic accepts arrays for appropriate fields
         $testData = [
             'title' => 'Test Category with Array Parent',
             // Even though parent doesn't support multiple, the validation should handle it gracefully
-            'parent' => $cat1Data['uid']
+            'parent' => $cat1Data['uid'],
         ];
-        
+
         // Call validateRecordData through WriteTableTool
         $params = [
             'action' => 'create',
             'table' => 'sys_category',
             'pid' => 0,
-            'data' => $testData
+            'data' => $testData,
         ];
-        
+
         $result = $this->writeTool->execute($params);
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+
         // The important part of this test is that the validation refactoring maintains
         // the array to CSV conversion logic in validateRecordData method
         // This is tested implicitly by the other tests passing
-        
+
         // Verify that the validation logic in TableAccessService works correctly
         $this->assertTrue(true, 'Array to CSV conversion logic is maintained in validateRecordData');
     }
@@ -222,11 +222,11 @@ class ValidationRefactoringTest extends FunctionalTestCase
     {
         // This test ensures that WriteTableTool properly delegates validation to TableAccessService
         // by checking that the same validation rules apply
-        
+
         // Test 1: Direct service validation
         $serviceResult = $this->tableAccessService->validateFieldValue('tt_content', 'header', str_repeat('x', 300));
         $this->assertNotNull($serviceResult);
-        
+
         // Test 2: Same validation through WriteTableTool
         $toolResult = $this->writeTool->execute([
             'action' => 'create',
@@ -234,12 +234,12 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'pid' => 1,
             'data' => [
                 'CType' => 'text',
-                'header' => str_repeat('x', 300)
-            ]
+                'header' => str_repeat('x', 300),
+            ],
         ]);
         $this->assertTrue($toolResult->isError);
         $toolError = $toolResult->jsonSerialize()['content'][0]->text ?? '';
-        
+
         // Both should produce similar validation errors
         $this->assertStringContainsString('header', $serviceResult);
         $this->assertStringContainsString('header', $toolError);

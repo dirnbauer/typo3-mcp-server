@@ -4,32 +4,32 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Traits;
 
-use Throwable;
-use InvalidArgumentException;
-use RuntimeException;
-use DomainException;
 use Doctrine\DBAL\Exception;
+use DomainException;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\McpException;
 use Hn\McpServer\Exception\ValidationException;
+use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Trait for standardized exception handling in MCP tools
- * 
+ *
  * Provides consistent error handling, logging, and user-friendly
  * error message generation across all MCP tools.
  */
 trait ExceptionHandlerTrait
 {
     private ?LoggerInterface $logger = null;
-    
+
     /**
      * Get logger instance
-     * 
+     *
      * @return LoggerInterface
      */
     protected function getLogger(): LoggerInterface
@@ -40,7 +40,7 @@ trait ExceptionHandlerTrait
         }
         return $this->logger;
     }
-    
+
     /**
      * Handle exception and return appropriate error result
      *
@@ -52,13 +52,13 @@ trait ExceptionHandlerTrait
     {
         // Log the exception
         $this->logException($e, $operation);
-        
+
         // Determine user-friendly message
         $userMessage = $this->getUserFriendlyMessage($e, $operation);
-        
+
         return $this->createErrorResult($userMessage);
     }
-    
+
     /**
      * Log exception with context
      *
@@ -71,20 +71,20 @@ trait ExceptionHandlerTrait
             'exception' => $e,
             'operation' => $operation,
             'tool' => static::class,
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
         ];
-        
+
         if ($e instanceof McpException) {
             $context = array_merge($context, $e->getContext());
         }
-        
+
         if ($this->isExpectedException($e)) {
             $this->getLogger()->error($e->getMessage(), $context);
         } else {
             $this->getLogger()->critical($e->getMessage(), $context);
         }
     }
-    
+
     /**
      * Get user-friendly error message
      *
@@ -98,22 +98,22 @@ trait ExceptionHandlerTrait
         if ($e instanceof McpException) {
             return $e->getUserMessage();
         }
-        
+
         // For expected exceptions with messages, use the original message
         if ($this->isExpectedException($e) && !empty($e->getMessage())) {
             return $e->getMessage();
         }
-        
+
         // Map common exceptions to user-friendly messages only for unexpected errors
         return match (true) {
             $e instanceof InvalidArgumentException => 'Invalid input provided' . ($operation ? ' for ' . $operation : ''),
             $e instanceof RuntimeException => 'Operation failed' . ($operation ? ': ' . $operation : ''),
             $e instanceof DomainException => 'Invalid operation requested',
             $e instanceof Exception => 'Database operation failed',
-            default => 'An unexpected error occurred' . ($operation ? ' during ' . $operation : '')
+            default => 'An unexpected error occurred' . ($operation ? ' during ' . $operation : ''),
         };
     }
-    
+
     /**
      * Check if exception is expected (for logging level)
      *
@@ -122,15 +122,15 @@ trait ExceptionHandlerTrait
      */
     protected function isExpectedException(Throwable $e): bool
     {
-        return $e instanceof ValidationException ||
-               $e instanceof AccessDeniedException ||
-               $e instanceof InvalidArgumentException ||
-               ($e instanceof McpException && $e->getCode() < 500);
+        return $e instanceof ValidationException
+               || $e instanceof AccessDeniedException
+               || $e instanceof InvalidArgumentException
+               || ($e instanceof McpException && $e->getCode() < 500);
     }
-    
+
     /**
      * Abstract method that must be implemented by the class using this trait
-     * 
+     *
      * @param string $message Error message
      * @return CallToolResult
      */

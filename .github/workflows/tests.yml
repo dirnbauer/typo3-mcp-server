@@ -50,7 +50,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: sqlite3, pdo_sqlite
           coverage: none
 
@@ -58,4 +58,16 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: PHPStan
-        run: vendor/bin/phpstan analyse --no-progress
+        run: composer phpstan
+
+      - name: PHPat architecture rules
+        run: composer phpstan
+
+      - name: PHP CS Fixer
+        run: composer php-cs-fixer
+
+      - name: Rector
+        run: composer rector
+
+      - name: Fractor
+        run: composer fractor

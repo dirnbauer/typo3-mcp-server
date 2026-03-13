@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use Throwable;
-use InvalidArgumentException;
 use Doctrine\DBAL\Exception;
-use TYPO3\CMS\Core\Database\Connection;
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Utility\RecordFormattingUtility;
+use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
+use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Utility\RecordFormattingUtility;
-use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
-use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use Hn\McpServer\Service\LanguageService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for searching records across TYPO3 tables using TCA-based searchable fields
@@ -53,23 +52,23 @@ final class SearchTool extends AbstractRecordTool
     protected function getTableColumns(string $table): array
     {
         $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
+        if (!\is_array($globalTca)) {
             return [];
         }
 
         $tableConfig = $globalTca[$table] ?? null;
-        if (!is_array($tableConfig)) {
+        if (!\is_array($tableConfig)) {
             return [];
         }
 
         $columns = $tableConfig['columns'] ?? null;
-        if (!is_array($columns)) {
+        if (!\is_array($columns)) {
             return [];
         }
 
         $normalizedColumns = [];
         foreach ($columns as $fieldName => $fieldConfig) {
-            if (is_string($fieldName) && is_array($fieldConfig)) {
+            if (\is_string($fieldName) && \is_array($fieldConfig)) {
                 $normalizedColumns[$fieldName] = $fieldConfig;
             }
         }
@@ -90,7 +89,7 @@ final class SearchTool extends AbstractRecordTool
     {
         $normalized = [];
         foreach ($record as $key => $value) {
-            if (is_string($key)) {
+            if (\is_string($key)) {
                 $normalized[$key] = $value;
             }
         }
@@ -107,9 +106,9 @@ final class SearchTool extends AbstractRecordTool
     protected function getToolSchema(): array
     {
         $schema = [
-            'description' => "Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. " .
-                "Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, " .
-                "or for thorough duplicate checking after initial exploration.",
+            'description' => "Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. "
+                . "Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, "
+                . "or for thorough duplicate checking after initial exploration.",
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -143,7 +142,7 @@ final class SearchTool extends AbstractRecordTool
 
         // Only add language parameter if multiple languages are configured
         $availableLanguages = $this->languageService->getAvailableIsoCodes();
-        if (count($availableLanguages) > 1) {
+        if (\count($availableLanguages) > 1) {
             $schema['inputSchema']['properties']['language'] = [
                 'type' => 'string',
                 'description' => 'Language ISO code to filter search results (e.g., "de", "fr"). When specified, searches only in content for that language.',
@@ -154,7 +153,7 @@ final class SearchTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
-            'idempotentHint' => true
+            'idempotentHint' => true,
         ];
 
         return $schema;
@@ -168,7 +167,7 @@ final class SearchTool extends AbstractRecordTool
         try {
             $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
             $sites = $siteFinder->getAllSites();
-            
+
             $languages = [];
             foreach ($sites as $site) {
                 foreach ($site->getAllLanguages() as $language) {
@@ -179,14 +178,14 @@ final class SearchTool extends AbstractRecordTool
                     ];
                 }
             }
-            
-            if (count($languages) <= 1) {
+
+            if (\count($languages) <= 1) {
                 return "LANGUAGES:\n• Single language site detected\n\n";
             }
-            
+
             $recommendation = "MULTILINGUAL SEARCH:\n";
-            $recommendation .= "• This site has " . count($languages) . " languages configured:\n";
-            
+            $recommendation .= "• This site has " . \count($languages) . " languages configured:\n";
+
             foreach ($languages as $langId => $langInfo) {
                 $recommendation .= "  - {$langInfo['title']} ({$langInfo['iso']})";
                 if ($langId === 0) {
@@ -194,13 +193,13 @@ final class SearchTool extends AbstractRecordTool
                 }
                 $recommendation .= "\n";
             }
-            
+
             $recommendation .= "• Search terms should match the content language\n";
             $recommendation .= "• Try terms in different languages for broader results\n";
             $recommendation .= "• Language-specific content may be on different pages\n\n";
-            
+
             return $recommendation;
-            
+
         } catch (Throwable $e) {
             // Log the error but return a helpful message
             $this->logException($e, 'language detection');
@@ -218,35 +217,35 @@ final class SearchTool extends AbstractRecordTool
     {
         // Validate all parameters first
         $this->validateParameters($params);
-        
+
         // Extract parameters
-        $terms = is_array($params['terms'] ?? null) ? $params['terms'] : [];
-        $termLogic = strtoupper(is_string($params['termLogic'] ?? null) ? $params['termLogic'] : 'OR');
-        $table = trim(is_string($params['table'] ?? null) ? $params['table'] : '');
-        $pageId = isset($params['pageId']) && is_numeric($params['pageId']) ? (int)$params['pageId'] : null;
+        $terms = \is_array($params['terms'] ?? null) ? $params['terms'] : [];
+        $termLogic = strtoupper(\is_string($params['termLogic'] ?? null) ? $params['termLogic'] : 'OR');
+        $table = trim(\is_string($params['table'] ?? null) ? $params['table'] : '');
+        $pageId = isset($params['pageId']) && is_numeric($params['pageId']) ? (int) $params['pageId'] : null;
         $limit = 50;
-        
+
         // Handle language parameter
         $languageId = null;
-        if (isset($params['language']) && is_string($params['language'])) {
+        if (isset($params['language']) && \is_string($params['language'])) {
             $languageId = $this->languageService->getUidFromIsoCode($params['language']);
             if ($languageId === null) {
                 throw new ValidationException(['Unknown language code: ' . $params['language']]);
             }
         }
-        
+
         // Get normalized search terms
         $searchTerms = $this->validateAndNormalizeSearchTerms($terms);
-        
+
         // Get search results
         $searchResults = $this->performSearch($searchTerms, $termLogic, $table, $pageId, $limit, $languageId);
-        
+
         // Format results
         $formattedResults = $this->formatSearchResults($searchResults, $searchTerms, $termLogic, $languageId);
-        
+
         return $this->createSuccessResult($formattedResults);
     }
-    
+
     /**
      * Validate all parameters
      */
@@ -256,22 +255,22 @@ final class SearchTool extends AbstractRecordTool
     protected function validateParameters(array $params): void
     {
         $errors = [];
-        
+
         // Validate terms
-        if (!isset($params['terms']) || !is_array($params['terms'])) {
+        if (!isset($params['terms']) || !\is_array($params['terms'])) {
             $errors[] = 'Parameter "terms" must be an array of strings';
         } elseif (empty($params['terms'])) {
             $errors[] = 'At least one search term is required in the "terms" array';
         }
-        
+
         // Validate term logic
         if (isset($params['termLogic'])) {
-            $termLogic = strtoupper(is_string($params['termLogic']) ? $params['termLogic'] : '');
-            if (!in_array($termLogic, ['AND', 'OR'])) {
+            $termLogic = strtoupper(\is_string($params['termLogic']) ? $params['termLogic'] : '');
+            if (!\in_array($termLogic, ['AND', 'OR'])) {
                 $errors[] = 'termLogic must be either "AND" or "OR"';
             }
         }
-        
+
         if (!empty($errors)) {
             throw new ValidationException($errors);
         }
@@ -288,9 +287,9 @@ final class SearchTool extends AbstractRecordTool
     {
         $searchTerms = [];
         $errors = [];
-        
+
         foreach ($terms as $term) {
-            if (!is_string($term)) {
+            if (!\is_string($term)) {
                 $errors[] = 'All terms must be strings';
                 continue;
             }
@@ -299,26 +298,26 @@ final class SearchTool extends AbstractRecordTool
                 $searchTerms[] = $trimmedTerm;
             }
         }
-        
+
         // Validate we have at least one term
         if (empty($searchTerms)) {
             $errors[] = 'At least one non-empty search term is required';
         }
-        
+
         // Validate term lengths
         foreach ($searchTerms as $term) {
-            if (strlen($term) < 2) {
+            if (\strlen($term) < 2) {
                 $errors[] = 'All search terms must be at least 2 characters long. Term "' . $term . '" is too short';
             }
-            if (strlen($term) > 100) {
+            if (\strlen($term) > 100) {
                 $errors[] = 'Search terms cannot exceed 100 characters. Term "' . substr($term, 0, 20) . '..." is too long';
             }
         }
-        
+
         if (!empty($errors)) {
             throw new ValidationException($errors);
         }
-        
+
         return $searchTerms;
     }
 
@@ -333,43 +332,43 @@ final class SearchTool extends AbstractRecordTool
     {
         $searchResults = [];
         $inlineTableMetadata = [];
-        
+
         // Get primary tables to search (accessible tables with searchable fields)
         $primaryTables = $this->getTablesToSearch($table);
-        
+
         // Discover related tables referenced by primary tables (inline/select relations)
         $inlineTableInfo = $this->getInlineRelatedHiddenTables($primaryTables);
-        
+
         // Create lookup for inline table metadata
         foreach ($inlineTableInfo as $inlineInfo) {
             $inlineTableMetadata[$inlineInfo['table']] = $inlineInfo;
         }
-        
+
         // Combine primary tables with inline tables for searching
         $allTablesToSearch = array_merge($primaryTables, array_column($inlineTableInfo, 'table'));
-        
+
         foreach ($allTablesToSearch as $tableName) {
             $searchableFields = $this->getSearchableFields($tableName);
-            
+
             if (empty($searchableFields)) {
                 continue;
             }
-            
+
             $results = $this->searchInTable($tableName, $searchTerms, $termLogic, $searchableFields, $pageId, $limit, $languageId);
-            
+
             if (!empty($results) && !empty($results['records'])) {
                 // Mark inline table results for attribution
                 if (isset($inlineTableMetadata[$tableName])) {
                     $results['_inline_metadata'] = $inlineTableMetadata[$tableName];
                 }
-                
+
                 $searchResults[$tableName] = $results;
             }
         }
-        
+
         // Attribute inline results to parent records
         $attributedResults = $this->attributeInlineResultsToParents($searchResults, $inlineTableMetadata);
-        
+
         return $attributedResults;
     }
 
@@ -385,57 +384,57 @@ final class SearchTool extends AbstractRecordTool
     {
         $attributedResults = [];
         $parentRecordCache = [];
-        
+
         foreach ($searchResults as $tableName => $tableResults) {
             // Check if this is an inline table result
             if (isset($tableResults['_inline_metadata'])) {
                 $inlineMetadata = $tableResults['_inline_metadata'];
-                if (!is_array($inlineMetadata)) {
+                if (!\is_array($inlineMetadata)) {
                     continue;
                 }
-                $parentTable = is_string($inlineMetadata['parent_table'] ?? null) ? $inlineMetadata['parent_table'] : '';
-                $foreignField = is_string($inlineMetadata['foreign_field'] ?? null) ? $inlineMetadata['foreign_field'] : '';
-                $parentField = is_string($inlineMetadata['parent_field'] ?? null) ? $inlineMetadata['parent_field'] : '';
-                $relationType = is_string($inlineMetadata['relation_type'] ?? null) ? $inlineMetadata['relation_type'] : 'inline';
+                $parentTable = \is_string($inlineMetadata['parent_table'] ?? null) ? $inlineMetadata['parent_table'] : '';
+                $foreignField = \is_string($inlineMetadata['foreign_field'] ?? null) ? $inlineMetadata['foreign_field'] : '';
+                $parentField = \is_string($inlineMetadata['parent_field'] ?? null) ? $inlineMetadata['parent_field'] : '';
+                $relationType = \is_string($inlineMetadata['relation_type'] ?? null) ? $inlineMetadata['relation_type'] : 'inline';
                 if ($parentTable === '' || $parentField === '') {
                     continue;
                 }
-                
+
                 // Process each inline record and find its parent(s)
                 // Note: tableResults is the structure returned by searchInTable which includes metadata
                 $inlineRecords = $tableResults['records'] ?? [];
-                if (!is_array($inlineRecords)) {
+                if (!\is_array($inlineRecords)) {
                     continue;
                 }
                 foreach ($inlineRecords as $inlineRecord) {
-                    if (!is_array($inlineRecord)) {
+                    if (!\is_array($inlineRecord)) {
                         continue;
                     }
                     $inlineRecord = $this->normalizeRecord($inlineRecord);
-                    
+
                     $parentRecords = $this->findParentRecordsForInlineRecord(
-                        $inlineRecord, 
-                        $tableName, 
-                        $parentTable, 
-                        $foreignField, 
+                        $inlineRecord,
+                        $tableName,
+                        $parentTable,
+                        $foreignField,
                         $parentField,
-                        $relationType
+                        $relationType,
                     );
-                    
+
                     // Add the inline match info to each parent record
                     foreach ($parentRecords as $parentRecord) {
-                        $parentUid = is_numeric($parentRecord['uid'] ?? null) ? (int)$parentRecord['uid'] : 0;
+                        $parentUid = is_numeric($parentRecord['uid'] ?? null) ? (int) $parentRecord['uid'] : 0;
                         if ($parentUid <= 0) {
                             continue;
                         }
                         $parentKey = $parentTable . '_' . $parentUid;
-                        
+
                         // Cache parent record
                         if (!isset($parentRecordCache[$parentKey])) {
                             $parentRecordCache[$parentKey] = $parentRecord;
                             $parentRecordCache[$parentKey]['_inline_matches'] = [];
                         }
-                        
+
                         // Add inline match information
                         $parentRecordCache[$parentKey]['_inline_matches'][] = [
                             'table' => $tableName,
@@ -445,28 +444,28 @@ final class SearchTool extends AbstractRecordTool
                         ];
                     }
                 }
-                
+
                 // Don't include the inline table directly in results
                 continue;
             }
-            
+
             // Include regular (non-inline) table results as-is
             $attributedResults[$tableName] = $tableResults;
         }
-        
+
         // Add parent records that had inline matches
         foreach ($parentRecordCache as $parentKey => $parentRecord) {
             $parentTable = explode('_', $parentKey)[0];
-            
+
             if (!isset($attributedResults[$parentTable])) {
                 $attributedResults[$parentTable] = [];
             }
-            
+
             // Remove the cached key prefix and add to results
             unset($parentRecord['_parent_key']);
             $attributedResults[$parentTable][] = $parentRecord;
         }
-        
+
         return $attributedResults;
     }
 
@@ -478,29 +477,29 @@ final class SearchTool extends AbstractRecordTool
      * @return list<SearchRecord>
      */
     protected function findParentRecordsForInlineRecord(
-        array $inlineRecord, 
-        string $inlineTable, 
-        string $parentTable, 
-        string $foreignField, 
+        array $inlineRecord,
+        string $inlineTable,
+        string $parentTable,
+        string $foreignField,
         string $parentField,
-        string $relationType = 'inline'
+        string $relationType = 'inline',
     ): array {
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $queryBuilder = $connectionPool->getQueryBuilderForTable($parentTable);
-        
+
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()));
-        
+
         $queryBuilder->select('*')->from($parentTable);
-        
+
         if ($relationType === 'inline' && !empty($foreignField)) {
             // For inline relations, use the foreign_field to find parent
             $parentUid = $inlineRecord[$foreignField] ?? null;
             if ($parentUid) {
                 $queryBuilder->where(
-                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($parentUid, ParameterType::INTEGER))
+                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($parentUid, ParameterType::INTEGER)),
                 );
             } else {
                 return [];
@@ -508,12 +507,12 @@ final class SearchTool extends AbstractRecordTool
         } elseif ($relationType === 'select') {
             // For select relations, find records that reference this inline record
             $inlineUid = $inlineRecord['uid'] ?? null;
-            if (is_scalar($inlineUid) && (string)$inlineUid !== '') {
+            if (\is_scalar($inlineUid) && (string) $inlineUid !== '') {
                 $queryBuilder->where(
                     $queryBuilder->expr()->like(
                         $parentField,
-                        $queryBuilder->createNamedParameter('%' . (string)$inlineUid . '%')
-                    )
+                        $queryBuilder->createNamedParameter('%' . (string) $inlineUid . '%'),
+                    ),
                 );
             } else {
                 return [];
@@ -521,10 +520,10 @@ final class SearchTool extends AbstractRecordTool
         } else {
             return [];
         }
-        
+
         try {
             $parentRecords = $queryBuilder->executeQuery()->fetchAllAssociative();
-            
+
             // Enhance with page information
             return $this->enhanceRecordsWithPageInfo($parentRecords, $parentTable);
         } catch (Throwable $e) {
@@ -549,13 +548,13 @@ final class SearchTool extends AbstractRecordTool
             } catch (InvalidArgumentException $e) {
                 throw new ValidationException(['Cannot search table "' . $specificTable . '": ' . $e->getMessage()]);
             }
-            
+
             return [$specificTable];
         }
 
         // Get all readable tables (includes non-workspace-capable tables for read operations)
         $accessibleTables = $this->tableAccessService->getReadableTables();
-        
+
         // Filter for tables that have searchable fields
         $searchableTables = [];
         foreach ($accessibleTables as $tableName => $accessInfo) {
@@ -564,7 +563,7 @@ final class SearchTool extends AbstractRecordTool
                 $searchableTables[] = $tableName;
             }
         }
-        
+
         return $searchableTables;
     }
 
@@ -578,22 +577,22 @@ final class SearchTool extends AbstractRecordTool
     protected function getInlineRelatedHiddenTables(array $primaryTables): array
     {
         $inlineTables = [];
-        
+
         foreach ($primaryTables as $primaryTable) {
             $columns = $this->getTableColumns($primaryTable);
             if ($columns === []) {
                 continue;
             }
-            
+
             // Look through all columns for relations
             foreach ($columns as $fieldName => $fieldConfig) {
-                $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
-                $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
-                
+                $fieldOptions = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+                $fieldType = \is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
+
                 // Check for inline fields
                 if ($fieldType === 'inline') {
-                    $foreignTable = is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
-                    
+                    $foreignTable = \is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
+
                     if ($foreignTable !== '' && $this->tableExistsInTca($foreignTable)) {
                         // Use TableAccessService to check if table is accessible and has searchable fields
                         if ($this->tableAccessService->canAccessTable($foreignTable) && !empty($this->getSearchableFields($foreignTable))) {
@@ -601,16 +600,16 @@ final class SearchTool extends AbstractRecordTool
                                 'table' => $foreignTable,
                                 'parent_table' => $primaryTable,
                                 'parent_field' => $fieldName,
-                                'foreign_field' => is_string($fieldOptions['foreign_field'] ?? null) ? $fieldOptions['foreign_field'] : '',
+                                'foreign_field' => \is_string($fieldOptions['foreign_field'] ?? null) ? $fieldOptions['foreign_field'] : '',
                             ];
                         }
                     }
                 }
-                
+
                 // Also check for select fields with foreign_table (like categories)
                 if ($fieldType === 'select') {
-                    $foreignTable = is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
-                    
+                    $foreignTable = \is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
+
                     // Skip self-referential relations (like localization fields)
                     if ($foreignTable !== '' && $foreignTable !== $primaryTable && $this->tableExistsInTca($foreignTable)) {
                         // Use TableAccessService to check if table is accessible and has searchable fields
@@ -627,7 +626,7 @@ final class SearchTool extends AbstractRecordTool
                 }
             }
         }
-        
+
         return array_values($inlineTables);
     }
 
@@ -653,21 +652,21 @@ final class SearchTool extends AbstractRecordTool
     {
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $connection = $connectionPool->getConnectionForTable($table);
-        
+
         try {
             // Get the actual columns from the database table
             $schemaManager = $connection->createSchemaManager();
             $tableColumns = $schemaManager->listTableColumns($table);
             $availableColumns = array_keys($tableColumns);
-            
+
             // Filter searchable fields to only include existing columns
             $validFields = [];
             foreach ($searchableFields as $field) {
-                if (in_array($field, $availableColumns)) {
+                if (\in_array($field, $availableColumns)) {
                     $validFields[] = $field;
                 }
             }
-            
+
             return $validFields;
         } catch (Throwable $e) {
             // Log validation error but continue with original fields
@@ -701,29 +700,29 @@ final class SearchTool extends AbstractRecordTool
 
         // Validate searchable fields exist in database
         $validSearchFields = $this->validateSearchableFields($table, $searchableFields);
-        
-        
+
+
         if (empty($validSearchFields)) {
             return [];
         }
 
         // Build search conditions for multiple terms
         $termConditions = [];
-        
+
         foreach ($searchTerms as $term) {
             // For each term, create conditions across all searchable fields
             $fieldConditions = [];
             foreach ($validSearchFields as $field) {
                 $fieldConditions[] = $queryBuilder->expr()->like(
                     $field,
-                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($term) . '%')
+                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($term) . '%'),
                 );
             }
-            
+
             // Combine field conditions with OR (any field can match this term)
             $termConditions[] = $queryBuilder->expr()->or(...$fieldConditions);
         }
-        
+
         if (empty($termConditions)) {
             return [];
         }
@@ -740,7 +739,7 @@ final class SearchTool extends AbstractRecordTool
         // Filter by page ID if specified
         if ($pageId !== null && $this->tableHasPidField($table)) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
             );
         }
 
@@ -751,8 +750,8 @@ final class SearchTool extends AbstractRecordTool
                 $queryBuilder->andWhere(
                     $queryBuilder->expr()->or(
                         $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
-                    )
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
+                    ),
                 );
             } else {
                 // Specific language: show records in that language, default language, or all languages
@@ -760,8 +759,8 @@ final class SearchTool extends AbstractRecordTool
                     $queryBuilder->expr()->or(
                         $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
                         $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
-                    )
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
+                    ),
                 );
             }
         }
@@ -782,7 +781,7 @@ final class SearchTool extends AbstractRecordTool
         // Return records in expected structure format
         return [
             'records' => $this->enhanceRecordsWithPageInfo($records, $table, $languageId),
-            'total' => count($records),
+            'total' => \count($records),
             'search_terms' => $searchTerms,
             'term_logic' => $termLogic,
         ];
@@ -812,32 +811,32 @@ final class SearchTool extends AbstractRecordTool
         // Process records for workspace transparency
         $processedRecords = [];
         $seenUids = [];
-        
+
         foreach ($records as $record) {
             // For workspace transparency, replace workspace UID with live UID
             if (isset($record['t3ver_oid']) && $record['t3ver_oid'] > 0) {
                 // This is a workspace version - use the live UID instead
-                $record['uid'] = is_numeric($record['t3ver_oid']) ? (int)$record['t3ver_oid'] : $record['uid'];
+                $record['uid'] = is_numeric($record['t3ver_oid']) ? (int) $record['t3ver_oid'] : $record['uid'];
             } elseif (isset($record['t3ver_state']) && $record['t3ver_state'] == 1) {
                 // This is a new placeholder record - its UID is already the "live" UID
                 // No change needed
             }
-            
+
             // De-duplicate records based on UID after processing
-            $uid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
+            $uid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
             if (!isset($seenUids[$uid])) {
                 $processedRecords[] = $record;
                 $seenUids[$uid] = true;
             }
         }
-        
+
         $records = $processedRecords;
 
         // Get unique page IDs
         $pageIds = [];
         foreach ($records as $record) {
-            if (is_numeric($record['pid'] ?? null) && (int)$record['pid'] > 0) {
-                $pageIds[] = (int)$record['pid'];
+            if (is_numeric($record['pid'] ?? null) && (int) $record['pid'] > 0) {
+                $pageIds[] = (int) $record['pid'];
             }
         }
 
@@ -852,7 +851,7 @@ final class SearchTool extends AbstractRecordTool
 
         // Enhance records
         foreach ($records as &$record) {
-            $pid = is_numeric($record['pid'] ?? null) ? (int)$record['pid'] : 0;
+            $pid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
             if (isset($pageInfo[$pid])) {
                 $record['_page'] = $pageInfo[$pid];
             }
@@ -887,8 +886,8 @@ final class SearchTool extends AbstractRecordTool
             ->where(
                 $queryBuilder->expr()->in(
                     'uid',
-                    $queryBuilder->createNamedParameter($pageIds, Connection::PARAM_INT_ARRAY)
-                )
+                    $queryBuilder->createNamedParameter($pageIds, Connection::PARAM_INT_ARRAY),
+                ),
             )
             ->executeQuery()
             ->fetchAllAssociative();
@@ -896,7 +895,7 @@ final class SearchTool extends AbstractRecordTool
         // Index by UID
         $pageInfo = [];
         foreach ($pages as $page) {
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
             if ($pageUid > 0) {
                 $pageInfo[$pageUid] = $page;
             }
@@ -917,14 +916,14 @@ final class SearchTool extends AbstractRecordTool
 
         $result = "SEARCH RESULTS\n";
         $result .= "==============\n";
-        
+
         // Display search terms
-        if (count($searchTerms) === 1) {
+        if (\count($searchTerms) === 1) {
             $result .= "Query: \"" . $searchTerms[0] . "\"\n";
         } else {
-            $result .= "Search Terms: [" . implode(', ', array_map(fn($t) => '"'.$t.'"', $searchTerms)) . "]\n";
-            $result .= "Logic: " . $termLogic . " (records must match " . 
-                      ($termLogic === 'AND' ? 'ALL terms' : 'ANY term') . ")\n";
+            $result .= "Search Terms: [" . implode(', ', array_map(fn($t) => '"' . $t . '"', $searchTerms)) . "]\n";
+            $result .= "Logic: " . $termLogic . " (records must match "
+                      . ($termLogic === 'AND' ? 'ALL terms' : 'ANY term') . ")\n";
         }
 
         if ($languageId !== null) {
@@ -936,19 +935,19 @@ final class SearchTool extends AbstractRecordTool
 
         $totalResults = 0;
         foreach ($searchResults as $tableResults) {
-            if (is_array($tableResults) && isset($tableResults['records']) && is_array($tableResults['records'])) {
-                $totalResults += count($tableResults['records']);
+            if (\is_array($tableResults) && isset($tableResults['records']) && \is_array($tableResults['records'])) {
+                $totalResults += \count($tableResults['records']);
             } else {
-                $totalResults += is_array($tableResults) ? count($tableResults) : 0;
+                $totalResults += \is_array($tableResults) ? \count($tableResults) : 0;
             }
         }
 
         $result .= "Total Results: $totalResults\n";
-        $result .= "Tables Searched: " . count($searchResults) . "\n\n";
+        $result .= "Tables Searched: " . \count($searchResults) . "\n\n";
 
         // If no results, show no results message
         if ($totalResults === 0) {
-            $termsDisplay = count($searchTerms) === 1 ? '"' . $searchTerms[0] . '"' : '[' . implode(', ', array_map(fn($t) => '"'.$t.'"', $searchTerms)) . ']';
+            $termsDisplay = \count($searchTerms) === 1 ? '"' . $searchTerms[0] . '"' : '[' . implode(', ', array_map(fn($t) => '"' . $t . '"', $searchTerms)) . ']';
             $result .= "No results found for search terms: $termsDisplay\n";
         } else {
             // Format results by table
@@ -971,22 +970,22 @@ final class SearchTool extends AbstractRecordTool
     {
         $tableLabel = RecordFormattingUtility::getTableLabel($table);
         $result = "TABLE: $tableLabel ($table)\n";
-        $result .= str_repeat('-', strlen("TABLE: $tableLabel ($table)")) . "\n";
-        
+        $result .= str_repeat('-', \strlen("TABLE: $tableLabel ($table)")) . "\n";
+
         // Handle both searchInTable result structure and attributed results array
         $records = [];
-        if (isset($tableData['records']) && is_array($tableData['records'])) {
+        if (isset($tableData['records']) && \is_array($tableData['records'])) {
             // This is a searchInTable result structure
             $records = $tableData['records'];
         } elseif ($tableData !== []) {
             // This is a direct array of records (from attributed results)
             $records = $tableData;
         }
-        
-        $result .= "Found " . count($records) . " record(s)\n\n";
+
+        $result .= "Found " . \count($records) . " record(s)\n\n";
 
         foreach ($records as $record) {
-            if (!is_array($record)) {
+            if (!\is_array($record)) {
                 continue;
             }
             $record = $this->normalizeRecord($record);
@@ -1007,28 +1006,28 @@ final class SearchTool extends AbstractRecordTool
     protected function formatRecord(string $table, array $record, array $searchTerms, ?int $languageId = null): string
     {
         $title = RecordFormattingUtility::getRecordTitle($table, $record);
-        $uid = is_scalar($record['uid'] ?? null) ? (string)$record['uid'] : 'unknown';
-        
+        $uid = \is_scalar($record['uid'] ?? null) ? (string) $record['uid'] : 'unknown';
+
         $result = "• [UID: $uid] $title\n";
 
         // Add page information if available
-        if (isset($record['_page']) && is_array($record['_page'])) {
+        if (isset($record['_page']) && \is_array($record['_page'])) {
             $pageInfo = $record['_page'];
-            $pageTitle = is_scalar($pageInfo['title'] ?? null) ? (string)$pageInfo['title'] : 'Untitled Page';
-            $pageUid = is_scalar($pageInfo['uid'] ?? null) ? (string)$pageInfo['uid'] : 'unknown';
+            $pageTitle = \is_scalar($pageInfo['title'] ?? null) ? (string) $pageInfo['title'] : 'Untitled Page';
+            $pageUid = \is_scalar($pageInfo['uid'] ?? null) ? (string) $pageInfo['uid'] : 'unknown';
             $result .= "  📍 Page: $pageTitle [UID: $pageUid]\n";
         }
 
         // Add record type information
         if ($table === 'tt_content' && isset($record['CType'])) {
-            $cType = is_scalar($record['CType']) ? (string)$record['CType'] : 'unknown';
+            $cType = \is_scalar($record['CType']) ? (string) $record['CType'] : 'unknown';
             $cTypeLabel = RecordFormattingUtility::getContentTypeLabel($cType);
             $result .= "  🎯 Type: $cTypeLabel ($cType)\n";
         }
 
         // Add language information if table has language support
         if ($this->tableHasLanguageSupport($table) && isset($record['sys_language_uid'])) {
-            $recordLangId = is_numeric($record['sys_language_uid']) ? (int)$record['sys_language_uid'] : 0;
+            $recordLangId = is_numeric($record['sys_language_uid']) ? (int) $record['sys_language_uid'] : 0;
             if ($recordLangId > 0) {
                 $langCode = $this->languageService->getIsoCodeFromUid($recordLangId) ?? 'unknown';
                 $result .= "  🌐 Language: " . strtoupper($langCode) . "\n";
@@ -1044,28 +1043,28 @@ final class SearchTool extends AbstractRecordTool
         }
 
         // Show inline matches if any
-        if (isset($record['_inline_matches']) && is_array($record['_inline_matches'])) {
+        if (isset($record['_inline_matches']) && \is_array($record['_inline_matches'])) {
             foreach ($record['_inline_matches'] as $inlineMatch) {
-                if (!is_array($inlineMatch)) {
+                if (!\is_array($inlineMatch)) {
                     continue;
                 }
                 $inlineTable = $inlineMatch['table'];
                 $inlineRecord = $inlineMatch['record'];
                 $inlineField = $inlineMatch['field'];
                 $inlineType = $inlineMatch['type'];
-                if (!is_string($inlineTable) || !is_array($inlineRecord) || !is_string($inlineField) || !is_string($inlineType)) {
+                if (!\is_string($inlineTable) || !\is_array($inlineRecord) || !\is_string($inlineField) || !\is_string($inlineType)) {
                     continue;
                 }
                 $inlineRecord = $this->normalizeRecord($inlineRecord);
-                
+
                 $inlineTitle = RecordFormattingUtility::getRecordTitle($inlineTable, $inlineRecord);
                 $inlineTableLabel = RecordFormattingUtility::getTableLabel($inlineTable);
-                
+
                 // Show different icons based on relation type
                 $icon = $inlineType === 'select' ? '🏷️' : '📎';
-                
+
                 $result .= "  $icon Contains: $inlineTitle [$inlineTableLabel via $inlineField]\n";
-                
+
                 // Show preview of the inline match
                 $inlinePreview = $this->getMatchingContentPreview($inlineTable, $inlineRecord, $searchTerms);
                 if (!empty($inlinePreview)) {
@@ -1095,10 +1094,10 @@ final class SearchTool extends AbstractRecordTool
                 continue;
             }
 
-            if (!is_scalar($record[$field])) {
+            if (!\is_scalar($record[$field])) {
                 continue;
             }
-            $content = (string)$record[$field];
+            $content = (string) $record[$field];
 
             // Remove HTML tags for preview
             $content = strip_tags($content);
@@ -1120,7 +1119,7 @@ final class SearchTool extends AbstractRecordTool
             return '';
         }
 
-        return implode(' ... ', array_slice($previews, 0, 2)); // Limit to 2 snippets
+        return implode(' ... ', \array_slice($previews, 0, 2)); // Limit to 2 snippets
     }
 
     /**

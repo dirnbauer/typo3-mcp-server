@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP;
 
 use InvalidArgumentException;
-use Throwable;
-use Mcp\Server\Server;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
+use Mcp\Server\Server;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use Throwable;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Factory for creating and configuring MCP Server instances
@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 final readonly class McpServerFactory
 {
     public function __construct(
-        private ToolRegistry $toolRegistry
+        private ToolRegistry $toolRegistry,
     ) {}
 
     /**
@@ -50,7 +50,7 @@ final readonly class McpServerFactory
         return new InitializationOptions(
             serverName: $this->getServerName(),
             serverVersion: $this->getServerVersion(),
-            capabilities: $capabilities
+            capabilities: $capabilities,
         );
     }
 
@@ -60,16 +60,16 @@ final readonly class McpServerFactory
     public function getServerName(): string
     {
         $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        if (!is_array($configuration)) {
+        if (!\is_array($configuration)) {
             return 'TYPO3 MCP Server';
         }
 
         $sysConfig = $configuration['SYS'] ?? null;
-        if (!is_array($sysConfig)) {
+        if (!\is_array($sysConfig)) {
             return 'TYPO3 MCP Server';
         }
 
-        return is_string($sysConfig['sitename'] ?? null) && $sysConfig['sitename'] !== ''
+        return \is_string($sysConfig['sitename'] ?? null) && $sysConfig['sitename'] !== ''
             ? $sysConfig['sitename']
             : 'TYPO3 MCP Server';
     }
@@ -102,7 +102,7 @@ final readonly class McpServerFactory
                 $schema = $tool->getSchema();
                 $tools[] = [
                     'name' => $tool->getName(),
-                    ...$schema
+                    ...$schema,
                 ];
             }
 
@@ -127,7 +127,7 @@ final readonly class McpServerFactory
                 $debug('Error executing tool ' . $toolName . ': ' . $e->getMessage());
                 return new CallToolResult(
                     [new TextContent($e->getMessage())],
-                    true
+                    true,
                 );
             }
         });

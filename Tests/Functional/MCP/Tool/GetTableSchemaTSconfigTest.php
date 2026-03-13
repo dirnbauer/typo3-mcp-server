@@ -59,7 +59,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         $tool = new GetTableSchemaTool();
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -90,7 +90,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         $tool = new GetTableSchemaTool();
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -114,7 +114,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         $tool = new GetTableSchemaTool();
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -134,7 +134,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
     {
         $tool = new GetTableSchemaTool();
         $result = $tool->execute([
-            'table' => 'pages'
+            'table' => 'pages',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -163,7 +163,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         // Check text type - bodytext should be hidden here too
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));

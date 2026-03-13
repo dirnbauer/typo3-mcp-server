@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
-use Throwable;
+use Hn\McpServer\Service\OAuthService;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use Hn\McpServer\Service\OAuthService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth token management for MCP server
@@ -34,9 +34,9 @@ final class OAuthManageCommand extends Command
     {
         $actionArgument = $input->getArgument('action');
         $usernameArgument = $input->getArgument('username');
-        $action = is_string($actionArgument) ? $actionArgument : '';
-        $username = is_string($usernameArgument) ? $usernameArgument : null;
-        
+        $action = \is_string($actionArgument) ? $actionArgument : '';
+        $username = \is_string($usernameArgument) ? $usernameArgument : null;
+
         try {
             switch ($action) {
                 case 'url':
@@ -72,7 +72,7 @@ final class OAuthManageCommand extends Command
         }
 
         $clientNameOption = $input->getOption('client-name');
-        $clientName = is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
+        $clientName = \is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
         $baseUrl = $this->getConfiguredBaseUrl();
 
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
@@ -148,13 +148,13 @@ final class OAuthManageCommand extends Command
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $revokeAll = $input->getOption('all');
         $tokenIdOption = $input->getOption('token-id');
-        $tokenId = is_string($tokenIdOption) || is_int($tokenIdOption) ? (string)$tokenIdOption : null;
+        $tokenId = \is_string($tokenIdOption) || \is_int($tokenIdOption) ? (string) $tokenIdOption : null;
 
         if ($revokeAll) {
             $count = $oauthService->revokeAllUserTokens($user['uid']);
             $output->writeln("<info>Revoked $count tokens for user '$username'</info>");
         } elseif ($tokenId) {
-            $success = $oauthService->revokeToken((int)$tokenId, $user['uid']);
+            $success = $oauthService->revokeToken((int) $tokenId, $user['uid']);
             if ($success) {
                 $output->writeln("<info>Token $tokenId revoked successfully</info>");
             } else {
@@ -173,7 +173,7 @@ final class OAuthManageCommand extends Command
     {
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $oauthService->cleanupExpired();
-        
+
         $output->writeln("<info>Cleanup completed - expired tokens and authorization codes removed</info>");
         return Command::SUCCESS;
     }
@@ -185,19 +185,19 @@ final class OAuthManageCommand extends Command
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('be_users');
-            
+
         $queryBuilder = $connection->createQueryBuilder();
         $user = $queryBuilder
             ->select('uid', 'username')
             ->from('be_users')
             ->where(
                 $queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($username)),
-                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
 
-        if (!is_array($user)) {
+        if (!\is_array($user)) {
             return null;
         }
 
@@ -205,8 +205,8 @@ final class OAuthManageCommand extends Command
         $resolvedUsername = $user['username'] ?? '';
 
         return [
-            'uid' => is_int($uid) ? $uid : (is_numeric($uid) ? (int)$uid : 0),
-            'username' => is_string($resolvedUsername) ? $resolvedUsername : '',
+            'uid' => \is_int($uid) ? $uid : (is_numeric($uid) ? (int) $uid : 0),
+            'username' => \is_string($resolvedUsername) ? $resolvedUsername : '',
         ];
     }
 
@@ -214,10 +214,10 @@ final class OAuthManageCommand extends Command
     {
         /** @var mixed $confVars */
         $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+        $configuredBaseUrl = \is_array($confVars) && \is_array($confVars['SYS'] ?? null)
             ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
             : null;
-        if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
+        if (\is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
             return $configuredBaseUrl;
         }
 

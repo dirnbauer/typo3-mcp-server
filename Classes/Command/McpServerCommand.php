@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
-use RuntimeException;
-use Throwable;
+use Hn\McpServer\MCP\McpServerFactory;
 use Mcp\Server\ServerRunner;
+use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
-use Hn\McpServer\MCP\McpServerFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP Server Command - Uses logiscape/mcp-sdk-php
@@ -21,7 +21,7 @@ use Hn\McpServer\MCP\McpServerFactory;
 final class McpServerCommand extends Command
 {
     public function __construct(
-        private readonly McpServerFactory $serverFactory
+        private readonly McpServerFactory $serverFactory,
     ) {
         parent::__construct();
     }

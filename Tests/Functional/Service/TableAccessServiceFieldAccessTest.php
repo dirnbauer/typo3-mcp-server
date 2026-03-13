@@ -72,9 +72,9 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
         // TYPO3 v13/v14 model this relation differently, but access should stay blocked in both.
         $this->assertArrayHasKey('assets', $GLOBALS['TCA']['tt_content']['columns'] ?? []);
         $fieldConfig = $GLOBALS['TCA']['tt_content']['columns']['assets'] ?? [];
-        $config = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
-        $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
-        $foreignTable = is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
+        $config = \is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
+        $fieldType = \is_string($config['type'] ?? null) ? $config['type'] : '';
+        $foreignTable = \is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
 
         $this->assertContains($fieldType, ['file', 'inline']);
         if ($fieldType === 'inline') {

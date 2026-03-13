@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
-use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\SiteInformationService;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -17,7 +17,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -25,14 +25,14 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create multi-language site configuration
         $this->createMultiLanguageSiteConfiguration();
-        
+
         // Import test data
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);
     }
@@ -91,7 +91,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
         // Write the site configuration
         $configPath = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($configPath);
-        
+
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
     }
@@ -102,7 +102,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     protected function createTestPagesWithTranslations(): void
     {
         $connection = $this->getConnectionPool()->getConnectionForTable('pages');
-        
+
         // Create German translation for page 2
         $connection->insert('pages', [
             'uid' => 100,
@@ -118,7 +118,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'crdate' => time(),
             'sorting' => 256,
         ]);
-        
+
         // Create French translation for page 2
         $connection->insert('pages', [
             'uid' => 101,
@@ -134,7 +134,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'crdate' => time(),
             'sorting' => 256,
         ]);
-        
+
     }
 
     /**
@@ -146,7 +146,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $schema = $tool->getSchema();
-        
+
         // Should have language parameter with enum
         $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
         $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
@@ -161,18 +161,18 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     public function testGetPageTreeDefaultLanguage(): void
     {
         $this->createTestPagesWithTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $result = $tool->execute([
             'startPage' => 1,
-            'depth' => 1
+            'depth' => 1,
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show default language titles
         $this->assertStringContainsString('[2] About', $output);
         $this->assertStringNotContainsString('[TRANSLATED]', $output);
@@ -185,30 +185,30 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     public function testGetPageTreeGermanLanguage(): void
     {
         $this->createTestPagesWithTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
-            'language' => 'de'
+            'language' => 'de',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show German titles where available
         // German translation has nav_title "Über", should use that instead of title
         $this->assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
-        
+
         // Page 2 should be marked as translated
         $this->assertStringContainsString('Über [Page] [TRANSLATED]', $output);
-        
+
         // Pages without translations should be marked as not translated
         $this->assertStringContainsString('[6] Contact [Page] [NOT TRANSLATED]', $output);
     }
-    
+
     /**
      * Helper method to set up backend user with workspace
      */
@@ -225,22 +225,22 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     public function testGetPageTreeFrenchLanguage(): void
     {
         $this->createTestPagesWithTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
-            'language' => 'fr'
+            'language' => 'fr',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Should show French title for page 2
         $this->assertStringContainsString('[2] À propos [Page] [TRANSLATED]', $output);
-        
+
         // Page 3 has no French translation
         $this->assertStringContainsString('[3] Hidden Page [Page] [HIDDEN] [NOT TRANSLATED]', $output);
     }
@@ -255,9 +255,9 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $result = $tool->execute([
             'startPage' => 1,
-            'language' => 'xx'
+            'language' => 'xx',
         ]);
-        
+
         $this->assertTrue($result->isError);
         $errorMessage = $result->error ?? $result->content[0]->text;
         $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
@@ -269,19 +269,19 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     public function testNavTitleInTranslation(): void
     {
         $this->createTestPagesWithTranslations();
-        
+
         $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
         $languageService = GeneralUtility::makeInstance(LanguageService::class);
         $tool = new GetPageTreeTool($siteInformationService, $languageService);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
-            'language' => 'de'
+            'language' => 'de',
         ]);
-        
+
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // German translation has nav_title "Über", should use that instead of title
         $this->assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
         $this->assertStringNotContainsString('Über uns', $output);

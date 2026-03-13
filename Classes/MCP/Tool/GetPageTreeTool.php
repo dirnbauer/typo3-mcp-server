@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use InvalidArgumentException;
-use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\SiteInformationService;
+use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
-use Hn\McpServer\Service\SiteInformationService;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for retrieving the TYPO3 page tree
@@ -26,7 +26,7 @@ final class GetPageTreeTool extends AbstractRecordTool
 {
     public function __construct(
         protected SiteInformationService $siteInformationService,
-        protected LanguageService $languageService
+        protected LanguageService $languageService,
     ) {
         parent::__construct();
     }
@@ -58,7 +58,7 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         // Only add language parameter if multiple languages are configured
         $availableLanguages = $this->languageService->getAvailableIsoCodes();
-        if (count($availableLanguages) > 1) {
+        if (\count($availableLanguages) > 1) {
             $schema['inputSchema']['properties']['language'] = [
                 'type' => 'string',
                 'description' => 'Language ISO code to show translated page titles (e.g., "de", "fr"). Shows translation status for each page.',
@@ -69,7 +69,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
-            'idempotentHint' => true
+            'idempotentHint' => true,
         ];
 
         return $schema;
@@ -82,13 +82,13 @@ final class GetPageTreeTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
-        $startPage = is_numeric($params['startPage'] ?? null) ? (int)$params['startPage'] : 0;
-        $depth = is_numeric($params['depth'] ?? null) ? (int)$params['depth'] : 3;
+
+        $startPage = is_numeric($params['startPage'] ?? null) ? (int) $params['startPage'] : 0;
+        $depth = is_numeric($params['depth'] ?? null) ? (int) $params['depth'] : 3;
         $languageUid = null;
 
         // Handle language parameter if provided
-        if (isset($params['language']) && is_string($params['language'])) {
+        if (isset($params['language']) && \is_string($params['language'])) {
             $languageUid = $this->languageService->getUidFromIsoCode($params['language']);
             if ($languageUid === null) {
                 throw new InvalidArgumentException('Unknown language code: ' . $params['language']);
@@ -97,13 +97,13 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         // Get page tree with the specified parameters
         $pageTree = $this->getPageTree($startPage, $depth, $languageUid);
-        
+
         // Collect all page UIDs from the tree
         $pageUids = $this->collectPageUids($pageTree);
-        
+
         // Get record counts for all pages
         $recordCounts = $this->getRecordCounts($pageUids);
-        
+
         // Get plugin hints for all pages
         $pluginHints = [];
         foreach ($pageUids as $uid) {
@@ -112,10 +112,10 @@ final class GetPageTreeTool extends AbstractRecordTool
                 $pluginHints[$uid] = $hint;
             }
         }
-        
+
         // Convert the page tree to a text-based tree with indentation
         $textTree = $this->renderTextTree($pageTree, 0, $languageUid, $recordCounts, $pluginHints);
-        
+
         return new CallToolResult([new TextContent($textTree)]);
     }
 
@@ -144,13 +144,13 @@ final class GetPageTreeTool extends AbstractRecordTool
             // Root level pages have pid=0
             $query->where(
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
             );
         } else {
             // Get subpages of the specified page
             $query->where(
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($startPage, ParameterType::INTEGER)),
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
             );
         }
 
@@ -169,7 +169,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 $languageUid,
                 $languageUid,
                 LanguageAspect::OVERLAYS_MIXED,
-                [$languageUid]
+                [$languageUid],
             );
             $context->setAspect('language', $languageAspect);
         }
@@ -181,14 +181,14 @@ final class GetPageTreeTool extends AbstractRecordTool
         $pageTree = [];
         foreach ($pages as $page) {
             $pageData = [
-                'uid' => is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0,
-                'pid' => is_numeric($page['pid'] ?? null) ? (int)$page['pid'] : 0,
-                'title' => is_scalar($page['title'] ?? null) ? (string)$page['title'] : '',
-                'nav_title' => is_scalar($page['nav_title'] ?? null) ? (string)$page['nav_title'] : '',
-                'hidden' => (bool)($page['hidden'] ?? false),
-                'doktype' => is_numeric($page['doktype'] ?? null) ? (int)$page['doktype'] : 0,
+                'uid' => is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0,
+                'pid' => is_numeric($page['pid'] ?? null) ? (int) $page['pid'] : 0,
+                'title' => \is_scalar($page['title'] ?? null) ? (string) $page['title'] : '',
+                'nav_title' => \is_scalar($page['nav_title'] ?? null) ? (string) $page['nav_title'] : '',
+                'hidden' => (bool) ($page['hidden'] ?? false),
+                'doktype' => is_numeric($page['doktype'] ?? null) ? (int) $page['doktype'] : 0,
                 'subpageCount' => 0,
-                'url' => $this->siteInformationService->generatePageUrl(is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0),
+                'url' => $this->siteInformationService->generatePageUrl(is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0),
             ];
 
             // Get language overlay if language specified
@@ -197,9 +197,9 @@ final class GetPageTreeTool extends AbstractRecordTool
 
                 if ($overlaidPage !== $page) {
                     // Apply overlay data
-                    $pageData['title'] = is_scalar($overlaidPage['title'] ?? null) && (string)$overlaidPage['title'] !== '' ? (string)$overlaidPage['title'] : $pageData['title'];
-                    $pageData['nav_title'] = is_scalar($overlaidPage['nav_title'] ?? null) && (string)$overlaidPage['nav_title'] !== '' ? (string)$overlaidPage['nav_title'] : $pageData['nav_title'];
-                    $pageData['hidden'] = (bool)($overlaidPage['hidden'] ?? false);
+                    $pageData['title'] = \is_scalar($overlaidPage['title'] ?? null) && (string) $overlaidPage['title'] !== '' ? (string) $overlaidPage['title'] : $pageData['title'];
+                    $pageData['nav_title'] = \is_scalar($overlaidPage['nav_title'] ?? null) && (string) $overlaidPage['nav_title'] !== '' ? (string) $overlaidPage['nav_title'] : $pageData['nav_title'];
+                    $pageData['hidden'] = (bool) ($overlaidPage['hidden'] ?? false);
                     $pageData['_translated'] = true;
                 } else {
                     $pageData['_translated'] = false;
@@ -210,7 +210,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             if ($depth > 1) {
                 $subpages = $this->getPageTree($pageData['uid'], $depth - 1, $languageUid);
                 $pageData['subpages'] = $subpages;
-                $pageData['subpageCount'] = count($subpages);
+                $pageData['subpageCount'] = \count($subpages);
             } else {
                 // We're at max depth, count the number of subpages
                 $pageData['subpageCount'] = $this->countSubpages($pageData['uid']);
@@ -221,7 +221,7 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         return $pageTree;
     }
-    
+
     /**
      * Count the number of subpages for a page
      */
@@ -238,13 +238,13 @@ final class GetPageTreeTool extends AbstractRecordTool
             ->from('pages')
             ->where(
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
             );
 
         $count = $query->executeQuery()->fetchOne();
-        return is_numeric($count) ? (int)$count : 0;
+        return is_numeric($count) ? (int) $count : 0;
     }
-    
+
 
     /**
      * Collect all page UIDs from the tree structure
@@ -255,23 +255,23 @@ final class GetPageTreeTool extends AbstractRecordTool
     protected function collectPageUids(array $pageTree): array
     {
         $uids = [];
-        
+
         foreach ($pageTree as $page) {
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
             if ($pageUid > 0) {
                 $uids[] = $pageUid;
             }
-            
-            if (isset($page['subpages']) && is_array($page['subpages'])) {
+
+            if (isset($page['subpages']) && \is_array($page['subpages'])) {
                 /** @var list<array<string, mixed>> $subpages */
                 $subpages = array_values(array_filter($page['subpages'], is_array(...)));
                 $uids = array_merge($uids, $this->collectPageUids($subpages));
             }
         }
-        
+
         return $uids;
     }
-    
+
     /**
      * Get record counts for given page UIDs
      *
@@ -283,26 +283,26 @@ final class GetPageTreeTool extends AbstractRecordTool
         if (empty($pageUids)) {
             return [];
         }
-        
+
         $recordCounts = [];
-        
+
         // Get accessible tables (exclude read-only system tables)
         $accessibleTables = $this->tableAccessService->getAccessibleTables(false);
-        
+
         foreach ($accessibleTables as $table => $accessInfo) {
             // Skip pages table itself
             if ($table === 'pages') {
                 continue;
             }
-            
+
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable($table);
-            
+
             // Only apply DeletedRestriction
             $queryBuilder->getRestrictions()
                 ->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-            
+
             // Count records grouped by pid
             $counts = $queryBuilder
                 ->select('pid')
@@ -310,30 +310,30 @@ final class GetPageTreeTool extends AbstractRecordTool
                 ->from($table)
                 ->where(
                     $queryBuilder->expr()->in(
-                        'pid', 
+                        'pid',
                         $queryBuilder->createNamedParameter(
-                            $pageUids, 
-                            ArrayParameterType::INTEGER
-                        )
-                    )
+                            $pageUids,
+                            ArrayParameterType::INTEGER,
+                        ),
+                    ),
                 )
                 ->groupBy('pid')
                 ->executeQuery()
                 ->fetchAllAssociative();
-            
+
             // Store counts
             foreach ($counts as $row) {
-                $pid = is_numeric($row['pid'] ?? null) ? (int)$row['pid'] : 0;
-                $count = is_numeric($row['count'] ?? null) ? (int)$row['count'] : 0;
-                
+                $pid = is_numeric($row['pid'] ?? null) ? (int) $row['pid'] : 0;
+                $count = is_numeric($row['count'] ?? null) ? (int) $row['count'] : 0;
+
                 if (!isset($recordCounts[$pid])) {
                     $recordCounts[$pid] = [];
                 }
-                
+
                 $recordCounts[$pid][$table] = $count;
             }
         }
-        
+
         return $recordCounts;
     }
 
@@ -343,15 +343,15 @@ final class GetPageTreeTool extends AbstractRecordTool
     protected function getPluginStorageHints(int $pageId): string
     {
         $hints = '';
-        
+
         // Query for plugins on this page
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
-        
+
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-        
+
         $plugins = $queryBuilder
             ->select('*')
             ->from('tt_content')
@@ -359,30 +359,30 @@ final class GetPageTreeTool extends AbstractRecordTool
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('list')),
-                    $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('news_pi1'))
-                )
+                    $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('news_pi1')),
+                ),
             )
             ->executeQuery()
             ->fetchAllAssociative();
-        
+
         foreach ($plugins as $plugin) {
             $pluginIdentifierSource = $plugin['list_type'] ?? $plugin['CType'] ?? '';
-            $pluginIdentifier = is_scalar($pluginIdentifierSource) ? (string)$pluginIdentifierSource : '';
+            $pluginIdentifier = \is_scalar($pluginIdentifierSource) ? (string) $pluginIdentifierSource : '';
 
             // Check for news plugin with startingpoint configuration
-            $pluginFlexform = is_string($plugin['pi_flexform'] ?? null) ? $plugin['pi_flexform'] : '';
+            $pluginFlexform = \is_string($plugin['pi_flexform'] ?? null) ? $plugin['pi_flexform'] : '';
             if ($pluginIdentifier === 'news_pi1' && $pluginFlexform !== '') {
                 // Simple regex to extract startingpoint value
                 if (preg_match('/<field index="settings\.startingpoint">.*?<value[^>]*>(\d+)<\/value>/s', $pluginFlexform, $matches)) {
-                    $storagePid = (int)$matches[1];
+                    $storagePid = (int) $matches[1];
                     $hints .= ' [news plugin → pid:' . $storagePid . ']';
                 }
             }
         }
-        
+
         // Debug: Remove debug for now
         // The issue seems to be with the condition or regex
-        
+
         return $hints;
     }
 
@@ -399,7 +399,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             PageRepository::DOKTYPE_MOUNTPOINT => 'Mount Point',
             PageRepository::DOKTYPE_SPACER => 'Spacer',
             PageRepository::DOKTYPE_SYSFOLDER => 'System Folder',
-            default => 'Unknown Type'
+            default => 'Unknown Type',
         };
     }
 
@@ -414,18 +414,18 @@ final class GetPageTreeTool extends AbstractRecordTool
     {
         $result = '';
         $indent = str_repeat('  ', $level);
-        
+
         foreach ($pageTree as $page) {
-            $pageTitle = is_scalar($page['title'] ?? null) ? (string)$page['title'] : '';
-            $pageNavTitle = is_scalar($page['nav_title'] ?? null) ? (string)$page['nav_title'] : '';
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+            $pageTitle = \is_scalar($page['title'] ?? null) ? (string) $page['title'] : '';
+            $pageNavTitle = \is_scalar($page['nav_title'] ?? null) ? (string) $page['nav_title'] : '';
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
             $title = $pageNavTitle !== '' ? $pageNavTitle : $pageTitle;
             $hiddenMark = !empty($page['hidden']) ? ' [HIDDEN]' : '';
-            $doktypeLabel = $this->getDoktypeLabel(is_numeric($page['doktype'] ?? null) ? (int)$page['doktype'] : 0);
-            
+            $doktypeLabel = $this->getDoktypeLabel(is_numeric($page['doktype'] ?? null) ? (int) $page['doktype'] : 0);
+
             // Start building the line: [uid] Title [Type]
             $result .= $indent . '- [' . $pageUid . '] ' . $title . ' [' . $doktypeLabel . ']' . $hiddenMark;
-            
+
             // Add translation status if language specified
             if ($languageUid !== null && $languageUid > 0) {
                 if (isset($page['_translated'])) {
@@ -441,24 +441,24 @@ final class GetPageTreeTool extends AbstractRecordTool
             }
 
             // Add URL if available
-            if (is_scalar($page['url'] ?? null) && (string)$page['url'] !== '') {
-                $result .= ' - ' . (string)$page['url'];
+            if (\is_scalar($page['url'] ?? null) && (string) $page['url'] !== '') {
+                $result .= ' - ' . (string) $page['url'];
             }
-            
+
             // If the page has subpages but we've reached max depth, show the count
-            $subpageCount = is_numeric($page['subpageCount'] ?? null) ? (int)$page['subpageCount'] : 0;
+            $subpageCount = is_numeric($page['subpageCount'] ?? null) ? (int) $page['subpageCount'] : 0;
             if (empty($page['subpages']) && $subpageCount > 0) {
                 $result .= ' (' . $subpageCount . ' subpages)';
             }
-            
+
             // Add plugin hints if available
             if ($pageUid > 0 && !empty($pluginHints[$pageUid])) {
                 $result .= $pluginHints[$pageUid];
             }
-            
+
             $result .= PHP_EOL;
-            
-            if (isset($page['subpages']) && is_array($page['subpages'])) {
+
+            if (isset($page['subpages']) && \is_array($page['subpages'])) {
                 /** @var list<array<string, mixed>> $subpages */
                 $subpages = array_values(array_filter($page['subpages'], is_array(...)));
                 if ($subpages !== []) {
@@ -466,7 +466,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 }
             }
         }
-        
+
         return $result;
     }
 

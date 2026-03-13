@@ -10,3 +10,4 @@
 # other
 *.local
 .DS_Store
+.php-cs-fixer.cache

@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\ListTablesTool;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -18,7 +17,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
         'news',
@@ -27,7 +26,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Import backend user fixture
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         // Set up backend user for DataHandler and TableAccessService
@@ -41,33 +40,33 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
     {
         $tool = new ListTablesTool();
         $result = $tool->execute([]);
-        
+
         $this->assertInstanceOf(TextContent::class, $result->content[0]);
         $content = $result->content[0]->text;
-        
+
         // Expected News tables (News uses sys_category and sys_file_reference, not custom tables)
         $expectedTables = [
             'tx_news_domain_model_news',
             'tx_news_domain_model_tag',
             'tx_news_domain_model_link',
         ];
-        
+
         foreach ($expectedTables as $table) {
             $this->assertStringContainsString(
                 $table,
                 $content,
-                "Expected News table '$table' not found in ListTablesTool output"
+                "Expected News table '$table' not found in ListTablesTool output",
             );
         }
-        
+
         // Verify News table is present
         $this->assertStringContainsString(
             'tx_news_domain_model_news',
             $content,
-            'News table should be present in the output'
+            'News table should be present in the output',
         );
     }
-    
+
     /**
      * Test that News tables are properly grouped under the News extension
      */
@@ -75,25 +74,25 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
     {
         $tool = new ListTablesTool();
         $result = $tool->execute([]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Should have a News extension section
         $this->assertStringContainsString(
             'EXTENSION: news',
             $content,
-            'News tables should be grouped under News extension'
+            'News tables should be grouped under News extension',
         );
-        
+
         // Check that News tables appear after the extension header
         $newsSection = strstr($content, 'EXTENSION: news');
         $this->assertNotFalse($newsSection, 'News extension section not found');
-        
+
         // All News tables should be in this section
         $this->assertStringContainsString('tx_news_domain_model_news', $newsSection);
         $this->assertStringContainsString('tx_news_domain_model_tag', $newsSection);
     }
-    
+
     /**
      * Test that News relation tables (MM tables) are included if they exist
      */
@@ -101,16 +100,16 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
     {
         $tool = new ListTablesTool();
         $result = $tool->execute([]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Check for possible MM tables (these may or may not exist depending on News version)
         $possibleMmTables = [
             'tx_news_domain_model_news_category_mm',
             'tx_news_domain_model_news_tag_mm',
             'tx_news_domain_model_news_related_mm',
         ];
-        
+
         // Count which MM tables are present
         $foundMmTables = [];
         foreach ($possibleMmTables as $mmTable) {
@@ -118,7 +117,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
                 $foundMmTables[] = $mmTable;
             }
         }
-        
+
         // Log which MM tables were found for debugging
         if (!empty($foundMmTables)) {
             $this->addToAssertionCount(1);
