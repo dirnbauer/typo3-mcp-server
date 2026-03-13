@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Hn\McpServer\Http;
 
 use Hn\McpServer\Service\OAuthService;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Crypto\HashService;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -22,9 +24,16 @@ final class OAuthAuthorizeEndpoint
     {
         try {
             $postParams = $this->getRequestData($request->getParsedBody());
+            $queryParams = $this->getRequestData($request->getQueryParams());
 
             // Initialize backend user context for eID
             $this->initializeBackendUserContext($request);
+
+            $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
+            $challengeMethod = $queryParams['code_challenge_method'] ?? '';
+            if ($challengeMethod !== '' && $challengeMethod !== 'S256') {
+                return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+            }
 
             // Check if user is authenticated
             if (!$this->isBackendUserAuthenticated()) {
@@ -45,8 +54,10 @@ final class OAuthAuthorizeEndpoint
             // Show consent form
             return $this->showConsentForm($request);
 
+        } catch (InvalidArgumentException $e) {
+            return $this->createErrorResponse('invalid_request', 'Invalid redirect_uri');
         } catch (Throwable $e) {
-            return $this->createErrorResponse('server_error', $e->getMessage());
+            return $this->createErrorResponse('server_error', 'Authorization failed');
         }
     }
 
@@ -122,18 +133,19 @@ final class OAuthAuthorizeEndpoint
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
     {
         $queryParams = $this->getRequestData($request->getQueryParams());
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
 
         // Store OAuth parameters in cookie
         $oauthData = [
             'client_id' => $queryParams['client_id'] ?? '',
             'client_name' => $this->resolveClientName($request),
-            'redirect_uri' => $queryParams['redirect_uri'] ?? '',
+            'redirect_uri' => $redirectUri,
             'code_challenge' => $queryParams['code_challenge'] ?? '',
             'code_challenge_method' => $queryParams['code_challenge_method'] ?? '',
             'state' => $queryParams['state'] ?? '',
         ];
 
-        $oauthDataEncoded = base64_encode($this->encodeJson($oauthData));
+        $oauthDataEncoded = $this->encodeOAuthCookie($oauthData);
         $loginUrl = '/typo3/index.php?loginProvider=1450629977&login_status=login';
 
         // Build cookie string with environment-aware security flags
@@ -163,9 +175,15 @@ final class OAuthAuthorizeEndpoint
         $postParams = $this->getRequestData($request->getParsedBody());
 
         $clientName = $postParams['client_name'] ?? $this->resolveClientName($request);
-        $redirectUri = $queryParams['redirect_uri'] ?? '';
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $pkceChallenge = $queryParams['code_challenge'] ?? '';
-        $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+        $challengeMethod = $queryParams['code_challenge_method'] ?? '';
+        if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
+            return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+        }
+        if ($challengeMethod === '') {
+            $challengeMethod = 'S256';
+        }
         $state = $postParams['state'] ?? $queryParams['state'] ?? '';
 
         $oauthService = GeneralUtility::makeInstance(OAuthService::class);
@@ -218,7 +236,7 @@ final class OAuthAuthorizeEndpoint
 
         $clientId = $queryParams['client_id'] ?? '';
         $clientName = $this->resolveClientName($request);
-        $redirectUri = $queryParams['redirect_uri'] ?? '';
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $codeChallenge = $queryParams['code_challenge'] ?? '';
         $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
         $state = $queryParams['state'] ?? '';
@@ -571,5 +589,46 @@ final class OAuthAuthorizeEndpoint
     {
         $json = json_encode($data);
         return \is_string($json) ? $json : '{}';
+    }
+
+    /**
+     * @param array<string, string|null> $oauthData
+     */
+    private function encodeOAuthCookie(array $oauthData): string
+    {
+        $payload = $this->encodeJson($oauthData);
+        $signature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth');
+
+        return base64_encode($payload) . '.' . $signature;
+    }
+
+    private function validateRedirectUri(?string $redirectUri): string
+    {
+        $trimmedRedirectUri = trim((string) $redirectUri);
+        if ($trimmedRedirectUri === '') {
+            return '';
+        }
+
+        $parsedUrl = parse_url($trimmedRedirectUri);
+        if (!\is_array($parsedUrl)) {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
+        $scheme = \is_string($parsedUrl['scheme'] ?? null) ? strtolower($parsedUrl['scheme']) : '';
+        if ($scheme === '') {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
+        if (!\in_array($scheme, ['http', 'https'], true)) {
+            return $trimmedRedirectUri;
+        }
+
+        $host = \is_string($parsedUrl['host'] ?? null) ? strtolower($parsedUrl['host']) : '';
+        $allowedHosts = ['localhost', '127.0.0.1', '::1'];
+        if ($host !== '' && (\in_array($host, $allowedHosts, true) || str_ends_with($host, '.localhost'))) {
+            return $trimmedRedirectUri;
+        }
+
+        throw new \InvalidArgumentException('Invalid redirect_uri');
     }
 }

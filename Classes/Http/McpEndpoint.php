@@ -296,26 +296,22 @@ final readonly class McpEndpoint
      */
     private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
     {
-        $headers = [];
         $receivedAuthHeader = false;
 
         // Check all possible ways the Authorization header might arrive
         $authHeader = $request->getHeaderLine('Authorization');
         if (!empty($authHeader)) {
-            $headers['authorization'] = $authHeader;
             $receivedAuthHeader = true;
         }
 
         // Check server params for HTTP_AUTHORIZATION
         $serverParams = $request->getServerParams();
         if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = \is_string($serverParams['HTTP_AUTHORIZATION']) ? $serverParams['HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
         // Also check for redirect env variable (Apache specific)
         if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = \is_string($serverParams['REDIRECT_HTTP_AUTHORIZATION']) ? $serverParams['REDIRECT_HTTP_AUTHORIZATION'] : '';
             $receivedAuthHeader = true;
         }
 
@@ -327,7 +323,6 @@ final readonly class McpEndpoint
 
         $responseData = [
             'test' => 'auth',
-            'headers_received' => $headers,
             'auth_header_detected' => $receivedAuthHeader,
             'server_software' => \is_string($serverParams['SERVER_SOFTWARE'] ?? null) ? $serverParams['SERVER_SOFTWARE'] : 'unknown',
             'hint' => !$receivedAuthHeader ? 'Authorization header not received. See module page for solutions.' : 'Authorization header received successfully.',

@@ -84,7 +84,8 @@ final readonly class OAuthTokenEndpoint
             return $this->addCorsHeaders($response);
 
         } catch (Throwable $e) {
-            return $this->createErrorResponse('server_error', $e->getMessage(), 500);
+            $this->logger->error('OAuth token exchange failed', ['exception' => $e]);
+            return $this->createErrorResponse('server_error', 'Token exchange failed', 500);
         }
     }
 

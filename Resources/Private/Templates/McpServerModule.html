@@ -170,20 +170,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                         <f:then>
                                             <div class="alert alert-success mb-3">
                                                 <h6><strong>✓ n8n token active</strong></h6>
-                                                <div class="mt-2">
-                                                    <label for="n8n-token" class="form-label mb-1"><strong>Bearer Token</strong></label>
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" value="{n8nTokenInfo.token}" readonly id="n8n-token" style="font-family: monospace; max-width: 40ch;">
-                                                        <div class="input-group-append">
-                                                            <button class="btn btn-outline-secondary copy-button" type="button" data-copy-target="n8n-token">
-                                                                <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                                                    <span class="icon-markup">📋</span>
-                                                                </span>
-                                                                Copy Token
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <p class="mb-0">The full token value is only shown when it is created. If you need to copy it again, revoke the existing token and create a new one.</p>
                                             </div>
                                         </f:then>
                                         <f:else>
@@ -207,7 +194,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                         <li>Set <strong>Endpoint</strong> to: <code>{baseUrl}/mcp</code></li>
                                         <li>Set <strong>Server Transport</strong> to: <code>HTTP Streamable</code></li>
                                         <li>Set <strong>Authentication</strong> to: <code>Bearer Auth</code></li>
-                                        <li>Create a new credential and paste <f:if condition="{n8nTokenInfo.hasToken}"><f:then>the token above</f:then><f:else>your token</f:else></f:if></li>
+                                        <li>Create a new credential and paste <f:if condition="{n8nTokenInfo.hasToken}"><f:then>the token returned when you created it</f:then><f:else>your token</f:else></f:if></li>
                                         <li>Select which tools to include or choose "All"</li>
                                     </ol>
                                 </div>
@@ -220,20 +207,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                         <f:then>
                                             <div class="alert alert-success mb-3">
                                                 <h6><strong>✓ manus token active</strong></h6>
-                                                <div class="mt-2">
-                                                    <label for="manus-token" class="form-label mb-1"><strong>Bearer Token</strong></label>
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control" value="{manusTokenInfo.token}" readonly id="manus-token" style="font-family: monospace; max-width: 40ch;">
-                                                        <div class="input-group-append">
-                                                            <button class="btn btn-outline-secondary copy-button" type="button" data-copy-target="manus-token">
-                                                                <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                                                    <span class="icon-markup">📋</span>
-                                                                </span>
-                                                                Copy Token
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <p class="mb-0">The full token value is only shown when it is created. If you need to copy it again, revoke the existing token and create a new one.</p>
                                             </div>
                                         </f:then>
                                         <f:else>
@@ -257,7 +231,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                         <li>Set <strong>Server Name</strong> to: <code>{siteName}</code></li>
                                         <li>Set <strong>Transport</strong> to: <code>HTTP</code></li>
                                         <li>Set <strong>Server URL</strong> to: <code>{baseUrl}/mcp</code></li>
-                                        <li>Add a custom header <code>Authorization</code> with the value <f:if condition="{manusTokenInfo.hasToken}"><f:then><code style="max-width: 20ch;overflow: hidden;display: inline-block;white-space: nowrap;vertical-align: sub;text-overflow: ellipsis;">Bearer {manusTokenInfo.token}</code></f:then><f:else><code>Bearer YOUR_TOKEN</code></f:else></f:if></li>
+                                        <li>Add a custom header <code>Authorization</code> with the value <f:if condition="{manusTokenInfo.hasToken}"><f:then><code>Bearer YOUR_CREATED_TOKEN</code></f:then><f:else><code>Bearer YOUR_TOKEN</code></f:else></f:if></li>
                                         <li>Save your MCP configuration</li>
                                     </ol>
                                 </div>
@@ -316,32 +290,34 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
 
                             <f:if condition="{mcpRemoteUrl.hasTokens}">
                                 <f:then>
-                                    <!-- Token URL for mcp-remote -->
-                                    <div class="alert alert-info">
-                                        <h6><strong>Using your active token:</strong></h6>
-                                        <p class="mb-2">Your existing OAuth token will be included in the URL as a query parameter.</p>
+                                    <div class="alert alert-warning">
+                                        <h6><strong>mcp-remote token active</strong></h6>
+                                        <p class="mb-2">For security reasons the full token value is only shown when it is created, so an existing URL with an embedded token cannot be reconstructed from storage.</p>
+                                        <p class="mb-0">If you need the URL again, revoke the token and create a new one, then copy it immediately.</p>
                                     </div>
 
                                     <div class="input-group mb-3">
-                                        <input type="text" class="form-control" value="{mcpRemoteUrl.tokenUrl}" readonly id="mcp-remote-url" style="font-family: monospace; max-width: 80ch;">
+                                        <input type="text" class="form-control" value="{mcpRemoteUrl.baseUrl}" readonly id="mcp-remote-url" style="font-family: monospace; max-width: 80ch;">
                                         <div class="input-group-append">
                                             <button class="btn btn-outline-primary copy-button" type="button" data-copy-target="mcp-remote-url">
                                                 <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
                                                     <span class="icon-markup">📋</span>
                                                 </span>
-                                                Copy Token URL
+                                                Copy Base URL
                                             </button>
                                         </div>
                                     </div>
 
-                                    <!-- mcp-remote Configuration Example -->
                                     <div class="mt-3">
                                         <h6><strong>Example mcp-remote configuration:</strong></h6>
                                         <textarea class="form-control mb-2" rows="9" readonly id="mcp-remote-config" style="font-family: monospace; font-size: 12px; white-space: pre"><f:format.raw>{
   "mcpServers": {
     "</f:format.raw>{siteName}<f:format.raw>": {
       "command": "npx",
-      "args": ["mcp-remote", "</f:format.raw>{mcpRemoteUrl.tokenUrl}<f:format.raw>"]
+      "args": ["mcp-remote", "</f:format.raw>{mcpRemoteUrl.baseUrl}<f:format.raw>"],
+      "env": {
+        "MCP_AUTH_HEADER": "Bearer YOUR_CREATED_TOKEN"
+      }
     }
   }
 }</f:format.raw></textarea>

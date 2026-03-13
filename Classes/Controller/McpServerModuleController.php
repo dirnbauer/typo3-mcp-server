@@ -168,7 +168,7 @@ final readonly class McpServerModuleController
         } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Error revoking token: ' . $e->getMessage(),
+                'message' => 'Unable to revoke the token right now.',
             ], 500);
         }
     }
@@ -202,7 +202,7 @@ final readonly class McpServerModuleController
         } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Error revoking tokens: ' . $e->getMessage(),
+                'message' => 'Unable to revoke tokens right now.',
             ], 500);
         }
     }
@@ -282,7 +282,7 @@ final readonly class McpServerModuleController
         } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Error retrieving tokens: ' . $e->getMessage(),
+                'message' => 'Unable to load tokens right now.',
             ], 500);
         }
     }
@@ -304,8 +304,8 @@ final readonly class McpServerModuleController
         return [
             'baseUrl' => $endpointUrl,
             'hasTokens' => !empty($mcpRemoteTokens),
-            'tokenUrl' => !empty($mcpRemoteTokens) ? $endpointUrl . '?token=' . array_values($mcpRemoteTokens)[0]['token'] : null,
-            'description' => 'For MCP clients that don\'t support Authorization headers (like mcp-remote without auth)',
+            'tokenUrl' => null,
+            'description' => 'Existing tokens are stored as secure hashes and cannot be shown again after creation.',
         ];
     }
 
@@ -326,7 +326,7 @@ final readonly class McpServerModuleController
 
         return [
             'hasToken' => $hasToken,
-            'token' => $token['token'] ?? null,
+            'token' => null,
             'expires' => $token['expires'] ?? null,
             'clientName' => $clientName,
         ];
@@ -486,7 +486,7 @@ final readonly class McpServerModuleController
         } catch (Throwable $e) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Error creating token: ' . $e->getMessage(),
+                'message' => 'Unable to create a token right now.',
             ], 500);
         }
     }

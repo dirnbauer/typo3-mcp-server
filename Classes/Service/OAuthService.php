@@ -50,6 +50,10 @@ final class OAuthService
      */
     public function createAuthorizationCode(int $beUserId, string $clientName, string $redirectUri = '', string $pkceChallenge = '', string $challengeMethod = 'S256'): string
     {
+        if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
+            throw new \InvalidArgumentException('Only S256 PKCE challenges are supported');
+        }
+
         $code = $this->generateSecureToken();
         $expires = time() + self::CODE_EXPIRY_SECONDS;
 
@@ -103,6 +107,10 @@ final class OAuthService
 
         $pkceChallenge = \is_array($authCode) && \is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
         if ($pkceChallenge !== '') {
+            $challengeMethod = \is_array($authCode) && \is_string($authCode['pkce_challenge_method'] ?? null) ? $authCode['pkce_challenge_method'] : '';
+            if ($challengeMethod !== 'S256') {
+                return null;
+            }
             if ($codeVerifier === null || $codeVerifier === '') {
                 return null;
             }
@@ -293,21 +301,26 @@ final class OAuthService
         // Clean up expired authorization codes
         $codeConnection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
-
-        $codeConnection->delete(
-            'tx_mcpserver_oauth_codes',
-            ['expires' => $codeConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)],
-        );
+        $codeQueryBuilder = $codeConnection->createQueryBuilder();
+        $codeQueryBuilder
+            ->delete('tx_mcpserver_oauth_codes')
+            ->where(
+                $codeQueryBuilder->expr()->lt('expires', $codeQueryBuilder->createNamedParameter($currentTime)),
+            )
+            ->executeStatement();
 
         // Mark expired tokens as deleted
         $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $tokenConnection->update(
-            'tx_mcpserver_access_tokens',
-            ['deleted' => 1, 'tstamp' => $currentTime],
-            ['expires' => $tokenConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)],
-        );
+        $tokenQueryBuilder = $tokenConnection->createQueryBuilder();
+        $tokenQueryBuilder
+            ->update('tx_mcpserver_access_tokens')
+            ->set('deleted', $tokenQueryBuilder->createNamedParameter(1, \TYPO3\CMS\Core\Database\Connection::PARAM_INT))
+            ->set('tstamp', $tokenQueryBuilder->createNamedParameter($currentTime, \TYPO3\CMS\Core\Database\Connection::PARAM_INT))
+            ->where(
+                $tokenQueryBuilder->expr()->lt('expires', $tokenQueryBuilder->createNamedParameter($currentTime)),
+            )
+            ->executeStatement();
     }
 
     /**
@@ -381,7 +394,7 @@ final class OAuthService
             'registration_endpoint' => $baseUrl . '/mcp_oauth/register',
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
-            'code_challenge_methods_supported' => ['S256', 'plain'],
+            'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['none', 'client_secret_post'],
             'registration_endpoint_auth_methods_supported' => ['none'],
         ];
@@ -411,7 +424,7 @@ final class OAuthService
                 'pid' => 0,
                 'tstamp' => time(),
                 'crdate' => time(),
-                'token' => $accessToken,
+                'token' => hash('sha256', $accessToken),
                 'be_user_uid' => $beUserId,
                 'client_name' => $clientName,
                 'expires' => $expires,

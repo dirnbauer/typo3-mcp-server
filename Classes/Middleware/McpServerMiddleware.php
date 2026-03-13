@@ -16,6 +16,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\UserAspect;
+use TYPO3\CMS\Core\Crypto\HashService;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -70,12 +72,13 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
         $cookieValue = $cookies['tx_mcpserver_oauth'];
 
         // Decode and validate OAuth data
-        $oauthData = json_decode(base64_decode($cookieValue), true);
-        if (!\is_array($oauthData)) {
+        $oauthData = $this->decodeOAuthCookie($cookieValue);
+        if ($oauthData === null) {
             return $handler->handle($request); // Invalid data, continue normal flow
         }
 
         // Check if user is now authenticated using Context API
+        /** @var UserAspect $backendUserAspect */
         $backendUserAspect = $this->context->getAspect('backend.user');
         if (!$backendUserAspect->isLoggedIn()) {
             return $handler->handle($request); // User still not authenticated, continue normal flow
@@ -102,5 +105,41 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
             302,
             ['Location' => $oauthAuthorizeUrl],
         );
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private function decodeOAuthCookie(string $cookieValue): ?array
+    {
+        $parts = explode('.', $cookieValue, 2);
+        if (\count($parts) !== 2 || $parts[0] === '' || $parts[1] === '') {
+            return null;
+        }
+
+        $payload = base64_decode($parts[0], true);
+        if (!\is_string($payload) || $payload === '') {
+            return null;
+        }
+
+        $expectedSignature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth');
+        if (!hash_equals($expectedSignature, $parts[1])) {
+            return null;
+        }
+
+        $oauthData = json_decode($payload, true);
+        if (!\is_array($oauthData)) {
+            return null;
+        }
+
+        $result = [];
+        foreach ($oauthData as $key => $value) {
+            if (!\is_string($key) || !\is_string($value)) {
+                continue;
+            }
+            $result[$key] = $value;
+        }
+
+        return $result;
     }
 }

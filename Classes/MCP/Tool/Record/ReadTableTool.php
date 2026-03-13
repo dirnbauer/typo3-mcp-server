@@ -32,6 +32,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ReadTableTool extends AbstractRecordTool
 {
+    private const MAX_WHERE_TOKENS = 5000;
+    private const MAX_WHERE_CONDITIONS = 80;
+    private const DISALLOWED_WHERE_PATTERN = '/(;|--|#|\/\*|\*\/|\b(?:SELECT|UNION|DROP|DELETE|UPDATE|INSERT|TRUNCATE|ALTER|CREATE|SLEEP|BENCHMARK)\b)/i';
+
     protected LanguageService $languageService;
 
     public function __construct()
@@ -139,7 +143,7 @@ final class ReadTableTool extends AbstractRecordTool
             ],
             'where' => [
                 'type' => 'string',
-                'description' => 'SQL WHERE condition for filtering (without the WHERE keyword)',
+                'description' => 'Restricted filter expression using field comparisons with AND/OR, LIKE, IN, and NULL checks. Example: CType = "textmedia" AND pid = 1',
             ],
             'limit' => [
                 'type' => 'integer',
@@ -342,26 +346,7 @@ final class ReadTableTool extends AbstractRecordTool
             }
         }
 
-        // Apply custom condition if specified
-        if (!empty($condition)) {
-            // Basic SQL injection protection
-            $disallowedKeywords = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'TRUNCATE', 'ALTER', 'CREATE'];
-            $containsDisallowed = false;
-
-            foreach ($disallowedKeywords as $keyword) {
-                if (stripos($condition, $keyword) !== false) {
-                    $containsDisallowed = true;
-                    break;
-                }
-            }
-
-            if ($containsDisallowed) {
-                throw new InvalidArgumentException('The condition contains disallowed SQL keywords');
-            }
-
-            // Add the condition directly
-            $queryBuilder->andWhere($condition);
-        }
+        $this->applyConditionFilter($queryBuilder, $table, $condition);
 
         // Apply default sorting from TCA
         $this->applyDefaultSorting($queryBuilder, $table);
@@ -423,9 +408,7 @@ final class ReadTableTool extends AbstractRecordTool
             }
         }
 
-        if (!empty($condition)) {
-            $countQueryBuilder->andWhere($condition);
-        }
+        $this->applyConditionFilter($countQueryBuilder, $table, $condition);
 
         try {
             $totalCount = $countQueryBuilder->executeQuery()->fetchOne();
@@ -1311,6 +1294,304 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         return $indexedRecords;
+    }
+
+    private function applyConditionFilter(QueryBuilder $queryBuilder, string $table, string $condition): void
+    {
+        $trimmedCondition = trim($condition);
+        if ($trimmedCondition === '') {
+            return;
+        }
+
+        if (preg_match(self::DISALLOWED_WHERE_PATTERN, $trimmedCondition) === 1) {
+            throw new InvalidArgumentException('The condition contains disallowed SQL keywords');
+        }
+
+        $tokens = $this->tokenizeCondition($trimmedCondition);
+        if (\count($tokens) > self::MAX_WHERE_TOKENS) {
+            throw new InvalidArgumentException('The condition is too complex');
+        }
+
+        $offset = 0;
+        $conditionCount = 0;
+        $expression = $this->parseConditionExpression($queryBuilder, $table, $tokens, $offset, $conditionCount);
+
+        if ($offset !== \count($tokens)) {
+            throw new InvalidArgumentException('The condition uses unsupported syntax');
+        }
+
+        if ($conditionCount > self::MAX_WHERE_CONDITIONS) {
+            throw new InvalidArgumentException('The condition is too complex');
+        }
+
+        $queryBuilder->andWhere($expression);
+    }
+
+    /**
+     * @return list<array{type: string, value: string}>
+     */
+    private function tokenizeCondition(string $condition): array
+    {
+        $pattern = '/\s+|(?P<LPAREN>\()|(?P<RPAREN>\))|(?P<COMMA>,)|(?P<OP><=|>=|!=|<>|=|<|>)|(?P<STRING>\'(?:[^\'\\\\]|\\\\.)*\'|"(?:[^"\\\\]|\\\\.)*")|(?P<NUMBER>-?\d+)|(?P<KEYWORD>\bAND\b|\bOR\b|\bIN\b|\bLIKE\b|\bIS\b|\bNOT\b|\bNULL\b)|(?P<IDENTIFIER>[A-Za-z_][A-Za-z0-9_]*)/i';
+        preg_match_all($pattern, $condition, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+
+        $tokens = [];
+        $cursor = 0;
+        foreach ($matches as $match) {
+            $fullMatch = $match[0][0];
+            $offset = $match[0][1];
+
+            if ($offset !== $cursor) {
+                throw new InvalidArgumentException('The condition uses unsupported syntax');
+            }
+
+            $cursor += \strlen($fullMatch);
+            if (trim($fullMatch) === '') {
+                continue;
+            }
+
+            foreach (['LPAREN', 'RPAREN', 'COMMA', 'OP', 'STRING', 'NUMBER', 'KEYWORD', 'IDENTIFIER'] as $type) {
+                if (!isset($match[$type])) {
+                    continue;
+                }
+                $value = $match[$type][0];
+                $valueOffset = $match[$type][1];
+                if ($valueOffset >= 0) {
+                    $tokens[] = [
+                        'type' => $type,
+                        'value' => $type === 'KEYWORD' ? strtoupper($value) : $value,
+                    ];
+                    break;
+                }
+            }
+        }
+
+        if ($cursor !== \strlen($condition)) {
+            throw new InvalidArgumentException('The condition uses unsupported syntax');
+        }
+
+        return $tokens;
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function parseConditionExpression(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $tokens,
+        int &$offset,
+        int &$conditionCount,
+    ): string {
+        $parts = [
+            $this->parseConditionAndExpression($queryBuilder, $table, $tokens, $offset, $conditionCount),
+        ];
+
+        while ($this->peekTokenValue($tokens, $offset) === 'OR') {
+            $offset++;
+            $parts[] = $this->parseConditionAndExpression($queryBuilder, $table, $tokens, $offset, $conditionCount);
+        }
+
+        if (\count($parts) === 1) {
+            return $parts[0];
+        }
+
+        return (string) $queryBuilder->expr()->or(...$parts);
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function parseConditionAndExpression(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $tokens,
+        int &$offset,
+        int &$conditionCount,
+    ): string {
+        $parts = [
+            $this->parseConditionPrimary($queryBuilder, $table, $tokens, $offset, $conditionCount),
+        ];
+
+        while ($this->peekTokenValue($tokens, $offset) === 'AND') {
+            $offset++;
+            $parts[] = $this->parseConditionPrimary($queryBuilder, $table, $tokens, $offset, $conditionCount);
+        }
+
+        if (\count($parts) === 1) {
+            return $parts[0];
+        }
+
+        return (string) $queryBuilder->expr()->and(...$parts);
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function parseConditionPrimary(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $tokens,
+        int &$offset,
+        int &$conditionCount,
+    ): string {
+        if ($this->peekTokenType($tokens, $offset) === 'LPAREN') {
+            $offset++;
+            $expression = $this->parseConditionExpression($queryBuilder, $table, $tokens, $offset, $conditionCount);
+            $this->expectToken($tokens, $offset, 'RPAREN');
+            return $expression;
+        }
+
+        return $this->parseSingleCondition($queryBuilder, $table, $tokens, $offset, $conditionCount);
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function parseSingleCondition(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $tokens,
+        int &$offset,
+        int &$conditionCount,
+    ): string {
+        $field = $this->expectToken($tokens, $offset, 'IDENTIFIER');
+        if (!$this->isFilterableField($table, $field)) {
+            throw new InvalidArgumentException(\sprintf('The condition references an unsupported field: %s', $field));
+        }
+
+        $conditionCount++;
+        if ($conditionCount > self::MAX_WHERE_CONDITIONS) {
+            throw new InvalidArgumentException('The condition is too complex');
+        }
+
+        $keyword = $this->peekTokenValue($tokens, $offset);
+        if ($keyword === 'IS') {
+            $offset++;
+            $isNot = false;
+            if ($this->peekTokenValue($tokens, $offset) === 'NOT') {
+                $offset++;
+                $isNot = true;
+            }
+
+            $this->expectTokenValue($tokens, $offset, 'NULL');
+            return $isNot
+                ? (string) $queryBuilder->expr()->isNotNull($field)
+                : (string) $queryBuilder->expr()->isNull($field);
+        }
+
+        if ($keyword === 'IN') {
+            $offset++;
+            $this->expectToken($tokens, $offset, 'LPAREN');
+
+            $parameters = [];
+            do {
+                $parameters[] = $this->createLiteralParameter($queryBuilder, $tokens, $offset);
+                if ($this->peekTokenType($tokens, $offset) !== 'COMMA') {
+                    break;
+                }
+                $offset++;
+            } while (true);
+
+            $this->expectToken($tokens, $offset, 'RPAREN');
+            return (string) $queryBuilder->expr()->in($field, implode(', ', $parameters));
+        }
+
+        if ($keyword === 'LIKE') {
+            $offset++;
+            $parameter = $this->createLiteralParameter($queryBuilder, $tokens, $offset);
+            return (string) $queryBuilder->expr()->like($field, $parameter);
+        }
+
+        $operator = $this->expectToken($tokens, $offset, 'OP');
+        $parameter = $this->createLiteralParameter($queryBuilder, $tokens, $offset);
+
+        return match ($operator) {
+            '=' => (string) $queryBuilder->expr()->eq($field, $parameter),
+            '!=', '<>' => (string) $queryBuilder->expr()->neq($field, $parameter),
+            '>' => (string) $queryBuilder->expr()->gt($field, $parameter),
+            '>=' => (string) $queryBuilder->expr()->gte($field, $parameter),
+            '<' => (string) $queryBuilder->expr()->lt($field, $parameter),
+            '<=' => (string) $queryBuilder->expr()->lte($field, $parameter),
+            default => throw new InvalidArgumentException('The condition uses unsupported syntax'),
+        };
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function createLiteralParameter(QueryBuilder $queryBuilder, array $tokens, int &$offset): string
+    {
+        $tokenType = $this->peekTokenType($tokens, $offset);
+        $tokenValue = $this->peekTokenValue($tokens, $offset);
+
+        if ($tokenType === 'NUMBER' && $tokenValue !== null) {
+            $offset++;
+            return (string) $queryBuilder->createNamedParameter((int) $tokenValue, ParameterType::INTEGER);
+        }
+
+        if ($tokenType === 'STRING' && $tokenValue !== null) {
+            $offset++;
+            $unquotedValue = substr($tokenValue, 1, -1);
+            return (string) $queryBuilder->createNamedParameter(stripcslashes($unquotedValue), ParameterType::STRING);
+        }
+
+        throw new InvalidArgumentException('The condition uses unsupported syntax');
+    }
+
+    private function isFilterableField(string $table, string $field): bool
+    {
+        if (\in_array($field, ['uid', 'pid', 't3ver_oid', 't3ver_state', 'sorting', 'crdate', 'tstamp', 'deleted', 'hidden'], true)) {
+            return true;
+        }
+
+        $columns = $this->getTableColumns($table);
+        return isset($columns[$field]) && $this->tableAccessService->canAccessField($table, $field);
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function expectToken(array $tokens, int &$offset, string $expectedType): string
+    {
+        $tokenType = $this->peekTokenType($tokens, $offset);
+        $tokenValue = $this->peekTokenValue($tokens, $offset);
+        if ($tokenType !== $expectedType || $tokenValue === null) {
+            throw new InvalidArgumentException('The condition uses unsupported syntax');
+        }
+
+        $offset++;
+        return $tokenValue;
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function expectTokenValue(array $tokens, int &$offset, string $expectedValue): string
+    {
+        $tokenValue = $this->peekTokenValue($tokens, $offset);
+        if ($tokenValue !== $expectedValue) {
+            throw new InvalidArgumentException('The condition uses unsupported syntax');
+        }
+
+        $offset++;
+        return $expectedValue;
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function peekTokenType(array $tokens, int $offset): ?string
+    {
+        return $tokens[$offset]['type'] ?? null;
+    }
+
+    /**
+     * @param list<array{type: string, value: string}> $tokens
+     */
+    private function peekTokenValue(array $tokens, int $offset): ?string
+    {
+        return $tokens[$offset]['value'] ?? null;
     }
 
 }
