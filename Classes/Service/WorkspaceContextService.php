@@ -171,18 +171,16 @@ class WorkspaceContextService
             // Create workspace record data
             // Only use fields that are guaranteed to exist in TYPO3 core
             $workspaceData = [
-                'pid' => 0, // Workspaces are created at root level
+                'pid' => 0,
                 'title' => $workspaceTitle,
                 'description' => $workspaceDescription,
                 'adminusers' => $beUser->user['uid'] ?? 0,
                 'members' => '',
-                'db_mountpoints' => '', // Inherit from user
-                'file_mountpoints' => '', // Inherit from user
-                'publish_access' => 1, // Allow publishing
-                'stagechg_notification' => 0, // No email notifications by default
-                'freeze' => 0, // Not frozen
-                'live_edit' => 0, // No live edit
-                'publish_time' => 0, // No scheduled publishing
+                'db_mountpoints' => '',
+                'file_mountpoints' => '',
+                'publish_access' => 1,
+                'stagechg_notification' => 0,
+                'publish_time' => 0,
             ];
             
             // Use DataHandler to create the workspace
