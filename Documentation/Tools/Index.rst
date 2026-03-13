@@ -15,9 +15,9 @@ GetPageTree
 Returns the TYPO3 page tree structure starting from a root page.
 
 :Parameters:
-   - ``root_page_id`` (integer): Starting page UID (default: site root)
+   - ``startPage`` (integer): Starting page UID (default: site root)
    - ``depth`` (integer): Tree depth (default: 3)
-   - ``workspace_id`` (integer, optional): Workspace to use
+   - ``language`` (string): ISO language code for translated page titles
 
 GetPage
 -------
@@ -25,8 +25,9 @@ GetPage
 Returns full page content including content elements and their data.
 
 :Parameters:
-   - ``page_id`` (integer, required): Page UID
-   - ``workspace_id`` (integer, optional): Workspace to use
+   - ``uid`` (integer): Page UID
+   - ``url`` (string): Full URL, path, or slug as an alternative to ``uid``
+   - ``language`` (string): ISO language code for translated page content
 
 ReadTable
 ---------
@@ -37,12 +38,13 @@ Read records from any accessible TYPO3 table with filtering and pagination.
    - ``table`` (string, required): Table name
    - ``uid`` (integer): Single record UID
    - ``pid`` (integer): Filter by page ID
-   - ``where`` (string): Additional filter condition
+   - ``where`` (string): Restricted filter expression using literal comparisons,
+     ``AND`` / ``OR``, ``LIKE``, ``IN (...)``, and ``IS NULL`` checks
    - ``language`` (string): ISO language code (e.g. ``de``, ``fr``)
    - ``limit`` (integer): Max records (default: 20)
    - ``offset`` (integer): Pagination offset
    - ``fields`` (array): Specific fields to return
-   - ``workspace_id`` (integer, optional): Workspace to use
+   - ``workspace_id`` (integer, optional): Override the default workspace selection
 
 ListTables
 ----------
@@ -75,9 +77,12 @@ SearchTool
 Full-text search across TYPO3 content.
 
 :Parameters:
-   - ``query`` (string, required): Search text
+   - ``terms`` (array, required): Search terms
+   - ``termLogic`` (string): ``AND`` or ``OR`` for combining terms
    - ``table`` (string): Limit search to a specific table
-   - ``workspace_id`` (integer, optional): Workspace to use
+   - ``pageId`` (integer): Limit results to a specific page
+   - ``language`` (string): ISO language code for language-specific content
+   - ``limit`` (integer): Max results per table
 
 Writing tools
 =============
@@ -106,7 +111,9 @@ ListWorkspaces
 --------------
 
 List all workspaces accessible to the current user. Shows which workspace
-is currently active and the access level for each.
+is currently active and the access level for each. Use the returned
+``workspace_id`` with record tools when you need to override the strong
+default workspace selection.
 
 File tools
 ==========

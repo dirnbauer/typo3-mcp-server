@@ -4,6 +4,16 @@
 Architecture
 ============
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   WorkspaceTransparency
+   LanguageOverlays
+   InlineRelations
+   SecurityAudit
+   Audits/Index
+
 Design decisions
 ================
 
@@ -49,3 +59,9 @@ Key security measures:
 - All database queries use parameterized QueryBuilder
 - Exception details are logged server-side, not returned to clients
 - ``DataHandler->admin = true`` is scoped to workspace creation only
+
+Audit reports
+=============
+
+See :doc:`Audits/Index` for dated upgrade, conformance, security, and
+testing audit reports from the current TYPO3 v13/v14 update cycle.
