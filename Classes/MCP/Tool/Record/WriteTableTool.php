@@ -366,7 +366,7 @@ final class WriteTableTool extends AbstractRecordTool
                         // Collect the UIDs of created child records
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (strpos($newId, 'NEW') === 0 && isset($childDataMap[$foreignTable][$newId])) {
+                            if (str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId])) {
                                 $childUids[] = $realId;
                             }
                         }
@@ -392,7 +392,7 @@ final class WriteTableTool extends AbstractRecordTool
         
         
         // Handle after/before positioning if needed
-        if (strpos($position, 'after:') === 0 || strpos($position, 'before:') === 0) {
+        if (str_starts_with($position, 'after:') || str_starts_with($position, 'before:')) {
             $positionType = substr($position, 0, strpos($position, ':'));
             $referenceUid = (int)substr($position, strpos($position, ':') + 1);
             
@@ -506,7 +506,7 @@ final class WriteTableTool extends AbstractRecordTool
                         // Collect the UIDs of created child records
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (strpos($newId, 'NEW') === 0 && isset($childDataMap[$foreignTable][$newId])) {
+                            if (str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId])) {
                                 $childUids[] = $realId;
                             }
                         }
@@ -1300,12 +1300,12 @@ final class WriteTableTool extends AbstractRecordTool
             // Handle FlexForm fields
             if ($this->isFlexFormField($table, $fieldName)) {
                 // If the value is already a string (XML), keep it as is
-                if (is_string($value) && strpos($value, '<?xml') === 0) {
+                if (is_string($value) && str_starts_with($value, '<?xml')) {
                     continue;
                 }
                 
                 // If the value is an array or JSON string, convert it to XML
-                $flexFormArray = is_array($value) ? $value : (is_string($value) && strpos($value, '{') === 0 ? json_decode($value, true) : null);
+                $flexFormArray = is_array($value) ? $value : (is_string($value) && str_starts_with($value, '{') ? json_decode($value, true) : null);
                 
                 if (is_array($flexFormArray)) {
                     // Prepare the data structure for TYPO3's XML conversion
@@ -1602,16 +1602,16 @@ final class WriteTableTool extends AbstractRecordTool
 
         foreach ($errorLog as $error) {
             // Parse common TYPO3 DataHandler error patterns
-            if (strpos($error, 'Attempt to insert record on pages:') !== false) {
-                if (strpos($error, 'not allowed') !== false) {
+            if (str_contains($error, 'Attempt to insert record on pages:')) {
+                if (str_contains($error, 'not allowed')) {
                     $errors[] = 'Cannot create record on this page. Check that you have database mount point access ' .
                         'and the necessary table permissions.';
                     continue;
                 }
             }
 
-            if (strpos($error, 'recordEditAccessInternals()') !== false) {
-                if (strpos($error, 'authMode') !== false) {
+            if (str_contains($error, 'recordEditAccessInternals()')) {
+                if (str_contains($error, 'authMode')) {
                     // Already handled by validateAuthModePermissions, but show if it slipped through
                     preg_match('/field "([^"]+)" with value "([^"]+)"/', $error, $matches);
                     if (count($matches) === 3) {
@@ -1624,7 +1624,7 @@ final class WriteTableTool extends AbstractRecordTool
                     }
                 }
 
-                if (strpos($error, 'languageField') !== false) {
+                if (str_contains($error, 'languageField')) {
                     $errors[] = 'Language permission check failed. Ensure sys_language_uid is set in your data.';
                     continue;
                 }

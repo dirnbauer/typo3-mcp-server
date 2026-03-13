@@ -192,24 +192,24 @@ final class ListTablesTool extends AbstractRecordTool
         }
         
         // System tables
-        if (strpos($table, 'sys_') === 0) {
+        if (str_starts_with($table, 'sys_')) {
             return 'system';
         }
         
         // Backend tables
-        if (strpos($table, 'be_') === 0) {
+        if (str_starts_with($table, 'be_')) {
             return 'backend';
         }
         
         // Frontend tables
-        if (strpos($table, 'fe_') === 0) {
+        if (str_starts_with($table, 'fe_')) {
             return 'frontend';
         }
         
         // Extension content tables (most tx_ tables)
-        if (strpos($table, 'tx_') === 0) {
+        if (str_starts_with($table, 'tx_')) {
             // Domain model tables are usually content
-            if (strpos($table, '_domain_model_') !== false) {
+            if (str_contains($table, '_domain_model_')) {
                 return 'content';
             }
             return 'extension';

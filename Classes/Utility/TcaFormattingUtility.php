@@ -40,7 +40,7 @@ final class TcaFormattingUtility
                 }
                 
                 // Check for typolink support via softref
-                if (isset($config['softref']) && strpos($config['softref'], 'typolink_tag') !== false) {
+                if (isset($config['softref']) && str_contains($config['softref'], 'typolink_tag')) {
                     $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
                 }
                 break;
@@ -59,7 +59,7 @@ final class TcaFormattingUtility
                 }
                 
                 // Check for typolink support via softref
-                if (isset($config['softref']) && strpos($config['softref'], 'typolink_tag') !== false) {
+                if (isset($config['softref']) && str_contains($config['softref'], 'typolink_tag')) {
                     $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
                 }
                 break;
@@ -168,7 +168,7 @@ final class TcaFormattingUtility
         }
         
         // Add required flag if set
-        if (isset($config['eval']) && strpos($config['eval'], 'required') !== false) {
+        if (isset($config['eval']) && str_contains($config['eval'], 'required')) {
             $result .= " [Required]";
         }
         

@@ -109,7 +109,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 // Format arrays as JSON
                 if (is_array($value)) {
                     $value = json_encode($value);
-                } elseif (is_string($value) && strpos($value, 'LLL:') === 0) {
+                } elseif (is_string($value) && str_starts_with($value, 'LLL:')) {
                     // Translate LLL keys
                     $value = TableAccessService::translateLabel($value);
                 }
@@ -223,7 +223,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 $fieldName = $itemParts[0];
                 
                 // Check if this is a palette
-                if ($fieldName === '--palette--' || strpos($fieldName, '--palette--') === 0) {
+                if ($fieldName === '--palette--' || str_starts_with($fieldName, '--palette--')) {
                     // Extract palette name from the parts
                     $paletteParts = explode(';', $item);
                     $paletteName = $paletteParts[2] ?? '';
@@ -370,7 +370,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 // Either directly or with a wildcard
                 $filteredIdentifiers = [];
                 foreach ($identifiers as $id) {
-                    if (strpos($id, ',') !== false) {
+                    if (str_contains($id, ',')) {
                         $parts = explode(',', $id);
                         // Check if the identifier matches the current type
                         // Either directly or with a wildcard

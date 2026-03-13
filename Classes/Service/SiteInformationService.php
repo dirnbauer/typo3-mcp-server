@@ -98,7 +98,7 @@ final class SiteInformationService
                 $generatedUrl = (string)$uri;
                 
                 // Check if the generated URL is missing a host (e.g., just a path like "/page")
-                if (!empty($generatedUrl) && strpos($generatedUrl, 'http') !== 0) {
+                if (!empty($generatedUrl) && !str_starts_with($generatedUrl, 'http')) {
                     // Try to add host from site configuration
                     $host = $site->getBase()->getHost();
                     

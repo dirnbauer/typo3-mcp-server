@@ -139,7 +139,7 @@ abstract class AbstractRecordTool extends AbstractTool
         }
         
         // Extension tables usually have a prefix like tx_news_domain_model_news
-        if (strpos($table, 'tx_') === 0) {
+        if (str_starts_with($table, 'tx_')) {
             $parts = explode('_', $table);
             if (count($parts) >= 2) {
                 return $parts[1]; // Return the extension name

@@ -473,7 +473,7 @@ final class ReadTableTool extends AbstractRecordTool
         $fieldConfig = $this->tableAccessService->getFieldConfig($table, $field);
         if ($fieldConfig) {
             // Check eval rules for int
-            if (isset($fieldConfig['config']['eval']) && strpos($fieldConfig['config']['eval'], 'int') !== false) {
+            if (isset($fieldConfig['config']['eval']) && str_contains($fieldConfig['config']['eval'], 'int')) {
                 return (int)$value;
             }
 
@@ -518,7 +518,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Convert FlexForm XML to JSON
-        if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && strpos($value, '<?xml') === 0) {
+        if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && str_starts_with($value, '<?xml')) {
             try {
                 // Use TYPO3's FlexFormService to convert XML to array
                 $flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
@@ -531,7 +531,7 @@ final class ReadTableTool extends AbstractRecordTool
                 // Process each field and organize settings
                 foreach ($flexFormArray as $key => $val) {
                     // Check if this is a settings field (key starts with "settings")
-                    if (strpos($key, 'settings') === 0 && strlen($key) > 8) {
+                    if (str_starts_with($key, 'settings') && strlen($key) > 8) {
                         // Extract the setting name (remove "settings" prefix)
                         $settingName = substr($key, 8);
                         // Convert first character to lowercase if it's uppercase
@@ -558,7 +558,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Convert JSON strings to arrays
-        if (is_string($value) && strpos($value, '{') === 0) {
+        if (is_string($value) && str_starts_with($value, '{')) {
             $decoded = json_decode($value, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $decoded;
@@ -753,7 +753,7 @@ final class ReadTableTool extends AbstractRecordTool
                     }
                 } else {
                     // Single-select field - keep as single value
-                    if (is_string($record[$fieldName]) && strpos($record[$fieldName], ',') !== false) {
+                    if (is_string($record[$fieldName]) && str_contains($record[$fieldName], ',')) {
                         // If there's a comma, take only the first value
                         $values = GeneralUtility::intExplode(',', $record[$fieldName], true);
                         $record[$fieldName] = !empty($values) ? $values[0] : 0;

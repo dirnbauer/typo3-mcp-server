@@ -101,7 +101,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             $dsValue = $flexFormConfig['ds'][$identifier];
 
             // Handle FILE: references
-            if (is_string($dsValue) && strpos($dsValue, 'FILE:') === 0) {
+            if (is_string($dsValue) && str_starts_with($dsValue, 'FILE:')) {
                 $file = substr($dsValue, 5);
                 $file = GeneralUtility::getFileAbsFileName($file);
                 $prefix = "Schema defined in file: " . $file . "\n\n";
@@ -179,7 +179,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function getJsonPath(string $fieldName): string
     {
-        if (strpos($fieldName, '.') === false) {
+        if (!str_contains($fieldName, '.')) {
             return 'pi_flexform.' . $fieldName;
         }
 
@@ -407,7 +407,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
         foreach ($fieldNames as $fieldName) {
             // Skip non-field entries
-            if (strpos($fieldName, '.') === false) {
+            if (!str_contains($fieldName, '.')) {
                 $example['pi_flexform'][$fieldName] = '<' . $fieldName . ' value>';
             } else {
                 // Handle nested structure
@@ -652,7 +652,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         // Handle ds configuration
         if (!empty($flexFormConfig['ds']) && is_array($flexFormConfig['ds'])) {
             foreach ($flexFormConfig['ds'] as $key => $ds) {
-                if (is_string($ds) && strpos($ds, 'FILE:') === 0) {
+                if (is_string($ds) && str_starts_with($ds, 'FILE:')) {
                     $file = substr($ds, 5);
                     $result[$key] = [
                         'id' => $key,
@@ -699,7 +699,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             $flexFormDS = $ds[$identifier];
 
             // Handle FILE: references
-            if (is_string($flexFormDS) && strpos($flexFormDS, 'FILE:') === 0) {
+            if (is_string($flexFormDS) && str_starts_with($flexFormDS, 'FILE:')) {
                 $file = substr($flexFormDS, 5);
                 $file = GeneralUtility::getFileAbsFileName($file);
 

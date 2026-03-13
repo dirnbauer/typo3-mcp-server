@@ -340,7 +340,7 @@ final class TableAccessService implements SingletonInterface
                 $hasSubtypeDS = false;
                 foreach (array_keys($dsConfig) as $dsKey) {
                     // Common patterns: "*,plugin_key" or "type,plugin_key" or just "plugin_key"
-                    if (strpos($dsKey, ',') !== false || isset($tca['columns'][$subtypeField]['config']['items'])) {
+                    if (str_contains($dsKey, ',') || isset($tca['columns'][$subtypeField]['config']['items'])) {
                         $hasSubtypeDS = true;
                         break;
                     }
@@ -499,9 +499,9 @@ final class TableAccessService implements SingletonInterface
         // But relation tables like sys_file_reference should still be writable
         $hasLabel = !empty($ctrl['label']);
         $hasType = !empty($ctrl['type']);
-        $isRelationTable = strpos($table, '_mm') !== false || 
-                          strpos($table, 'sys_file_reference') !== false ||
-                          strpos($table, 'sys_category_record_mm') !== false;
+$isRelationTable = str_contains($table, '_mm') ||
+                          str_contains($table, 'sys_file_reference') ||
+                          str_contains($table, 'sys_category_record_mm');
         
         // If it's a relation table, it should be writable regardless of label field
         if ($isRelationTable) {
@@ -962,7 +962,7 @@ final class TableAccessService implements SingletonInterface
         }
         
         // Check field name pattern
-        if (strpos($fieldName, 'flexform') !== false) {
+        if (str_contains($fieldName, 'flexform')) {
             return true;
         }
         
@@ -1155,7 +1155,7 @@ final class TableAccessService implements SingletonInterface
      */
     public static function translateLabel(string $label): string
     {
-        if (strpos($label, 'LLL:') === 0) {
+        if (str_starts_with($label, 'LLL:')) {
             // Check if language service is available, initialize if not
             if (!isset($GLOBALS['LANG'])) {
                 try {

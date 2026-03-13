@@ -174,7 +174,7 @@ final class OAuthAuthorizeEndpoint
 
         // If redirect_uri is provided, redirect there with the code
         if (!empty($redirectUri)) {
-            $separator = strpos($redirectUri, '?') !== false ? '&' : '?';
+            $separator = str_contains($redirectUri, '?') ? '&' : '?';
             $redirectUrl = $redirectUri . $separator . 'code=' . urlencode($code);
             
             // Add state parameter if provided
