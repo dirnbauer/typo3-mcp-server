@@ -23,7 +23,9 @@
         "georgringer/news": "^12.0",
         "brianium/paratest": "^7.11",
         "phpstan/phpstan": "^2.0",
-        "saschaegerer/phpstan-typo3": "^2.0"
+        "saschaegerer/phpstan-typo3": "^2.0",
+        "ssch/typo3-rector": "^2.0",
+        "a9f/typo3-fractor": "^0.4"
     },
     "autoload": {
         "psr-4": {
@@ -61,6 +63,18 @@
         ],
         "phpstan": [
             "phpstan analyse --no-progress"
+        ],
+        "rector": [
+            "rector process --dry-run"
+        ],
+        "rector:fix": [
+            "rector process"
+        ],
+        "fractor": [
+            "fractor process --dry-run"
+        ],
+        "fractor:fix": [
+            "fractor process"
         ]
     },
     "config": {
