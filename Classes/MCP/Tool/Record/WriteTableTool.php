@@ -570,86 +570,89 @@ class WriteTableTool extends AbstractRecordTool
      */
     protected function translateRecord(string $table, int $uid, int $targetLanguageUid): CallToolResult
     {
-        // Check if table supports translations
+        if ($targetLanguageUid <= 0) {
+            return $this->createErrorResult('Cannot translate into the default language (id=0). Provide a target language other than the default.');
+        }
+
         $languageField = $this->tableAccessService->getLanguageFieldName($table);
         if (!$languageField) {
             return $this->createErrorResult('Table ' . $table . ' does not support translations');
         }
 
-        // Check if translation parent field exists
         $translationParentField = $this->tableAccessService->getTranslationParentFieldName($table);
         if (!$translationParentField) {
             return $this->createErrorResult('Table ' . $table . ' does not have a translation parent field configured');
         }
 
-        // Get the record to be translated
-        $record = BackendUtility::getRecord($table, $uid);
+        $liveUid = $this->getLiveUid($table, $uid);
+
+        $record = BackendUtility::getRecordWSOL($table, $liveUid);
         if (!$record) {
-            return $this->createErrorResult('Record not found');
+            return $this->createErrorResult('Record not found (uid=' . $uid . ')');
         }
 
-        // Check if this is already a translation
-        if (!empty($record[$translationParentField]) && $record[$translationParentField] > 0) {
-            return $this->createErrorResult('Cannot translate a record that is already a translation. Translate the original record instead.');
+        if (!empty($record[$translationParentField]) && (int)$record[$translationParentField] > 0) {
+            return $this->createErrorResult('Cannot translate a record that is already a translation. Translate the original record (uid=' . $record[$translationParentField] . ') instead.');
         }
 
-        // Check if translation already exists
+        if (!empty($record[$languageField]) && (int)$record[$languageField] > 0) {
+            return $this->createErrorResult('Record uid=' . $uid . ' is already in language ' . $record[$languageField] . '. Only default-language records can be translated.');
+        }
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
 
         $existingTranslation = $queryBuilder
-            ->select('uid')
+            ->select('uid', 't3ver_wsid')
             ->from($table)
             ->where(
-                $queryBuilder->expr()->eq($translationParentField, $queryBuilder->createNamedParameter($uid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq($translationParentField, $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
                 $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter($targetLanguageUid, ParameterType::INTEGER))
             )
             ->setMaxResults(1)
             ->executeQuery()
-            ->fetchOne();
+            ->fetchAssociative();
 
         if ($existingTranslation) {
-            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
-            return $this->createErrorResult('Translation already exists for language "' . $targetIsoCode . '" (UID: ' . $existingTranslation . ')');
+            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
+            return $this->createErrorResult(
+                'Translation already exists for language "' . $targetIsoCode . '" (uid=' . $existingTranslation['uid'] . ')'
+            );
         }
 
-        // Use DataHandler to create the translation
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $GLOBALS['BE_USER'];
 
-        // Use the localize command to create a translation
         $cmdMap = [
             $table => [
-                $uid => [
-                    'localize' => $targetLanguageUid
-                ]
-            ]
+                $liveUid => [
+                    'localize' => $targetLanguageUid,
+                ],
+            ],
         ];
 
         $dataHandler->start([], $cmdMap);
         $dataHandler->process_cmdmap();
 
-        // Check for errors
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating translation: ' . implode(', ', $dataHandler->errorLog));
         }
 
-        // Get the UID of the newly created translation
-        $newTranslationUid = null;
-        if (isset($dataHandler->copyMappingArray[$table][$uid])) {
-            $newTranslationUid = $dataHandler->copyMappingArray[$table][$uid];
-        }
+        $newTranslationUid = $dataHandler->copyMappingArray[$table][$liveUid] ?? null;
 
         if (!$newTranslationUid) {
-            // Try to find the translation we just created
             $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
 
             $newTranslationUid = $queryBuilder
                 ->select('uid')
                 ->from($table)
                 ->where(
-                    $queryBuilder->expr()->eq($translationParentField, $queryBuilder->createNamedParameter($uid, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->eq($translationParentField, $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
                     $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter($targetLanguageUid, ParameterType::INTEGER))
                 )
                 ->orderBy('uid', 'DESC')
@@ -658,13 +661,13 @@ class WriteTableTool extends AbstractRecordTool
                 ->fetchOne();
         }
 
-        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
+        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
 
         return $this->createJsonResult([
             'action' => 'translate',
             'table' => $table,
             'sourceUid' => $uid,
-            'translationUid' => $newTranslationUid ?: 'Translation created but UID not found',
+            'translationUid' => $newTranslationUid ?: 'Translation created but UID could not be determined',
             'targetLanguage' => $targetIsoCode,
         ]);
     }
