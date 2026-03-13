@@ -1,6 +1,11 @@
 # TYPO3 MCP Server Extension
 
-**⚠️ This extension is a work in progress and under active development.**
+> **New in this release:** Fileadmin browsing and file metadata access, flexible workspace
+> selection, and hardened content translation are now available. These features have been
+> implemented and tested but have not yet been validated in production environments.
+> We recommend testing in a staging setup before relying on them for critical workflows.
+> Feedback is welcome via [GitHub Issues](https://github.com/hauptsacheNet/typo3-mcp-server/issues)
+> or the [#typo3-core-ai Slack channel](https://typo3.slack.com/archives/C091M0M7BL6).
 
 This extension provides a Model Context Protocol (MCP) server implementation for TYPO3 that allows
 AI assistants to safely view and manipulate TYPO3 pages and records through TYPO3's workspace system.
@@ -41,9 +46,9 @@ All these operations happen safely in workspaces, giving you full control to rev
 | **Page Tree Navigation**   | ✅ Ready         | Page tree view similar to the TYPO3 backend                                                                   |
 | **Page Content Discovery** | ✅ Ready         | Similar to the List or Page module with backend layout support                                                |
 | **Record Reading/Writing** | ✅ Ready         | Read and write any workspace-capable TYPO3 table (core & extensions) with full schema inspection              |
-| **Content Translation**    | ⚠️ Experimental | Implemented, needs real-world testing                                                                         |
-| **Fileadmin Support**      | ❌ Missing       | Not yet implemented                                                                                           |
-| **Workspace Selection**    | ❌ Missing       | Currently uses the first writable workspace of the user                                                       |
+| **Content Translation**    | ⚠️ New           | Workspace-aware with validation; needs production feedback                                                    |
+| **Fileadmin Support**      | ⚠️ New           | Browse storages, read file metadata; physical files are not workspace-versioned                                |
+| **Workspace Selection**    | ⚠️ New           | Explicit workspace selection via `workspace_id`; smart default preserved                                      |
 
 While there are a lot of automated tests, and even some [LLM test](Tests/Llm/README.md), TYPO3 instances are widely different and Language Models are also widely different. Feel free to [create issues here on GitHub](https://github.com/logiscape/mcp-sdk-php/issues) or [share experiences in the typo3-core-ai channel](https://typo3.slack.com/archives/C091M0M7BL6). 
 
@@ -54,7 +59,8 @@ composer require hn/typo3-mcp-server
 ```
 
 **Requirements:**
-- TYPO3 v13.4+
+- TYPO3 v13.4 or v14
+- PHP 8.2+
 - TYPO3 Workspaces extension (automatically installed as dependency)
 
 ## Usage
