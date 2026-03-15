@@ -154,6 +154,9 @@ final class WriteTableTool extends AbstractRecordTool
                         'description' => 'Record data with field names as keys and their values (required for "create", "update", and "translate" actions). '
                             . 'Uses the same field syntax as ReadTable output. Language fields (sys_language_uid) accept ISO codes like "de", "fr" instead of numeric IDs. '
                             . 'Inline relations can be specified as arrays - UIDs for independent tables, record data for embedded tables. '
+                            . 'File fields (image, assets, media, etc.) accept an array of sys_file UIDs or objects with uid + metadata: '
+                            . '[58, 59] or [{"uid": 58, "title": "My image", "description": "Credit"}]. '
+                            . 'Use BrowseFiles to find sys_file UIDs. Supported metadata: title, description, alternative, link, crop, autoplay, showinpreview. '
                             . 'For text fields in update actions, instead of providing the full text, you can provide an array of search-and-replace operations: '
                             . '[{"search": "old text", "replace": "new text"}]. Each operation can optionally include "replaceAll": true. '
                             . 'Operations are applied sequentially. Each search string must match exactly once unless replaceAll is true.',
@@ -161,6 +164,8 @@ final class WriteTableTool extends AbstractRecordTool
                         'examples' => [
                             ['title' => 'News Title', 'bodytext' => 'News <b>content</b>', 'datetime' => '2024-01-01 10:00:00'],
                             ['header' => 'Content Element Header', 'bodytext' => 'Content <b>text</b>', 'CType' => 'text'],
+                            ['CType' => 'textmedia', 'header' => 'With Images', 'bodytext' => 'Text', 'assets' => [58, 59]],
+                            ['CType' => 'textmedia', 'header' => 'With Metadata', 'assets' => [['uid' => 58, 'title' => 'Photo', 'description' => 'Credit']]],
                             ['sys_language_uid' => 'de', 'title' => 'German translation'],
                             ['header' => [['search' => 'Welcom', 'replace' => 'Welcome'], ['search' => 'Compnay', 'replace' => 'Company']]],
                         ],
@@ -366,6 +371,9 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
 
+        // Extract file relations before inline relations (both modify $data in place)
+        $fileRelations = $this->extractFileRelations($table, $data);
+
         // Extract inline relations before converting data
         $inlineRelations = $this->extractInlineRelations($table, $data);
 
@@ -407,11 +415,17 @@ final class WriteTableTool extends AbstractRecordTool
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $this->assignBackendUser($dataHandler);
 
-        // First, create the parent record without inline relations
+        // Build the data map with the parent record
         $dataMap = [];
         $dataMap[$table][$newId] = $newRecordData;
 
-        // Process the parent record first
+        // Process file relations into the same dataMap (must be in same DataHandler call
+        // so NEW* IDs for sys_file_reference records are resolved correctly)
+        if (!empty($fileRelations)) {
+            $this->processFileRelations($dataMap, $table, $newId, $pid, $fileRelations);
+        }
+
+        // Process the parent record (and file references) together
         $dataHandler->start($dataMap, []);
         $dataHandler->process_datamap();
 
@@ -551,6 +565,9 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
 
+        // Extract file relations before inline relations (both modify $data in place)
+        $fileRelations = $this->extractFileRelations($table, $data);
+
         // Extract inline relations before converting data
         $inlineRelations = $this->extractInlineRelations($table, $data);
 
@@ -560,10 +577,17 @@ final class WriteTableTool extends AbstractRecordTool
         // Resolve the live UID to workspace UID
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
 
-        // First, update the parent record without inline relations
+        // Build the data map with the parent record
         $dataMap = [$table => [$workspaceUid => $data]];
 
-        // Update the record using DataHandler
+        // Process file relations into the same dataMap
+        if (!empty($fileRelations)) {
+            $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
+            $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
+            $this->processFileRelations($dataMap, $table, (string) $workspaceUid, $filePid, $fileRelations);
+        }
+
+        // Update the record (and file references) using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $this->assignBackendUser($dataHandler);
         $dataHandler->start($dataMap, []);
@@ -813,13 +837,8 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            // Check if field is accessible (filters out file fields and inaccessible inline relations)
+            // Check if field is accessible (filters out inaccessible inline relations)
             if (!$this->tableAccessService->canAccessField($table, $fieldName)) {
-                $fieldOptions = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
-                $fieldType = \is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
-                if ($fieldType === 'file') {
-                    return "Field '{$fieldName}': File fields are not supported. Please use TYPO3 backend for file operations.";
-                }
                 return "Field '{$fieldName}' is not accessible";
             }
 
@@ -845,6 +864,15 @@ final class WriteTableTool extends AbstractRecordTool
                         }
                     }
                 }
+            }
+
+            // Validate file field type (accepts array of sys_file UIDs)
+            if (($fieldOptions['type'] ?? null) === 'file') {
+                $validationError = $this->validateFileFieldData($value);
+                if ($validationError !== null) {
+                    return "Field '{$fieldName}': " . $validationError;
+                }
+                continue;
             }
 
             // Validate inline field type
@@ -1205,6 +1233,139 @@ final class WriteTableTool extends AbstractRecordTool
 
                 $dataHandler->start([], $cmdMap);
                 $dataHandler->process_cmdmap();
+            }
+        }
+    }
+
+    /**
+     * Validate file field data.
+     *
+     * File fields accept:
+     * - An array of sys_file UIDs (integers)
+     * - An array of objects with at least 'uid' (sys_file UID) and optional metadata
+     *   like 'title', 'description', 'alternative', 'link', 'crop'
+     */
+    protected function validateFileFieldData(mixed $value): ?string
+    {
+        if (!\is_array($value)) {
+            return 'File field must be an array of sys_file UIDs or file reference objects';
+        }
+
+        foreach ($value as $index => $item) {
+            if (is_numeric($item) && (int) $item > 0) {
+                continue;
+            }
+            if (\is_array($item)) {
+                $uid = $item['uid'] ?? null;
+                if (!is_numeric($uid) || (int) $uid <= 0) {
+                    return "File reference at index {$index} must have a positive integer 'uid' (sys_file UID)";
+                }
+                continue;
+            }
+            return "File field items must be positive integer UIDs or objects with 'uid' key (sys_file UID)";
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract file relations from data array.
+     *
+     * Pulls out fields with TCA type=file and returns them separately
+     * so they can be processed as sys_file_reference records.
+     *
+     * @param RecordData $data
+     * @return array<string, array{config: array<string, mixed>, value: mixed}>
+     */
+    protected function extractFileRelations(string $table, array &$data): array
+    {
+        $fileRelations = [];
+
+        foreach ($data as $fieldName => $value) {
+            $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
+            $fieldOptions = $fieldConfig !== null && isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            if (($fieldOptions['type'] ?? null) === 'file') {
+                $fileRelations[$fieldName] = [
+                    'config' => $fieldOptions,
+                    'value' => $value,
+                ];
+                unset($data[$fieldName]);
+            }
+        }
+
+        return $fileRelations;
+    }
+
+    /**
+     * Process file relations by creating sys_file_reference records in the dataMap.
+     *
+     * Accepts an array of sys_file UIDs (or objects with uid + metadata) and creates
+     * NEW* sys_file_reference entries. Sets the file field value on the parent record
+     * to a comma-separated list of NEW* IDs so DataHandler wires everything correctly.
+     *
+     * @param array<string, array<int|string, array<string, mixed>>> $dataMap DataMap to add sys_file_reference entries to
+     * @param string $parentTable Parent table name (e.g. 'tt_content')
+     * @param string $parentId Parent record ID (NEW* for creates, numeric for updates)
+     * @param int $pid Page ID for the new sys_file_reference records
+     * @param array<string, array{config: array<string, mixed>, value: mixed}> $fileRelations Extracted file relations
+     */
+    protected function processFileRelations(
+        array &$dataMap,
+        string $parentTable,
+        string $parentId,
+        int $pid,
+        array $fileRelations,
+    ): void {
+        foreach ($fileRelations as $fieldName => $relationData) {
+            $value = $relationData['value'];
+            if (!\is_array($value) || empty($value)) {
+                continue;
+            }
+
+            $newIds = [];
+            foreach ($value as $index => $item) {
+                $fileUid = null;
+                $metadata = [];
+
+                if (is_numeric($item)) {
+                    $fileUid = (int) $item;
+                } elseif (\is_array($item)) {
+                    $fileUid = isset($item['uid']) && is_numeric($item['uid']) ? (int) $item['uid'] : null;
+                    unset($item['uid']);
+                    $metadata = $item;
+                }
+
+                if ($fileUid === null || $fileUid <= 0) {
+                    continue;
+                }
+
+                $newRefId = 'NEW_file_' . uniqid() . '_' . $index;
+
+                $refData = [
+                    'uid_local' => $fileUid,
+                    'pid' => $pid,
+                    'sorting_foreign' => ((int) $index + 1) * 256,
+                ];
+
+                $allowedMetadataFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
+                foreach ($allowedMetadataFields as $metaField) {
+                    if (isset($metadata[$metaField])) {
+                        $refData[$metaField] = $metadata[$metaField];
+                    }
+                }
+
+                if (!isset($dataMap['sys_file_reference'])) {
+                    $dataMap['sys_file_reference'] = [];
+                }
+                $dataMap['sys_file_reference'][$newRefId] = $refData;
+                $newIds[] = $newRefId;
+            }
+
+            if (!empty($newIds)) {
+                if (!isset($dataMap[$parentTable])) {
+                    $dataMap[$parentTable] = [];
+                }
+                $dataMap[$parentTable][$parentId][$fieldName] = implode(',', $newIds);
             }
         }
     }

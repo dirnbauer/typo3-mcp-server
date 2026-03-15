@@ -744,12 +744,8 @@ final class TableAccessService
             return false;
         }
 
-        // Block file fields - file handling not supported yet
         $fieldOptions = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         $fieldType = \is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
-        if ($fieldType === 'file') {
-            return false;
-        }
 
         // Block inline relations where foreign table isn't writable
         // This automatically filters out relations to:
