@@ -40,7 +40,7 @@ With the TYPO3 MCP Server, your AI assistant can help you:
 ### 📁 **File Management**
 - **Browse Files**: "Show me what's in the images folder" - Navigate file storages and folders in fileadmin
 - **Update Metadata**: "Add alt text to all product images" - Set or update title, description, alternative text, and copyright on any file
-- **Create Text Files**: "Create a robots.txt with these rules" - Write text-based files (.txt, .html, .css, .json, .xml, .svg, .yaml, etc.) directly to fileadmin
+- **Create Text Files**: "Generate an SVG icon for our contact section" - Write text-based files (.svg, .html, .css, .json, .xml, .yaml, etc.) directly to fileadmin
 
 ### 🚀 **Productivity Boosters**
 - **Template Application**: "Apply our standard legal disclaimer to all service pages" - Consistently apply content patterns

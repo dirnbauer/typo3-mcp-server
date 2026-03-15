@@ -271,19 +271,25 @@ Here are practical examples of how the MCP Server enables AI-powered content man
 }}
 ```
 
-### "Create a configuration file"
+### "Generate an SVG icon"
 
-**User says**: "Create a robots.txt with these rules"
+**User says**: "Create a simple phone icon for our contact section"
 
 **What happens**:
-1. AI uses `WriteFile` to create the text file directly in fileadmin
-2. Parent folders are created automatically if they don't exist
+1. AI generates SVG markup for the requested icon
+2. Uses `WriteFile` to save it to fileadmin with descriptive metadata
+3. Parent folders are created automatically if they don't exist
 
 **Tool calls**:
 ```json
 {"tool": "WriteFile", "params": {
-  "path": "1:/robots.txt",
-  "content": "User-agent: *\nDisallow: /typo3/\nDisallow: /typo3conf/\nSitemap: https://example.com/sitemap.xml"
+  "path": "1:/icons/contact-phone.svg",
+  "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg>",
+  "metadata": {
+    "title": "Contact Phone Icon",
+    "alternative": "Phone icon for contact section",
+    "description": "Line-art phone icon, 24x24 viewBox, uses currentColor"
+  }
 }}
 ```
 
