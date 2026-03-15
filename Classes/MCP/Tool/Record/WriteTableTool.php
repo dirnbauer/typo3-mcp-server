@@ -415,17 +415,11 @@ final class WriteTableTool extends AbstractRecordTool
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $this->assignBackendUser($dataHandler);
 
-        // Build the data map with the parent record
+        // First, create the parent record without file relations
         $dataMap = [];
         $dataMap[$table][$newId] = $newRecordData;
 
-        // Process file relations into the same dataMap (must be in same DataHandler call
-        // so NEW* IDs for sys_file_reference records are resolved correctly)
-        if (!empty($fileRelations)) {
-            $this->processFileRelations($dataMap, $table, $newId, $pid, $fileRelations);
-        }
-
-        // Process the parent record (and file references) together
+        // Process the parent record first
         $dataHandler->start($dataMap, []);
         $dataHandler->process_datamap();
 
@@ -509,6 +503,26 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
 
+        // Process file relations with the resolved parent UID
+        if (!empty($fileRelations)) {
+            $fileDataMap = [];
+            $this->processFileRelations($fileDataMap, $table, (string) $parentUid, $pid, $fileRelations);
+
+            if (!empty($fileDataMap)) {
+                $fileDataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                $this->assignBackendUser($fileDataHandler);
+                $fileDataHandler->start($fileDataMap, []);
+                $fileDataHandler->process_datamap();
+
+                if (!empty($fileDataHandler->errorLog)) {
+                    return $this->createErrorResult(
+                        'Parent record created but error attaching files: '
+                        . implode(', ', $fileDataHandler->errorLog),
+                    );
+                }
+            }
+        }
+
         // Handle after/before positioning if needed
         if (preg_match('/^(after|before):(\d+)$/', $position, $positionMatches) === 1) {
             $positionType = $positionMatches[1];
@@ -577,17 +591,10 @@ final class WriteTableTool extends AbstractRecordTool
         // Resolve the live UID to workspace UID
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
 
-        // Build the data map with the parent record
+        // First, update the parent record without file relations
         $dataMap = [$table => [$workspaceUid => $data]];
 
-        // Process file relations into the same dataMap
-        if (!empty($fileRelations)) {
-            $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
-            $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
-            $this->processFileRelations($dataMap, $table, (string) $workspaceUid, $filePid, $fileRelations);
-        }
-
-        // Update the record (and file references) using DataHandler
+        // Update the record using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $this->assignBackendUser($dataHandler);
         $dataHandler->start($dataMap, []);
@@ -596,6 +603,26 @@ final class WriteTableTool extends AbstractRecordTool
         // Check for errors in parent update
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
+        }
+
+        // Process file relations with the resolved parent UID
+        if (!empty($fileRelations)) {
+            $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
+            $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
+
+            $fileDataMap = [];
+            $this->processFileRelations($fileDataMap, $table, (string) $workspaceUid, $filePid, $fileRelations);
+
+            if (!empty($fileDataMap)) {
+                $fileDataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                $this->assignBackendUser($fileDataHandler);
+                $fileDataHandler->start($fileDataMap, []);
+                $fileDataHandler->process_datamap();
+
+                if (!empty($fileDataHandler->errorLog)) {
+                    return $this->createErrorResult('Error attaching files: ' . implode(', ', $fileDataHandler->errorLog));
+                }
+            }
         }
 
         // Now process inline relations with the resolved parent UID
