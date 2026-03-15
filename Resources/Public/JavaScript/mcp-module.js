@@ -437,6 +437,11 @@ document.addEventListener('DOMContentLoaded', function() {
  * Token Management Functions for OAuth Tokens Table
  */
 
+function getCsrfToken() {
+    const moduleBody = document.querySelector('.module-body');
+    return moduleBody?.getAttribute('data-csrf-token') || '';
+}
+
 /**
  * Refresh the OAuth tokens table
  */
@@ -469,6 +474,7 @@ function refreshTokens() {
  */
 function revokeToken(tokenId) {
     showLoading();
+    const csrfToken = getCsrfToken();
     
     // Ensure tokenId is an integer
     const tokenIdInt = parseInt(tokenId, 10);
@@ -485,7 +491,8 @@ function revokeToken(tokenId) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            tokenId: tokenIdInt
+            tokenId: tokenIdInt,
+            csrfToken: csrfToken
         })
     })
     .then(response => response.json())
@@ -513,12 +520,16 @@ function revokeAllTokens() {
     }
     
     showLoading();
+    const csrfToken = getCsrfToken();
     
     fetch(TYPO3.settings.ajaxUrls.mcp_server_revoke_all_tokens, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+            csrfToken: csrfToken
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -602,6 +613,7 @@ function updateTokensTable(tokens) {
  */
 function createMcpRemoteToken() {
     showLoading();
+    const csrfToken = getCsrfToken();
 
     const button = document.getElementById('create-mcp-remote-token-btn');
     if (button) {
@@ -612,7 +624,11 @@ function createMcpRemoteToken() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+            clientType: 'mcp-remote token',
+            csrfToken: csrfToken
+        })
     })
     .then(response => response.json())
     .then(data => {
@@ -644,6 +660,7 @@ function createMcpRemoteToken() {
  */
 function createN8nToken() {
     showLoading();
+    const csrfToken = getCsrfToken();
 
     const button = document.getElementById('create-n8n-token-btn');
     if (button) {
@@ -656,7 +673,8 @@ function createN8nToken() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            clientType: 'n8n token'
+            clientType: 'n8n token',
+            csrfToken: csrfToken
         })
     })
     .then(response => response.json())
@@ -689,6 +707,7 @@ function createN8nToken() {
  */
 function createManusToken() {
     showLoading();
+    const csrfToken = getCsrfToken();
 
     const button = document.getElementById('create-manus-token-btn');
     if (button) {
@@ -701,7 +720,8 @@ function createManusToken() {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            clientType: 'manus token'
+            clientType: 'manus token',
+            csrfToken: csrfToken
         })
     })
     .then(response => response.json())
