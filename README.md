@@ -37,6 +37,11 @@ With the TYPO3 MCP Server, your AI assistant can help you:
 - **Tone Analysis**: "Review the tone of our product pages and make them more friendly" - Get suggestions for improving content voice and style
 - **Content Audit**: "Find all pages mentioning our old company name" - Quickly locate content that needs updating
 
+### 📁 **File Management**
+- **Browse Files**: "Show me what's in the images folder" - Navigate file storages and folders in fileadmin
+- **Update Metadata**: "Add alt text to all product images" - Set or update title, description, alternative text, and copyright on any file
+- **Create Text Files**: "Create a robots.txt with these rules" - Write text-based files (.txt, .html, .css, .json, .xml, .svg, .yaml, etc.) directly to fileadmin
+
 ### 🚀 **Productivity Boosters**
 - **Template Application**: "Apply our standard legal disclaimer to all service pages" - Consistently apply content patterns
 - **Content Migration**: "Copy all news articles from 2023 to the archive folder" - Reorganize content efficiently
@@ -49,15 +54,16 @@ All these operations happen safely in workspaces, giving you full control to rev
 ## Project Status
 
 | Feature                    | Status          | Notes                                                                                                         |
-  |----------------------------|-----------------|---------------------------------------------------------------------------------------------------------------|
+|----------------------------|-----------------|---------------------------------------------------------------------------------------------------------------|
 | **MCP Connection**         | ✅ Ready         | HTTP and stdin/stdout protocols (thanks to [logiscape/mcp-sdk-php](https://github.com/logiscape/mcp-sdk-php)) |
 | **Authentication**         | ✅ Ready         | OAuth for Backend Users                                                                                       |
 | **Page Tree Navigation**   | ✅ Ready         | Page tree view similar to the TYPO3 backend                                                                   |
 | **Page Content Discovery** | ✅ Ready         | Similar to the List or Page module with backend layout support                                                |
 | **Record Reading/Writing** | ✅ Ready         | Read and write any workspace-capable TYPO3 table (core & extensions) with full schema inspection              |
-| **Content Translation**    | ⚠️ New           | Workspace-aware with validation; needs production feedback                                                    |
-| **Fileadmin Support**      | ⚠️ New           | Browse storages, read file metadata; physical files are not workspace-versioned                                |
-| **Workspace Selection**    | ⚠️ New           | Explicit workspace selection via `workspace_id`; smart default preserved                                      |
+| **Content Translation**    | ✅ Ready         | Workspace-aware with validation                                                                               |
+| **Fileadmin Browsing**     | ✅ Ready         | Browse storages, read file metadata                                                                           |
+| **File Writing**           | ⚠️ New           | Create/overwrite text files and update metadata (title, alt text, copyright); physical files are not workspace-versioned |
+| **Workspace Selection**    | ✅ Ready         | Explicit workspace listing and selection via `workspace_id`; smart default preserved                          |
 
 While there are a lot of automated tests, and even some [LLM test](Tests/Llm/README.md), TYPO3 instances are widely different and Language Models are also widely different. Feel free to [create issues here on GitHub](https://github.com/logiscape/mcp-sdk-php/issues) or [share experiences in the typo3-core-ai channel](https://typo3.slack.com/archives/C091M0M7BL6). 
 
@@ -68,7 +74,7 @@ composer require hn/typo3-mcp-server
 ```
 
 **Requirements:**
-- TYPO3 v13.4 or v14
+- TYPO3 v14
 - PHP 8.2+
 - TYPO3 Workspaces extension (automatically installed as dependency)
 
@@ -122,6 +128,23 @@ composer docs:check
 
 This uses the official `ghcr.io/typo3-documentation/render-guides` container
 and fails on renderer warnings or broken ReST syntax.
+
+## Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| **GetPageTree** | Navigate site hierarchy and explore page structure |
+| **GetPage** | Get page details by URL or ID with content summary |
+| **ListTables** | Discover available TYPO3 tables and extensions |
+| **ReadTable** | Read records from any TYPO3 table with filtering and language support |
+| **WriteTable** | Create, update, translate, or delete records (safely in workspace) |
+| **GetTableSchema** | Understand table structure, field types, and validation |
+| **GetFlexFormSchema** | Get plugin configuration schemas |
+| **Search** | Find content across tables using full-text search |
+| **BrowseFiles** | Browse file storages and folders in fileadmin |
+| **ReadFileMetadata** | Read file metadata (title, description, alt text, dimensions) |
+| **WriteFile** | Create/overwrite text files and update file metadata |
+| **ListWorkspaces** | List available workspaces and select which one to use |
 
 ## Learn More
 

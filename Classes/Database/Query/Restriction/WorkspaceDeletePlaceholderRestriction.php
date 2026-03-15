@@ -47,7 +47,7 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
             $globalTca = $GLOBALS['TCA'] ?? null;
             $tableConfig = \is_array($globalTca) ? ($globalTca[$tableName] ?? null) : null;
             $ctrl = \is_array($tableConfig) && \is_array($tableConfig['ctrl'] ?? null) ? $tableConfig['ctrl'] : [];
-            if (($ctrl['versioningWS'] ?? false) !== true) {
+            if (empty($ctrl['versioningWS'])) {
                 continue;
             }
 

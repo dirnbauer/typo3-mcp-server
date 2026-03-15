@@ -112,15 +112,25 @@ The MCP Server provides these tools for interacting with TYPO3:
 - **GetPageTree** - Navigate site hierarchy and explore page structure
 - **GetPage** - Get page details by URL or ID with content summary
 - **ListTables** - Discover available TYPO3 tables and extensions
-
-### Content Reading
-- **ReadTable** - Read records from any TYPO3 table with filtering
 - **Search** - Find content across tables using full-text search
-- **GetTableSchema** - Understand table structure and field types
-- **GetFlexFormSchema** - Get plugin configuration schemas
+
+### Content Reading & Schema
+- **ReadTable** - Read records from any TYPO3 table with filtering, pagination, and language support
+- **GetTableSchema** - Understand table structure, field types, and validation
+- **GetFlexFormSchema** - Get plugin configuration schemas (FlexForm DataStructures)
 
 ### Content Modification
-- **WriteTable** - Create, update, or delete records (safely in workspace)
+- **WriteTable** - Create, update, translate, or delete records (safely in workspace)
+
+### File Management
+- **BrowseFiles** - Browse file storages and folders in fileadmin; list storages, navigate directories, view file listings with metadata
+- **ReadFileMetadata** - Read metadata for a file by UID or combined identifier (title, description, alt text, categories, dimensions)
+- **WriteFile** - Create or overwrite text-based files in fileadmin and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Binary uploads (images, PDFs) are not supported. Can update metadata on existing files — including images — without changing content.
+
+> **Note:** Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately across all workspaces.
+
+### Workspace Management
+- **ListWorkspaces** - List workspaces available to the current user and show which one is active. Use to get a `workspace_id` for other tools.
 
 > Each tool provides detailed schema information when called. See the Real-World Scenarios below for practical examples.
 
@@ -232,6 +242,68 @@ Here are practical examples of how the MCP Server enables AI-powered content man
 3. Generates appropriate meta descriptions
 4. Updates page records with SEO content
 
+### "Add alt text to all product images"
+
+**User says**: "Add descriptive alt text to all images in the product folder"
+
+**What happens**:
+1. AI uses `BrowseFiles` to list files in the product images folder
+2. Reads existing metadata with `ReadFileMetadata` for each image
+3. Generates appropriate alt text based on file names and context
+4. Updates metadata using `WriteFile` (metadata-only mode)
+
+**Tool calls**:
+```json
+// 1. Browse the product images folder
+{"tool": "BrowseFiles", "params": {"path": "1:/products/"}}
+
+// 2. Read metadata for an image
+{"tool": "ReadFileMetadata", "params": {"file": "1:/products/widget-pro.jpg"}}
+
+// 3. Update metadata (no content change, just metadata)
+{"tool": "WriteFile", "params": {
+  "path": "1:/products/widget-pro.jpg",
+  "metadata": {
+    "alternative": "Widget Pro - ergonomic design in brushed aluminium",
+    "title": "Widget Pro Product Photo",
+    "description": "Front view of the Widget Pro showing the new ergonomic design"
+  }
+}}
+```
+
+### "Create a configuration file"
+
+**User says**: "Create a robots.txt with these rules"
+
+**What happens**:
+1. AI uses `WriteFile` to create the text file directly in fileadmin
+2. Parent folders are created automatically if they don't exist
+
+**Tool calls**:
+```json
+{"tool": "WriteFile", "params": {
+  "path": "1:/robots.txt",
+  "content": "User-agent: *\nDisallow: /typo3/\nDisallow: /typo3conf/\nSitemap: https://example.com/sitemap.xml"
+}}
+```
+
+### "Which workspace am I in?"
+
+**User says**: "Show me available workspaces" or "Switch to the staging workspace"
+
+**Tool calls**:
+```json
+// List all workspaces
+{"tool": "ListWorkspaces", "params": {}}
+
+// Use a specific workspace for subsequent operations
+{"tool": "ReadTable", "params": {
+  "table": "tt_content",
+  "pid": 1,
+  "workspace_id": 3
+}}
+```
+
 **Note on Limitations**: Complex operations like "translate the entire page" may hit context window limits depending on the MCP client and language model. Consider processing in chunks for large pages.
 
 ## Key Features in Detail
@@ -253,8 +325,19 @@ Relations are transparently resolved and can be set using simple syntax:
 - **Select relations**: Use comma-separated IDs or arrays
 - **Inline relations**: Provide as nested objects
 - **MM relations**: Handled automatically
-- **File references**: Currently read-only
+- **File references**: Browsable via `BrowseFiles`, metadata readable/writable via `ReadFileMetadata` and `WriteFile`
 - **Bidirectional**: Updates both sides as needed
+
+### File Management
+
+The MCP Server provides access to TYPO3's File Abstraction Layer (FAL):
+
+1. **Browse Storages**: Navigate file storages and folder hierarchies in fileadmin
+2. **Read Metadata**: Inspect file metadata including title, description, alt text, dimensions, and categories
+3. **Write Text Files**: Create or overwrite text-based files (`.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`)
+4. **Update Metadata**: Set title, description, alternative text, and copyright on any file — including images — without changing file content
+
+**Important**: Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately. Record-based data (content elements, pages, etc.) remains safely workspace-versioned.
 
 ### Language Support
 
@@ -280,6 +363,8 @@ Behind the scenes, the workspace system:
 3. **Handles deletes** through delete placeholders
 4. **Overlays data** for transparent reading
 5. **Queues changes** for editorial review
+
+The `ListWorkspaces` tool lets AI assistants see which workspaces are available and which one is currently active. Any tool that reads or writes records accepts an optional `workspace_id` parameter to target a specific workspace. This gives editors explicit control over where changes land while keeping workspace internals transparent.
 
 ### Validation & Error Handling
 
@@ -314,15 +399,16 @@ The MCP Server respects all TYPO3 permissions:
 
 While the MCP Server is powerful, some features are still in development:
 
-### Image/File Handling
-- Currently read-only access to file references
-- Cannot upload new files or modify existing ones
-- Workaround: Reference existing files by ID
+### Binary File Uploads
+- Cannot upload binary files (images, PDFs, etc.) through MCP
+- Text-based files can be created via `WriteFile`
+- Existing files (including images) can have their metadata updated
+- Workaround: Upload binaries through the TYPO3 backend, then reference or update metadata via MCP
 
-### Direct Workspace Management
-- Cannot create/delete workspaces
-- Cannot manually publish changes
-- Must use TYPO3 backend for workspace operations
+### Workspace Publishing
+- Cannot publish workspace changes through MCP
+- Must use TYPO3 backend for reviewing and publishing
+- Workspace selection and listing is fully supported
 
 ### Bulk Operations Optimization
 - Large batch operations may be slow
