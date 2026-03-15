@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\SearchTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class SearchLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -158,7 +160,7 @@ class SearchLanguageTest extends FunctionalTestCase
      */
     public function testLanguageParameterInSchema(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $schema = $tool->getSchema();
 
         // Should have language parameter with enum
@@ -176,7 +178,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $result = $tool->execute([
             'terms' => ['team'],
         ]);
@@ -205,7 +207,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $result = $tool->execute([
             'terms' => ['team'],
             'language' => 'de',
@@ -233,7 +235,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         // Search with French filter using French term
         $result = $tool->execute([
             'terms' => ['équipe'],
@@ -264,7 +266,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $result = $tool->execute([
             'terms' => ['team'],
             'language' => 'en',
@@ -292,7 +294,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search without language filter
         $result = $tool->execute([
@@ -325,7 +327,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Test with each language filter - should always find "all languages" content
         foreach (['en', 'de', 'fr'] as $lang) {
@@ -348,7 +350,7 @@ class SearchLanguageTest extends FunctionalTestCase
      */
     public function testInvalidLanguageCode(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $result = $tool->execute([
             'terms' => ['test'],
             'language' => 'xx',
@@ -366,7 +368,7 @@ class SearchLanguageTest extends FunctionalTestCase
     {
         $this->createTestContentWithTranslations();
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $result = $tool->execute([
             'terms' => ['Team', 'kennen'],
             'termLogic' => 'AND',

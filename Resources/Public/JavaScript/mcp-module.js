@@ -15,21 +15,24 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function getCsrfToken() {
+    const el = document.querySelector('[data-csrf-token]');
+    return el ? el.dataset.csrfToken : '';
+}
+
 function getJsonFetchOptions(body) {
-    const options = {
+    const csrfToken = getCsrfToken();
+    const payload = body !== undefined ? { ...body, csrfToken } : { csrfToken };
+
+    return {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
         },
+        body: JSON.stringify(payload),
     };
-
-    if (body !== undefined) {
-        options.body = JSON.stringify(body);
-    }
-
-    return options;
 }
 
 function copyToClipboard(elementId, button) {

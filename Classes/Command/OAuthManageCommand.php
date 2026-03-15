@@ -12,13 +12,18 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth token management for MCP server
  */
 final class OAuthManageCommand extends Command
 {
+    public function __construct(
+        private readonly OAuthService $oauthService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct();
+    }
     protected function configure(): void
     {
         $this->setDescription('Manage OAuth tokens for MCP server')
@@ -75,8 +80,7 @@ final class OAuthManageCommand extends Command
         $clientName = \is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
         $baseUrl = $this->getConfiguredBaseUrl();
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $authUrl = $oauthService->generateAuthorizationUrl($baseUrl, $clientName);
+        $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, $clientName);
 
         $output->writeln("<info>OAuth Authorization URL for user '$username':</info>");
         $output->writeln("<info>$authUrl</info>");
@@ -103,9 +107,8 @@ final class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
-        $tokens = $oauthService->getUserTokens($user['uid']);
+        $tokens = $this->oauthService->getUserTokens($user['uid']);
 
         if (empty($tokens)) {
             $output->writeln("<info>No active tokens found for user '$username'</info>");
@@ -145,16 +148,15 @@ final class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $revokeAll = $input->getOption('all');
         $tokenIdOption = $input->getOption('token-id');
         $tokenId = \is_string($tokenIdOption) || \is_int($tokenIdOption) ? (string) $tokenIdOption : null;
 
         if ($revokeAll) {
-            $count = $oauthService->revokeAllUserTokens($user['uid']);
+            $count = $this->oauthService->revokeAllUserTokens($user['uid']);
             $output->writeln("<info>Revoked $count tokens for user '$username'</info>");
         } elseif ($tokenId) {
-            $success = $oauthService->revokeToken((int) $tokenId, $user['uid']);
+            $success = $this->oauthService->revokeToken((int) $tokenId, $user['uid']);
             if ($success) {
                 $output->writeln("<info>Token $tokenId revoked successfully</info>");
             } else {
@@ -171,8 +173,7 @@ final class OAuthManageCommand extends Command
 
     private function cleanupTokens(InputInterface $input, OutputInterface $output): int
     {
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $oauthService->cleanupExpired();
+        $this->oauthService->cleanupExpired();
 
         $output->writeln("<info>Cleanup completed - expired tokens and authorization codes removed</info>");
         return Command::SUCCESS;
@@ -183,7 +184,7 @@ final class OAuthManageCommand extends Command
      */
     private function findUser(string $username): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('be_users');
 
         $queryBuilder = $connection->createQueryBuilder();

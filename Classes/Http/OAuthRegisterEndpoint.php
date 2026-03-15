@@ -7,18 +7,22 @@ namespace Hn\McpServer\Http;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth Dynamic Client Registration endpoint
  */
-final class OAuthRegisterEndpoint
+final readonly class OAuthRegisterEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private OAuthService $oauthService,
+        private LoggerInterface $logger,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
@@ -57,9 +61,7 @@ final class OAuthRegisterEndpoint
             $clientData['scope'] ??= 'mcp_access';
             /** @var array{client_name: string, redirect_uris: list<string>, grant_types: list<string>, response_types: list<string>, scope: string} $clientData */
 
-            // Register the client
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $clientInfo = $oauthService->registerClient($clientData);
+            $clientInfo = $this->oauthService->registerClient($clientData);
 
             // Return client registration response
             $stream = new Stream('php://temp', 'rw');
@@ -79,9 +81,7 @@ final class OAuthRegisterEndpoint
             return $this->addCorsHeaders($response);
 
         } catch (Throwable $e) {
-            GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(self::class)
-                ->error('OAuth client registration failed', ['exception' => $e]);
+            $this->logger->error('OAuth client registration failed', ['exception' => $e]);
 
             return $this->createErrorResponse('server_error', 'Unable to register the client right now.', 500);
         }

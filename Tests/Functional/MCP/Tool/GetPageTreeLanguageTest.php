@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetPageTreeLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -142,9 +142,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
      */
     public function testLanguageParameterInSchema(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $schema = $tool->getSchema();
 
         // Should have language parameter with enum
@@ -162,9 +160,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     {
         $this->createTestPagesWithTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
@@ -186,9 +182,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     {
         $this->createTestPagesWithTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
@@ -226,9 +220,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     {
         $this->createTestPagesWithTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,
@@ -250,9 +242,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
      */
     public function testInvalidLanguageCode(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $result = $tool->execute([
             'startPage' => 1,
             'language' => 'xx',
@@ -270,9 +260,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
     {
         $this->createTestPagesWithTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
         $result = $tool->execute([
             'startPage' => 1,
             'depth' => 1,

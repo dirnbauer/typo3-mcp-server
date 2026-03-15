@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ListTablesTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class ListTablesToolTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -38,7 +40,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testListTables(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -64,7 +66,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTableGroupingByExtension(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -87,7 +89,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTableInformationFields(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -110,7 +112,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testReadOnlyTableDistinction(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -133,7 +135,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testWorkspaceCapabilityIdentification(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -154,7 +156,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTableTypeIdentification(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -177,7 +179,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTableDescriptions(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -200,7 +202,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTotalTableCount(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -224,7 +226,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testExtensionCount(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -247,7 +249,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testTableSummaryStatistics(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -270,7 +272,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testOutputFormat(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         $result = $tool->execute([]);
 
@@ -295,7 +297,7 @@ class ListTablesToolTest extends FunctionalTestCase
      */
     public function testWorkspaceContextInitialization(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
 
         // Should work in workspace context
         $result = $tool->execute([]);

@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Hn\McpServer\Service\WorkspaceContextService;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -18,6 +19,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class WorkspaceEdgeCaseTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -45,8 +47,8 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         // Initialize tools and services
-        $this->writeTool = new WriteTableTool();
-        $this->readTool = new ReadTableTool();
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
 

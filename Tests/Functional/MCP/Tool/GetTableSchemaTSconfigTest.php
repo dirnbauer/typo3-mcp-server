@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -16,6 +17,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class GetTableSchemaTSconfigTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -56,7 +58,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testHidesGloballyDisabledFields(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
             'type' => 'textmedia',
@@ -87,7 +89,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testNonDisabledFieldsAppearNormally(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
             'type' => 'textmedia',
@@ -111,7 +113,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         // Verify admin user is set up
         $this->assertTrue($GLOBALS['BE_USER']->isAdmin());
 
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
             'type' => 'textmedia',
@@ -132,7 +134,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testDisabledFieldInPagesTable(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'pages',
         ]);
@@ -158,7 +160,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testDifferentContentTypes(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Check text type - bodytext should be hidden here too
         $result = $tool->execute([

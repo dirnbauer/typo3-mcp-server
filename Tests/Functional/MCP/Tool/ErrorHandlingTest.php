@@ -24,7 +24,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testSearchToolValidationException(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Test missing terms
         $result = $tool->execute([]);
@@ -72,7 +72,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testReadTableToolValidationException(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Test missing table
         $result = $tool->execute([]);
@@ -109,7 +109,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testTableAccessValidation(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Test non-existent table
         $result = $tool->execute([
@@ -134,7 +134,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         // This test would verify that errors are properly logged
         // For now, we'll just ensure the error handling doesn't break the execution
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Force an invalid table search to trigger error handling
         $result = $tool->execute([
@@ -152,8 +152,8 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testConsistentErrorMessages(): void
     {
-        $readTool = new ReadTableTool();
-        $writeTool = new WriteTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Test the same error in different tools
         $readResult = $readTool->execute(['table' => 'non_existent']);
@@ -177,7 +177,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testDatabaseExceptionHandling(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Create a condition that would cause a database error
         // Using invalid SQL syntax in where clause
@@ -200,7 +200,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         // This is harder to test directly, but we can verify the error handling
         // doesn't expose internal details
 
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search with very complex terms that might trigger edge cases
         $result = $tool->execute([
@@ -224,7 +224,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testExecuteWithErrorHandlingMethod(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Test with valid search that should succeed
         $result = $tool->execute([
@@ -249,7 +249,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
      */
     public function testWorkspaceErrorHandling(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Try to write to a non-workspace capable table
         $result = $tool->execute([

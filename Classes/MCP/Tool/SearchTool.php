@@ -11,6 +11,8 @@ use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Utility\RecordFormattingUtility;
 use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
@@ -32,12 +34,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class SearchTool extends AbstractRecordTool
 {
-    protected LanguageService $languageService;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     protected function getCurrentWorkspaceId(): int
@@ -484,7 +487,7 @@ final class SearchTool extends AbstractRecordTool
         string $parentField,
         string $relationType = 'inline',
     ): array {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($parentTable);
 
         $queryBuilder->getRestrictions()
@@ -650,7 +653,7 @@ final class SearchTool extends AbstractRecordTool
      */
     protected function validateSearchableFields(string $table, array $searchableFields): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $connection = $connectionPool->getConnectionForTable($table);
 
         try {
@@ -685,7 +688,7 @@ final class SearchTool extends AbstractRecordTool
      */
     protected function searchInTable(string $table, array $searchTerms, string $termLogic, array $searchableFields, ?int $pageId, int $limit, ?int $languageId = null): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions
@@ -873,7 +876,7 @@ final class SearchTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()

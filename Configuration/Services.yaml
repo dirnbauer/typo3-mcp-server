@@ -8,6 +8,10 @@ services:
     resource: '../Classes/*'
     exclude: '../Classes/Domain/Model/*'
 
+  _instanceof:
+    Hn\McpServer\MCP\Tool\ToolInterface:
+      public: true
+
   # Explicitly register command controllers
   Hn\McpServer\Command\McpServerCommand:
     tags:
@@ -45,6 +49,14 @@ services:
     
   # Make SiteInformationService public for eID access
   Hn\McpServer\Service\SiteInformationService:
+    public: true
+
+  # Make LanguageService public for functional tests and eID access
+  Hn\McpServer\Service\LanguageService:
+    public: true
+
+  # Make TableAccessService public for functional tests
+  Hn\McpServer\Service\TableAccessService:
     public: true
     
   # Explicitly configure the module controller

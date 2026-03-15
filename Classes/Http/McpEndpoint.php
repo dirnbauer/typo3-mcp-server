@@ -35,6 +35,10 @@ final readonly class McpEndpoint
 {
     public function __construct(
         private LoggerInterface $logger,
+        private OAuthService $oauthService,
+        private ConnectionPool $connectionPool,
+        private WorkspaceContextService $workspaceContextService,
+        private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
     /**
@@ -78,8 +82,7 @@ final readonly class McpEndpoint
 
             $this->logger->debug('Token received for MCP request');
 
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $tokenInfo = $oauthService->validateToken($token, $request);
+            $tokenInfo = $this->oauthService->validateToken($token, $request);
 
             if (!$this->isValidTokenInfo($tokenInfo)) {
                 $this->logger->warning('Token validation failed for MCP request');
@@ -236,7 +239,7 @@ final readonly class McpEndpoint
         $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
 
         // Load user data
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('be_users');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -260,8 +263,7 @@ final readonly class McpEndpoint
             $this->initializeLanguageService($beUser);
 
             // Set up workspace context
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceId = $this->workspaceContextService->switchToOptimalWorkspace($beUser);
 
             // Set up TYPO3 Context API (following BackendUserAuthenticator pattern)
             $context = GeneralUtility::makeInstance(Context::class);
@@ -284,8 +286,7 @@ final readonly class McpEndpoint
     private function initializeLanguageService(BackendUserAuthentication $beUser): void
     {
         // Create language service
-        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
-        $languageService = $languageServiceFactory->createFromUserPreferences($beUser);
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($beUser);
 
         // Set global language service
         $GLOBALS['LANG'] = $languageService;

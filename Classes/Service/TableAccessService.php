@@ -46,14 +46,11 @@ final class TableAccessService
     ];
 
     protected ?BackendUserAuthentication $backendUser = null;
-    protected WorkspaceContextService $workspaceContextService;
-    protected TcaSchemaFactory $tcaSchemaFactory;
 
-    public function __construct()
-    {
-        $this->workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-        $this->tcaSchemaFactory = GeneralUtility::makeInstance(TcaSchemaFactory::class);
-    }
+    public function __construct(
+        protected readonly WorkspaceContextService $workspaceContextService,
+        protected readonly TcaSchemaFactory $tcaSchemaFactory,
+    ) {}
 
     /**
      * @return array<string, array<string, mixed>>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -15,6 +16,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class WriteTableToolErrorTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -39,7 +41,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         // Initialize tool
-        $this->tool = new WriteTableTool();
+        $this->tool = $this->getService(WriteTableTool::class);
     }
 
     /**

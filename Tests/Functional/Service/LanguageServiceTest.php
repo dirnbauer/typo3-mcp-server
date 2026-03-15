@@ -30,7 +30,9 @@ class LanguageServiceTest extends FunctionalTestCase
         $this->createMultiLanguageSiteConfiguration();
 
         // Initialize the language service
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $service = $this->getContainer()->get(LanguageService::class);
+        \assert($service instanceof LanguageService);
+        $this->languageService = $service;
     }
 
     /**
@@ -268,8 +270,8 @@ class LanguageServiceTest extends FunctionalTestCase
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
 
-        // Re-initialize the service to pick up new site
-        $newLanguageService = GeneralUtility::makeInstance(LanguageService::class, '_', true);
+        $siteFinder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Site\SiteFinder::class);
+        $newLanguageService = new LanguageService($siteFinder);
 
         // Test that all formats are properly extracted
         $this->assertEquals(10, $newLanguageService->getUidFromIsoCode('it'));

@@ -10,6 +10,8 @@ use Doctrine\DBAL\ParameterType;
 use Exception;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use LogicException;
 use Mcp\Types\CallToolResult;
 use RuntimeException;
@@ -35,12 +37,13 @@ final class WriteTableTool extends AbstractRecordTool
 {
     private const DEFAULT_PAGE_DOKTYPE = 1;
 
-    protected LanguageService $languageService;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     protected function getBackendUser(): BackendUserAuthentication
@@ -389,7 +392,7 @@ final class WriteTableTool extends AbstractRecordTool
         $sortingField = $this->tableAccessService->getSortingFieldName($table);
         if ($position === 'bottom' && $sortingField !== null && !isset($data[$sortingField])) {
             // Get the maximum sorting value and add some space
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
             $maxSorting = $queryBuilder
@@ -486,7 +489,7 @@ final class WriteTableTool extends AbstractRecordTool
                         if (!empty($childUids)) {
                             // Update foreign field directly in database
                             // RelationHandler's writeForeignField is for MM relations, not direct foreign fields
-                            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                            $connection = $this->connectionPool
                                 ->getConnectionForTable($foreignTable);
 
                             foreach ($childUids as $childUid) {
@@ -646,7 +649,7 @@ final class WriteTableTool extends AbstractRecordTool
                         if (!empty($childUids)) {
                             // Update foreign field directly in database
                             // RelationHandler's writeForeignField is for MM relations, not direct foreign fields
-                            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                            $connection = $this->connectionPool
                                 ->getConnectionForTable($foreignTable);
 
                             // In update context, $uid is already the live UID
@@ -731,7 +734,7 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Record uid=' . $uid . ' is already in language ' . $record[$languageField] . '. Only default-language records can be translated.');
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
@@ -783,7 +786,7 @@ final class WriteTableTool extends AbstractRecordTool
         $newTranslationUid = $dataHandler->copyMappingArray[$table][$liveUid] ?? null;
 
         if (!$newTranslationUid) {
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
@@ -1136,7 +1139,7 @@ final class WriteTableTool extends AbstractRecordTool
     protected function clearExistingInlineRelations(string $foreignTable, string $foreignField, int $parentUid): void
     {
         // Get all records that currently have this parent
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($foreignTable);
 
         $queryBuilder->getRestrictions()
@@ -1188,7 +1191,7 @@ final class WriteTableTool extends AbstractRecordTool
         array $newRecords,
     ): void {
         // Get all existing child records for this parent
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($foreignTable);
 
         $queryBuilder->getRestrictions()
@@ -1721,7 +1724,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Look up the record to get its t3ver_oid
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
 
         $queryBuilder->getRestrictions()->removeAll();

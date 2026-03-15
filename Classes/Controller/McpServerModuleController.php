@@ -15,6 +15,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -32,6 +33,8 @@ final readonly class McpServerModuleController
         private OAuthService $oauthService,
         private WorkspaceContextService $workspaceContextService,
         private UriBuilder $uriBuilder,
+        private ConnectionPool $connectionPool,
+        private FormProtectionFactory $formProtectionFactory,
     ) {}
 
     public function mainAction(ServerRequestInterface $request): ResponseInterface
@@ -111,6 +114,9 @@ final readonly class McpServerModuleController
             'canShowAdvancedSection' => $moduleOptions['showTokenManagement']
                 || $moduleOptions['showAlternativeConnectionOptions']
                 || $moduleOptions['showAdvancedExamples'],
+            'csrfToken' => $this->formProtectionFactory
+                ->createForType('backend')
+                ->generateToken('mcpserver', 'tokenManagement'),
         ];
 
         // Include JavaScript for copy functionality
@@ -138,18 +144,19 @@ final readonly class McpServerModuleController
         }
 
         $rawBody = $request->getBody()->getContents();
-
-        // Reset body stream position for further processing
         $request->getBody()->rewind();
 
         $parsedBody = $this->getRequestData($request->getParsedBody());
 
-        // If parsedBody is null, try to decode JSON manually
         if ($parsedBody === [] && $rawBody !== '') {
             $jsonData = json_decode($rawBody, true);
             if (json_last_error() === JSON_ERROR_NONE && \is_array($jsonData)) {
                 $parsedBody = $jsonData;
             }
+        }
+
+        if (!$this->validateCsrfToken($parsedBody)) {
+            return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
         }
 
         $tokenIdValue = $parsedBody['tokenId'] ?? '0';
@@ -190,6 +197,19 @@ final readonly class McpServerModuleController
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
             return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        $rawBody = $request->getBody()->getContents();
+        $request->getBody()->rewind();
+        $parsedBody = $this->getRequestData($request->getParsedBody());
+        if ($parsedBody === [] && $rawBody !== '') {
+            $jsonData = json_decode($rawBody, true);
+            if (json_last_error() === JSON_ERROR_NONE && \is_array($jsonData)) {
+                $parsedBody = $jsonData;
+            }
+        }
+        if (!$this->validateCsrfToken($parsedBody)) {
+            return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
         }
 
         $userId = (int) ($backendUser->user['uid'] ?? 0);
@@ -347,8 +367,7 @@ final readonly class McpServerModuleController
     private function hasAnyWorkspace(): bool
     {
         try {
-            $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-            $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_workspace');
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
             $count = $queryBuilder
                 ->count('uid')
                 ->from('sys_workspace')
@@ -442,7 +461,6 @@ final readonly class McpServerModuleController
         try {
             $userId = (int) ($backendUser->user['uid'] ?? 0);
 
-            // Get client type from POST body (default to mcp-remote for backward compatibility)
             $rawBody = $request->getBody()->getContents();
             $request->getBody()->rewind();
             $parsedBody = $request->getParsedBody();
@@ -455,6 +473,10 @@ final readonly class McpServerModuleController
             }
 
             $requestData = $this->getRequestData($parsedBody);
+
+            if (!$this->validateCsrfToken($requestData)) {
+                return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
+            }
             $clientType = $requestData['clientType'] ?? 'mcp-remote token';
             $replaceExisting = ($requestData['replaceExisting'] ?? '') === '1';
 
@@ -655,6 +677,23 @@ final readonly class McpServerModuleController
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Validate CSRF token from request body (defense-in-depth on top of route tokens).
+     *
+     * @param array<string, mixed> $requestData
+     */
+    private function validateCsrfToken(array $requestData): bool
+    {
+        $token = $requestData['csrfToken'] ?? null;
+        if (!\is_string($token) || $token === '') {
+            return false;
+        }
+
+        return $this->formProtectionFactory
+            ->createForType('backend')
+            ->validateToken($token, 'mcpserver', 'tokenManagement');
     }
 
     /**

@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTool;
-use Hn\McpServer\Service\LanguageService as McpLanguageService;
-use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -19,6 +18,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class GetPageToolBackendLayoutTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'install',
         'workspaces',
@@ -63,9 +63,7 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
      */
     protected function createGetPageTool(): GetPageTool
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(McpLanguageService::class);
-        return new GetPageTool($siteInformationService, $languageService);
+        return $this->getService(GetPageTool::class);
     }
 
     /**

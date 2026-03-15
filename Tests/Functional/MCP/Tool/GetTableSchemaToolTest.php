@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetTableSchemaToolTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -38,7 +40,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testGetBasicTableSchema(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for tt_content table
         $result = $tool->execute([
@@ -64,7 +66,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testGetSchemaForSpecificType(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for textmedia content type
         $result = $tool->execute([
@@ -89,7 +91,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testGetPagesTableSchema(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for pages table
         $result = $tool->execute([
@@ -115,7 +117,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testGetSysCategoryTableSchema(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for sys_category table
         $result = $tool->execute([
@@ -139,7 +141,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testMissingTableParameter(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([]);
 
@@ -153,7 +155,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testEmptyTableParameter(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => '',
@@ -169,7 +171,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testInvalidTable(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'nonexistent_table',
@@ -185,7 +187,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testTableWithoutTca(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'sys_log',
@@ -201,7 +203,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testInvalidTypeParameter(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for tt_content with invalid type
         $result = $tool->execute([
@@ -226,7 +228,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testSchemaOutputFormat(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -254,7 +256,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testWorkspaceContextInitialization(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Should work in workspace context
         $result = $tool->execute([
@@ -270,7 +272,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testRichtextFieldsAreMarked(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for textmedia type which has richtext bodytext
         $result = $tool->execute([

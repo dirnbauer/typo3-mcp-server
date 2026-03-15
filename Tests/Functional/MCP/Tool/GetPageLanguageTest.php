@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTool;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetPageLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -160,9 +160,7 @@ class GetPageLanguageTest extends FunctionalTestCase
      */
     public function testLanguageParameterInSchema(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $schema = $tool->getSchema();
 
@@ -185,9 +183,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -211,9 +207,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -246,9 +240,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -278,9 +270,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -299,9 +289,7 @@ class GetPageLanguageTest extends FunctionalTestCase
      */
     public function testInvalidLanguageCode(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -320,9 +308,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'uid' => 2,
@@ -344,9 +330,7 @@ class GetPageLanguageTest extends FunctionalTestCase
     {
         $this->createTestTranslations();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         $result = $tool->execute([
             'url' => '/about',

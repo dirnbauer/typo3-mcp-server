@@ -8,15 +8,18 @@ use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\JsonResponse;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth Authorization Server Metadata endpoint
  * RFC 8414: https://tools.ietf.org/html/rfc8414
  */
-final class OAuthAuthServerMetadataEndpoint
+final readonly class OAuthAuthServerMetadataEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private OAuthService $oauthService,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
@@ -26,9 +29,8 @@ final class OAuthAuthServerMetadataEndpoint
         }
 
         $baseUrl = $this->getBaseUrl($request);
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
 
-        $metadata = $oauthService->getMetadata($baseUrl);
+        $metadata = $this->oauthService->getMetadata($baseUrl);
 
         return $this->createJsonResponse($metadata);
     }

@@ -28,7 +28,9 @@ final class OAuthServiceTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 
-        $this->service = new OAuthService();
+        $service = $this->getContainer()->get(OAuthService::class);
+        \assert($service instanceof OAuthService);
+        $this->service = $service;
     }
 
     public function testCreateAuthorizationCodeReturnsNonEmptyString(): void

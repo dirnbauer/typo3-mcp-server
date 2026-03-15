@@ -26,7 +26,9 @@ final class TableAccessServiceTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 
-        $this->service = new TableAccessService();
+        $service = $this->getContainer()->get(TableAccessService::class);
+        \assert($service instanceof TableAccessService);
+        $this->service = $service;
     }
 
     public function testTranslateLabelReturnsPlainStringUnchanged(): void

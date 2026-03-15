@@ -31,7 +31,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         // Import additional fixtures needed for this test
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_category.csv');
 
-        $this->tool = new WriteTableTool();
+        $this->tool = $this->getService(WriteTableTool::class);
         $this->data = new TestDataBuilder();
     }
 
@@ -208,7 +208,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testEditExistingContentElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Update existing content element (UID 100)
         $result = $tool->execute([
@@ -233,7 +233,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testAddContentElementWithCorrectSorting(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create content at bottom (default)
         $bottomResult = $tool->execute([
@@ -295,7 +295,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testCreateContentElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -362,7 +362,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testUpdateContentElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Get original record state first
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -452,7 +452,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testDeleteContentElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Verify record exists before deletion
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -543,7 +543,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testCreateContentAtBottom(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -591,7 +591,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         unset($GLOBALS['TCA']['tt_content']['ctrl']['sortby']);
 
         try {
-            $tool = new WriteTableTool();
+            $tool = $this->getService(WriteTableTool::class);
 
             $result = $tool->execute([
                 'action' => 'create',
@@ -622,7 +622,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testCreateContentAfterElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -667,7 +667,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testCreateContentBeforeElement(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -712,7 +712,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testCreateContentAtTop(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -737,7 +737,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testWorkspaceIsolation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create multiple records
         $createResults = [];
@@ -782,7 +782,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testWorkspaceCapabilityValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Try to create a record in a non-workspace-capable table
         // Use be_users which exists and is not workspace-capable
@@ -806,7 +806,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testDataValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test with invalid CType
         $result = $tool->execute([
@@ -828,7 +828,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testRequiredFieldValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test creating page without required title
         $result = $tool->execute([
@@ -851,7 +851,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testInvalidTableHandling(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -871,7 +871,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testReadOnlyTableHandling(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -892,7 +892,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testFieldTypeValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test select field with invalid value
         $result = $tool->execute([
@@ -915,7 +915,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testMaxLengthValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create a very long string that exceeds typical field length
         $veryLongTitle = str_repeat('a', 300); // Exceeds typical 255 char limit
@@ -939,7 +939,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testSelectFieldValidation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test with invalid doktype value
         $result = $tool->execute([
@@ -961,7 +961,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
      */
     public function testFlexFormFieldHandling(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
         $pluginType = 'mcp_test_flexform_plugin';
         $flexFormDataStructure = <<<'XML'
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
@@ -1070,7 +1070,7 @@ XML;
      */
     public function testDateFieldConversion(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test with ISO 8601 date
         $result = $tool->execute([
@@ -1096,7 +1096,7 @@ XML;
      */
     public function testMultipleSelectFieldHandling(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Test with the actual categories field which is available for textmedia
         $result = $tool->execute([
@@ -1127,7 +1127,7 @@ XML;
      */
     public function testMissingActionError(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -1144,7 +1144,7 @@ XML;
      */
     public function testMissingTableError(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -1161,7 +1161,7 @@ XML;
      */
     public function testMissingPidError(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -1178,7 +1178,7 @@ XML;
      */
     public function testMissingUidOnUpdateError(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'update',
@@ -1195,7 +1195,7 @@ XML;
      */
     public function testMissingDataOnCreateError(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -1213,7 +1213,7 @@ XML;
     public function testWriteTableThroughRegistry(): void
     {
         // Create tool registry with WriteTableTool
-        $tools = [new WriteTableTool()];
+        $tools = [$this->getService(WriteTableTool::class)];
         $registry = new ToolRegistry($tools);
 
         // Get tool from registry
@@ -1240,7 +1240,7 @@ XML;
      */
     public function testToolName(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
         $this->assertEquals('WriteTable', $tool->getName());
     }
 
@@ -1249,7 +1249,7 @@ XML;
      */
     public function testToolSchema(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
         $schema = $tool->getSchema();
 
         $this->assertIsArray($schema);
@@ -1292,7 +1292,7 @@ XML;
     #[DataProvider('slugNormalizationDataProvider')]
     public function testCreatePageNormalizesSlug(string $inputSlug, string $expectedSlug): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -1338,7 +1338,7 @@ XML;
             ->withParent($this->getRootPageUid())
             ->create();
 
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'update',

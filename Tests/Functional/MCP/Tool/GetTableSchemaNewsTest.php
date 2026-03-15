@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetTableSchemaNewsTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -36,7 +38,7 @@ class GetTableSchemaNewsTest extends FunctionalTestCase
      */
     public function testNewsBodytextShowsRichtextAndTypolinkSupport(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for news table
         $result = $tool->execute([

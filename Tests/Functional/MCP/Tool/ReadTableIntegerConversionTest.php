@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -13,6 +14,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class ReadTableIntegerConversionTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
     ];
@@ -39,8 +41,8 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
     public function testSelectFieldWithAllIntegerValues(): void
     {
         // Tools will automatically switch to optimal workspace
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Create a pages record with integer type value
         $result = $writeTool->execute([
@@ -95,8 +97,8 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
         // For now, we'll test that string values remain strings
 
         // Tools will automatically switch to optimal workspace
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Create content with frame_class (which might have string values)
         $result = $writeTool->execute([
@@ -136,8 +138,8 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
     public function testFieldsWithEvalInt(): void
     {
         // Tools will automatically switch to optimal workspace
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Create content with sorting (has eval=int)
         $result = $writeTool->execute([

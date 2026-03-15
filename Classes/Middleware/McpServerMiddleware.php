@@ -31,6 +31,7 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private Context $context,
+        private HashService $hashService,
         private McpEndpoint $mcpEndpoint,
         private OAuthAuthorizeEndpoint $oauthAuthorizeEndpoint,
         private OAuthTokenEndpoint $oauthTokenEndpoint,
@@ -127,7 +128,7 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
             return null;
         }
 
-        $expectedSignature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
+        $expectedSignature = $this->hashService->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
         if (!hash_equals($expectedSignature, $parts[1])) {
             return null;
         }

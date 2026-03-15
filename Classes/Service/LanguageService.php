@@ -9,15 +9,12 @@ use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service for handling language mappings between ISO codes and UIDs
  */
 final class LanguageService
 {
-    protected SiteFinder $siteFinder;
-
     /**
      * Cached mapping of ISO codes to language UIDs
      * @var array<string, int>
@@ -40,10 +37,9 @@ final class LanguageService
      */
     protected bool $initialized = false;
 
-    public function __construct()
-    {
-        $this->siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-    }
+    public function __construct(
+        protected readonly SiteFinder $siteFinder,
+    ) {}
 
     /**
      * Initialize language mappings from all sites

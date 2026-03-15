@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -13,6 +14,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class NewsSchemaTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -38,7 +40,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsTableSchema(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -67,7 +69,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsFieldTypes(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -86,7 +88,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsUsesSysCategoryForCategories(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // News extends sys_category, not creates its own table
         $result = $tool->execute([
@@ -108,7 +110,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsTagSchema(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tx_news_domain_model_tag',
@@ -127,7 +129,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsUsesSysFileReferenceForMedia(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // News extends sys_file_reference, but this table is restricted
         $result = $tool->execute([
@@ -144,7 +146,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsSchemaFieldGrouping(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -163,7 +165,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsTypes(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get basic schema to check if types are used
         $result = $tool->execute([
@@ -193,7 +195,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsPluginSchemaInTtContent(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for News plugin content type
         $result = $tool->execute([
@@ -251,7 +253,7 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsPluginFlexFormIdentifiers(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // First, check if News registers as a plugin type
         $result = $tool->execute([

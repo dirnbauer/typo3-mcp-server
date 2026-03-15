@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\SearchTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Hn\McpServer\Service\WorkspaceContextService;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -15,6 +16,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class IntegrationTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -47,9 +49,9 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testBasicCrudFlowWithWorkspaceTransparency(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
-        $searchTool = new SearchTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
+        $searchTool = $this->getService(SearchTool::class);
 
 
         // Step 1: Create a content element
@@ -142,8 +144,8 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testReferenceWorkflowWithWorkspaceTransparency(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Step 1: Create a parent page
         $pageResult = $writeTool->execute([
@@ -219,9 +221,9 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testNewRecordHandling(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
-        $searchTool = new SearchTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
+        $searchTool = $this->getService(SearchTool::class);
 
         // Create a new page (which won't have a live version initially)
         $pageResult = $writeTool->execute([
@@ -277,9 +279,9 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testDeleteWithWorkspaceTransparency(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
-        $searchTool = new SearchTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
+        $searchTool = $this->getService(SearchTool::class);
 
         // Create content to delete
         $createResult = $writeTool->execute([
@@ -341,9 +343,9 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testDeleteExistingLiveRecordInWorkspace(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
-        $searchTool = new SearchTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
+        $searchTool = $this->getService(SearchTool::class);
 
         // Use an existing live record from fixtures (UID 100)
         $liveUid = 100;
@@ -445,7 +447,7 @@ class IntegrationTest extends FunctionalTestCase
      */
     public function testWorkspaceUidsNeverExposed(): void
     {
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Create multiple records
         $uids = [];

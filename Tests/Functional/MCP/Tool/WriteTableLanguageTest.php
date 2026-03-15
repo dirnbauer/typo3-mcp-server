@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -12,6 +13,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class WriteTableLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -100,7 +102,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testCreateContentWithIsoLanguageCode(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create content in German using ISO code
         $result = $tool->execute([
@@ -149,7 +151,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testCreateWithInvalidLanguageCode(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $result = $tool->execute([
             'action' => 'create',
@@ -171,7 +173,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testTranslateRecord(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // First create a record in default language
         $createResult = $tool->execute([
@@ -229,7 +231,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testTranslateWithInvalidLanguage(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create a record first
         $createResult = $tool->execute([
@@ -265,7 +267,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testTranslateAlreadyTranslatedRecord(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create original record
         $createResult = $tool->execute([
@@ -314,7 +316,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testPreventDuplicateTranslation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create original record
         $createResult = $tool->execute([
@@ -367,7 +369,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testUpdateTranslationMaintainsLanguage(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         // Create original and translate
         $createResult = $tool->execute([

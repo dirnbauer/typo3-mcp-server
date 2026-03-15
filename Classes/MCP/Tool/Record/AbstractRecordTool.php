@@ -17,19 +17,15 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 abstract class AbstractRecordTool extends AbstractTool
 {
-    protected TableAccessService $tableAccessService;
-    protected WorkspaceContextService $workspaceContextService;
-
     /**
      * Workspace ID requested by the current tool call (null = auto-select).
      */
     private ?int $requestedWorkspaceId = null;
 
-    public function __construct()
-    {
-        $this->tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
-        $this->workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-    }
+    public function __construct(
+        protected readonly TableAccessService $tableAccessService,
+        protected readonly WorkspaceContextService $workspaceContextService,
+    ) {}
 
     /**
      * Override execute to extract workspace_id before initialize() runs.

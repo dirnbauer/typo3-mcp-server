@@ -19,8 +19,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth authorization endpoint
  */
-final class OAuthAuthorizeEndpoint
+final readonly class OAuthAuthorizeEndpoint
 {
+    public function __construct(
+        private OAuthService $oauthService,
+        private HashService $hashService,
+    ) {}
+
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         try {
@@ -187,8 +192,7 @@ final class OAuthAuthorizeEndpoint
         }
         $state = $postParams['state'] ?? $queryParams['state'] ?? '';
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $code = $oauthService->createAuthorizationCode(
+        $code = $this->oauthService->createAuthorizationCode(
             $beUserId,
             $clientName,
             $redirectUri,
@@ -598,7 +602,7 @@ final class OAuthAuthorizeEndpoint
     private function encodeOAuthCookie(array $oauthData): string
     {
         $payload = $this->encodeJson($oauthData);
-        $signature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
+        $signature = $this->hashService->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
 
         return base64_encode($payload) . '.' . $signature;
     }

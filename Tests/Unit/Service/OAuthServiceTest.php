@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Unit\Service;
 
 use Hn\McpServer\Service\OAuthService;
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 
 final class OAuthServiceTest extends TestCase
 {
@@ -14,7 +15,8 @@ final class OAuthServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new OAuthService();
+        $connectionPool = $this->createMock(ConnectionPool::class);
+        $this->service = new OAuthService($connectionPool);
     }
 
     public function testGenerateAuthorizationUrlContainsClientId(): void

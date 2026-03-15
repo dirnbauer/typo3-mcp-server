@@ -10,20 +10,18 @@ use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service for centralizing site and domain information
  */
 final class SiteInformationService
 {
-    protected SiteFinder $siteFinder;
     protected ?ServerRequestInterface $currentRequest = null;
 
-    public function __construct()
-    {
-        $this->siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-    }
+    public function __construct(
+        protected readonly SiteFinder $siteFinder,
+        private readonly ConnectionPool $connectionPool,
+    ) {}
 
     /**
      * Set the current HTTP request for context
@@ -207,8 +205,7 @@ final class SiteInformationService
      */
     protected function getPageRecord(int $pageId): ?array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
 
         $page = $queryBuilder
             ->select('uid', 'slug', 'title')

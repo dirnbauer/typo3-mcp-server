@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\NewsExtension;
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -14,6 +15,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class NewsCrudTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -43,7 +45,7 @@ class NewsCrudTest extends FunctionalTestCase
      */
     public function testNewsCategoriesSchemaShowsMmTable(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -72,7 +74,7 @@ class NewsCrudTest extends FunctionalTestCase
      */
     public function testCreateCategories(): void
     {
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Create parent category
         $result = $writeTool->execute([
@@ -114,7 +116,7 @@ class NewsCrudTest extends FunctionalTestCase
         }
 
         // Verify categories were created
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'sys_category',
             'pid' => 1,
@@ -133,7 +135,7 @@ class NewsCrudTest extends FunctionalTestCase
         // First create categories
         $this->testCreateCategories();
 
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Create news with multiple categories (using the child category UIDs)
         $result = $writeTool->execute([
@@ -155,7 +157,7 @@ class NewsCrudTest extends FunctionalTestCase
         $newsUid = $createdRecord->uid;
 
         // Read the news record back
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
@@ -187,7 +189,7 @@ class NewsCrudTest extends FunctionalTestCase
         $this->testCreateNewsWithCategories();
 
         // Get the news record
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'pid' => 1,
@@ -199,7 +201,7 @@ class NewsCrudTest extends FunctionalTestCase
         $newsUid = $readResult->records[0]->uid;
 
         // Update with different categories
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'update',
@@ -236,7 +238,7 @@ class NewsCrudTest extends FunctionalTestCase
      */
     public function testReadNewsWithoutCategories(): void
     {
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Create news without categories
         $result = $writeTool->execute([
@@ -256,7 +258,7 @@ class NewsCrudTest extends FunctionalTestCase
         $newsUid = $createdRecord->uid;
 
         // Read it back
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
@@ -279,7 +281,7 @@ class NewsCrudTest extends FunctionalTestCase
     public function testDeleteNews(): void
     {
         // First create a news record
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
@@ -306,7 +308,7 @@ class NewsCrudTest extends FunctionalTestCase
         $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Try to read it - should not be found
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
@@ -329,7 +331,7 @@ class NewsCrudTest extends FunctionalTestCase
         $this->testCreateCategories();
 
         // Create news in workspace
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
@@ -348,7 +350,7 @@ class NewsCrudTest extends FunctionalTestCase
         $newsUid = $createdRecord->uid;
 
         // Read back in workspace
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
@@ -378,7 +380,7 @@ class NewsCrudTest extends FunctionalTestCase
      */
     public function testOtherNewsFields(): void
     {
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
 
         // Create news with various field types
         $result = $writeTool->execute([
@@ -405,7 +407,7 @@ class NewsCrudTest extends FunctionalTestCase
         $newsUid = $createdRecord->uid;
 
         // Read back
-        $readTool = new ReadTableTool();
+        $readTool = $this->getService(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,

@@ -301,7 +301,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         $this->assertEquals('German Content', $data['records'][0]['header'], 'Should be the German content');
 
         // Test that multi-language site configuration is working
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $languageService = $this->getService(LanguageService::class);
         $availableLanguages = $languageService->getAvailableIsoCodes();
 
         $this->assertContains('en', $availableLanguages, 'English should be available');

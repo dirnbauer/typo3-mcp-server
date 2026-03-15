@@ -11,7 +11,6 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth token endpoint for exchanging authorization codes for access tokens
@@ -22,6 +21,7 @@ final readonly class OAuthTokenEndpoint
 
     public function __construct(
         private LoggerInterface $logger,
+        private OAuthService $oauthService,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -58,9 +58,7 @@ final readonly class OAuthTokenEndpoint
                 return $this->createErrorResponse('invalid_client', 'Invalid client_id');
             }
 
-            // Exchange code for token
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $tokenData = $oauthService->exchangeCodeForToken($code, $codeVerifier, $request);
+            $tokenData = $this->oauthService->exchangeCodeForToken($code, $codeVerifier, $request);
 
             if (!$tokenData) {
                 return $this->createErrorResponse('invalid_grant', 'Invalid or expired authorization code');

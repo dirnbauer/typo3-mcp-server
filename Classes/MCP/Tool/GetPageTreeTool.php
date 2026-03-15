@@ -9,6 +9,8 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -25,10 +27,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class GetPageTreeTool extends AbstractRecordTool
 {
     public function __construct(
-        protected SiteInformationService $siteInformationService,
-        protected LanguageService $languageService,
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly SiteInformationService $siteInformationService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
     ) {
-        parent::__construct();
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
@@ -127,7 +132,7 @@ final class GetPageTreeTool extends AbstractRecordTool
     protected function getPageTree(int $startPage, int $depth, ?int $languageUid = null): array
     {
         // Get database connection for pages table
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         // Only apply the DeletedRestriction to filter out deleted pages
@@ -227,7 +232,7 @@ final class GetPageTreeTool extends AbstractRecordTool
      */
     protected function countSubpages(int $pageId): int
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()
@@ -295,7 +300,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 continue;
             }
 
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
             // Only apply DeletedRestriction
@@ -345,7 +350,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         $hints = '';
 
         // Query for plugins on this page
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tt_content');
 
         $queryBuilder->getRestrictions()

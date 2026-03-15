@@ -9,18 +9,12 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class ListWorkspacesTool extends AbstractTool
 {
     public function __construct(
-        ?WorkspaceContextService $workspaceContextService = null,
-    ) {
-        $this->workspaceContextService = $workspaceContextService
-            ?? GeneralUtility::makeInstance(WorkspaceContextService::class);
-    }
-
-    private readonly WorkspaceContextService $workspaceContextService;
+        private readonly WorkspaceContextService $workspaceContextService,
+    ) {}
 
     /**
      * @return array<string, mixed>

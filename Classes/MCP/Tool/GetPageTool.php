@@ -11,6 +11,7 @@ use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Utility\RecordFormattingUtility;
 use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
@@ -43,10 +44,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class GetPageTool extends AbstractRecordTool
 {
     public function __construct(
-        protected SiteInformationService $siteInformationService,
-        protected McpLanguageService $languageService,
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly SiteInformationService $siteInformationService,
+        protected readonly McpLanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
     ) {
-        parent::__construct();
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     protected function getCurrentWorkspaceId(): int
@@ -236,7 +240,7 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function getPageData(int $uid, int $languageId = 0): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
 
         // Apply proper workspace restrictions
@@ -328,7 +332,7 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function getPageTranslations(int $pageUid): array
     {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         // Apply proper workspace restrictions
@@ -435,7 +439,7 @@ final class GetPageTool extends AbstractRecordTool
             ];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply proper workspace restrictions
@@ -823,7 +827,7 @@ final class GetPageTool extends AbstractRecordTool
         }
 
         // If no match found via router AND no host was specified, try to find by slug directly in the database
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()

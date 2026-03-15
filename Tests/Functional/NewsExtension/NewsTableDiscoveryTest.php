@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\ListTablesTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -13,6 +14,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class NewsTableDiscoveryTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -38,7 +40,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
      */
     public function testNewsTablesAreDiscoverable(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
 
         $this->assertInstanceOf(TextContent::class, $result->content[0]);
@@ -72,7 +74,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
      */
     public function testNewsTablesGrouping(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
 
         $content = $result->content[0]->text;
@@ -98,7 +100,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
      */
     public function testNewsRelationTables(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
 
         $content = $result->content[0]->text;

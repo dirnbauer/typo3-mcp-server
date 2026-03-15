@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -13,6 +14,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class SearchToolTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -42,7 +44,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSingleTermSearch(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
 
         // Search for "welcome"
@@ -74,7 +76,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleTermsWithOrLogic(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         $result = $tool->execute([
             'terms' => ['news', 'article'],
@@ -100,7 +102,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleTermsWithAndLogic(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         $result = $tool->execute([
             'terms' => ['team', 'meet'],
@@ -126,7 +128,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testTableSpecificSearch(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search only in pages table
         $result = $tool->execute([
@@ -162,7 +164,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testPageSpecificSearch(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search only on page 2 (About)
         $result = $tool->execute([
@@ -190,7 +192,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchFindsHiddenRecords(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Hidden records are always included now
         $result = $tool->execute([
@@ -214,7 +216,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testInlineRecordAttribution(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search for category name
         $result = $tool->execute([
@@ -248,7 +250,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchResultFormatting(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         $result = $tool->execute([
             'terms' => ['team'],
@@ -274,7 +276,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testEmptySearchResults(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         $result = $tool->execute([
             'terms' => ['nonexistentterm12345'],
@@ -293,7 +295,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchTermValidation(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Test empty terms array
         $result = $tool->execute([
@@ -343,7 +345,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchWithLimit(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search with very small limit - use a term that will match multiple records
         $result = $tool->execute([
@@ -376,7 +378,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSpecialCharacterSearch(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Create test data with special characters
         $this->createPage(['title' => 'Page with 100% success rate', 'pid' => 0]);
@@ -501,7 +503,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testInvalidTableName(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         $result = $tool->execute([
             'terms' => ['test'],
@@ -517,7 +519,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testNonWorkspaceCapableTable(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Try to search in a non-workspace-capable table (if one exists)
         $result = $tool->execute([
@@ -537,7 +539,7 @@ class SearchToolTest extends FunctionalTestCase
     public function testSearchThroughRegistry(): void
     {
         // Create tool registry with SearchTool
-        $tools = [new SearchTool()];
+        $tools = [$this->getService(SearchTool::class)];
         $registry = new ToolRegistry($tools);
 
         // Get tool from registry
@@ -560,7 +562,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testToolName(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $this->assertEquals('Search', $tool->getName());
     }
 
@@ -569,7 +571,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testToolSchema(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $schema = $tool->getSchema();
 
         $this->assertIsArray($schema);
@@ -596,7 +598,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testComplexMultiTableSearch(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search that should find results in multiple tables
         $result = $tool->execute([
@@ -621,7 +623,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testTermLogicValidation(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Test invalid term logic
         $result = $tool->execute([
@@ -638,7 +640,7 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleInlineMatches(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
 
         // Search for Web Development (subcategory)
         $result = $tool->execute([

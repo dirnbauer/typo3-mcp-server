@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetTableSchemaLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -99,7 +101,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testShowsIsoCodesForLanguageField(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for tt_content
         $result = $tool->execute([
@@ -125,7 +127,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testNoIsoCodesForNonLanguageTables(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for sys_category which doesn't typically have language field in showitem
         $result = $tool->execute([
@@ -150,7 +152,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testIsoCodeListMatchesConfiguration(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Get schema for tt_content
         $result = $tool->execute([

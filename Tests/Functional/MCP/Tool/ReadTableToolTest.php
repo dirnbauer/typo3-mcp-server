@@ -20,7 +20,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        $this->tool = new ReadTableTool();
+        $this->tool = $this->getService(ReadTableTool::class);
         $this->data = new TestDataBuilder();
     }
 
@@ -198,7 +198,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testReadWithWhereCondition(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -220,7 +220,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testWhereConditionSecurity(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Try to inject dangerous SQL
         $result = $tool->execute([
@@ -237,7 +237,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testToolSchema(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
         $schema = $tool->getSchema();
 
         $this->assertIsArray($schema);
@@ -260,7 +260,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testReadWithSorting(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -285,7 +285,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testEssentialFieldsIncluded(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         $result = $tool->execute([
             'table' => 'pages',
@@ -313,7 +313,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testFieldFilteringBasedOnCType(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Test textmedia record (UID 100)
         $result = $tool->execute([
@@ -407,7 +407,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
     public function testFieldFilteringWithUnknownCType(): void
     {
         // Create a record with an unknown CType
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read a record but simulate unknown CType by testing field filtering behavior
         $result = $tool->execute([

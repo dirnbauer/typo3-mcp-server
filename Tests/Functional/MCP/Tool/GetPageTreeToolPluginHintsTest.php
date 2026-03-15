@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\Service\SiteInformationService;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetPageTreeToolPluginHintsTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -39,9 +38,7 @@ class GetPageTreeToolPluginHintsTest extends FunctionalTestCase
      */
     public function testPluginStorageHints(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
 
         // Get page tree including the page with news plugin
         $result = $tool->execute([
@@ -64,9 +61,7 @@ class GetPageTreeToolPluginHintsTest extends FunctionalTestCase
      */
     public function testEnhancedOutputComplete(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTreeTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTreeTool::class);
 
         // Get deeper tree to see storage folder and its contents
         $result = $tool->execute([

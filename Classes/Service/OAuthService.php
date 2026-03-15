@@ -9,7 +9,6 @@ use TYPO3\CMS\Core\Database\Connection;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth service for MCP server authentication
@@ -19,6 +18,10 @@ final class OAuthService
     private const CLIENT_ID = 'typo3-mcp-server';
     private const CODE_EXPIRY_SECONDS = 600; // 10 minutes
     private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
+
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+    ) {}
 
     /**
      * Generate authorization URL for OAuth flow
@@ -59,7 +62,7 @@ final class OAuthService
         $code = $this->generateSecureToken();
         $expires = time() + self::CODE_EXPIRY_SECONDS;
 
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
 
         $connection->insert(
@@ -88,7 +91,7 @@ final class OAuthService
      */
     public function exchangeCodeForToken(string $code, ?string $codeVerifier = null, ?ServerRequestInterface $request = null): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -107,9 +110,9 @@ final class OAuthService
             return null;
         }
 
-        $pkceChallenge = \is_array($authCode) && \is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
+        $pkceChallenge = \is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
         if ($pkceChallenge !== '') {
-            $challengeMethod = \is_array($authCode) && \is_string($authCode['pkce_challenge_method'] ?? null) ? $authCode['pkce_challenge_method'] : '';
+            $challengeMethod = \is_string($authCode['pkce_challenge_method'] ?? null) ? $authCode['pkce_challenge_method'] : '';
             if ($challengeMethod !== 'S256') {
                 return null;
             }
@@ -132,7 +135,7 @@ final class OAuthService
             $clientIp = $this->getRemoteAddress($request);
         }
 
-        $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $tokenConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $tokenConnection->insert(
@@ -173,7 +176,7 @@ final class OAuthService
     {
         $tokenHash = hash('sha256', $token);
 
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -220,7 +223,7 @@ final class OAuthService
      */
     public function getUserTokens(int $beUserId): array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -236,15 +239,8 @@ final class OAuthService
             ->executeQuery()
             ->fetchAllAssociative();
 
-        if (!\is_array($tokens)) {
-            return [];
-        }
-
         $normalizedTokens = [];
         foreach ($tokens as $token) {
-            if (!\is_array($token)) {
-                continue;
-            }
             $normalizedTokens[] = [
                 'uid' => is_numeric($token['uid'] ?? null) ? (int) $token['uid'] : 0,
                 'client_name' => \is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
@@ -263,7 +259,7 @@ final class OAuthService
      */
     public function revokeToken(int $tokenUid, int $beUserId): bool
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $affectedRows = $connection->update(
@@ -283,7 +279,7 @@ final class OAuthService
      */
     public function revokeAllUserTokens(int $beUserId): int
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         return $connection->update(
@@ -295,7 +291,7 @@ final class OAuthService
 
     public function revokeUserTokensByClientName(int $beUserId, string $clientName): int
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         return $connection->update(
@@ -316,7 +312,7 @@ final class OAuthService
         $currentTime = time();
 
         // Clean up expired authorization codes
-        $codeConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $codeConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
         $codeQueryBuilder = $codeConnection->createQueryBuilder();
         $codeQueryBuilder
@@ -327,7 +323,7 @@ final class OAuthService
             ->executeStatement();
 
         // Mark expired tokens as deleted
-        $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $tokenConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
         $tokenQueryBuilder = $tokenConnection->createQueryBuilder();
         $tokenQueryBuilder
@@ -353,7 +349,7 @@ final class OAuthService
         $clientSecret = bin2hex(random_bytes(32));
 
         // For now, store in database (could be enhanced later)
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_clients');
 
         // Check if table exists, if not create it on the fly
@@ -432,7 +428,7 @@ final class OAuthService
         }
 
         // Create access token
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $connection->insert(

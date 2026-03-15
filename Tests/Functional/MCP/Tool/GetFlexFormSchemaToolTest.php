@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetFlexFormSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetFlexFormSchemaToolTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -39,7 +41,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchema(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Test with form_formframework (likely not available in test environment)
         $result = $tool->execute([
@@ -64,7 +66,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchemaWithDefaults(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Test with only identifier (defaults to tt_content.pi_flexform)
         $result = $tool->execute([
@@ -86,7 +88,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchemaWithCustomTableAndField(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Test with custom table and field
         $result = $tool->execute([
@@ -110,7 +112,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testMissingIdentifierParameter(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -127,7 +129,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testEmptyIdentifierParameter(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -145,7 +147,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testInvalidTable(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'nonexistent_table',
@@ -163,7 +165,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testTableWithoutTca(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'sys_log',
@@ -181,7 +183,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testUnknownIdentifier(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -204,7 +206,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testFlexFormSchemaOutputFormat(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'identifier' => 'form_formframework',
@@ -224,7 +226,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testNonFlexFormField(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -247,7 +249,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testFlexFormSchemaFieldInformation(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $result = $tool->execute([
             'identifier' => 'form_formframework',
@@ -267,7 +269,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testWorkspaceContextInitialization(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Should work in workspace context but still return error for missing identifier
         $result = $tool->execute([
@@ -284,7 +286,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testToolSchema(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         $schema = $tool->getSchema();
 
@@ -309,7 +311,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchemaSuccess(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Test with News plugin identifier
         $result = $tool->execute([
@@ -360,7 +362,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchemaWithDifferentNewsTypes(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // Test category list FlexForm
         $result = $tool->execute([
@@ -390,7 +392,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
      */
     public function testGetFlexFormSchemaWithRecordUid(): void
     {
-        $tool = new GetFlexFormSchemaTool();
+        $tool = $this->getService(GetFlexFormSchemaTool::class);
 
         // recordUid parameter is accepted but not used for schema retrieval
         $result = $tool->execute([

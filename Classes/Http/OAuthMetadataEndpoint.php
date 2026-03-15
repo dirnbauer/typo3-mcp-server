@@ -10,14 +10,17 @@ use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth metadata discovery endpoint
  */
-final class OAuthMetadataEndpoint
+final readonly class OAuthMetadataEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private OAuthService $oauthService,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
@@ -44,8 +47,7 @@ final class OAuthMetadataEndpoint
                 $baseUrl = rtrim($configuredBaseUrl, '/');
             }
 
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $metadata = $oauthService->getMetadata($baseUrl);
+            $metadata = $this->oauthService->getMetadata($baseUrl);
 
             $stream = new Stream('php://temp', 'rw');
             $stream->write($this->encodeJson($metadata));

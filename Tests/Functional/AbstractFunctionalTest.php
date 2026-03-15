@@ -58,7 +58,10 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     {
         $this->context = GeneralUtility::makeInstance(Context::class);
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $container = $this->getContainer();
+        $service = $container->get(LanguageService::class);
+        \assert($service instanceof LanguageService);
+        $this->languageService = $service;
     }
 
     /**
@@ -165,5 +168,20 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     protected function getConnectionForTable(string $table): Connection
     {
         return $this->connectionPool->getConnectionForTable($table);
+    }
+
+    /**
+     * Resolve a service from the DI container.
+     *
+     * @template T of object
+     * @param class-string<T> $className
+     * @return T
+     */
+    protected function getService(string $className): object
+    {
+        $service = $this->getContainer()->get($className);
+        \assert($service instanceof $className);
+        /** @var T $service */
+        return $service;
     }
 }

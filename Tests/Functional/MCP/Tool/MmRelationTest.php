@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -15,6 +16,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class MmRelationTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
     ];
@@ -42,8 +44,8 @@ class MmRelationTest extends FunctionalTestCase
      */
     public function testOppositeMmRelation(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Create a news record with categories
         $result = $writeTool->execute([
@@ -105,8 +107,8 @@ class MmRelationTest extends FunctionalTestCase
      */
     public function testStandardMmRelation(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // First create some tags
         $tagUids = [];
@@ -185,8 +187,8 @@ class MmRelationTest extends FunctionalTestCase
      */
     public function testMmMatchFields(): void
     {
-        $writeTool = new WriteTableTool();
-        $readTool = new ReadTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
+        $readTool = $this->getService(ReadTableTool::class);
 
         // Create a content element with categories
         $result = $writeTool->execute([

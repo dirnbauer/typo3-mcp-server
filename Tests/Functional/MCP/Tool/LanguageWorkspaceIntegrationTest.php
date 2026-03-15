@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -22,6 +23,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -55,8 +57,8 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
         $GLOBALS['LANG'] = $languageServiceFactory->create('default');
 
         // Initialize tools
-        $this->writeTool = new WriteTableTool();
-        $this->readTool = new ReadTableTool();
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
 

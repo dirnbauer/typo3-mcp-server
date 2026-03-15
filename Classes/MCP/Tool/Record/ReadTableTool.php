@@ -12,6 +12,8 @@ use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestrictio
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use RuntimeException;
@@ -36,12 +38,13 @@ final class ReadTableTool extends AbstractRecordTool
     private const MAX_WHERE_CONDITIONS = 80;
     private const DISALLOWED_WHERE_PATTERN = '/(;|--|#|\/\*|\*\/|\b(?:SELECT|UNION|DROP|DELETE|UPDATE|INSERT|TRUNCATE|ALTER|CREATE|SLEEP|BENCHMARK)\b)/i';
 
-    protected LanguageService $languageService;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     protected function getBackendUser(): BackendUserAuthentication
@@ -289,7 +292,7 @@ final class ReadTableTool extends AbstractRecordTool
         ?int $languageUid = null,
         array $requestedFields = [],
     ): array {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions
@@ -361,7 +364,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Get total count (without pagination)
-        $countQueryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $countQueryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
         $countQueryBuilder->getRestrictions()
             ->removeAll()
@@ -1025,7 +1028,7 @@ final class ReadTableTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
 
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
@@ -1097,7 +1100,7 @@ final class ReadTableTool extends AbstractRecordTool
      */
     protected function getMmRelationValues(string $mmTable, string $localTable, int $localUid, string $fieldName, array $fieldConfig): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($mmTable);
 
         // Determine if this is an opposite/reverse relation
@@ -1147,7 +1150,7 @@ final class ReadTableTool extends AbstractRecordTool
 
         $values = [];
         while ($row = $result->fetchAssociative()) {
-            if (\is_array($row) && is_numeric($row[$foreignColumn] ?? null)) {
+            if (is_numeric($row[$foreignColumn] ?? null)) {
                 $values[] = (int) $row[$foreignColumn];
             }
         }
@@ -1261,7 +1264,7 @@ final class ReadTableTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions

@@ -22,6 +22,7 @@ final readonly class WorkspaceContextService
         private ConnectionPool $connectionPool,
         private Context $context,
         private LoggerInterface $logger,
+        private WorkspaceService $workspaceService,
     ) {}
 
     /**
@@ -79,8 +80,7 @@ final readonly class WorkspaceContextService
         $result = [];
 
         try {
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceService::class);
-            $availableWorkspaces = $workspaceService->getAvailableWorkspaces();
+            $availableWorkspaces = $this->workspaceService->getAvailableWorkspaces();
 
             foreach ($availableWorkspaces as $wsId => $title) {
                 if ($wsId <= 0) {
@@ -121,8 +121,7 @@ final readonly class WorkspaceContextService
     protected function getFirstWritableWorkspace(BackendUserAuthentication $beUser): int
     {
         try {
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceService::class);
-            $availableWorkspaces = $workspaceService->getAvailableWorkspaces();
+            $availableWorkspaces = $this->workspaceService->getAvailableWorkspaces();
 
             foreach ($availableWorkspaces as $workspaceId => $title) {
                 if ($workspaceId > 0) {

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class ReadTableLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -100,7 +102,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadRecordsWithLanguageFilter(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read German content
         $result = $tool->execute([
@@ -126,7 +128,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadWithInvalidLanguageCode(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
@@ -143,7 +145,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadDefaultLanguageContent(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read English content (default language)
         $result = $tool->execute([
@@ -166,7 +168,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadTranslationsWithSourceInfo(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read German content with translation source info
         $result = $tool->execute([
@@ -208,7 +210,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testNoTranslationSourceForDefaultLanguage(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read default language with translation source flag
         $result = $tool->execute([
@@ -230,7 +232,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadAllLanguages(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
 
         // Read without language filter
         $result = $tool->execute([
