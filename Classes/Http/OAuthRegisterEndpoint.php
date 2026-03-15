@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -78,7 +79,11 @@ final class OAuthRegisterEndpoint
             return $this->addCorsHeaders($response);
 
         } catch (Throwable $e) {
-            return $this->createErrorResponse('server_error', $e->getMessage(), 500);
+            GeneralUtility::makeInstance(LogManager::class)
+                ->getLogger(self::class)
+                ->error('OAuth client registration failed', ['exception' => $e]);
+
+            return $this->createErrorResponse('server_error', 'Unable to register the client right now.', 500);
         }
     }
 

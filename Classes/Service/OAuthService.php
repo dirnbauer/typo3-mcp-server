@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use InvalidArgumentException;
+use TYPO3\CMS\Core\Database\Connection;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -51,7 +53,7 @@ final class OAuthService
     public function createAuthorizationCode(int $beUserId, string $clientName, string $redirectUri = '', string $pkceChallenge = '', string $challengeMethod = 'S256'): string
     {
         if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
-            throw new \InvalidArgumentException('Only S256 PKCE challenges are supported');
+            throw new InvalidArgumentException('Only S256 PKCE challenges are supported');
         }
 
         $code = $this->generateSecureToken();
@@ -291,6 +293,21 @@ final class OAuthService
         );
     }
 
+    public function revokeUserTokensByClientName(int $beUserId, string $clientName): int
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_mcpserver_access_tokens');
+
+        return $connection->update(
+            'tx_mcpserver_access_tokens',
+            ['deleted' => 1, 'tstamp' => time()],
+            [
+                'be_user_uid' => $beUserId,
+                'client_name' => $clientName,
+            ],
+        );
+    }
+
     /**
      * Clean up expired codes and tokens
      */
@@ -315,8 +332,8 @@ final class OAuthService
         $tokenQueryBuilder = $tokenConnection->createQueryBuilder();
         $tokenQueryBuilder
             ->update('tx_mcpserver_access_tokens')
-            ->set('deleted', $tokenQueryBuilder->createNamedParameter(1, \TYPO3\CMS\Core\Database\Connection::PARAM_INT))
-            ->set('tstamp', $tokenQueryBuilder->createNamedParameter($currentTime, \TYPO3\CMS\Core\Database\Connection::PARAM_INT))
+            ->set('deleted', $tokenQueryBuilder->createNamedParameter(1, Connection::PARAM_INT))
+            ->set('tstamp', $tokenQueryBuilder->createNamedParameter($currentTime, Connection::PARAM_INT))
             ->where(
                 $tokenQueryBuilder->expr()->lt('expires', $tokenQueryBuilder->createNamedParameter($currentTime)),
             )

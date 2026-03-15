@@ -125,7 +125,8 @@ The MCP Server provides these tools for interacting with TYPO3:
 ### File Management
 - **BrowseFiles** - Browse file storages and folders in fileadmin; list storages, navigate directories, view file listings with metadata
 - **ReadFileMetadata** - Read metadata for a file by UID or combined identifier (title, description, alt text, categories, dimensions)
-- **WriteFile** - Create or overwrite text-based files in fileadmin and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Binary uploads (images, PDFs) are not supported. Can update metadata on existing files — including images — without changing content.
+- **WriteFile** - Create or overwrite text-based files in the MCP file harness and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Can update metadata on existing files — including images — without changing content.
+- **UploadFile** - Upload binary or text files into the MCP file harness. Uploads are restricted to a configurable sandbox folder (default: `fileadmin/mcp/`) and can use workspace-specific subfolders for safer draft handling.
 
 > **Note:** Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately across all workspaces.
 
@@ -331,7 +332,7 @@ Relations are transparently resolved and can be set using simple syntax:
 - **Select relations**: Use comma-separated IDs or arrays
 - **Inline relations**: Provide as nested objects
 - **MM relations**: Handled automatically
-- **File references**: Browsable via `BrowseFiles`, metadata readable/writable via `ReadFileMetadata` and `WriteFile`
+- **File references**: Browsable via `BrowseFiles`, metadata readable/writable via `ReadFileMetadata` and `WriteFile`, binaries uploadable via `UploadFile`
 - **Bidirectional**: Updates both sides as needed
 
 ### File Management
@@ -341,9 +342,10 @@ The MCP Server provides access to TYPO3's File Abstraction Layer (FAL):
 1. **Browse Storages**: Navigate file storages and folder hierarchies in fileadmin
 2. **Read Metadata**: Inspect file metadata including title, description, alt text, dimensions, and categories
 3. **Write Text Files**: Create or overwrite text-based files (`.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`)
-4. **Update Metadata**: Set title, description, alternative text, and copyright on any file — including images — without changing file content
+4. **Upload Files**: Upload binary or text files into the MCP file harness (`UploadFile`)
+5. **Update Metadata**: Set title, description, alternative text, and copyright on any file — including images — without changing file content
 
-**Important**: Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately. Record-based data (content elements, pages, etc.) remains safely workspace-versioned.
+**Important**: Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately. The MCP file harness reduces risk by restricting operations to a dedicated folder and can place uploads in workspace-specific subfolders, but the physical file still exists immediately once uploaded. Record-based data (content elements, pages, etc.) remains safely workspace-versioned.
 
 ### Language Support
 
@@ -405,11 +407,10 @@ The MCP Server respects all TYPO3 permissions:
 
 While the MCP Server is powerful, some features are still in development:
 
-### Binary File Uploads
-- Cannot upload binary files (images, PDFs, etc.) through MCP
-- Text-based files can be created via `WriteFile`
-- Existing files (including images) can have their metadata updated
-- Workaround: Upload binaries through the TYPO3 backend, then reference or update metadata via MCP
+### Full Physical File Versioning
+- Binary uploads are supported through `UploadFile`, but TYPO3 still does not workspace-version physical files
+- The MCP file harness can isolate uploads to a dedicated sandbox folder and optional workspace subfolders
+- Publishing still affects only record references and content; uploaded files themselves exist immediately after upload
 
 ### Workspace Publishing
 - Cannot publish workspace changes through MCP

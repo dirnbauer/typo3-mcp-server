@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use TYPO3\CMS\Core\Crypto\HashAlgo;
 use Hn\McpServer\Service\OAuthService;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
@@ -54,9 +55,9 @@ final class OAuthAuthorizeEndpoint
             // Show consent form
             return $this->showConsentForm($request);
 
-        } catch (InvalidArgumentException $e) {
+        } catch (InvalidArgumentException) {
             return $this->createErrorResponse('invalid_request', 'Invalid redirect_uri');
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return $this->createErrorResponse('server_error', 'Authorization failed');
         }
     }
@@ -597,7 +598,7 @@ final class OAuthAuthorizeEndpoint
     private function encodeOAuthCookie(array $oauthData): string
     {
         $payload = $this->encodeJson($oauthData);
-        $signature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth');
+        $signature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
 
         return base64_encode($payload) . '.' . $signature;
     }
@@ -611,12 +612,12 @@ final class OAuthAuthorizeEndpoint
 
         $parsedUrl = parse_url($trimmedRedirectUri);
         if (!\is_array($parsedUrl)) {
-            throw new \InvalidArgumentException('Invalid redirect_uri');
+            throw new InvalidArgumentException('Invalid redirect_uri');
         }
 
         $scheme = \is_string($parsedUrl['scheme'] ?? null) ? strtolower($parsedUrl['scheme']) : '';
         if ($scheme === '') {
-            throw new \InvalidArgumentException('Invalid redirect_uri');
+            throw new InvalidArgumentException('Invalid redirect_uri');
         }
 
         if (!\in_array($scheme, ['http', 'https'], true)) {
@@ -629,6 +630,6 @@ final class OAuthAuthorizeEndpoint
             return $trimmedRedirectUri;
         }
 
-        throw new \InvalidArgumentException('Invalid redirect_uri');
+        throw new InvalidArgumentException('Invalid redirect_uri');
     }
 }

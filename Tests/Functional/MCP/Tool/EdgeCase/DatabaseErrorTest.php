@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 
+use Exception;
 use Doctrine\DBAL\Connection;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
@@ -185,7 +186,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
 
             $this->assertTrue(true, 'Deadlock handling test completed');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Rollback on any exception
             if ($conn1->isTransactionActive()) {
                 $conn1->rollBack();
@@ -262,7 +263,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             $connection->commit();
             $this->assertTrue(true, 'Transaction handling tested');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
             }
@@ -299,7 +300,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             // Should still work even with many connections
             $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If we hit a connection limit, that's what we're testing for
             if (stripos($e->getMessage(), 'connection') !== false
                 || stripos($e->getMessage(), 'too many') !== false) {

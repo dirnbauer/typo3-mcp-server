@@ -6,12 +6,13 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\McpFileHarnessService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
-use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -28,7 +29,7 @@ final class WriteFileTool extends AbstractTool
 
     public function __construct(
         private readonly StorageRepository $storageRepository,
-        private readonly ResourceFactory $resourceFactory,
+        private readonly McpFileHarnessService $fileHarnessService,
     ) {}
 
     /**
@@ -37,7 +38,8 @@ final class WriteFileTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Create or overwrite a text-based file in TYPO3 file storage (fileadmin), and/or update its metadata. '
+            'description' => 'Create or overwrite a text-based file inside the MCP file harness, and/or update its metadata. '
+                . 'The configured harness defaults to fileadmin/mcp/ and all paths are restricted to that sandbox. '
                 . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .svg, .yaml, .md. '
                 . 'Binary file uploads (images, PDFs, etc.) are NOT supported. '
                 . 'Can also update metadata (title, description, alt text, copyright) on any existing file — including images — without changing the file content. '
@@ -47,8 +49,9 @@ final class WriteFileTool extends AbstractTool
                 'properties' => [
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Target file path including storage ID, e.g. "1:/user_upload/data.json" or "1:/images/photo.jpg". '
-                            . 'Format: "<storageId>:/<folder/path/filename.ext>". Parent folders are created automatically when writing content.',
+                        'description' => 'Target file path inside the MCP harness. '
+                            . 'Use either a relative path like "notes/data.json" or an absolute combined identifier inside the harness such as "1:/mcp/notes/data.json". '
+                            . 'Parent folders are created automatically when writing content.',
                     ],
                     'content' => [
                         'type' => 'string',
@@ -89,21 +92,21 @@ final class WriteFileTool extends AbstractTool
         $metadata = \is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
 
         if ($path === '') {
-            throw new ValidationException(['Parameter "path" is required. Format: "<storageId>:/<folder/path/filename.ext>"']);
+            throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP harness.']);
         }
 
         if ($content === null && empty($metadata)) {
             throw new ValidationException(['Either "content" or "metadata" (or both) must be provided.']);
         }
 
-        $parsed = $this->parseCombinedIdentifier($path);
+        $parsed = $this->fileHarnessService->resolveFileTarget($path);
         $storage = $this->resolveStorage($parsed['storageUid']);
 
         if ($content === null) {
             return $this->updateMetadataOnly($storage, $parsed, $metadata);
         }
 
-        $this->validateExtension($parsed['fileName'], $storage);
+        $this->validateExtension($parsed['fileName']);
         $folder = $this->ensureFolder($storage, $parsed['folderPath']);
 
         if ($folder->hasFile($parsed['fileName'])) {
@@ -112,7 +115,7 @@ final class WriteFileTool extends AbstractTool
                     "File already exists: {$path}. Set overwrite=true to replace it.",
                 ]);
             }
-            $existingFile = $storage->getFileInFolder($parsed['fileName'], $folder);
+            $existingFile = $this->getExistingFile($storage, $folder, $parsed['fileName']);
             $existingFile->setContents($content);
 
             if (!empty($metadata)) {
@@ -158,7 +161,7 @@ final class WriteFileTool extends AbstractTool
             ]);
         }
 
-        $file = $storage->getFileInFolder($parsed['fileName'], $folder);
+        $file = $this->getExistingFile($storage, $folder, $parsed['fileName']);
         $this->applyMetadata($file, $metadata);
 
         return $this->buildResult('metadata_updated', $file, $metadata);
@@ -212,34 +215,6 @@ final class WriteFileTool extends AbstractTool
         return $clean;
     }
 
-    /**
-     * @return array{storageUid: int, folderPath: string, fileName: string}
-     */
-    private function parseCombinedIdentifier(string $path): array
-    {
-        if (!preg_match('#^(\d+):(/.+)$#', $path, $m)) {
-            throw new ValidationException([
-                'Invalid path format. Use "<storageId>:/<folder/path/filename.ext>" (e.g. "1:/user_upload/data.json").',
-            ]);
-        }
-
-        $storageUid = (int) $m[1];
-        $fullPath = $m[2];
-        $lastSlash = strrpos($fullPath, '/');
-        $folderPath = substr($fullPath, 0, $lastSlash + 1);
-        $fileName = substr($fullPath, $lastSlash + 1);
-
-        if ($fileName === '' || $fileName === false) {
-            throw new ValidationException(['Path must include a filename (e.g. "1:/user_upload/data.json").']);
-        }
-
-        return [
-            'storageUid' => $storageUid,
-            'folderPath' => $folderPath,
-            'fileName' => $fileName,
-        ];
-    }
-
     private function resolveStorage(int $storageUid): ResourceStorage
     {
         $storage = $this->storageRepository->findByUid($storageUid);
@@ -253,16 +228,24 @@ final class WriteFileTool extends AbstractTool
         return $storage;
     }
 
-    private function validateExtension(string $fileName, ResourceStorage $storage): void
+    private function validateExtension(string $fileName): void
     {
         $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
         if ($ext === '') {
             throw new ValidationException(['Filename must have an extension (e.g. .txt, .html, .json).']);
         }
 
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $sysConfig = \is_array($confVars) && \is_array($confVars['SYS'] ?? null)
+            ? $confVars['SYS']
+            : [];
+        $configuredTextExtensions = \is_string($sysConfig['textfile_ext'] ?? null)
+            ? $sysConfig['textfile_ext']
+            : 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf,yaml,yml,md,rst,json,svg';
         $textExtensions = GeneralUtility::trimExplode(
             ',',
-            $GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext'] ?? 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf,yaml,yml,md,rst,json,svg',
+            $configuredTextExtensions,
             true,
         );
 
@@ -274,7 +257,7 @@ final class WriteFileTool extends AbstractTool
         }
     }
 
-    private function ensureFolder(ResourceStorage $storage, string $folderPath): \TYPO3\CMS\Core\Resource\Folder
+    private function ensureFolder(ResourceStorage $storage, string $folderPath): Folder
     {
         if ($storage->hasFolder($folderPath)) {
             return $storage->getFolder($folderPath);
@@ -282,10 +265,22 @@ final class WriteFileTool extends AbstractTool
 
         try {
             return $storage->createFolder($folderPath);
-        } catch (InsufficientFolderAccessPermissionsException $e) {
+        } catch (InsufficientFolderAccessPermissionsException) {
             throw new ValidationException(["Permission denied: Cannot create folder \"{$folderPath}\"."]);
         } catch (ExistingTargetFolderException) {
             return $storage->getFolder($folderPath);
         }
+    }
+
+    private function getExistingFile(ResourceStorage $storage, Folder $folder, string $fileName): File
+    {
+        $file = $storage->getFileInFolder($fileName, $folder);
+        if (!$file instanceof File) {
+            throw new ValidationException([
+                "The target file \"{$fileName}\" could not be resolved as a writable TYPO3 file.",
+            ]);
+        }
+
+        return $file;
     }
 }

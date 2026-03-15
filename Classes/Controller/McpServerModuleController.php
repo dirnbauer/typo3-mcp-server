@@ -52,9 +52,6 @@ final readonly class McpServerModuleController
         // Get base URL for endpoint
         $baseUrl = $this->getBaseUrl($request);
 
-        // Generate OAuth authorization URL
-        $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
-
         // Get available tools
         $tools = [];
         foreach ($this->toolRegistry->getTools() as $tool) {
@@ -66,6 +63,8 @@ final readonly class McpServerModuleController
         }
 
 
+        $endpointUrl = $baseUrl . '/mcp';
+
         // Generate mcp-remote token URL (for clients that don't support auth headers)
         $mcpRemoteUrl = $this->generateMcpRemoteUrl($baseUrl, $tokens);
 
@@ -76,6 +75,7 @@ final readonly class McpServerModuleController
         // Check if any workspace exists
         $hasWorkspace = $this->hasAnyWorkspace();
         $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
+        $moduleOptions = $this->getModuleOptions($backendUser);
 
         // Detect if the server is running on localhost
         $isLocalhost = $this->isLocalhostUrl($baseUrl);
@@ -89,8 +89,8 @@ final readonly class McpServerModuleController
         // Prepare template variables
         $templateVariables = [
             'tokens' => $tokens,
-            'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
+            'endpointUrl' => $endpointUrl,
             'tools' => $tools,
             'username' => \is_string($backendUser->user['username'] ?? null) ? $backendUser->user['username'] : 'unknown',
             'userId' => $userId,
@@ -102,6 +102,15 @@ final readonly class McpServerModuleController
             'isLocalhost' => $isLocalhost,
             'createWorkspaceUrl' => $createWorkspaceUrl,
             'workspaceInfo' => $workspaceInfo,
+            'moduleOptions' => $moduleOptions,
+            'cursorInstallUrl' => $this->buildCursorInstallUrl($this->getSiteName(), $endpointUrl),
+            'cursorConfigJson' => $this->buildRemoteClientConfigJson($this->getSiteName(), $endpointUrl),
+            'claudeCliCommand' => $this->buildClaudeCliCommand($this->getSiteName(), $endpointUrl),
+            'localCliConfigJson' => $this->buildLocalCliConfigJson($this->getSiteName()),
+            'mcpRemoteConfigJson' => $this->buildMcpRemoteConfigJson($this->getSiteName(), $mcpRemoteUrl['baseUrl']),
+            'canShowAdvancedSection' => $moduleOptions['showTokenManagement']
+                || $moduleOptions['showAlternativeConnectionOptions']
+                || $moduleOptions['showAdvancedExamples'],
         ];
 
         // Include JavaScript for copy functionality
@@ -112,7 +121,7 @@ final readonly class McpServerModuleController
 
         // Assign variables to ModuleTemplate and render
         $moduleTemplate->assignMultiple($templateVariables);
-        $moduleTemplate->setTitle('MCP Server Configuration');
+        $moduleTemplate->setTitle('Connect MCP Clients');
 
         return $moduleTemplate->renderResponse('McpServerModule');
     }
@@ -165,7 +174,7 @@ final readonly class McpServerModuleController
                     'message' => 'Token not found or access denied',
                 ], 404);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to revoke the token right now.',
@@ -199,7 +208,7 @@ final readonly class McpServerModuleController
                     'message' => 'No tokens found to revoke',
                 ], 404);
             }
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to revoke tokens right now.',
@@ -279,7 +288,7 @@ final readonly class McpServerModuleController
                 'tokens' => $formattedTokens,
             ]);
 
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to load tokens right now.',
@@ -447,6 +456,7 @@ final readonly class McpServerModuleController
 
             $requestData = $this->getRequestData($parsedBody);
             $clientType = $requestData['clientType'] ?? 'mcp-remote token';
+            $replaceExisting = ($requestData['replaceExisting'] ?? '') === '1';
 
             // Validate client type
             $allowedClientTypes = ['mcp-remote token', 'n8n token', 'manus token'];
@@ -467,11 +477,15 @@ final readonly class McpServerModuleController
                 }
             }
 
-            if ($tokenExists) {
+            if ($tokenExists && !$replaceExisting) {
                 return new JsonResponse([
                     'success' => false,
                     'message' => \sprintf('You already have a %s. Please revoke it first if you want to create a new one.', $clientType),
                 ], 400);
+            }
+
+            if ($tokenExists && $replaceExisting) {
+                $this->oauthService->revokeUserTokensByClientName($userId, $clientType);
             }
 
             // Create new token for the specified client type
@@ -479,11 +493,12 @@ final readonly class McpServerModuleController
 
             return new JsonResponse([
                 'success' => true,
-                'message' => \sprintf('%s created successfully', $clientType),
+                'message' => \sprintf('%s created successfully. Copy it now because it will not be shown again.', $clientType),
                 'token' => $token,
+                'clientType' => $clientType,
             ]);
 
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to create a token right now.',
@@ -510,6 +525,156 @@ final readonly class McpServerModuleController
         }
 
         return $result;
+    }
+
+    /**
+     * @return array{
+     *   showAlternativeConnectionOptions: bool,
+     *   showAdvancedExamples: bool,
+     *   showTokenManagement: bool,
+     *   allowLocalChatbotConnection: bool,
+     *   allowMcpRemoteBridge: bool
+     * }
+     */
+    private function getModuleOptions(BackendUserAuthentication $backendUser): array
+    {
+        return [
+            'showAlternativeConnectionOptions' => $this->getUserTsConfigBool(
+                $backendUser,
+                'options.tx_mcpserver.module.showAlternativeConnectionOptions',
+                false,
+            ),
+            'showAdvancedExamples' => $this->getUserTsConfigBool(
+                $backendUser,
+                'options.tx_mcpserver.module.showAdvancedExamples',
+                false,
+            ),
+            'showTokenManagement' => $this->getUserTsConfigBool(
+                $backendUser,
+                'options.tx_mcpserver.module.showTokenManagement',
+                true,
+            ),
+            'allowLocalChatbotConnection' => $this->getUserTsConfigBool(
+                $backendUser,
+                'options.tx_mcpserver.module.allowLocalChatbotConnection',
+                true,
+            ),
+            'allowMcpRemoteBridge' => $this->getUserTsConfigBool(
+                $backendUser,
+                'options.tx_mcpserver.module.allowMcpRemoteBridge',
+                false,
+            ),
+        ];
+    }
+
+    private function getUserTsConfigBool(
+        BackendUserAuthentication $backendUser,
+        string $path,
+        bool $default,
+    ): bool {
+        $value = $this->getUserTsConfigValue($backendUser, $path);
+        if ($value === null) {
+            return $default;
+        }
+
+        return !\in_array(strtolower($value), ['0', 'false', 'off', 'no'], true);
+    }
+
+    private function getUserTsConfigValue(
+        BackendUserAuthentication $backendUser,
+        string $path,
+    ): ?string {
+        $tsConfig = $backendUser->getTSConfig();
+        $segments = GeneralUtility::trimExplode('.', $path, true);
+        $current = $tsConfig;
+
+        foreach ($segments as $index => $segment) {
+            $key = $index === \count($segments) - 1 ? $segment : $segment . '.';
+            if (!\is_array($current) || !array_key_exists($key, $current)) {
+                return null;
+            }
+            $current = $current[$key];
+        }
+
+        return \is_string($current) ? $current : null;
+    }
+
+    private function buildCursorInstallUrl(string $serverName, string $endpointUrl): string
+    {
+        $config = ['url' => $endpointUrl];
+        $encodedConfig = base64_encode($this->encodeJson($config));
+
+        return 'cursor://anysphere.cursor-deeplink/mcp/install?name='
+            . rawurlencode($serverName)
+            . '&config='
+            . rawurlencode($encodedConfig);
+    }
+
+    private function buildRemoteClientConfigJson(string $serverName, string $endpointUrl): string
+    {
+        return $this->encodePrettyJson([
+            'mcpServers' => [
+                $serverName => [
+                    'url' => $endpointUrl,
+                ],
+            ],
+        ]);
+    }
+
+    private function buildLocalCliConfigJson(string $serverName): string
+    {
+        return $this->encodePrettyJson([
+            'mcpServers' => [
+                $serverName => [
+                    'command' => 'php',
+                    'args' => ['vendor/bin/typo3', 'mcp:server'],
+                ],
+            ],
+        ]);
+    }
+
+    private function buildClaudeCliCommand(string $serverName, string $endpointUrl): string
+    {
+        return sprintf(
+            'claude mcp add --transport http %s %s',
+            escapeshellarg($serverName),
+            escapeshellarg($endpointUrl),
+        );
+    }
+
+    private function buildMcpRemoteConfigJson(string $serverName, string $endpointUrl): string
+    {
+        return $this->encodePrettyJson([
+            'mcpServers' => [
+                $serverName => [
+                    'command' => 'npx',
+                    'args' => ['mcp-remote', $endpointUrl],
+                    'env' => [
+                        'MCP_AUTH_HEADER' => 'Bearer YOUR_CREATED_TOKEN',
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function encodeJson(array $config): string
+    {
+        $json = json_encode($config, JSON_UNESCAPED_SLASHES);
+
+        return \is_string($json) ? $json : '{}';
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function encodePrettyJson(array $config): string
+    {
+        $json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        return \is_string($json) ? $json : '{}';
     }
 
 }

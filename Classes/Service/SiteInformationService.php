@@ -92,7 +92,7 @@ final class SiteInformationService
             // Get the appropriate language
             try {
                 $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // Fall back to default language if specified language not found
                 $language = $site->getDefaultLanguage();
             }
@@ -124,7 +124,7 @@ final class SiteInformationService
             }
 
             return $generatedUrl;
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Continue to fallback strategies
         }
 

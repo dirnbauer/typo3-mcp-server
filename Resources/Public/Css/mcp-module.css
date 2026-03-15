@@ -1,3 +1,192 @@
+.mcp-module {
+    --mcp-border: rgba(17, 24, 39, 0.1);
+    --mcp-surface: #f7f9fc;
+    --mcp-surface-strong: #eef3f8;
+    --mcp-accent: #0a66c2;
+    --mcp-accent-soft: rgba(10, 102, 194, 0.08);
+}
+
+.mcp-hero-card {
+    overflow: hidden;
+}
+
+.mcp-hero-header {
+    align-items: center;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.mcp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.mcp-server-row,
+.mcp-client-picker-header,
+.mcp-token-result-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+}
+
+.mcp-server-row {
+    background: linear-gradient(180deg, #ffffff 0%, var(--mcp-surface) 100%);
+    border: 1px solid var(--mcp-border);
+    border-radius: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.mcp-server-meta {
+    align-items: flex-start;
+    display: flex;
+    flex: 1 1 280px;
+    gap: 1rem;
+}
+
+.mcp-server-input-group {
+    flex: 2 1 420px;
+}
+
+.mcp-step-badge {
+    align-items: center;
+    background: var(--mcp-accent-soft);
+    border: 1px solid rgba(10, 102, 194, 0.18);
+    border-radius: 999px;
+    color: var(--mcp-accent);
+    display: inline-flex;
+    font-size: 0.875rem;
+    font-weight: 700;
+    height: 2rem;
+    justify-content: center;
+    min-width: 2rem;
+}
+
+.mcp-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+
+.mcp-endpoint-health {
+    display: grid;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+}
+
+.mcp-client-picker {
+    background: var(--mcp-surface);
+    border: 1px solid var(--mcp-border);
+    border-radius: 18px;
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+}
+
+.mcp-client-tabs {
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.mcp-client-tabs .nav-link {
+    background: #fff;
+    border: 1px solid var(--mcp-border);
+    border-radius: 999px;
+    color: #1f2937;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+}
+
+.mcp-client-tabs .nav-link.active {
+    background: #1f2937;
+    border-color: #1f2937;
+    color: #fff;
+}
+
+.mcp-client-content {
+    background: #fff;
+    border: 1px solid var(--mcp-border);
+    border-radius: 18px;
+    min-height: 320px;
+    padding: 1.25rem;
+}
+
+.mcp-client-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.mcp-client-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.mcp-client-status {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.mcp-token-result {
+    border-radius: 16px;
+}
+
+.mcp-advanced {
+    border: 1px solid var(--mcp-border);
+    border-radius: 18px;
+    margin-top: 1rem;
+    overflow: hidden;
+}
+
+.mcp-advanced > summary {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    list-style: none;
+}
+
+.mcp-advanced > summary::-webkit-details-marker {
+    display: none;
+}
+
+.mcp-advanced-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    margin-bottom: 1rem;
+}
+
+.mcp-advanced-card {
+    border: 1px solid var(--mcp-border);
+    border-radius: 16px;
+    margin-bottom: 1rem;
+}
+
+.mcp-advanced-list {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.mcp-code-block {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.825rem;
+    min-height: 8rem;
+    white-space: pre;
+}
+
+.mcp-inline-pre {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 8px;
+}
+
 .endpoint-status {
     display: inline-block;
     position: relative;
@@ -5,13 +194,13 @@
 }
 
 .endpoint-status .status-icon {
+    cursor: help;
     display: inline-block;
-    width: 20px;
     height: 20px;
     line-height: 20px;
     text-align: center;
     vertical-align: middle;
-    cursor: help;
+    width: 20px;
 }
 
 .endpoint-status.checking .status-icon::after {
@@ -35,36 +224,51 @@
 }
 
 .endpoint-status .status-tooltip {
-    display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    transform: translateX(0);
-    margin-bottom: 0.5rem;
-    z-index: 1000;
     background-color: #212529 !important;
-    color: #fff !important;
-    padding: 0.5rem 0.75rem !important;
     border-radius: 0.25rem;
+    bottom: 100%;
+    color: #fff !important;
+    display: none;
     font-size: 0.875rem;
-    white-space: nowrap;
-    min-width: 200px;
+    left: 0;
+    margin-bottom: 0.5rem;
+    min-width: 220px;
+    padding: 0.5rem 0.75rem !important;
+    position: absolute;
     text-align: center;
+    transform: translateX(0);
+    white-space: normal;
+    z-index: 1000;
 }
 
 .endpoint-status .status-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 10px;
-    transform: translateX(0);
-    width: 0;
-    height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
     border-top: 6px solid #212529;
+    content: '';
+    height: 0;
+    left: 10px;
+    position: absolute;
+    top: 100%;
+    transform: translateX(0);
+    width: 0;
 }
 
 .endpoint-status:hover .status-tooltip {
     display: block;
+}
+
+@media (max-width: 767px) {
+    .mcp-hero-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .mcp-hero-actions {
+        flex-direction: column;
+    }
+
+    .mcp-client-content {
+        min-height: 0;
+    }
 }

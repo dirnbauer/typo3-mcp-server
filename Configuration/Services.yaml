@@ -50,8 +50,3 @@ services:
   # Explicitly configure the module controller
   Hn\McpServer\Controller\McpServerModuleController:
     public: true
-    arguments:
-      $moduleTemplateFactory: '@TYPO3\CMS\Backend\Template\ModuleTemplateFactory'
-      $toolRegistry: '@Hn\McpServer\MCP\ToolRegistry'
-      $pageRenderer: '@TYPO3\CMS\Core\Page\PageRenderer'
-      $oauthService: '@Hn\McpServer\Service\OAuthService'

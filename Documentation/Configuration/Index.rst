@@ -7,35 +7,136 @@ Configuration
 Backend module
 ==============
 
-The MCP Server module is available under :guilabel:`User > MCP Server`
-in the TYPO3 backend. From there you can:
+The MCP Server module is available under :guilabel:`User > MCP Server` in the
+TYPO3 backend.
+
+The module is the main control center for editors and integrators. From there
+you can:
 
 - View the MCP endpoint URL
-- Register OAuth clients
-- Manage access tokens
-- Test MCP tools directly
+- Review remote and local client setup instructions
+- Create and revoke access tokens for supported client types
+- Inspect workspace context information
 
 OAuth setup
 ===========
 
 The extension supports OAuth 2.1 with PKCE for authentication. Dynamic
-client registration is available at the registration endpoint.
+client discovery is exposed through the well-known endpoints used by MCP
+clients.
 
-Access tokens are stored as SHA-256 hashes in the database and expire
-after 30 days.
+Access tokens are:
+
+- stored as hashes in the database
+- scoped to the backend user that created them
+- revocable through the backend module
 
 Workspace behavior
 ==================
 
-All write operations happen in a TYPO3 workspace:
+All record tools are workspace-aware.
 
-- If the user already has an active workspace, it is used
-- Otherwise, the first writable workspace is selected
-- If no workspace exists, one is created automatically
-- Tools accept an optional ``workspace_id`` parameter to target a specific workspace
-- Use the ``list_workspaces`` tool to discover available workspaces
+Default behavior:
+
+- if the user is already in a writable workspace, that workspace is used
+- otherwise the first writable workspace is selected
+- if needed, the extension can create an MCP workspace for the user
+
+Explicit behavior:
+
+- tools that operate on records accept ``workspace_id``
+- clients can use ``ListWorkspaces`` to inspect available workspaces
+- clients only need the public workspace ID, not TYPO3's internal versioning
+  details
 
 .. important::
 
-   Live data is never directly edited. The workspace acts as a staging area.
-   Changes must be published by an editor through the TYPO3 backend.
+   Live records are not directly edited through the record tools.
+
+File harness configuration
+==========================
+
+The extension uses a dedicated file harness so MCP file tools do not receive
+unrestricted ``fileadmin`` access.
+
+By default, the harness root is:
+
+.. code-block:: text
+
+   1:/mcp/
+
+This usually maps to:
+
+.. code-block:: text
+
+   fileadmin/mcp/
+
+Extension configuration values
+==============================
+
+.. confval:: fileHarnessRoot
+   :name: ext-mcp-server-fileHarnessRoot
+   :type: string
+   :default: '1:/mcp/'
+   :required: false
+
+   Combined folder identifier that defines the MCP file harness root.
+
+   All MCP file tools are restricted to this root. Use a combined identifier,
+   for example ``1:/mcp/`` or ``1:/ai-content/``.
+
+.. confval:: workspaceUploadSubfolders
+   :name: ext-mcp-server-workspaceUploadSubfolders
+   :type: boolean
+   :default: true
+   :required: false
+
+   When enabled, ``UploadFile`` stores uploads below workspace-specific
+   subfolders inside the harness root.
+
+   Example:
+
+   .. code-block:: text
+
+      1:/mcp/workspaces/ws-3/images/
+
+Why the harness matters
+=======================
+
+The harness improves safety and maintainability:
+
+- AI-generated files stay inside a known directory
+- cleanup is easier
+- file operations become auditable and predictable
+- workspace upload folders reduce collisions between draft and live-oriented
+  assets
+
+File safety notes
+=================
+
+.. warning::
+
+   TYPO3 does not workspace-version physical files.
+
+This remains true even with the harness:
+
+- uploaded files exist immediately once stored
+- text file overwrites change the physical file immediately
+- record references and metadata workflows can still be staged in TYPO3
+  workspaces
+
+Use the harness and workspace upload folders to reduce risk, not to simulate
+physical file versioning.
+
+Configuration checklist
+=======================
+
+Use this checklist when rolling out the extension:
+
+- confirm the TYPO3 base URL is correct for remote MCP clients
+- verify backend user permissions and page mounts
+- verify workspace access
+- review the configured file harness root
+- decide whether workspace upload subfolders should stay enabled
+- test remote OAuth login with your target MCP client
+

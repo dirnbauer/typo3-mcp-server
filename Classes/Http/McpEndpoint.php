@@ -76,13 +76,13 @@ final readonly class McpEndpoint
                 return $this->createUnauthorizedResponse('Missing authentication token');
             }
 
-            $this->logger->debug('Token received', ['tokenPrefix' => substr($token, 0, 20)]);
+            $this->logger->debug('Token received for MCP request');
 
             $oauthService = GeneralUtility::makeInstance(OAuthService::class);
             $tokenInfo = $oauthService->validateToken($token, $request);
 
             if (!$this->isValidTokenInfo($tokenInfo)) {
-                $this->logger->warning('Token validation failed', ['tokenPrefix' => substr($token, 0, 20)]);
+                $this->logger->warning('Token validation failed for MCP request');
                 return $this->createUnauthorizedResponse('Invalid or expired token');
             }
 
@@ -317,8 +317,9 @@ final readonly class McpEndpoint
 
         $response = GeneralUtility::makeInstance(Response::class)
             ->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Origin', $this->resolveAuthTestOrigin($request))
             ->withHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type')
+            ->withHeader('Vary', 'Origin')
             ->withStatus(200);
 
         $responseData = [
@@ -354,5 +355,22 @@ final readonly class McpEndpoint
     {
         $json = json_encode($data, $flags);
         return \is_string($json) ? $json : '{}';
+    }
+
+    private function resolveAuthTestOrigin(ServerRequestInterface $request): string
+    {
+        $origin = $request->getHeaderLine('Origin');
+        if ($origin !== '') {
+            return $origin;
+        }
+
+        $uri = $request->getUri();
+        $resolvedOrigin = $uri->getScheme() . '://' . $uri->getHost();
+        $port = $uri->getPort();
+        if ($port !== null && !\in_array($port, [80, 443], true)) {
+            $resolvedOrigin .= ':' . $port;
+        }
+
+        return $resolvedOrigin;
     }
 }

@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 use Exception;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\McpFileHarnessService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\Connection;
@@ -21,6 +22,7 @@ final class ReadFileMetadataTool extends AbstractTool
     public function __construct(
         private readonly ResourceFactory $resourceFactory,
         private readonly ConnectionPool $connectionPool,
+        private readonly McpFileHarnessService $fileHarnessService,
     ) {}
 
     /**
@@ -29,9 +31,10 @@ final class ReadFileMetadataTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Read detailed metadata for a file by UID or combined identifier. '
+            'description' => 'Read detailed metadata for a file in the MCP file harness by UID or path. '
+                . 'All access is restricted to the configured MCP harness root (default: fileadmin/mcp/). '
                 . 'Returns title, description, alternative text, categories, dimensions, and more. '
-                . 'Use browse_files to find file UIDs first.',
+                . 'Use browse_files to inspect the harness first.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -41,7 +44,9 @@ final class ReadFileMetadataTool extends AbstractTool
                     ],
                     'identifier' => [
                         'type' => 'string',
-                        'description' => 'Combined identifier, e.g. "1:/user_upload/photo.jpg". Use uid OR identifier, not both.',
+                        'description' => 'File path inside the MCP harness. '
+                            . 'Use a relative path like "images/photo.jpg" or an absolute combined identifier inside the harness such as "1:/mcp/images/photo.jpg". '
+                            . 'Use uid OR identifier, not both.',
                     ],
                 ],
                 'required' => [],
@@ -69,7 +74,8 @@ final class ReadFileMetadataTool extends AbstractTool
             if ($uid !== null) {
                 $file = $this->resourceFactory->getFileObject($uid);
             } else {
-                $file = $this->resourceFactory->getFileObjectFromCombinedIdentifier($identifier);
+                $resolved = $this->fileHarnessService->resolveFileTarget($identifier);
+                $file = $this->resourceFactory->getFileObjectFromCombinedIdentifier($resolved['combinedIdentifier']);
             }
         } catch (Exception $e) {
             throw new ValidationException(['File not found: ' . $e->getMessage()]);
@@ -78,6 +84,8 @@ final class ReadFileMetadataTool extends AbstractTool
         if (!$file instanceof File && !$file instanceof ProcessedFile) {
             throw new ValidationException(['File could not be loaded']);
         }
+
+        $this->fileHarnessService->assertFileAllowed($file);
 
         $props = $file->getProperties();
         $metadataFile = $file instanceof ProcessedFile ? $file->getOriginalFile() : $file;

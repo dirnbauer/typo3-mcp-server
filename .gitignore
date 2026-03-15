@@ -12,3 +12,5 @@
 .DS_Store
 .php-cs-fixer.cache
 Documentation-GENERATED-temp
+node_modules
+npm-debug.log*

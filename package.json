@@ -1,0 +1,16 @@
+{
+  "name": "typo3-mcp-server-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "remotion:studio": "remotion studio remotion/index.ts",
+    "remotion:render": "remotion render remotion/index.ts MCPServerFeatureTour Documentation/Media/typo3-mcp-server-feature-tour.mp4",
+    "remotion:poster": "remotion still remotion/index.ts MCPServerFeatureTour Documentation/Images/FeatureTourPoster.png --frame 70"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.435",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.435"
+  }
+}

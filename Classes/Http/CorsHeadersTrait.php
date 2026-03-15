@@ -18,7 +18,6 @@ trait CorsHeadersTrait
      */
     private function addCorsHeaders(ResponseInterface $response, ?string $origin = null): ResponseInterface
     {
-        // Get the actual origin from the request, or use a safe default
         $allowedOrigin = $origin ?: $this->getAllowedOrigin();
 
         return $response
@@ -26,6 +25,7 @@ trait CorsHeadersTrait
             ->withHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
             ->withHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
             ->withHeader('Access-Control-Allow-Credentials', 'true')
+            ->withHeader('Vary', 'Origin')
             ->withHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
     }
 
@@ -36,11 +36,24 @@ trait CorsHeadersTrait
     {
         $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
         if ($request instanceof ServerRequestInterface && $request->hasHeader('Origin')) {
-            return $request->getHeaderLine('Origin');
+            $origin = $request->getHeaderLine('Origin');
+            if ($origin !== '') {
+                return $origin;
+            }
         }
 
-        // Fallback for non-CORS requests
-        return '*';
+        if ($request instanceof ServerRequestInterface) {
+            $uri = $request->getUri();
+            $origin = $uri->getScheme() . '://' . $uri->getHost();
+            $port = $uri->getPort();
+            if ($port !== null && !\in_array($port, [80, 443], true)) {
+                $origin .= ':' . $port;
+            }
+
+            return $origin;
+        }
+
+        return 'null';
     }
 
     /**

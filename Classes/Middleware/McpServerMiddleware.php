@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Middleware;
 
+use TYPO3\CMS\Core\Crypto\HashAlgo;
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Http\OAuthAuthorizeEndpoint;
 use Hn\McpServer\Http\OAuthAuthServerMetadataEndpoint;
@@ -126,7 +127,7 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
             return null;
         }
 
-        $expectedSignature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth');
+        $expectedSignature = GeneralUtility::makeInstance(HashService::class)->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
         if (!hash_equals($expectedSignature, $parts[1])) {
             return null;
         }
