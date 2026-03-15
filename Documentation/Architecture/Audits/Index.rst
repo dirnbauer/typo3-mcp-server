@@ -15,3 +15,9 @@ TYPO3 v13/v14 update and cleanup work.
    2026-03-13-security-audit
    2026-03-13-testing-audit
    2026-03-13-docs-audit
+   2026-03-15-extension-upgrade-audit
+   2026-03-15-conformance-audit
+   2026-03-15-typo3-security-audit
+   2026-03-15-security-audit
+   2026-03-15-testing-audit
+   2026-03-15-docs-audit
