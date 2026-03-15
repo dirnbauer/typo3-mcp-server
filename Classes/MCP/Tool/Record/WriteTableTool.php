@@ -1343,6 +1343,9 @@ final class WriteTableTool extends AbstractRecordTool
 
                 $refData = [
                     'uid_local' => $fileUid,
+                    'uid_foreign' => $parentId,
+                    'tablenames' => $parentTable,
+                    'fieldname' => $fieldName,
                     'pid' => $pid,
                     'sorting_foreign' => ((int) $index + 1) * 256,
                 ];
