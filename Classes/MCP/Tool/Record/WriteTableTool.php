@@ -1299,25 +1299,21 @@ final class WriteTableTool extends AbstractRecordTool
     }
 
     /**
-     * Process file relations by creating sys_file_reference records in the dataMap.
+     * Process file relations by creating sys_file_reference records.
      *
      * Accepts an array of sys_file UIDs (or objects with uid + metadata) and creates
-     * NEW* sys_file_reference entries. Sets the file field value on the parent record
-     * to a comma-separated list of NEW* IDs so DataHandler wires everything correctly.
+     * sys_file_reference entries. Sets the file field value on the parent record
+     * to a comma-separated list of reference UIDs so DataHandler wires everything.
      *
-     * @param array<string, array<int|string, array<string, mixed>>> $dataMap DataMap to add sys_file_reference entries to
      * @param string $parentTable Parent table name (e.g. 'tt_content')
-     * @param string $parentId Parent record ID (NEW* for creates, numeric for updates)
-     * @param int $pid Page ID for the new sys_file_reference records
-     * @param array<string, array{config: array<string, mixed>, value: mixed}> $fileRelations Extracted file relations
-     */
-    /**
      * @param int $liveParentUid The LIVE UID of the parent record (not workspace version).
      *                           sys_file_reference.uid_foreign always points to the live record.
      * @param int $parentUidForUpdate The UID to use when updating the parent's count field.
      *                                In live workspace this equals $liveParentUid.
      *                                In a workspace, this should be the workspace version UID
      *                                so DataHandler creates a proper workspace overlay.
+     * @param int $pid Page ID for the new sys_file_reference records
+     * @param array<string, array{config: array<string, mixed>, value: mixed}> $fileRelations Extracted file relations
      */
     protected function processFileRelations(
         string $parentTable,

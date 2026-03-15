@@ -34,24 +34,23 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     }
 
     /**
-     * Test that file type fields are not accessible
+     * Test that file type fields are accessible (file handling is supported via dedicated file tools)
      */
-    public function testFileFieldsAreNotAccessible(): void
+    public function testFileFieldsAreAccessible(): void
     {
-        // The 'media' field on pages table is type='file'
         $canAccess = $this->service->canAccessField('pages', 'media');
 
-        $this->assertFalse($canAccess, 'File fields should not be accessible');
+        $this->assertTrue($canAccess, 'File fields should be accessible (handled via WriteTable file relations)');
     }
 
     /**
-     * Test that file fields are hidden from available fields
+     * Test that file fields are included in available fields
      */
-    public function testFileFieldsAreHiddenFromSchema(): void
+    public function testFileFieldsAreInSchema(): void
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        $this->assertArrayNotHasKey('media', $fields, 'File field "media" should not be in available fields');
+        $this->assertArrayHasKey('media', $fields, 'File field "media" should be in available fields');
     }
 
     /**
@@ -65,25 +64,21 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     }
 
     /**
-     * Test that inline relations to sys_file_reference are filtered out
+     * Test that file relations (assets on tt_content) are accessible.
+     * sys_file_reference is workspace-versioned and needed for file attachments.
      */
-    public function testInlineRelationsToSysFileReferenceAreHidden(): void
+    public function testFileRelationsAreAccessible(): void
     {
-        // TYPO3 v13/v14 model this relation differently, but access should stay blocked in both.
         $this->assertArrayHasKey('assets', $GLOBALS['TCA']['tt_content']['columns'] ?? []);
         $fieldConfig = $GLOBALS['TCA']['tt_content']['columns']['assets'] ?? [];
         $config = \is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
         $fieldType = \is_string($config['type'] ?? null) ? $config['type'] : '';
-        $foreignTable = \is_string($config['foreign_table'] ?? null) ? $config['foreign_table'] : '';
 
         $this->assertContains($fieldType, ['file', 'inline']);
-        if ($fieldType === 'inline') {
-            $this->assertSame('sys_file_reference', $foreignTable);
-        }
 
         $canAccess = $this->service->canAccessField('tt_content', 'assets');
 
-        $this->assertFalse($canAccess, 'Relations to sys_file_reference should not be accessible');
+        $this->assertTrue($canAccess, 'File relation fields should be accessible for file handling');
     }
 
     /**
@@ -116,42 +111,29 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     }
 
     /**
-     * Test that available fields properly filters file fields
+     * Test that available fields include both regular and file fields
      */
-    public function testAvailableFieldsFiltersFileFields(): void
+    public function testAvailableFieldsIncludeFileFields(): void
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        // Check that normal fields are present
         $this->assertArrayHasKey('title', $fields, 'Title field should be available');
         $this->assertArrayHasKey('description', $fields, 'Description field should be available');
-
-        // Check that file field is not present
-        $this->assertArrayNotHasKey('media', $fields, 'Media file field should not be available');
+        $this->assertArrayHasKey('media', $fields, 'Media file field should be available');
     }
 
     /**
-     * Test that tt_content fields properly filter file/inline fields
+     * Test that tt_content fields include both regular and file fields
      */
-    public function testTtContentFieldsFilterFileAndInlineRelations(): void
+    public function testTtContentFieldsIncludeFileRelations(): void
     {
-        $fields = $this->service->getAvailableFields('tt_content', 'text');
+        $fields = $this->service->getAvailableFields('tt_content', 'textmedia');
 
-        // Check that normal fields are present
         $this->assertArrayHasKey('header', $fields, 'Header field should be available');
         $this->assertArrayHasKey('bodytext', $fields, 'Bodytext field should be available');
 
-        // Check that assets field (inline to sys_file_reference) is not present
         if (isset($GLOBALS['TCA']['tt_content']['columns']['assets'])) {
-            $this->assertArrayNotHasKey('assets', $fields, 'Assets field (inline to sys_file_reference) should not be available');
-        }
-
-        // Check that image field (if type=file) is not present
-        if (isset($GLOBALS['TCA']['tt_content']['columns']['image'])) {
-            $imageConfig = $GLOBALS['TCA']['tt_content']['columns']['image'] ?? [];
-            if (($imageConfig['config']['type'] ?? '') === 'file') {
-                $this->assertArrayNotHasKey('image', $fields, 'Image file field should not be available');
-            }
+            $this->assertArrayHasKey('assets', $fields, 'Assets field should be available for file handling');
         }
     }
 }
