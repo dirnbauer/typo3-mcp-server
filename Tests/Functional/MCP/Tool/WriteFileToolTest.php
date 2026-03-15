@@ -146,4 +146,85 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         $this->assertSame($jsonContent, $storage->getFile('/user_upload/config.json')->getContents());
     }
+
+    #[Test]
+    public function setsMetadataOnNewFile(): void
+    {
+        $tool = $this->get(WriteFileTool::class);
+        $result = $tool->execute([
+            'path' => '1:/user_upload/documented.txt',
+            'content' => 'File with metadata',
+            'metadata' => [
+                'title' => 'My Document',
+                'description' => 'A test document created via MCP',
+                'alternative' => 'Document alt text',
+            ],
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode($result->content[0]->text, true);
+        $this->assertSame('created', $json['action']);
+        $this->assertSame('My Document', $json['metadata']['title']);
+
+        $storage = $this->get(StorageRepository::class)->findByUid(1);
+        $file = $storage->getFile('/user_upload/documented.txt');
+        $meta = $file->getMetaData()->get();
+        $this->assertSame('My Document', $meta['title']);
+        $this->assertSame('A test document created via MCP', $meta['description']);
+        $this->assertSame('Document alt text', $meta['alternative']);
+    }
+
+    #[Test]
+    public function updatesMetadataOnExistingFileWithoutChangingContent(): void
+    {
+        $tool = $this->get(WriteFileTool::class);
+
+        $tool->execute([
+            'path' => '1:/user_upload/keep-content.txt',
+            'content' => 'Original content stays',
+        ]);
+
+        $result = $tool->execute([
+            'path' => '1:/user_upload/keep-content.txt',
+            'metadata' => [
+                'title' => 'Updated Title',
+                'description' => 'Added later',
+            ],
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode($result->content[0]->text, true);
+        $this->assertSame('metadata_updated', $json['action']);
+        $this->assertSame('Updated Title', $json['metadata']['title']);
+
+        $storage = $this->get(StorageRepository::class)->findByUid(1);
+        $file = $storage->getFile('/user_upload/keep-content.txt');
+        $this->assertSame('Original content stays', $file->getContents());
+        $this->assertSame('Updated Title', $file->getMetaData()->get()['title']);
+    }
+
+    #[Test]
+    public function metadataOnlyRejectsNonexistentFile(): void
+    {
+        $tool = $this->get(WriteFileTool::class);
+        $result = $tool->execute([
+            'path' => '1:/user_upload/does-not-exist.txt',
+            'metadata' => ['title' => 'Nope'],
+        ]);
+
+        $this->assertTrue($result->isError);
+        $this->assertStringContainsString('not found', $result->content[0]->text);
+    }
+
+    #[Test]
+    public function rejectsCallWithoutContentOrMetadata(): void
+    {
+        $tool = $this->get(WriteFileTool::class);
+        $result = $tool->execute([
+            'path' => '1:/user_upload/empty-call.txt',
+        ]);
+
+        $this->assertTrue($result->isError);
+        $this->assertStringContainsString('content', $result->content[0]->text);
+    }
 }

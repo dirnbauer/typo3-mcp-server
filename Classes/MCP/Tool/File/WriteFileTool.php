@@ -10,6 +10,7 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
@@ -23,6 +24,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class WriteFileTool extends AbstractTool
 {
+    private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
+
     public function __construct(
         private readonly StorageRepository $storageRepository,
         private readonly ResourceFactory $resourceFactory,
@@ -34,28 +37,39 @@ final class WriteFileTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Create or overwrite a text-based file in TYPO3 file storage (fileadmin). '
+            'description' => 'Create or overwrite a text-based file in TYPO3 file storage (fileadmin), and/or update its metadata. '
                 . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .svg, .yaml, .md. '
                 . 'Binary file uploads (images, PDFs, etc.) are NOT supported. '
+                . 'Can also update metadata (title, description, alt text, copyright) on any existing file — including images — without changing the file content. '
                 . 'WARNING: Physical files are NOT workspace-versioned — changes take effect immediately across all workspaces.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Target file path including storage ID, e.g. "1:/user_upload/data.json" or "1:/templates/header.html". '
-                            . 'Format: "<storageId>:/<folder/path/filename.ext>". Parent folders are created automatically.',
+                        'description' => 'Target file path including storage ID, e.g. "1:/user_upload/data.json" or "1:/images/photo.jpg". '
+                            . 'Format: "<storageId>:/<folder/path/filename.ext>". Parent folders are created automatically when writing content.',
                     ],
                     'content' => [
                         'type' => 'string',
-                        'description' => 'The text content to write to the file.',
+                        'description' => 'The text content to write to the file. Omit to only update metadata on an existing file.',
                     ],
                     'overwrite' => [
                         'type' => 'boolean',
                         'description' => 'If true, overwrite an existing file. If false (default), fail when the file already exists.',
                     ],
+                    'metadata' => [
+                        'type' => 'object',
+                        'description' => 'File metadata to set or update. Works on new files and existing files (including images).',
+                        'properties' => [
+                            'title' => ['type' => 'string', 'description' => 'File title'],
+                            'description' => ['type' => 'string', 'description' => 'File description'],
+                            'alternative' => ['type' => 'string', 'description' => 'Alternative text (used as alt attribute for images)'],
+                            'copyright' => ['type' => 'string', 'description' => 'Copyright notice'],
+                        ],
+                    ],
                 ],
-                'required' => ['path', 'content'],
+                'required' => ['path'],
             ],
             'annotations' => [
                 'readOnlyHint' => false,
@@ -70,17 +84,26 @@ final class WriteFileTool extends AbstractTool
     protected function doExecute(array $params): CallToolResult
     {
         $path = \is_string($params['path'] ?? null) ? $params['path'] : '';
-        $content = \is_string($params['content'] ?? null) ? $params['content'] : '';
+        $content = \is_string($params['content'] ?? null) ? $params['content'] : null;
         $overwrite = (bool) ($params['overwrite'] ?? false);
+        $metadata = \is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
 
         if ($path === '') {
             throw new ValidationException(['Parameter "path" is required. Format: "<storageId>:/<folder/path/filename.ext>"']);
         }
 
+        if ($content === null && empty($metadata)) {
+            throw new ValidationException(['Either "content" or "metadata" (or both) must be provided.']);
+        }
+
         $parsed = $this->parseCombinedIdentifier($path);
         $storage = $this->resolveStorage($parsed['storageUid']);
-        $this->validateExtension($parsed['fileName'], $storage);
 
+        if ($content === null) {
+            return $this->updateMetadataOnly($storage, $parsed, $metadata);
+        }
+
+        $this->validateExtension($parsed['fileName'], $storage);
         $folder = $this->ensureFolder($storage, $parsed['folderPath']);
 
         if ($folder->hasFile($parsed['fileName'])) {
@@ -92,12 +115,11 @@ final class WriteFileTool extends AbstractTool
             $existingFile = $storage->getFileInFolder($parsed['fileName'], $folder);
             $existingFile->setContents($content);
 
-            return new CallToolResult([new TextContent(json_encode([
-                'action' => 'overwritten',
-                'identifier' => $existingFile->getCombinedIdentifier(),
-                'uid' => $existingFile->getUid(),
-                'size' => $existingFile->getSize(),
-            ], JSON_UNESCAPED_SLASHES) ?: '{}')]);
+            if (!empty($metadata)) {
+                $this->applyMetadata($existingFile, $metadata);
+            }
+
+            return $this->buildResult('overwritten', $existingFile, $metadata);
         }
 
         $tempFile = GeneralUtility::tempnam('mcp_write_');
@@ -110,12 +132,84 @@ final class WriteFileTool extends AbstractTool
             }
         }
 
-        return new CallToolResult([new TextContent(json_encode([
-            'action' => 'created',
-            'identifier' => $newFile->getCombinedIdentifier(),
-            'uid' => $newFile->getUid(),
-            'size' => $newFile->getSize(),
-        ], JSON_UNESCAPED_SLASHES) ?: '{}')]);
+        if (!empty($metadata)) {
+            $this->applyMetadata($newFile, $metadata);
+        }
+
+        return $this->buildResult('created', $newFile, $metadata);
+    }
+
+    /**
+     * @param array{storageUid: int, folderPath: string, fileName: string} $parsed
+     * @param array<string, string> $metadata
+     */
+    private function updateMetadataOnly(ResourceStorage $storage, array $parsed, array $metadata): CallToolResult
+    {
+        $folderPath = $parsed['folderPath'];
+        if (!$storage->hasFolder($folderPath)) {
+            throw new ValidationException(["Folder not found: {$parsed['storageUid']}:{$folderPath}"]);
+        }
+        $folder = $storage->getFolder($folderPath);
+
+        if (!$folder->hasFile($parsed['fileName'])) {
+            throw new ValidationException([
+                "File not found: {$parsed['storageUid']}:{$folderPath}{$parsed['fileName']}. "
+                . 'To update metadata, the file must already exist.',
+            ]);
+        }
+
+        $file = $storage->getFileInFolder($parsed['fileName'], $folder);
+        $this->applyMetadata($file, $metadata);
+
+        return $this->buildResult('metadata_updated', $file, $metadata);
+    }
+
+    /**
+     * @param array<string, string> $metadata
+     */
+    private function applyMetadata(File $file, array $metadata): void
+    {
+        $metaDataObj = $file->getMetaData();
+        foreach ($metadata as $key => $value) {
+            $metaDataObj->offsetSet($key, $value);
+        }
+        $metaDataObj->save();
+    }
+
+    /**
+     * @param array<string, string> $metadata
+     */
+    private function buildResult(string $action, File $file, array $metadata): CallToolResult
+    {
+        $result = [
+            'action' => $action,
+            'identifier' => $file->getCombinedIdentifier(),
+            'uid' => $file->getUid(),
+            'size' => $file->getSize(),
+        ];
+
+        if (!empty($metadata)) {
+            $result['metadata'] = $metadata;
+        }
+
+        return new CallToolResult([new TextContent(
+            json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+        )]);
+    }
+
+    /**
+     * @param array<mixed, mixed> $raw
+     * @return array<string, string>
+     */
+    private function sanitizeMetadata(array $raw): array
+    {
+        $clean = [];
+        foreach (self::METADATA_FIELDS as $field) {
+            if (isset($raw[$field]) && \is_string($raw[$field])) {
+                $clean[$field] = $raw[$field];
+            }
+        }
+        return $clean;
     }
 
     /**
