@@ -505,22 +505,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         // Process file relations with the resolved parent UID
         if (!empty($fileRelations)) {
-            $fileDataMap = [];
-            $this->processFileRelations($fileDataMap, $table, (string) $parentUid, $pid, $fileRelations);
-
-            if (!empty($fileDataMap)) {
-                $fileDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $this->assignBackendUser($fileDataHandler);
-                $fileDataHandler->start($fileDataMap, []);
-                $fileDataHandler->process_datamap();
-
-                if (!empty($fileDataHandler->errorLog)) {
-                    return $this->createErrorResult(
-                        'Parent record created but error attaching files: '
-                        . implode(', ', $fileDataHandler->errorLog),
-                    );
-                }
-            }
+            $this->processFileRelations($table, (int) $parentUid, $pid, $fileRelations);
         }
 
         // Handle after/before positioning if needed
@@ -609,20 +594,7 @@ final class WriteTableTool extends AbstractRecordTool
         if (!empty($fileRelations)) {
             $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
             $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
-
-            $fileDataMap = [];
-            $this->processFileRelations($fileDataMap, $table, (string) $workspaceUid, $filePid, $fileRelations);
-
-            if (!empty($fileDataMap)) {
-                $fileDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $this->assignBackendUser($fileDataHandler);
-                $fileDataHandler->start($fileDataMap, []);
-                $fileDataHandler->process_datamap();
-
-                if (!empty($fileDataHandler->errorLog)) {
-                    return $this->createErrorResult('Error attaching files: ' . implode(', ', $fileDataHandler->errorLog));
-                }
-            }
+            $this->processFileRelations($table, $workspaceUid, $filePid, $fileRelations);
         }
 
         // Now process inline relations with the resolved parent UID
@@ -1337,9 +1309,8 @@ final class WriteTableTool extends AbstractRecordTool
      * @param array<string, array{config: array<string, mixed>, value: mixed}> $fileRelations Extracted file relations
      */
     protected function processFileRelations(
-        array &$dataMap,
         string $parentTable,
-        string $parentId,
+        int $parentUid,
         int $pid,
         array $fileRelations,
     ): void {
@@ -1349,7 +1320,10 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            $newIds = [];
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('sys_file_reference');
+
+            $refCount = 0;
             foreach ($value as $index => $item) {
                 $fileUid = null;
                 $metadata = [];
@@ -1366,36 +1340,36 @@ final class WriteTableTool extends AbstractRecordTool
                     continue;
                 }
 
-                $newRefId = 'NEW_file_' . uniqid() . '_' . $index;
-
                 $refData = [
                     'uid_local' => $fileUid,
-                    'uid_foreign' => $parentId,
+                    'uid_foreign' => $parentUid,
                     'tablenames' => $parentTable,
                     'fieldname' => $fieldName,
                     'pid' => $pid,
                     'sorting_foreign' => ((int) $index + 1) * 256,
+                    'tstamp' => time(),
+                    'crdate' => time(),
                 ];
 
                 $allowedMetadataFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
                 foreach ($allowedMetadataFields as $metaField) {
-                    if (isset($metadata[$metaField])) {
+                    if (isset($metadata[$metaField]) && (\is_string($metadata[$metaField]) || is_numeric($metadata[$metaField]))) {
                         $refData[$metaField] = $metadata[$metaField];
                     }
                 }
 
-                if (!isset($dataMap['sys_file_reference'])) {
-                    $dataMap['sys_file_reference'] = [];
-                }
-                $dataMap['sys_file_reference'][$newRefId] = $refData;
-                $newIds[] = $newRefId;
+                $connection->insert('sys_file_reference', $refData);
+                $refCount++;
             }
 
-            if (!empty($newIds)) {
-                if (!isset($dataMap[$parentTable])) {
-                    $dataMap[$parentTable] = [];
-                }
-                $dataMap[$parentTable][$parentId][$fieldName] = implode(',', $newIds);
+            if ($refCount > 0) {
+                $parentConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+                    ->getConnectionForTable($parentTable);
+                $parentConnection->update(
+                    $parentTable,
+                    [$fieldName => $refCount],
+                    ['uid' => $parentUid],
+                );
             }
         }
     }
