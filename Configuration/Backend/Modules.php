@@ -14,7 +14,7 @@ return [
         'access' => 'user',
         'workspaces' => '*',
         'path' => '/module/user/mcp-server',
-        'iconIdentifier' => 'content-plugin',
+        'iconIdentifier' => 'module-mcp-server',
         'labels' => 'LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf',
         'routes' => [
             '_default' => [

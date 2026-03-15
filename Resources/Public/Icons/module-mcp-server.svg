@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <g opacity=".4">
+    <circle fill="currentColor" cx="16" cy="20" r="4"/>
+    <circle fill="currentColor" cx="16" cy="44" r="4"/>
+    <circle fill="currentColor" cx="48" cy="20" r="4"/>
+    <circle fill="currentColor" cx="48" cy="44" r="4"/>
+    <path fill="currentColor" d="M16 24v16M48 24v16" stroke="currentColor" stroke-width="2" fill="none"/>
+  </g>
+  <path fill="currentColor" d="M32 14c-5.52 0-10 4.48-10 10v4h-2v8h2v4c0 5.52 4.48 10 10 10s10-4.48 10-10v-4h2v-8h-2v-4c0-5.52-4.48-10-10-10zm7 26c0 3.87-3.13 7-7 7s-7-3.13-7-7v-4h14v4zm0-8H25v-8c0-3.87 3.13-7 7-7s7 3.13 7 7v8z"/>
+  <path fill="var(--icon-color-accent, #ff8700)" d="M20 28h-6v-8c0-1.1.9-2 2-2h4v2h-4v6h4v2zM44 28h6v-8c0-1.1-.9-2-2-2h-4v2h4v6h-4v2zM20 36h-6v8c0 1.1.9 2 2 2h4v-2h-4v-6h4v-2zM44 36h6v8c0 1.1-.9 2-2 2h-4v-2h4v-6h-4v-2z"/>
+  <circle fill="var(--icon-color-accent, #ff8700)" cx="32" cy="28" r="3"/>
+</svg>
