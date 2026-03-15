@@ -1,8 +1,12 @@
 .. include:: /Includes.rst.txt
 
+.. _installation:
+
 ============
 Installation
 ============
+
+.. _installation-requirements:
 
 Requirements
 ============
@@ -84,11 +88,13 @@ The common path is:
 Less common connection modes and token administration can be shown in the
 advanced area when enabled through User TSconfig.
 
+.. _installation-connection-options:
+
 Connection options
 ==================
 
-Option 1: Remote MCP over OAuth
-===============================
+Remote MCP over OAuth
+---------------------
 
 This is the recommended setup for remote MCP clients.
 
@@ -99,8 +105,8 @@ This is the recommended setup for remote MCP clients.
 
 The module includes setup instructions for multiple client types.
 
-Option 2: Local TYPO3 CLI server
-================================
+Local TYPO3 CLI server
+-----------------------
 
 For local development or shell-based MCP clients, use the TYPO3 CLI command.
 

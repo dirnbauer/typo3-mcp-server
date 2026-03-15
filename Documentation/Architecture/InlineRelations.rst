@@ -47,12 +47,14 @@ Embedded child creation works through a two-step approach:
 - The extension applies the necessary foreign-field update afterwards when TYPO3
   does not manage that relation field directly through TCA columns
 
-Restrictions
-============
+File references
+===============
 
-``sys_file_reference`` remains deliberately restricted in MCP tools because file
-references do not currently fit the extension's workspace-safety guarantees well
-enough for unrestricted write support.
+``sys_file_reference`` records are now supported through the ``WriteTable``
+tool. When a file field (TCA type ``file``) receives an array of
+``sys_file`` UIDs or objects with UID and metadata, the extension creates
+``sys_file_reference`` records and wires them to the parent record through
+``DataHandler``. File references are workspace-versioned like other records.
 
 Automatic workspace handling
 ============================
@@ -76,7 +78,6 @@ Best practices
 Future improvements
 ===================
 
-- Better support for file-reference workflows once workspace handling is safe
 - Bulk updates for relation management
 - Better ordering and positioning support
 - Stronger validation of embedded record payloads
