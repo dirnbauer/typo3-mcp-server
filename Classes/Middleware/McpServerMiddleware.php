@@ -28,31 +28,35 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final readonly class McpServerMiddleware implements MiddlewareInterface
 {
-    public function __construct(private Context $context) {}
+    public function __construct(
+        private Context $context,
+        private McpEndpoint $mcpEndpoint,
+        private OAuthAuthorizeEndpoint $oauthAuthorizeEndpoint,
+        private OAuthTokenEndpoint $oauthTokenEndpoint,
+        private OAuthMetadataEndpoint $oauthMetadataEndpoint,
+        private OAuthRegisterEndpoint $oauthRegisterEndpoint,
+        private OAuthResourceMetadataEndpoint $oauthResourceMetadataEndpoint,
+        private OAuthAuthServerMetadataEndpoint $oauthAuthServerMetadataEndpoint,
+    ) {}
+
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $path = $request->getUri()->getPath();
 
-        // Route to appropriate endpoint
         return match ($path) {
-            // Main MCP endpoint
-            '/mcp' => GeneralUtility::makeInstance(McpEndpoint::class)($request),
+            '/mcp' => ($this->mcpEndpoint)($request),
 
-            // OAuth endpoints
-            '/mcp_oauth/authorize' => GeneralUtility::makeInstance(OAuthAuthorizeEndpoint::class)($request),
-            '/mcp_oauth/token' => GeneralUtility::makeInstance(OAuthTokenEndpoint::class)($request),
-            '/mcp_oauth/metadata' => GeneralUtility::makeInstance(OAuthMetadataEndpoint::class)($request),
-            '/mcp_oauth/register' => GeneralUtility::makeInstance(OAuthRegisterEndpoint::class)($request),
-            '/mcp_oauth/resource' => GeneralUtility::makeInstance(OAuthResourceMetadataEndpoint::class)($request),
+            '/mcp_oauth/authorize' => ($this->oauthAuthorizeEndpoint)($request),
+            '/mcp_oauth/token' => ($this->oauthTokenEndpoint)($request),
+            '/mcp_oauth/metadata' => ($this->oauthMetadataEndpoint)($request),
+            '/mcp_oauth/register' => ($this->oauthRegisterEndpoint)($request),
+            '/mcp_oauth/resource' => ($this->oauthResourceMetadataEndpoint)($request),
 
-            // OAuth discovery endpoints (.well-known)
-            '/.well-known/oauth-authorization-server' => GeneralUtility::makeInstance(OAuthAuthServerMetadataEndpoint::class)($request),
-            '/.well-known/oauth-protected-resource' => GeneralUtility::makeInstance(OAuthResourceMetadataEndpoint::class)($request),
+            '/.well-known/oauth-authorization-server' => ($this->oauthAuthServerMetadataEndpoint)($request),
+            '/.well-known/oauth-protected-resource' => ($this->oauthResourceMetadataEndpoint)($request),
 
-            // TYPO3 main page with OAuth continuation check
             '/typo3/main' => $this->handleOAuthCookieContinuation($request, $handler),
 
-            // All other routes
             default => $handler->handle($request),
         };
     }
