@@ -504,8 +504,9 @@ final class WriteTableTool extends AbstractRecordTool
 
 
         // Process file relations with the resolved parent UID
+        // For new records: parentUid is the live UID (t3ver_state=1 new placeholders are their own live UID)
         if (!empty($fileRelations)) {
-            $this->processFileRelations($table, (int) $parentUid, $pid, $fileRelations);
+            $this->processFileRelations($table, (int) $parentUid, (int) $parentUid, $pid, $fileRelations);
         }
 
         // Handle after/before positioning if needed
@@ -590,11 +591,13 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
         }
 
-        // Process file relations with the resolved parent UID
+        // Process file relations:
+        // uid_foreign must point to the LIVE UID ($uid), not the workspace version
+        // Parent count update uses workspace UID so DataHandler creates proper overlay
         if (!empty($fileRelations)) {
             $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
             $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
-            $this->processFileRelations($table, $workspaceUid, $filePid, $fileRelations);
+            $this->processFileRelations($table, $uid, $workspaceUid, $filePid, $fileRelations);
         }
 
         // Now process inline relations with the resolved parent UID
@@ -1308,9 +1311,18 @@ final class WriteTableTool extends AbstractRecordTool
      * @param int $pid Page ID for the new sys_file_reference records
      * @param array<string, array{config: array<string, mixed>, value: mixed}> $fileRelations Extracted file relations
      */
+    /**
+     * @param int $liveParentUid The LIVE UID of the parent record (not workspace version).
+     *                           sys_file_reference.uid_foreign always points to the live record.
+     * @param int $parentUidForUpdate The UID to use when updating the parent's count field.
+     *                                In live workspace this equals $liveParentUid.
+     *                                In a workspace, this should be the workspace version UID
+     *                                so DataHandler creates a proper workspace overlay.
+     */
     protected function processFileRelations(
         string $parentTable,
-        int $parentUid,
+        int $liveParentUid,
+        int $parentUidForUpdate,
         int $pid,
         array $fileRelations,
     ): void {
@@ -1320,10 +1332,9 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getConnectionForTable('sys_file_reference');
-
+            $dataMap = [];
             $refCount = 0;
+
             foreach ($value as $index => $item) {
                 $fileUid = null;
                 $metadata = [];
@@ -1340,15 +1351,15 @@ final class WriteTableTool extends AbstractRecordTool
                     continue;
                 }
 
+                $newRefId = 'NEW_file_' . uniqid() . '_' . $index;
+
                 $refData = [
                     'uid_local' => $fileUid,
-                    'uid_foreign' => $parentUid,
+                    'uid_foreign' => $liveParentUid,
                     'tablenames' => $parentTable,
                     'fieldname' => $fieldName,
                     'pid' => $pid,
                     'sorting_foreign' => ((int) $index + 1) * 256,
-                    'tstamp' => time(),
-                    'crdate' => time(),
                 ];
 
                 $allowedMetadataFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
@@ -1358,18 +1369,29 @@ final class WriteTableTool extends AbstractRecordTool
                     }
                 }
 
-                $connection->insert('sys_file_reference', $refData);
+                $dataMap['sys_file_reference'][$newRefId] = $refData;
                 $refCount++;
             }
 
             if ($refCount > 0) {
-                $parentConnection = GeneralUtility::makeInstance(ConnectionPool::class)
-                    ->getConnectionForTable($parentTable);
-                $parentConnection->update(
-                    $parentTable,
-                    [$fieldName => $refCount],
-                    ['uid' => $parentUid],
-                );
+                // Create sys_file_reference records via DataHandler for workspace safety
+                $refDataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                $this->assignBackendUser($refDataHandler);
+                $refDataHandler->start($dataMap, []);
+                $refDataHandler->process_datamap();
+
+                // Update parent record's file count via DataHandler for workspace safety
+                $countDataMap = [
+                    $parentTable => [
+                        $parentUidForUpdate => [
+                            $fieldName => $refCount,
+                        ],
+                    ],
+                ];
+                $countDataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                $this->assignBackendUser($countDataHandler);
+                $countDataHandler->start($countDataMap, []);
+                $countDataHandler->process_datamap();
             }
         }
     }
