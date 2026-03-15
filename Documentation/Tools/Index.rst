@@ -185,7 +185,7 @@ Supported text extensions follow TYPO3's configured text file extensions.
 UploadFile
 ----------
 
-Upload binary or text files into the MCP file harness.
+Upload binary or text files into the MCP file harness via base64.
 
 :Parameters:
    - ``path`` (string, required): requested target path inside the harness
@@ -198,6 +198,43 @@ Upload behavior:
 - the stored file name is randomized for safer handling
 - existing files are not overwritten
 - when configured, uploads are stored inside workspace-specific subfolders
+
+.. note::
+
+   The MCP specification has no finalized binary upload standard yet.
+   `SEP-1306 <https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1306>`_
+   (Binary Mode Elicitation) was proposed in August 2025 and is still in
+   progress. The current approach is base64 in tool arguments, which works
+   on the server side but may be limited by MCP client implementations
+   (e.g. Cursor's ``CallMcpTool`` truncates at ~1 KB of base64). Use
+   **UploadFileFromUrl** for larger files.
+
+UploadFileFromUrl
+-----------------
+
+Download a file from a public HTTP/HTTPS URL and store it in the MCP file
+harness. This bypasses base64 encoding limits by fetching the file
+server-side.
+
+:Parameters:
+   - ``url`` (string, required): public HTTP or HTTPS URL
+   - ``path`` (string): target path inside the harness (derived from the URL
+     if omitted)
+   - ``metadata`` (object): optional file metadata
+
+Security measures:
+
+- **SSRF protection**: hostnames are resolved to IP addresses via DNS and
+  validated against private/reserved ranges (RFC 1918, loopback, link-local,
+  cloud metadata endpoints). This prevents attacks via decimal IPs, hex
+  encoding, IPv6 embeddings, or DNS rebinding.
+- **File extension deny list**: TYPO3's ``FileNameValidator`` rejects
+  dangerous extensions (php, phtml, htaccess, etc.).
+- **Size limit**: downloads are streamed in chunks and aborted when exceeding
+  20 MB.
+- **Scheme allow-list**: only ``http`` and ``https`` are accepted.
+- **Redirect limit**: at most 5 redirects are followed.
+- **Timeout**: requests are aborted after 30 seconds.
 
 File safety model
 =================
