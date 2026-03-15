@@ -1380,18 +1380,31 @@ final class WriteTableTool extends AbstractRecordTool
                 $refDataHandler->start($dataMap, []);
                 $refDataHandler->process_datamap();
 
-                // Update parent record's file count via DataHandler for workspace safety
-                $countDataMap = [
-                    $parentTable => [
-                        $parentUidForUpdate => [
-                            $fieldName => $refCount,
+                // Collect the real UIDs of the created sys_file_reference records
+                $createdRefUids = [];
+                foreach ($refDataHandler->substNEWwithIDs as $newId => $realId) {
+                    if (\is_string($newId) && str_starts_with($newId, 'NEW_file_') && is_numeric($realId)) {
+                        $createdRefUids[] = (int) $realId;
+                    }
+                }
+
+                // Update parent record's file field with actual reference UIDs
+                // DataHandler's relation handler for type=file expects a comma-separated
+                // list of sys_file_reference UIDs, not a count
+                if (!empty($createdRefUids)) {
+                    $refUidList = implode(',', $createdRefUids);
+                    $updateDataMap = [
+                        $parentTable => [
+                            $parentUidForUpdate => [
+                                $fieldName => $refUidList,
+                            ],
                         ],
-                    ],
-                ];
-                $countDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $this->assignBackendUser($countDataHandler);
-                $countDataHandler->start($countDataMap, []);
-                $countDataHandler->process_datamap();
+                    ];
+                    $updateDataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                    $this->assignBackendUser($updateDataHandler);
+                    $updateDataHandler->start($updateDataMap, []);
+                    $updateDataHandler->process_datamap();
+                }
             }
         }
     }
