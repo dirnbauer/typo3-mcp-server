@@ -141,6 +141,7 @@ final readonly class McpFileHarnessService
 
     public function buildStoredUploadFileName(string $requestedFileName): string
     {
+        $requestedFileName = trim($requestedFileName);
         $extension = strtolower(pathinfo($requestedFileName, PATHINFO_EXTENSION));
         $baseName = pathinfo($requestedFileName, PATHINFO_FILENAME);
         $baseName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $baseName) ?? 'upload';
