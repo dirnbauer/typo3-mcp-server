@@ -359,15 +359,14 @@ final class GetPageTreeTool extends AbstractRecordTool
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('list')),
-                    $queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter('news_pi1')),
+                    $queryBuilder->expr()->neq('pi_flexform', $queryBuilder->createNamedParameter('')),
                 ),
             )
             ->executeQuery()
             ->fetchAllAssociative();
 
         foreach ($plugins as $plugin) {
-            $pluginIdentifierSource = $plugin['list_type'] ?? $plugin['CType'] ?? '';
-            $pluginIdentifier = \is_scalar($pluginIdentifierSource) ? (string) $pluginIdentifierSource : '';
+            $pluginIdentifier = $this->getPluginIdentifier($plugin);
 
             // Check for news plugin with startingpoint configuration
             $pluginFlexform = \is_string($plugin['pi_flexform'] ?? null) ? $plugin['pi_flexform'] : '';
@@ -384,6 +383,28 @@ final class GetPageTreeTool extends AbstractRecordTool
         // The issue seems to be with the condition or regex
 
         return $hints;
+    }
+
+    /**
+     * Determine the logical plugin identifier for a tt_content record.
+     *
+     * TYPO3 v14 plugin CTypes use the CType directly. Legacy list-based plugins
+     * still fall back to list_type when CType is "list".
+     *
+     * @param array<string, mixed> $plugin
+     */
+    protected function getPluginIdentifier(array $plugin): string
+    {
+        $cType = \is_scalar($plugin['CType'] ?? null) ? (string) $plugin['CType'] : '';
+        if ($cType !== '' && $cType !== 'list') {
+            return $cType;
+        }
+
+        if ($cType === 'list' && \is_scalar($plugin['list_type'] ?? null)) {
+            return (string) $plugin['list_type'];
+        }
+
+        return $cType;
     }
 
     /**

@@ -111,6 +111,18 @@ This method gives you admin privileges by default. Add this to your mcp config f
 
 Tools are defined in the `Classes/MCP/Tools` directory. Each tool follows the MCP tool specification and maps to specific TYPO3 functionality.
 
+### Validating documentation
+
+Run the TYPO3 documentation renderer locally before pushing documentation
+changes:
+
+```bash
+composer docs:check
+```
+
+This uses the official `ghcr.io/typo3-documentation/render-guides` container
+and fails on renderer warnings or broken ReST syntax.
+
 ## Learn More
 
 - 📖 **[Technical Overview](TECHNICAL_OVERVIEW.md)** - Comprehensive guide covering architecture, implementation details, and advanced usage

@@ -378,7 +378,8 @@ final class TableAccessService
             $subSchema = $schema->getSubSchema($type);
 
             // TYPO3 v14 no longer exposes subtype handling via TcaSchema.
-            // Fall back to the raw TCA config when a type still declares subtype fields.
+            // Prefer CType-driven schema handling and only fall back to raw TCA when
+            // older subtype-based configurations are still present.
             $typeConfig = $this->getTableTypeConfig($table, $type);
             $subtypeFieldName = isset($typeConfig['subtype_value_field']) && \is_string($typeConfig['subtype_value_field'])
                 ? $typeConfig['subtype_value_field']
@@ -437,12 +438,14 @@ final class TableAccessService
     }
 
     /**
-     * Add fields that should be available based on subtype configuration
-     * This handles the deprecated subtypes system and FlexForm fields
+     * Add fields that should be available based on subtype configuration.
+     *
+     * TYPO3 v14 primarily uses CType-driven plugin types. This helper keeps the
+     * legacy subtype/list_type path working for TYPO3 v13-compatible setups.
      *
      * @param string $table Table name
      * @param string $type Record type
-     * @param string $subtypeField The subtype field name (e.g., 'list_type')
+     * @param string $subtypeField The subtype field name (for example `list_type`)
      * @param array<string, array<string, mixed>> &$fields Reference to fields array to modify
      */
     protected function addSubtypeFields(string $table, string $type, string $subtypeField, array &$fields): void
@@ -466,7 +469,7 @@ final class TableAccessService
             $dsConfig = $flexFormOptions['ds'] ?? [];
 
             if (!empty($dsConfig)) {
-                // Check if any DS key uses the subtype pattern (e.g., "*,list_type_value")
+                // Check if any DS key still uses the legacy subtype pattern.
                 $hasSubtypeDS = false;
                 if (\is_array($dsConfig)) {
                     foreach (array_keys($dsConfig) as $dsKey) {

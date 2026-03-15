@@ -110,7 +110,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                     ],
                     'identifier' => [
                         'type' => 'string',
-                        'description' => 'The FlexForm identifier (e.g., "form_formframework", "*,news_pi1"). For plugins, often uses pattern "*,list_type_value"',
+                        'description' => 'The FlexForm identifier (e.g., "form_formframework", "*,news_pi1"). In TYPO3 v14, plugin CTypes typically use the CType-based pattern; legacy list-based plugins may still use list_type-based identifiers.',
                     ],
                     'recordUid' => [
                         'type' => 'integer',

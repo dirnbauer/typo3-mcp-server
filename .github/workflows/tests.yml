@@ -5,6 +5,17 @@ on:
   pull_request:
 
 jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    name: Documentation render check
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Render TYPO3 documentation
+        run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log
+
   unit-tests:
     runs-on: ubuntu-latest
     name: Unit tests with coverage
@@ -20,7 +31,9 @@ jobs:
           coverage: xdebug
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer require --no-update "typo3/cms-core:^14.0"
+          composer install --no-interaction --prefer-dist
 
       - name: Run unit test suite with coverage
         run: |
@@ -33,14 +46,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - php-version: '8.2'
-            typo3-version: '^13.4'
-          - php-version: '8.3'
-            typo3-version: '^13.4'
           - php-version: '8.3'
             typo3-version: '^14.0'
           - php-version: '8.4'
             typo3-version: '^14.0'
+          - php-version: '8.2'
+            typo3-version: '^13.4'
+          - php-version: '8.3'
+            typo3-version: '^13.4'
 
     name: "PHP ${{ matrix.php-version }} / TYPO3 ${{ matrix.typo3-version }}"
 
@@ -77,13 +90,15 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer require --no-update "typo3/cms-core:^14.0"
+          composer install --no-interaction --prefer-dist
 
       - name: PHPStan
         run: composer phpstan
 
       - name: PHPat architecture rules
-        run: composer phpstan
+        run: vendor/bin/phpat test
 
       - name: PHP CS Fixer
         run: composer php-cs-fixer
