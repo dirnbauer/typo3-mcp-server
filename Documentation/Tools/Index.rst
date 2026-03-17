@@ -12,9 +12,28 @@ inspection, record operations, workspaces, and file handling.
 General notes
 =============
 
-- Record tools are workspace-aware and accept ``workspace_id`` when applicable.
-- File tools are restricted to the configured MCP file harness.
-- Schema tools exist so MCP clients can inspect before they write.
+- Record-backed tools automatically switch to an appropriate TYPO3 workspace.
+- Most record-backed tools also accept an optional ``workspace_id`` override.
+- Language-related parameters are only exposed when the TYPO3 instance has
+  multiple configured languages.
+- File tools are always restricted to the configured MCP file harness.
+- Several tools return human-readable text, while record and file write tools
+  typically return JSON encoded into MCP text content.
+
+Record-backed tools
+===================
+
+The following tools use the shared record-tool base class and therefore support
+workspace-aware execution:
+
+- ``GetPageTree``
+- ``GetPage``
+- ``ListTables``
+- ``Search``
+- ``ReadTable``
+- ``GetTableSchema``
+- ``GetFlexFormSchema``
+- ``WriteTable``
 
 Navigation and discovery
 ========================
@@ -25,53 +44,59 @@ GetPageTree
 Browse the TYPO3 page tree.
 
 :Parameters:
-   - ``startPage`` (integer): starting page UID
-   - ``depth`` (integer): Tree depth (default: 3)
-   - ``language`` (string): ISO language code for translated page titles
+   - ``startPage`` (integer, required): page UID to start from, or ``0`` for
+     the root level
+   - ``depth`` (integer): tree depth, default ``3``
+   - ``language`` (string): ISO language code for translated page titles when
+     language support is available
+   - ``workspace_id`` (integer): optional workspace override
+
+The result is a readable tree with page URLs, record counts, and plugin storage
+hints.
 
 GetPage
 -------
 
-Resolve a page by URL or UID and return page details plus content context.
+Resolve a page by URL or UID and return page details plus page content context.
 
 :Parameters:
    - ``uid`` (integer): page UID
    - ``url`` (string): full URL, path, or slug
-   - ``language`` (string): ISO language code for translated content
+   - ``language`` (string): ISO language code for translated page and content
+     output when language support is available
+   - ``languageId`` (integer): deprecated numeric language ID
+   - ``workspace_id`` (integer): optional workspace override
+
+The result includes page metadata, generated URL, visible records, and
+available page translations.
 
 ListTables
 ----------
 
 List TYPO3 tables that are available through MCP, grouped by extension.
 
-ReadTable
----------
-
-Read records from any accessible TYPO3 table.
-
 :Parameters:
-   - ``table`` (string, required): table name
-   - ``uid`` (integer): single record UID
-   - ``pid`` (integer): page UID filter
-   - ``where`` (string): restricted filter expression
-   - ``language`` (string): ISO language code
-   - ``limit`` (integer): record limit
-   - ``offset`` (integer): pagination offset
-   - ``fields`` (array): explicit field selection
    - ``workspace_id`` (integer): optional workspace override
+
+The output marks read-only tables and includes workspace-capability context.
 
 Search
 ------
 
-Search across TYPO3 content and records.
+Search across TYPO3 tables using TCA-derived searchable fields.
 
 :Parameters:
    - ``terms`` (array, required): search terms
-   - ``termLogic`` (string): ``AND`` or ``OR``
-   - ``table`` (string): restrict to a specific table
-   - ``pageId`` (integer): restrict to a page
-   - ``language`` (string): ISO language code
-   - ``limit`` (integer): maximum results per table
+   - ``termLogic`` (string): ``AND`` or ``OR``, default ``OR``
+   - ``table`` (string): restrict search to a specific table
+   - ``pageId`` (integer): restrict search to one page
+   - ``language`` (string): ISO language code when language support is
+     available
+   - ``limit`` (integer): maximum results per table, default ``50``
+   - ``workspace_id`` (integer): optional workspace override
+
+Search applies the same workspace transparency rules as the read tools, so
+workspace rows and delete placeholders do not leak into client-facing results.
 
 Schema inspection
 =================
@@ -83,21 +108,55 @@ Inspect the TCA-derived schema of a TYPO3 table.
 
 :Parameters:
    - ``table`` (string, required): table name
+   - ``type`` (string): optional specific record type such as ``text`` for
+     ``tt_content``
    - ``workspace_id`` (integer): optional workspace override
+
+The output summarizes table control fields, available record types, and the
+fields visible for the selected type.
 
 GetFlexFormSchema
 -----------------
 
-Inspect a FlexForm schema for a specific record.
+Inspect a FlexForm DataStructure by identifier.
+
+:Parameters:
+   - ``identifier`` (string, required): FlexForm identifier such as
+     ``form_formframework`` or ``*,news_pi1``
+   - ``table`` (string): table that contains the FlexForm field, default
+     ``tt_content``
+   - ``field`` (string): FlexForm field name, default ``pi_flexform``
+   - ``recordUid`` (integer): optional compatibility parameter, currently not
+     used for resolution
+   - ``workspace_id`` (integer): optional workspace override
+
+This tool resolves inline XML, PHP-array DataStructures, and ``FILE:``
+references and formats the result as a readable schema summary.
+
+Reading and writing records
+===========================
+
+ReadTable
+---------
+
+Read records from any accessible TYPO3 table.
 
 :Parameters:
    - ``table`` (string, required): table name
-   - ``uid`` (integer, required): record UID
-   - ``field`` (string): FlexForm field name
+   - ``pid`` (integer): page filter, recommended for page content
+   - ``uid`` (integer): single record UID lookup
+   - ``where`` (string): restricted filter expression
+   - ``limit`` (integer): maximum number of records, default ``20``
+   - ``offset`` (integer): pagination offset
+   - ``fields`` (array): explicit field selection
+   - ``language`` (string): ISO language code when language support is
+     available
+   - ``includeTranslationSource`` (boolean): include translation source details
+     for translated records when language support is available
    - ``workspace_id`` (integer): optional workspace override
 
-Writing tools
-=============
+Without a language filter, records from all languages are returned together,
+matching TYPO3 list-module behavior more closely than a frontend-style overlay.
 
 WriteTable
 ----------
@@ -105,51 +164,51 @@ WriteTable
 Create, update, translate, or delete TYPO3 records.
 
 :Parameters:
-   - ``action`` (string, required): ``create``, ``update``, ``translate``,
-     or ``delete``
+   - ``action`` (string, required): ``create``, ``update``, ``translate``, or
+     ``delete``
    - ``table`` (string, required): table name
-   - ``uid`` (integer): record UID for update, delete, or translate
-   - ``pid`` (integer): page UID for create
-   - ``data`` (object): field payload
-   - ``position`` (string): optional positioning for new records
+   - ``pid`` (integer): parent page for ``create``
+   - ``uid`` (integer): record UID for ``update``, ``translate``, or
+     ``delete``
+   - ``data`` (object): field payload for ``create``, ``update``, or
+     ``translate``
+   - ``position`` (string): create position, one of ``top``, ``bottom``,
+     ``after:UID``, or ``before:UID``
    - ``workspace_id`` (integer): optional workspace override
 
-Language-related fields accept ISO codes where supported, for example ``de``
-instead of numeric language UIDs.
+Important behavior:
+
+- writes always happen in workspace context
+- language-aware tables accept ISO codes such as ``de`` for
+  ``sys_language_uid``
+- file fields can receive ``sys_file`` UIDs or objects with UID and metadata,
+  which creates ``sys_file_reference`` rows
+- update payloads can use structured search-and-replace operations for text
+  fields
+- translation creates language overlays from default-language source records
 
 Positioning semantics for ``action=create``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``position`` parameter is intentionally simpler than TYPO3's native
-``DataHandler`` API, but it maps to TYPO3 behavior as closely as possible.
+The ``position`` parameter is simpler than TYPO3's raw ``DataHandler`` API, but
+it maps deliberately to TYPO3 behavior:
 
 - ``bottom``:
-  the MCP layer creates the record on the requested page and, for tables with a
-  TCA sorting field, sets a sorting value after the current last visible record
-  in the active workspace context.
+  create on the requested page and, for sortable tables, place the record after
+  the last visible sibling in the active workspace context
 - ``top``:
-  TYPO3 ``DataHandler`` has no dedicated ``top`` token for record creation, so
-  the MCP layer implements this explicitly by setting a sorting value before the
-  current first visible record in the active workspace context.
+  create on the requested page and place the record before the first visible
+  sibling when the table uses sorting
 - ``after:UID``:
-  the MCP layer resolves the visible target record first, validates that it
-  belongs to the requested parent page, and then uses TYPO3's native
-  ``DataHandler`` create-after-record semantics by passing a negative pid
-  target.
+  resolve the visible target record and use TYPO3's create-after-record
+  behavior
 - ``before:UID``:
-  TYPO3 ``DataHandler`` has no direct create-before-record primitive, so the MCP
-  layer resolves the previous visible sibling of the target record and creates
-  the new record after that sibling. If the target record is already the first
-  visible sibling, this becomes a top insert on the page.
+  resolve the target record, find the previous visible sibling, and translate
+  the request to a create-after operation; if the target is already first, this
+  becomes a top insert
 
 If the requested ``pid`` and the resolved position target belong to different
-parent pages, the tool returns an error instead of silently creating the record
-on another page.
-
-.. important::
-
-   Record writes happen in workspace context. The tools are designed so MCP
-   clients do not have to understand TYPO3 version rows or workspace overlays.
+parent pages, the tool returns an error.
 
 Workspace tool
 ==============
@@ -157,11 +216,18 @@ Workspace tool
 ListWorkspaces
 --------------
 
-List the workspaces available to the current user, including the currently
-active one and the access level for each workspace.
+List the workspaces available to the current user.
 
-Use the returned ``workspace_id`` with record tools when you need explicit
-workspace targeting.
+This tool is read-only and does not accept parameters. It shows:
+
+- workspace ID
+- title
+- access level
+- active workspace marker
+
+Clients can pass the returned ``workspace_id`` to record-backed tools when they
+need explicit workspace selection. Otherwise the extension auto-selects or
+creates a suitable workspace.
 
 File tools
 ==========
@@ -172,49 +238,52 @@ BrowseFiles
 Browse folders inside the MCP file harness.
 
 :Parameters:
-   - ``path`` (string): relative path or combined identifier inside the
+   - ``path`` (string): relative folder path or combined identifier inside the
      harness
-   - ``recursive`` (boolean): include subfolders
+   - ``recursive`` (boolean): include subfolder listing
 
-Omit ``path`` to inspect the harness root and current upload folder behavior.
-
-.. important::
-
-   File tools do not browse unrestricted ``fileadmin`` paths. They are limited
-   to the configured MCP file harness.
+Omit ``path`` to inspect the configured harness root, current workspace upload
+folder, and upload-folder behavior.
 
 ReadFileMetadata
 ----------------
 
-Read file metadata for a file inside the MCP file harness.
+Read metadata for a file inside the MCP file harness.
 
 :Parameters:
    - ``uid`` (integer): file UID
-   - ``identifier`` (string): relative path or combined identifier inside the
-     harness
+   - ``identifier`` (string): relative file path or combined identifier inside
+     the harness
 
-Returns title, description, alternative text, copyright, dimensions, and usage
-references when available.
+The result includes core file data, metadata fields, categories, and a summary
+of where the file is referenced.
 
 WriteFile
 ---------
 
-Create or overwrite text-based files inside the MCP file harness, or update
-metadata on existing files.
+Create or overwrite a text-based file inside the MCP file harness, or update
+metadata on an existing file.
 
 :Parameters:
    - ``path`` (string, required): relative path or combined identifier inside
      the harness
    - ``content`` (string): text content to write
-   - ``overwrite`` (boolean): overwrite existing file
-   - ``metadata`` (object): title, description, alternative, copyright
+   - ``overwrite`` (boolean): overwrite an existing file
+   - ``metadata`` (object): title, description, alternative text, copyright
 
-Supported text extensions follow TYPO3's configured text file extensions.
+This tool supports TYPO3 text file extensions such as ``.txt``, ``.html``,
+``.css``, ``.js``, ``.json``, ``.xml``, ``.csv``, ``.yaml``, ``.md``, and
+others configured in TYPO3.
+
+.. warning::
+
+   Physical files are not workspace-versioned. Overwriting a file changes the
+   underlying file immediately across all workspaces.
 
 UploadFile
 ----------
 
-Upload binary or text files into the MCP file harness via base64.
+Upload a binary or text file into the MCP file harness via base64.
 
 :Parameters:
    - ``path`` (string, required): requested target path inside the harness
@@ -224,46 +293,29 @@ Upload binary or text files into the MCP file harness via base64.
 Upload behavior:
 
 - the requested folder path is respected
-- the stored file name is randomized for safer handling
-- existing files are not overwritten
-- when configured, uploads are stored inside workspace-specific subfolders
-
-.. note::
-
-   The MCP specification has no finalized binary upload standard yet.
-   `SEP-1306 <https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1306>`_
-   (Binary Mode Elicitation) was proposed in August 2025 and is still in
-   progress. The current approach is base64 in tool arguments, which works
-   on the server side but may be limited by MCP client implementations
-   (e.g. Cursor's ``CallMcpTool`` truncates at ~1 KB of base64). Use
-   **UploadFileFromUrl** for larger files.
+- the stored filename is randomized
+- existing files are never overwritten
+- uploads can be routed into workspace-specific folders inside the harness
 
 UploadFileFromUrl
 -----------------
 
-Download a file from a public HTTP/HTTPS URL and store it in the MCP file
-harness. This bypasses base64 encoding limits by fetching the file
-server-side.
+Download a public HTTP or HTTPS URL server-side and store the result in the MCP
+file harness.
 
 :Parameters:
-   - ``url`` (string, required): public HTTP or HTTPS URL
-   - ``path`` (string): target path inside the harness (derived from the URL
-     if omitted)
+   - ``url`` (string, required): public file URL
+   - ``path`` (string): target path inside the harness, derived from the URL if
+     omitted
    - ``metadata`` (object): optional file metadata
 
-Security measures:
+Security measures include:
 
-- **SSRF protection**: hostnames are resolved to IP addresses via DNS and
-  validated against private/reserved ranges (RFC 1918, loopback, link-local,
-  cloud metadata endpoints). This prevents attacks via decimal IPs, hex
-  encoding, IPv6 embeddings, or DNS rebinding.
-- **File extension deny list**: TYPO3's ``FileNameValidator`` rejects
-  dangerous extensions (php, phtml, htaccess, etc.).
-- **Size limit**: downloads are streamed in chunks and aborted when exceeding
-  20 MB.
-- **Scheme allow-list**: only ``http`` and ``https`` are accepted.
-- **Redirect limit**: at most 5 redirects are followed.
-- **Timeout**: requests are aborted after 30 seconds.
+- allow-listing only ``http`` and ``https``
+- rejecting private and reserved network targets after DNS resolution
+- streaming downloads with a 20 MB size limit
+- limiting redirects and request timeout
+- relying on TYPO3 file validation when the file is stored
 
 File safety model
 =================
@@ -277,4 +329,5 @@ semantics:
 
 - uploaded files exist immediately
 - overwritten text files change immediately
-- workspace safety applies to records and references, not the physical file
+- workspace safety applies to records and file references, not to the physical
+  file itself

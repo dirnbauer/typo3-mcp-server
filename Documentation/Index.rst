@@ -48,6 +48,11 @@ Highlights
 - Browse, upload, and manage files inside a dedicated MCP file harness
 - Connect remote MCP clients using OAuth 2.1 with PKCE
 
+The public tool surface adapts to the current TYPO3 instance. For example,
+language parameters are only exposed when multiple site languages exist, and
+record tools automatically switch to an appropriate workspace unless a client
+explicitly requests a ``workspace_id``.
+
 .. note::
 
    Physical files are not workspace-versioned in TYPO3. The extension reduces
@@ -65,7 +70,8 @@ Start here depending on your role:
 - :doc:`Configuration/Index` for module, OAuth, workspace, and file harness
   configuration
 - :doc:`Tools/Index` for the complete MCP tool reference
-- :doc:`Architecture/Index` for design decisions and implementation details
+- :doc:`Architecture/Index` for design decisions, implementation layers, and
+  deeper architecture notes
 
 Further reading
 ===============

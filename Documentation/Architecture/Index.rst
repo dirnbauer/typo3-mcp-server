@@ -10,6 +10,7 @@ Architecture
    :maxdepth: 1
    :hidden:
 
+   ImplementationOverview
    WorkspaceTransparency
    LanguageOverlays
    InlineRelations
@@ -37,6 +38,22 @@ Language overlay
    Language overlays use TYPO3's ``PageRepository`` API. Workspace overlays
    use a custom implementation for transparency. See
    :doc:`LanguageOverlays` for details.
+
+Implementation layers
+=====================
+
+The repository is split into a few deliberate layers:
+
+- ``Classes/Http/`` for the remote MCP endpoint and OAuth/discovery endpoints
+- ``Classes/Command/`` for the local stdio server and maintenance commands
+- ``Classes/MCP/`` for the server factory, tool registry, and tool classes
+- ``Classes/Service/`` for shared workspace, TCA, language, file, OAuth, and
+  site services
+- ``Classes/Utility/`` and ``Classes/Database/Query/Restriction/`` for
+  formatting and workspace-specific query behavior
+
+See :doc:`ImplementationOverview` for the request flow and the role of the
+main services.
 
 File handling and sandboxing
 ============================

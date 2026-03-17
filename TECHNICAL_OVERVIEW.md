@@ -147,10 +147,11 @@ while still staying aligned with TYPO3's official `DataHandler` model and
 workspace behavior.
 
 ### File Management
-- **BrowseFiles** - Browse file storages and folders in fileadmin; list storages, navigate directories, view file listings with metadata
-- **ReadFileMetadata** - Read metadata for a file by UID or combined identifier (title, description, alt text, categories, dimensions)
+- **BrowseFiles** - Browse folders inside the dedicated MCP file harness and inspect the current harness root and upload folder behavior
+- **ReadFileMetadata** - Read metadata for a file by UID or path inside the harness (title, description, alt text, categories, dimensions, usage references)
 - **WriteFile** - Create or overwrite text-based files in the MCP file harness and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Can update metadata on existing files — including images — without changing content.
-- **UploadFile** - Upload binary or text files into the MCP file harness. Uploads are restricted to a configurable sandbox folder (default: `fileadmin/mcp/`) and can use workspace-specific subfolders for safer draft handling.
+- **UploadFile** - Upload binary or text files into the MCP file harness using base64 payloads. Uploads are restricted to a configurable sandbox folder (default: `fileadmin/mcp/`) and can use workspace-specific subfolders for safer draft handling.
+- **UploadFileFromUrl** - Download a public `http` or `https` URL server-side and store the result in the MCP file harness. This avoids base64 size limits and adds SSRF and file-size safeguards.
 
 > **Note:** Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately across all workspaces.
 
@@ -426,6 +427,48 @@ The MCP Server respects all TYPO3 permissions:
 - **Field permissions**: Exclude fields work
 - **Record permissions**: Custom access checks
 - **Workspace permissions**: Automatic workspace selection
+
+## Implementation Architecture
+
+The runtime is intentionally thin and delegates most TYPO3-specific work to
+shared services.
+
+### Request Path
+
+1. **Remote clients** authenticate through the OAuth endpoints and call the
+   MCP HTTP endpoint.
+2. **Local clients** start the stdio server through `vendor/bin/typo3 mcp:server`.
+3. `McpServerFactory` builds the MCP server and registers the tool handlers.
+4. `ToolRegistry` provides the tool instances.
+5. Tools call shared services for workspace selection, TCA access, language
+   mapping, URL resolution, file harness restrictions, and OAuth validation.
+6. TYPO3 core APIs such as `DataHandler`, `PageRepository`, `TcaSchemaFactory`,
+   and FAL do the actual CMS work.
+
+### Key Services
+
+- **WorkspaceContextService**: selects, switches, and if necessary creates a
+  writable workspace
+- **TableAccessService**: central gatekeeper for table access, field access,
+  workspace capability, and TSconfig-based field visibility
+- **LanguageService**: maps site languages to ISO codes and lets tool schemas
+  hide translation-specific parameters when the site is effectively monolingual
+- **McpFileHarnessService**: constrains all file tools to the configured MCP
+  harness root and computes workspace-specific upload folders
+- **OAuthService**: stores authorization codes and hashes access tokens before
+  they are written to the database
+
+### Testing Strategy
+
+The repository verifies behavior at several levels:
+
+- **Unit tests** for focused services such as OAuth hashing and file harness
+  path handling
+- **Functional TYPO3 tests** for record reads/writes, workspace transparency,
+  language handling, file tools, non-admin permissions, and extension
+  compatibility such as `georgringer/news`
+- **LLM tests** that use real models to check whether tool descriptions and
+  schemas are intuitive in realistic multi-step conversations
 
 ## What's Not Yet Implemented
 
