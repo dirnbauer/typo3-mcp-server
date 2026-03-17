@@ -16,9 +16,10 @@ The module is the main control center for editors and integrators. From there
 you can:
 
 - View the MCP endpoint URL
+- Review endpoint reachability checks for the MCP and OAuth discovery URLs
 - Review remote and local client setup instructions
 - Create and revoke access tokens for supported client types
-- Inspect workspace context information
+- See workspace-related warnings when no workspace is configured
 
 OAuth setup
 ===========
@@ -40,7 +41,7 @@ All record tools are workspace-aware.
 
 Default behavior:
 
-- if the user is already in a writable workspace, that workspace is used
+- if the user is already in a non-live workspace, that workspace is kept
 - otherwise the first writable workspace is selected
 - if needed, the extension can create an MCP workspace for the user
 
@@ -141,4 +142,3 @@ Use this checklist when rolling out the extension:
 - review the configured file harness root
 - decide whether workspace upload subfolders should stay enabled
 - test remote OAuth login with your target MCP client
-

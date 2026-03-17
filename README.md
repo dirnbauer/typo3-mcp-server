@@ -62,10 +62,12 @@ The implementation is split into a few clear layers:
 
 ### Workspace transparency
 
-All database writes are workspace-first.
+Record-backed MCP writes are workspace-first.
 
-- If the authenticated backend user already works in a writable workspace, that
-  workspace is used.
+- Clients can explicitly choose a workspace by passing `workspace_id` on
+  record-backed tools.
+- If `workspace_id` is omitted and the authenticated backend user is already in
+  a non-live workspace, that workspace is kept.
 - Otherwise the extension selects the first writable workspace.
 - If none exists and the user is allowed to create one, the extension creates
   an MCP workspace automatically.
@@ -170,7 +172,6 @@ point. It exposes:
 - the MCP endpoint URL
 - OAuth/client setup instructions
 - token management
-- current workspace information
 - health checks for discovery endpoints
 
 ## Installation

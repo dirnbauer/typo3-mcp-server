@@ -85,9 +85,9 @@ Shared services
 ===============
 
 ``WorkspaceContextService``
-   Selects an existing writable workspace, switches to an explicit workspace
-   when requested, or creates an MCP workspace if none exists and the user is
-   allowed to create one.
+   Keeps the current non-live workspace by default, switches to an explicit
+   workspace when requested, otherwise selects a writable workspace, or creates
+   an MCP workspace if none exists and the user is allowed to create one.
 
 ``TableAccessService``
    The central gatekeeper for table and field visibility. It combines TCA,

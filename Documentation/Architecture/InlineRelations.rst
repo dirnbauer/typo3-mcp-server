@@ -62,7 +62,9 @@ Automatic workspace handling
 Inline relation reads and writes use the same workspace context service as the
 rest of the extension:
 
-- A writable workspace is selected automatically, or created when needed
+- The current non-live workspace is kept when one is already active;
+  otherwise a writable workspace is selected automatically, or created when
+  needed
 - Live IDs stay visible to clients
 - Workspace-specific implementation details stay internal
 

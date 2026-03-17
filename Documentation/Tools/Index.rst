@@ -12,7 +12,8 @@ inspection, record operations, workspaces, and file handling.
 General notes
 =============
 
-- Record-backed tools automatically switch to an appropriate TYPO3 workspace.
+- Record-backed tools keep the current non-live workspace by default, or
+  otherwise select or create a suitable workspace automatically.
 - Most record-backed tools also accept an optional ``workspace_id`` override.
 - Language-related parameters are only exposed when the TYPO3 instance has
   multiple configured languages.

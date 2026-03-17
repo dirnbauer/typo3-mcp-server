@@ -52,7 +52,12 @@ The MCP Server acts as an intelligent translator between what the AI understands
 These design principles guide every aspect of the MCP Server implementation:
 
 ### 1. Workspace Transparency
-All content modifications automatically happen in TYPO3 workspaces. The AI assistant doesn't need to understand workspaces - it just creates or modifies content, and the system ensures it's safely queued for review. From the AI's perspective, it's working with simple record IDs, while behind the scenes, the workspace system manages versions and drafts.
+Record-backed modifications automatically happen in TYPO3 workspaces. The AI
+assistant doesn't need to understand TYPO3 version rows - it just creates or
+modifies records, and the system stages those changes for review. Clients can
+also choose a workspace explicitly through ``workspace_id`` when needed. From
+the AI's perspective, it is still working with stable record IDs while the
+workspace system manages versions and drafts behind the scenes.
 
 ### 2. TCA-First Approach
 TYPO3's TCA is designed to create human-understandable forms, and we leverage this same design to create AI-understandable data representations. Every operation is based on the Table Configuration Array rather than raw database schemas. This means:
@@ -69,8 +74,12 @@ The MCP tools closely resemble TYPO3's Page-Tree and List-Module interfaces. Thi
 - Better for everyone: improvements in human usability translate directly to AI usability
 
 ### 4. Extension Compatibility
-Any TYPO3 extension with proper TCA configuration and workspace support works automatically - no modifications needed. If you can edit it in the TYPO3 backend, the AI can work with it through MCP. This includes:
-- Core TYPO3 tables (pages, content, users)
+TYPO3 extensions do not need custom MCP adapters when they fit TYPO3's normal
+record model. Tables with suitable TCA, user access, and workspace support for
+writes can usually work automatically through the generic tools. MCP still
+applies table restrictions for security and system integrity, so "editable in
+the backend" is not the same as "exposed through MCP". This includes:
+- Core TYPO3 content tables such as pages and content elements
 - Popular extensions (news, etc.)
 - Your custom extensions
 
@@ -391,13 +400,17 @@ Example:
 
 Behind the scenes, the workspace system:
 
-1. **Finds or creates** an appropriate workspace
+1. **Keeps, finds, or creates** an appropriate workspace
 2. **Manages versions** without exposing version UIDs
 3. **Handles deletes** through delete placeholders
 4. **Overlays data** for transparent reading
 5. **Queues changes** for editorial review
 
-The `ListWorkspaces` tool lets AI assistants see which workspaces are available and which one is currently active. Any tool that reads or writes records accepts an optional `workspace_id` parameter to target a specific workspace. This gives editors explicit control over where changes land while keeping workspace internals transparent.
+The `ListWorkspaces` tool lets AI assistants see which workspaces are available
+and which one is currently active. Any record-backed tool accepts an optional
+`workspace_id` parameter to target a specific workspace. This gives editors
+explicit control over where changes land while keeping TYPO3's internal version
+rows out of the MCP-facing interface.
 
 ### Validation & Error Handling
 
@@ -447,8 +460,9 @@ shared services.
 
 ### Key Services
 
-- **WorkspaceContextService**: selects, switches, and if necessary creates a
-  writable workspace
+- **WorkspaceContextService**: keeps the current non-live workspace by default,
+  switches explicitly when requested, otherwise selects a writable workspace,
+  and if necessary creates one
 - **TableAccessService**: central gatekeeper for table access, field access,
   workspace capability, and TSconfig-based field visibility
 - **LanguageService**: maps site languages to ISO codes and lets tool schemas

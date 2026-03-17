@@ -51,9 +51,10 @@ First backend check
 Open the backend module and verify that you can see:
 
 - the MCP endpoint URL
-- the connection setup tabs
-- the current workspace information
-- token management actions
+- the main connection setup tabs
+- the remote client setup tabs
+- the active token management area
+- endpoint status indicators for MCP and OAuth discovery URLs
 
 Backend module setup
 ====================
@@ -63,30 +64,31 @@ The backend module is designed around the most common connection flow first.
 At the top of the page you get:
 
 - the remote MCP server URL
-- an :guilabel:`Install in Cursor` shortcut
-- a :guilabel:`Copy Claude command` shortcut
+- a copy button for the server URL
 - endpoint health checks for the MCP and OAuth discovery URLs
 
 The client chooser then provides focused setup steps for:
 
-- Cursor
 - Claude Desktop
 - n8n
 - Manus
 - MCP Inspector
 - other MCP clients
 
+Separate top-level tabs also cover:
+
+- Remote MCP Setup
+- Local Setup (mcp-remote)
+- Local Setup (TYPO3 CLI)
+
 The common path is:
 
 1. Open :guilabel:`User > MCP Server`.
-2. Copy the server URL or use the Cursor install shortcut.
+2. Copy the server URL.
 3. Choose your client tab.
 4. Follow the short client-specific setup.
 5. Complete OAuth in TYPO3, or create a direct-access token for clients such as
    n8n or Manus.
-
-Less common connection modes and token administration can be shown in the
-advanced area when enabled through User TSconfig.
 
 .. _installation-connection-options:
 
@@ -135,4 +137,3 @@ Continue with:
 - :doc:`../Configuration/Index` to configure the file harness and understand
   workspace behavior
 - :doc:`../Tools/Index` to review the available MCP tools
-
