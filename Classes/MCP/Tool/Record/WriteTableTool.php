@@ -8,6 +8,7 @@ use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Exception;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
@@ -89,6 +90,12 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         return is_numeric($value) ? (int) $value : null;
+    }
+
+    protected function isValidCreatePosition(string $position): bool
+    {
+        return \in_array($position, ['top', 'bottom'], true)
+            || preg_match('/^(after|before):\d+$/', $position) === 1;
     }
 
     protected function isHiddenTcaTable(string $table): bool
@@ -263,6 +270,12 @@ final class WriteTableTool extends AbstractRecordTool
                     throw new ValidationException(['Page ID (pid) is required for create action']);
                 }
 
+                if (!$this->isValidCreatePosition($position)) {
+                    throw new ValidationException([
+                        'Invalid position: ' . $position . '. Valid positions are "top", "bottom", "after:UID", or "before:UID".',
+                    ]);
+                }
+
                 if (empty($data)) {
                     throw new ValidationException(['Data is required for create action']);
                 }
@@ -384,27 +397,20 @@ final class WriteTableTool extends AbstractRecordTool
         $data = $this->convertDataForStorage($table, $data);
 
         // Prepare the data array
+        $positioning = $this->resolveCreatePosition($table, $pid, $position);
+        if (\is_string($positioning)) {
+            return $this->createErrorResult($positioning);
+        }
+
+        $effectivePid = $positioning['parentPid'];
         $newRecordData = $data;
-        $newRecordData['pid'] = $pid;
+        $newRecordData['pid'] = $positioning['dataPid'];
 
         // Handle sorting for bottom position
         // Only set sorting if the table has a sorting field configured and not explicitly provided
         $sortingField = $this->tableAccessService->getSortingFieldName($table);
         if ($position === 'bottom' && $sortingField !== null && !isset($data[$sortingField])) {
-            // Get the maximum sorting value and add some space
-            $queryBuilder = $this->connectionPool
-                ->getQueryBuilderForTable($table);
-
-            $maxSorting = $queryBuilder
-                ->select($sortingField)
-                ->from($table)
-                ->where(
-                    $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
-                )
-                ->orderBy($sortingField, 'DESC')
-                ->setMaxResults(1)
-                ->executeQuery()
-                ->fetchOne();
+            $maxSorting = $this->getVisibleMaxSortingValue($table, $effectivePid, $sortingField);
 
             if ($maxSorting !== false && is_numeric($maxSorting)) {
                 $newRecordData[$sortingField] = (int) $maxSorting + 128; // Add some space for future insertions
@@ -509,49 +515,214 @@ final class WriteTableTool extends AbstractRecordTool
         // Process file relations with the resolved parent UID
         // For new records: parentUid is the live UID (t3ver_state=1 new placeholders are their own live UID)
         if (!empty($fileRelations)) {
-            $this->processFileRelations($table, (int) $parentUid, (int) $parentUid, $pid, $fileRelations);
-        }
-
-        // Handle after/before positioning if needed
-        if (preg_match('/^(after|before):(\d+)$/', $position, $positionMatches) === 1) {
-            $positionType = $positionMatches[1];
-            $referenceUid = (int) $positionMatches[2];
-
-            // Set up the command map for moving the record
-            $cmdMap = [];
-            $cmdMap[$table][$parentUid]['move'] = [
-                'action' => $positionType,
-                'target' => $referenceUid,
-            ];
-
-            // Initialize a new DataHandler for the move operation
-            $moveDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $this->assignBackendUser($moveDataHandler);
-            $moveDataHandler->start([], $cmdMap);
-            $moveDataHandler->process_cmdmap();
-
-            // Check for errors in the move operation
-            if (!empty($moveDataHandler->errorLog)) {
-                // The record was created but positioning failed
-                $liveUid = $this->getLiveUid($table, $parentUid);
-                return $this->createJsonResult([
-                    'action' => 'create',
-                    'table' => $table,
-                    'uid' => $liveUid,
-                    'warning' => 'Record created but positioning failed: ' . implode(', ', $moveDataHandler->errorLog),
-                ]);
-            }
+            $this->processFileRelations($table, (int) $parentUid, (int) $parentUid, $effectivePid, $fileRelations);
         }
 
         // Get the live UID for workspace transparency
         $liveUid = $this->getLiveUid($table, $parentUid);
+        $createdRecordInfo = $this->getCreatedRecordInfo($table, (int) $parentUid, $effectivePid);
 
         // Return the result with live UID
         return $this->createJsonResult([
             'action' => 'create',
             'table' => $table,
             'uid' => $liveUid,
+            'pid' => $createdRecordInfo['pid'],
+            'sorting' => $createdRecordInfo['sorting'],
         ]);
+    }
+
+    /**
+     * @return array{parentPid: int, dataPid: int}|string
+     */
+    protected function resolveCreatePosition(string $table, int $requestedPid, string $position): array|string
+    {
+        if (\in_array($position, ['top', 'bottom'], true)) {
+            return [
+                'parentPid' => $requestedPid,
+                'dataPid' => $requestedPid,
+            ];
+        }
+
+        if (preg_match('/^(after|before):(\d+)$/', $position, $matches) !== 1) {
+            return 'Invalid position: ' . $position;
+        }
+
+        $referenceUid = (int) $matches[2];
+        $referenceRecord = $this->findVisiblePositionRecord($table, $referenceUid);
+        if ($referenceRecord === null) {
+            return 'Position reference record not found: uid=' . $referenceUid . ' in table ' . $table;
+        }
+
+        $referencePid = is_numeric($referenceRecord['pid'] ?? null) ? (int) $referenceRecord['pid'] : 0;
+        if ($referencePid !== $requestedPid) {
+            return 'Position reference record uid=' . $referenceUid . ' belongs to pid=' . $referencePid
+                . ', but the create request specified pid=' . $requestedPid . '.'
+                . ' Use the reference record\'s parent pid or remove the conflicting position.';
+        }
+
+        $referenceActualUid = is_numeric($referenceRecord['uid'] ?? null) ? (int) $referenceRecord['uid'] : 0;
+        if ($referenceActualUid <= 0) {
+            return 'Position reference record uid=' . $referenceUid . ' could not be resolved in the active workspace.';
+        }
+
+        if ($matches[1] === 'after') {
+            return [
+                'parentPid' => $referencePid,
+                'dataPid' => -$referenceActualUid,
+            ];
+        }
+
+        $previousSiblingUid = $this->findPreviousVisibleSiblingUid($table, $referencePid, $referenceUid);
+
+        return [
+            'parentPid' => $referencePid,
+            'dataPid' => $previousSiblingUid === null ? $referencePid : -$previousSiblingUid,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function findVisiblePositionRecord(string $table, int $referenceUid): ?array
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        $record = $queryBuilder
+            ->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($referenceUid, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter($referenceUid, ParameterType::INTEGER)),
+                ),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        return \is_array($record) ? $record : null;
+    }
+
+    protected function findPreviousVisibleSiblingUid(string $table, int $pid, int $referenceUid): ?int
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        $queryBuilder
+            ->select('uid', 't3ver_oid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+            );
+
+        $this->applyPositionOrdering($queryBuilder, $table);
+
+        $records = $queryBuilder->executeQuery()->fetchAllAssociative();
+
+        $previousActualUid = null;
+        foreach ($records as $record) {
+            $logicalUid = is_numeric($record['t3ver_oid'] ?? null) && (int) $record['t3ver_oid'] > 0
+                ? (int) $record['t3ver_oid']
+                : (is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0);
+
+            if ($logicalUid === $referenceUid) {
+                return $previousActualUid;
+            }
+
+            $actualUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+            if ($actualUid > 0) {
+                $previousActualUid = $actualUid;
+            }
+        }
+
+        return null;
+    }
+
+    protected function getVisibleMaxSortingValue(string $table, int $pid, string $sortingField): mixed
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        return $queryBuilder
+            ->select($sortingField)
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+            )
+            ->orderBy($sortingField, 'DESC')
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
+    }
+
+    protected function createWorkspaceAwarePositionQueryBuilder(string $table): \TYPO3\CMS\Core\Database\Query\QueryBuilder
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+
+        return $queryBuilder;
+    }
+
+    protected function applyPositionOrdering(\TYPO3\CMS\Core\Database\Query\QueryBuilder $queryBuilder, string $table): void
+    {
+        $sortingField = $this->tableAccessService->getSortingFieldName($table);
+        if ($sortingField !== null) {
+            $queryBuilder->orderBy($sortingField, 'ASC')
+                ->addOrderBy('uid', 'ASC');
+            return;
+        }
+
+        foreach ($this->tableAccessService->parseDefaultSorting($table) as $index => $sorting) {
+            if ($index === 0) {
+                $queryBuilder->orderBy($sorting['field'], $sorting['direction']);
+            } else {
+                $queryBuilder->addOrderBy($sorting['field'], $sorting['direction']);
+            }
+        }
+
+        $queryBuilder->addOrderBy('uid', 'ASC');
+    }
+
+    /**
+     * @return array{pid: int, sorting: int|null}
+     */
+    protected function getCreatedRecordInfo(string $table, int $recordUid, int $fallbackPid): array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $sortingField = $this->tableAccessService->getSortingFieldName($table);
+        $fields = ['pid'];
+        if ($sortingField !== null) {
+            $fields[] = $sortingField;
+        }
+
+        $record = $queryBuilder
+            ->select(...$fields)
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($recordUid, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!\is_array($record)) {
+            return [
+                'pid' => $fallbackPid,
+                'sorting' => null,
+            ];
+        }
+
+        return [
+            'pid' => is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : $fallbackPid,
+            'sorting' => $sortingField !== null && is_numeric($record[$sortingField] ?? null) ? (int) $record[$sortingField] : null,
+        ];
     }
 
     /**

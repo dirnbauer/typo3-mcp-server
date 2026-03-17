@@ -275,6 +275,38 @@ class GetPageToolTest extends FunctionalTestCase
         $this->assertMatchesRegularExpression('/Column: .+ \[colPos: 0\]/', $content);
     }
 
+    public function testGetPageCountsVisibleImageReferences(): void
+    {
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
+
+        $writeTool = $this->getService(WriteTableTool::class);
+        $writeResult = $writeTool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'position' => 'bottom',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Image Summary Test',
+                'colPos' => 0,
+                'assets' => [1],
+            ],
+        ]);
+
+        $this->assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+
+        $tool = $this->getService(GetPageTool::class);
+        $result = $tool->execute([
+            'uid' => 1,
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $content = $result->content[0]->text;
+
+        $this->assertStringContainsString('Image Summary Test', $content);
+        $this->assertStringContainsString('Images: 1', $content);
+    }
+
     /**
      * Test error handling for non-existent page
      */

@@ -673,6 +673,16 @@ final class GetPageTool extends AbstractRecordTool
         $result = "Content Elements (tt_content)\n";
         $result .= "----------------------------\n";
         $result .= "Total: " . $contentInfo['total'] . " elements\n\n";
+        $imageCounts = $this->countVisibleFileReferencesByParentUid(
+            'tt_content',
+            array_values(array_filter(
+                array_map(
+                    static fn(array $record): int => is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0,
+                    $contentInfo['records'],
+                ),
+                static fn(int $uid): bool => $uid > 0,
+            )),
+        );
 
         // Get column position definitions for this specific page
         $hasCustomLayout = false;
@@ -718,8 +728,9 @@ final class GetPageTool extends AbstractRecordTool
                     $result .= "  Text: " . $bodytext . "\n";
                 }
 
-                if (\in_array($cType, ['image', 'textpic', 'textmedia'], true) && \is_scalar($element['assets'] ?? null) && (string) $element['assets'] !== '') {
-                    $result .= "  Images: " . (string) $element['assets'] . "\n";
+                $imageCount = $imageCounts[$elementUid] ?? 0;
+                if (\in_array($cType, ['image', 'textpic', 'textmedia'], true) && $imageCount > 0) {
+                    $result .= "  Images: " . $imageCount . "\n";
                 }
 
                 if ($cType === 'html' && \is_string($element['bodytext'] ?? null) && $element['bodytext'] !== '') {
@@ -752,6 +763,58 @@ final class GetPageTool extends AbstractRecordTool
         }
 
         return $result;
+    }
+
+    /**
+     * @param list<int> $parentUids
+     * @return array<int, int>
+     */
+    protected function countVisibleFileReferencesByParentUid(string $parentTable, array $parentUids): array
+    {
+        if ($parentUids === []) {
+            return [];
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file_reference');
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+
+        $references = $queryBuilder
+            ->select('uid', 't3ver_oid', 'uid_foreign')
+            ->from('sys_file_reference')
+            ->where(
+                $queryBuilder->expr()->eq('tablenames', $queryBuilder->createNamedParameter($parentTable)),
+                $queryBuilder->expr()->in('uid_foreign', $queryBuilder->createNamedParameter($parentUids, \TYPO3\CMS\Core\Database\Connection::PARAM_INT_ARRAY)),
+            )
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        $counts = [];
+        $seenLogicalReferenceUids = [];
+        foreach ($references as $reference) {
+            $parentUid = is_numeric($reference['uid_foreign'] ?? null) ? (int) $reference['uid_foreign'] : 0;
+            if ($parentUid <= 0) {
+                continue;
+            }
+
+            $logicalReferenceUid = is_numeric($reference['t3ver_oid'] ?? null) && (int) $reference['t3ver_oid'] > 0
+                ? (int) $reference['t3ver_oid']
+                : (is_numeric($reference['uid'] ?? null) ? (int) $reference['uid'] : 0);
+
+            if ($logicalReferenceUid <= 0 || isset($seenLogicalReferenceUids[$parentUid][$logicalReferenceUid])) {
+                continue;
+            }
+
+            $seenLogicalReferenceUids[$parentUid][$logicalReferenceUid] = true;
+            $counts[$parentUid] = ($counts[$parentUid] ?? 0) + 1;
+        }
+
+        return $counts;
     }
 
     /**

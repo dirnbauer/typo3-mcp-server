@@ -36,6 +36,36 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     /**
+     * @return list<array<string, mixed>>
+     */
+    protected function readVisibleContentRows(int $pid): array
+    {
+        $readTool = $this->getService(ReadTableTool::class);
+        $result = $readTool->execute([
+            'table' => 'tt_content',
+            'pid' => $pid,
+            'fields' => ['uid', 'pid', 'sorting', 'header'],
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = $this->extractJsonFromResult($result);
+        $this->assertIsArray($data['records']);
+
+        return $data['records'];
+    }
+
+    protected function findRecordIndexByUid(array $records, int $uid): int
+    {
+        foreach ($records as $index => $record) {
+            if (($record['uid'] ?? null) === $uid) {
+                return $index;
+            }
+        }
+
+        $this->fail('Record uid=' . $uid . ' not found in visible content order: ' . json_encode($records));
+    }
+
+    /**
      * Test using builder pattern for fixture creation
      */
     public function testCreatePageWithBuilderPattern(): void
@@ -557,27 +587,15 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->content));
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $data = json_decode($result->content[0]->text, true);
         $newUid = $data['uid'];
+        $this->assertSame(1, $data['pid']);
+        $this->assertIsInt($data['sorting']);
 
-        // Verify it's created with high sorting value
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('tt_content');
-
-        $record = $queryBuilder->select('sorting')
-            ->from('tt_content')
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($newUid, ParameterType::INTEGER)),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        $this->assertIsArray($record);
-        // The record should have a sorting value
-        $this->assertArrayHasKey('sorting', $record);
-        $this->assertIsInt($record['sorting']);
+        $records = $this->readVisibleContentRows(1);
+        $this->assertSame($newUid, $records[array_key_last($records)]['uid']);
     }
 
     /**
@@ -636,30 +654,20 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->content));
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $data = json_decode($result->content[0]->text, true);
         $this->assertIsArray($data);
         $this->assertEquals('create', $data['action']);
         $this->assertIsInt($data['uid']);
+        $this->assertSame(1, $data['pid']);
+        $this->assertIsInt($data['sorting']);
 
-        // Verify the sorting is set (positioning might not work perfectly in test env)
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('tt_content');
+        $records = $this->readVisibleContentRows(1);
+        $referenceIndex = $this->findRecordIndexByUid($records, 100);
+        $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        $record = $queryBuilder->select('sorting')
-            ->from('tt_content')
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($data['uid'], ParameterType::INTEGER)),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        $this->assertIsArray($record);
-        $this->assertArrayHasKey('sorting', $record);
-        // The sorting should be set, even if positioning didn't work perfectly
-        $this->assertIsInt($record['sorting']);
-        $this->assertGreaterThan(0, $record['sorting']);
+        $this->assertSame($referenceIndex + 1, $newIndex, json_encode($records));
     }
 
     /**
@@ -681,30 +689,20 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->content));
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $data = json_decode($result->content[0]->text, true);
         $this->assertIsArray($data);
         $this->assertEquals('create', $data['action']);
         $this->assertIsInt($data['uid']);
+        $this->assertSame(1, $data['pid']);
+        $this->assertIsInt($data['sorting']);
 
-        // Verify the sorting is set (positioning might not work perfectly in test env)
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('tt_content');
+        $records = $this->readVisibleContentRows(1);
+        $referenceIndex = $this->findRecordIndexByUid($records, 101);
+        $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        $record = $queryBuilder->select('sorting')
-            ->from('tt_content')
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($data['uid'], ParameterType::INTEGER)),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        $this->assertIsArray($record);
-        $this->assertArrayHasKey('sorting', $record);
-        // The sorting should be set, even if positioning didn't work perfectly
-        $this->assertIsInt($record['sorting']);
-        $this->assertGreaterThan(0, $record['sorting']);
+        $this->assertSame($referenceIndex - 1, $newIndex, json_encode($records));
     }
 
     /**
@@ -726,10 +724,71 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->content));
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $data = json_decode($result->content[0]->text, true);
         $this->assertIsInt($data['uid']);
+        $this->assertSame(1, $data['pid']);
+        $this->assertIsInt($data['sorting']);
+
+        $records = $this->readVisibleContentRows(1);
+        $this->assertSame($data['uid'], $records[0]['uid']);
+    }
+
+    public function testCreateContentWithConflictingPositionPidReturnsError(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $result = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 2,
+            'position' => 'after:100',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Conflicting Position',
+                'colPos' => 0,
+            ],
+        ]);
+
+        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        $this->assertStringContainsString('belongs to pid=1', $result->content[0]->text);
+    }
+
+    public function testCreateContentAfterWorkspaceVersionedReference(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $updateResult = $tool->execute([
+            'action' => 'update',
+            'table' => 'tt_content',
+            'uid' => 100,
+            'data' => [
+                'header' => 'Workspace Overlay Reference',
+            ],
+        ]);
+        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+
+        $createResult = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'position' => 'after:100',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'After Workspace Overlay',
+                'colPos' => 0,
+            ],
+        ]);
+
+        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        $data = json_decode($createResult->content[0]->text, true);
+
+        $records = $this->readVisibleContentRows(1);
+        $referenceIndex = $this->findRecordIndexByUid($records, 100);
+        $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
+
+        $this->assertSame($referenceIndex + 1, $newIndex, json_encode($records));
     }
 
     /**
