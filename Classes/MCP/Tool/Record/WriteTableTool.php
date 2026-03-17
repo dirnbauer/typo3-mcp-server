@@ -406,14 +406,22 @@ final class WriteTableTool extends AbstractRecordTool
         $newRecordData = $data;
         $newRecordData['pid'] = $positioning['dataPid'];
 
-        // Handle sorting for bottom position
-        // Only set sorting if the table has a sorting field configured and not explicitly provided
+        // Handle deterministic top/bottom placement for tables with a sorting field.
+        // Without this, "top" would rely on TYPO3's default insert behavior.
         $sortingField = $this->tableAccessService->getSortingFieldName($table);
-        if ($position === 'bottom' && $sortingField !== null && !isset($data[$sortingField])) {
-            $maxSorting = $this->getVisibleMaxSortingValue($table, $effectivePid, $sortingField);
+        if ($sortingField !== null && !isset($data[$sortingField])) {
+            if ($position === 'bottom') {
+                $maxSorting = $this->getVisibleMaxSortingValue($table, $effectivePid, $sortingField);
 
-            if ($maxSorting !== false && is_numeric($maxSorting)) {
-                $newRecordData[$sortingField] = (int) $maxSorting + 128; // Add some space for future insertions
+                if ($maxSorting !== false && is_numeric($maxSorting)) {
+                    $newRecordData[$sortingField] = (int) $maxSorting + 128; // Add some space for future insertions
+                }
+            } elseif ($position === 'top') {
+                $minSorting = $this->getVisibleMinSortingValue($table, $effectivePid, $sortingField);
+
+                if ($minSorting !== false && is_numeric($minSorting)) {
+                    $newRecordData[$sortingField] = max(0, (int) $minSorting - 128);
+                }
             }
         }
 
@@ -649,6 +657,22 @@ final class WriteTableTool extends AbstractRecordTool
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
             )
             ->orderBy($sortingField, 'DESC')
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
+    }
+
+    protected function getVisibleMinSortingValue(string $table, int $pid, string $sortingField): mixed
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        return $queryBuilder
+            ->select($sortingField)
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+            )
+            ->orderBy($sortingField, 'ASC')
             ->setMaxResults(1)
             ->executeQuery()
             ->fetchOne();

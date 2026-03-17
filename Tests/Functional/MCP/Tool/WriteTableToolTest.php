@@ -711,6 +711,9 @@ class WriteTableToolTest extends AbstractFunctionalTest
     public function testCreateContentAtTop(): void
     {
         $tool = $this->getService(WriteTableTool::class);
+        $existingRecords = $this->readVisibleContentRows(1);
+        $this->assertNotEmpty($existingRecords);
+        $previousFirstSorting = $existingRecords[0]['sorting'] ?? null;
 
         $result = $tool->execute([
             'action' => 'create',
@@ -733,6 +736,8 @@ class WriteTableToolTest extends AbstractFunctionalTest
 
         $records = $this->readVisibleContentRows(1);
         $this->assertSame($data['uid'], $records[0]['uid']);
+        $this->assertIsInt($previousFirstSorting);
+        $this->assertLessThan($previousFirstSorting, $data['sorting']);
     }
 
     public function testCreateContentWithConflictingPositionPidReturnsError(): void

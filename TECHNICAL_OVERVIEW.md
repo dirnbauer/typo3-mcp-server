@@ -122,6 +122,30 @@ The MCP Server provides these tools for interacting with TYPO3:
 ### Content Modification
 - **WriteTable** - Create, update, translate, or delete records (safely in workspace)
 
+#### Write positioning and TYPO3 DataHandler
+
+`WriteTable` uses TYPO3's `DataHandler` for record creation and updates, but the
+MCP-facing `position` parameter is a higher-level abstraction. TYPO3 does not
+offer native `top` and `before` create tokens, so the MCP server translates
+these into workspace-aware operations that behave as editors would expect.
+
+For `action=create`, the current behavior is:
+
+- `bottom`: create on the requested page and, for sortable tables, assign a
+  sorting value after the last visible sibling in the active workspace context
+- `top`: create on the requested page and, for sortable tables, assign a
+  sorting value before the first visible sibling in the active workspace context
+- `after:UID`: resolve the visible target record first and then use TYPO3's
+  native create-after-record behavior by passing a negative pid target to
+  `DataHandler`
+- `before:UID`: resolve the visible target record and translate the request to
+  "after previous visible sibling"; if the target is already first, this becomes
+  a top insert
+
+This translation layer is deliberate. It keeps the MCP interface intuitive
+while still staying aligned with TYPO3's official `DataHandler` model and
+workspace behavior.
+
 ### File Management
 - **BrowseFiles** - Browse file storages and folders in fileadmin; list storages, navigate directories, view file listings with metadata
 - **ReadFileMetadata** - Read metadata for a file by UID or combined identifier (title, description, alt text, categories, dimensions)

@@ -117,6 +117,35 @@ Create, update, translate, or delete TYPO3 records.
 Language-related fields accept ISO codes where supported, for example ``de``
 instead of numeric language UIDs.
 
+Positioning semantics for ``action=create``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``position`` parameter is intentionally simpler than TYPO3's native
+``DataHandler`` API, but it maps to TYPO3 behavior as closely as possible.
+
+- ``bottom``:
+  the MCP layer creates the record on the requested page and, for tables with a
+  TCA sorting field, sets a sorting value after the current last visible record
+  in the active workspace context.
+- ``top``:
+  TYPO3 ``DataHandler`` has no dedicated ``top`` token for record creation, so
+  the MCP layer implements this explicitly by setting a sorting value before the
+  current first visible record in the active workspace context.
+- ``after:UID``:
+  the MCP layer resolves the visible target record first, validates that it
+  belongs to the requested parent page, and then uses TYPO3's native
+  ``DataHandler`` create-after-record semantics by passing a negative pid
+  target.
+- ``before:UID``:
+  TYPO3 ``DataHandler`` has no direct create-before-record primitive, so the MCP
+  layer resolves the previous visible sibling of the target record and creates
+  the new record after that sibling. If the target record is already the first
+  visible sibling, this becomes a top insert on the page.
+
+If the requested ``pid`` and the resolved position target belong to different
+parent pages, the tool returns an error instead of silently creating the record
+on another page.
+
 .. important::
 
    Record writes happen in workspace context. The tools are designed so MCP
