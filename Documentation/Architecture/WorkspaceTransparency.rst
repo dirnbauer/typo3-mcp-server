@@ -47,6 +47,15 @@ The custom ``WorkspaceDeletePlaceholderRestriction`` excludes live records that
 have a delete placeholder in the active workspace. This prevents deleted
 content from leaking into read results.
 
+Move pointers
+-------------
+
+The custom ``WorkspaceMovePointerRestriction`` excludes live records that have
+move pointers in the active workspace. TYPO3 stores a moved workspace record as
+an overlay row with the new ``pid`` and sorting, so without this restriction
+the same logical record would appear at both the old live location and the new
+workspace location.
+
 UID resolution
 --------------
 
@@ -91,6 +100,7 @@ Benefits
 - All tools behave consistently
 - Fewer incorrect intermediary results need post-processing
 - Delete handling is more predictable
+- Moved records appear only at their workspace-visible location
 
 Limitations
 ===========

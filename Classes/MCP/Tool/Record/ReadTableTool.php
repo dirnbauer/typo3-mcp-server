@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceMovePointerRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
@@ -295,7 +296,8 @@ final class ReadTableTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $this->getCurrentWorkspaceId()));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -365,7 +367,8 @@ final class ReadTableTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $this->getCurrentWorkspaceId()));
 
         $countQueryBuilder->count('uid')->from($table);
 
@@ -1264,7 +1267,8 @@ final class ReadTableTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $this->getCurrentWorkspaceId()));
 
         $records = $queryBuilder
             ->select('*')

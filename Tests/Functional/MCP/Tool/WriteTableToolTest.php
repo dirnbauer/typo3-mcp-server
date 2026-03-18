@@ -568,6 +568,65 @@ class WriteTableToolTest extends AbstractFunctionalTest
         // The important verification is that the delete placeholder was created above
     }
 
+    public function testMoveContentElementToDifferentPage(): void
+    {
+        $createPageResult = $this->tool->execute([
+            'action' => 'create',
+            'table' => 'pages',
+            'pid' => $this->getRootPageUid(),
+            'data' => [
+                'title' => 'Move Target Page',
+                'slug' => '/move-target-page',
+                'doktype' => 1,
+            ],
+        ]);
+        self::assertFalse($createPageResult->isError, json_encode($createPageResult->jsonSerialize()));
+
+        $pageData = $this->extractJsonFromResult($createPageResult);
+        $targetPageUid = $pageData['uid'];
+        self::assertIsInt($targetPageUid);
+
+        $moveResult = $this->tool->execute([
+            'action' => 'move',
+            'table' => 'tt_content',
+            'uid' => 100,
+            'pid' => $targetPageUid,
+            'position' => 'bottom',
+        ]);
+        self::assertFalse($moveResult->isError, json_encode($moveResult->jsonSerialize()));
+
+        $moveData = $this->extractJsonFromResult($moveResult);
+        self::assertSame('move', $moveData['action']);
+        self::assertSame('tt_content', $moveData['table']);
+        self::assertSame(100, $moveData['uid']);
+        self::assertSame($targetPageUid, $moveData['pid']);
+        self::assertIsInt($moveData['sorting']);
+
+        $sourceRecords = $this->readVisibleContentRows(1);
+        self::assertNotContains(100, array_column($sourceRecords, 'uid'));
+
+        $targetRecords = $this->readVisibleContentRows($targetPageUid);
+        self::assertContains(100, array_column($targetRecords, 'uid'));
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $movePointer = $queryBuilder->select('uid', 'pid', 't3ver_oid', 't3ver_state', 't3ver_wsid')
+            ->from('tt_content')
+            ->where(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter(100, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_state', $queryBuilder->createNamedParameter(4, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        self::assertIsArray($movePointer, 'Workspace move pointer should be created');
+        self::assertSame($targetPageUid, (int)$movePointer['pid']);
+        self::assertGreaterThan(0, (int)$movePointer['t3ver_wsid']);
+    }
+
     /**
      * Test creating content at bottom position
      */
@@ -1329,6 +1388,7 @@ XML;
         self::assertArrayHasKey('uid', $properties);
         self::assertArrayHasKey('data', $properties);
         self::assertArrayHasKey('position', $properties);
+        self::assertContains('move', $properties['action']['enum']);
 
         // Check required fields
         self::assertArrayHasKey('required', $schema['inputSchema']);

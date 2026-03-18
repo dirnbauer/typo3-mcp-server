@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceMovePointerRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
 use Hn\McpServer\Service\SiteInformationService;
@@ -246,7 +247,8 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $currentWorkspace));
 
         $queryBuilder->select('*')->from('pages');
 
@@ -336,7 +338,8 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $currentWorkspace));
 
         $translations = $queryBuilder->select('sys_language_uid', 'title')
             ->from('pages')
@@ -443,7 +446,8 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $currentWorkspace));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -777,7 +781,8 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $currentWorkspace));
 
         $references = $queryBuilder
             ->select('uid', 't3ver_oid', 'uid_foreign')

@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceMovePointerRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
@@ -694,7 +695,8 @@ final class SearchTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $this->getCurrentWorkspaceId()));
 
         // Select all fields
         $queryBuilder->select('*')->from($table);

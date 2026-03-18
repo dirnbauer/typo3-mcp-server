@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceMovePointerRestriction;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
@@ -88,7 +89,7 @@ final class WriteTableTool extends AbstractRecordTool
         return is_numeric($value) ? (int)$value : null;
     }
 
-    protected function isValidCreatePosition(string $position): bool
+    protected function isValidPosition(string $position): bool
     {
         return \in_array($position, ['top', 'bottom'], true)
             || preg_match('/^(after|before):\d+$/', $position) === 1;
@@ -128,10 +129,10 @@ final class WriteTableTool extends AbstractRecordTool
         sort($tableNames); // Sort alphabetically for better readability
 
         return [
-            'description' => 'Create, update, translate, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live. Language fields (sys_language_uid) can be provided as ISO codes (e.g., "de", "fr") instead of numeric IDs. '
+            'description' => 'Create, update, move, translate, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live. Language fields (sys_language_uid) can be provided as ISO codes (e.g., "de", "fr") instead of numeric IDs. '
                 . 'Before creating or updating content, always use GetPage to understand the page structure, existing content, and writing style. '
                 . 'Check existing content elements with ReadTable to ensure new content fits the page\'s tone and doesn\'t duplicate existing elements. '
-                . 'For content creation, verify the appropriate colPos by examining existing content layout. '
+                . 'For content creation or moves, verify the appropriate target page and content layout. '
                 . 'Note: If you encounter plugins (CType=list) that reference non-workspace capable tables, '
                 . 'look for record storage folders (doktype=254) where the actual records are stored.',
             'inputSchema' => [
@@ -139,8 +140,8 @@ final class WriteTableTool extends AbstractRecordTool
                 'properties' => [
                     'action' => [
                         'type' => 'string',
-                        'description' => 'Action to perform: "create", "update", "translate", or "delete"',
-                        'enum' => ['create', 'update', 'translate', 'delete'],
+                        'description' => 'Action to perform: "create", "update", "move", "translate", or "delete"',
+                        'enum' => ['create', 'update', 'move', 'translate', 'delete'],
                     ],
                     'table' => [
                         'type' => 'string',
@@ -149,11 +150,11 @@ final class WriteTableTool extends AbstractRecordTool
                     ],
                     'pid' => [
                         'type' => 'integer',
-                        'description' => 'Page ID for new records (required for "create" action)',
+                        'description' => 'Target page ID for new records and moves (required for "create" and "move" actions)',
                     ],
                     'uid' => [
                         'type' => 'integer',
-                        'description' => 'Record UID (required for "update" and "delete" actions)',
+                        'description' => 'Record UID (required for "update", "move", and "delete" actions)',
                     ],
                     'data' => [
                         'type' => 'object',
@@ -178,7 +179,7 @@ final class WriteTableTool extends AbstractRecordTool
                     ],
                     'position' => [
                         'type' => 'string',
-                        'description' => 'Position for new records: "top", "bottom", "after:UID", or "before:UID"',
+                        'description' => 'Position for create and move actions: "top", "bottom", "after:UID", or "before:UID"',
                         'default' => 'bottom',
                     ],
                 ],
@@ -211,7 +212,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         // Validate parameters
         if (empty($action)) {
-            throw new ValidationException(['Action is required (create, update, translate, or delete)']);
+            throw new ValidationException(['Action is required (create, update, move, translate, or delete)']);
         }
 
         if (empty($table)) {
@@ -266,7 +267,7 @@ final class WriteTableTool extends AbstractRecordTool
                     throw new ValidationException(['Page ID (pid) is required for create action']);
                 }
 
-                if (!$this->isValidCreatePosition($position)) {
+                if (!$this->isValidPosition($position)) {
                     throw new ValidationException([
                         'Invalid position: ' . $position . '. Valid positions are "top", "bottom", "after:UID", or "before:UID".',
                     ]);
@@ -284,6 +285,26 @@ final class WriteTableTool extends AbstractRecordTool
 
                 if (empty($data) && empty($searchReplace)) {
                     throw new ValidationException(['Data is required for update action']);
+                }
+                break;
+
+            case 'move':
+                if ($uid === null) {
+                    throw new ValidationException(['Record UID is required for move action']);
+                }
+
+                if ($pid === null) {
+                    throw new ValidationException(['Page ID (pid) is required for move action']);
+                }
+
+                if (!$this->isValidPosition($position)) {
+                    throw new ValidationException([
+                        'Invalid position: ' . $position . '. Valid positions are "top", "bottom", "after:UID", or "before:UID".',
+                    ]);
+                }
+
+                if (!empty($data) || !empty($searchReplace)) {
+                    throw new ValidationException(['Data is not supported for move action. Use pid and optional position instead.']);
                 }
                 break;
 
@@ -308,7 +329,7 @@ final class WriteTableTool extends AbstractRecordTool
                 break;
 
             default:
-                throw new ValidationException(['Invalid action: ' . $action . '. Valid actions are: create, update, translate, delete']);
+                throw new ValidationException(['Invalid action: ' . $action . '. Valid actions are: create, update, move, translate, delete']);
         }
 
         // Execute the action
@@ -343,6 +364,12 @@ final class WriteTableTool extends AbstractRecordTool
                 // The language UID has already been converted from ISO code if needed
                 $targetLanguageUid = is_numeric($data['sys_language_uid'] ?? null) ? (int)$data['sys_language_uid'] : 0;
                 return $this->translateRecord($table, $uid, $targetLanguageUid);
+
+            case 'move':
+                if ($uid === null || $pid === null) {
+                    throw new \LogicException('UID and PID must be validated before move');
+                }
+                return $this->moveRecord($table, $uid, $pid, $position);
 
             default:
                 // This should never happen due to earlier validation
@@ -583,6 +610,64 @@ final class WriteTableTool extends AbstractRecordTool
     }
 
     /**
+     * @return array{targetPid: int, moveTarget: int}|string
+     */
+    protected function resolveMovePosition(string $table, int $requestedPid, string $position): array|string
+    {
+        if ($position === 'top') {
+            return [
+                'targetPid' => $requestedPid,
+                'moveTarget' => $requestedPid,
+            ];
+        }
+
+        if ($position === 'bottom') {
+            $lastVisibleSiblingUid = $this->findLastVisibleSiblingUid($table, $requestedPid);
+
+            return [
+                'targetPid' => $requestedPid,
+                'moveTarget' => $lastVisibleSiblingUid === null ? $requestedPid : -$lastVisibleSiblingUid,
+            ];
+        }
+
+        if (preg_match('/^(after|before):(\d+)$/', $position, $matches) !== 1) {
+            return 'Invalid position: ' . $position;
+        }
+
+        $referenceUid = (int)$matches[2];
+        $referenceRecord = $this->findVisiblePositionRecord($table, $referenceUid);
+        if ($referenceRecord === null) {
+            return 'Position reference record not found: uid=' . $referenceUid . ' in table ' . $table;
+        }
+
+        $referencePid = is_numeric($referenceRecord['pid'] ?? null) ? (int)$referenceRecord['pid'] : 0;
+        if ($referencePid !== $requestedPid) {
+            return 'Position reference record uid=' . $referenceUid . ' belongs to pid=' . $referencePid
+                . ', but the move request specified pid=' . $requestedPid . '.'
+                . ' Use the reference record\'s parent pid or remove the conflicting position.';
+        }
+
+        $referenceActualUid = is_numeric($referenceRecord['uid'] ?? null) ? (int)$referenceRecord['uid'] : 0;
+        if ($referenceActualUid <= 0) {
+            return 'Position reference record uid=' . $referenceUid . ' could not be resolved in the active workspace.';
+        }
+
+        if ($matches[1] === 'after') {
+            return [
+                'targetPid' => $referencePid,
+                'moveTarget' => -$referenceActualUid,
+            ];
+        }
+
+        $previousSiblingUid = $this->findPreviousVisibleSiblingUid($table, $referencePid, $referenceUid);
+
+        return [
+            'targetPid' => $referencePid,
+            'moveTarget' => $previousSiblingUid === null ? $referencePid : -$previousSiblingUid,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     protected function findVisiblePositionRecord(string $table, int $referenceUid): ?array
@@ -639,6 +724,54 @@ final class WriteTableTool extends AbstractRecordTool
         return null;
     }
 
+    protected function findLastVisibleSiblingUid(string $table, int $pid): ?int
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        $queryBuilder
+            ->select('uid', 't3ver_oid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+            );
+
+        $sortingField = $this->tableAccessService->getSortingFieldName($table);
+        if ($sortingField !== null) {
+            $queryBuilder->orderBy($sortingField, 'DESC')
+                ->addOrderBy('uid', 'DESC');
+        } else {
+            $defaultSorting = $this->tableAccessService->parseDefaultSorting($table);
+            if ($defaultSorting !== []) {
+                foreach ($defaultSorting as $index => $sorting) {
+                    $direction = strtoupper($sorting['direction']) === 'DESC' ? 'ASC' : 'DESC';
+                    if ($index === 0) {
+                        $queryBuilder->orderBy($sorting['field'], $direction);
+                    } else {
+                        $queryBuilder->addOrderBy($sorting['field'], $direction);
+                    }
+                }
+            }
+            $queryBuilder->addOrderBy('uid', 'DESC');
+        }
+
+        $records = $queryBuilder
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        foreach ($records as $record) {
+            $visibleUid = is_numeric($record['t3ver_oid'] ?? null) && (int)$record['t3ver_oid'] > 0
+                ? (int)$record['t3ver_oid']
+                : (is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0);
+
+            if ($visibleUid > 0) {
+                return is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : null;
+            }
+        }
+
+        return null;
+    }
+
     protected function getVisibleMaxSortingValue(string $table, int $pid, string $sortingField): mixed
     {
         $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
@@ -680,7 +813,8 @@ final class WriteTableTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceMovePointerRestriction::class, $currentWorkspace));
 
         return $queryBuilder;
     }
@@ -885,6 +1019,47 @@ final class WriteTableTool extends AbstractRecordTool
             'action' => 'delete',
             'table' => $table,
             'uid' => $uid, // Return the live UID that was passed in
+        ]);
+    }
+
+    protected function moveRecord(string $table, int $uid, int $pid, string $position): CallToolResult
+    {
+        $pageAccessError = $this->validatePageAccess($pid);
+        if ($pageAccessError !== null) {
+            return $this->createErrorResult($pageAccessError);
+        }
+
+        $positioning = $this->resolveMovePosition($table, $pid, $position);
+        if (\is_string($positioning)) {
+            return $this->createErrorResult($positioning);
+        }
+
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $this->assignBackendUser($dataHandler);
+        $dataHandler->start([], [
+            $table => [
+                $workspaceUid => [
+                    'move' => $positioning['moveTarget'],
+                ],
+            ],
+        ]);
+        $dataHandler->process_cmdmap();
+
+        if (!empty($dataHandler->errorLog)) {
+            return $this->createErrorResult('Error moving record: ' . $this->formatDataHandlerErrors($dataHandler->errorLog));
+        }
+
+        $resolvedWorkspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $recordInfo = $this->getCreatedRecordInfo($table, $resolvedWorkspaceUid, $positioning['targetPid']);
+
+        return $this->createJsonResult([
+            'action' => 'move',
+            'table' => $table,
+            'uid' => $uid,
+            'pid' => $recordInfo['pid'],
+            'sorting' => $recordInfo['sorting'],
         ]);
     }
 
@@ -1958,18 +2133,39 @@ final class WriteTableTool extends AbstractRecordTool
             return $liveUid;
         }
 
-        // Use BackendUtility to get the workspace version
-        $record = BackendUtility::getRecord($table, $liveUid);
-        if (!$record) {
-            return $liveUid;
+        $queryBuilder = $this->connectionPool
+            ->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $workspaceRecord = $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_wsid', $queryBuilder->createNamedParameter($currentWorkspace, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
+
+        if (is_numeric($workspaceRecord)) {
+            return (int)$workspaceRecord;
         }
 
-        // Let BackendUtility handle the workspace overlay
-        BackendUtility::workspaceOL($table, $record);
+        $workspaceOverlayUid = $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_wsid', $queryBuilder->createNamedParameter($currentWorkspace, ParameterType::INTEGER)),
+            )
+            ->orderBy('uid', 'DESC')
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
 
-        // If we got a different UID, that's the workspace version
-        if (isset($record['_ORIG_uid']) && $record['_ORIG_uid'] != $liveUid) {
-            return (int)$record['uid'];
+        if (is_numeric($workspaceOverlayUid)) {
+            return (int)$workspaceOverlayUid;
         }
 
         return $liveUid;

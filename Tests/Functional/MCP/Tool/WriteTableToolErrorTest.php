@@ -120,6 +120,24 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
         self::assertTrue($result->isError);
         self::assertStringContainsString('Data is required for update action', $result->content[0]->text);
+
+        // Missing UID for move
+        $result = $this->tool->execute([
+            'action' => 'move',
+            'table' => 'pages',
+            'pid' => 1,
+        ]);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Record UID is required for move action', $result->content[0]->text);
+
+        // Missing PID for move
+        $result = $this->tool->execute([
+            'action' => 'move',
+            'table' => 'pages',
+            'uid' => 1,
+        ]);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Page ID (pid) is required for move action', $result->content[0]->text);
     }
 
     /**
