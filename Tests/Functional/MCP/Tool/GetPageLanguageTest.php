@@ -165,15 +165,15 @@ class GetPageLanguageTest extends FunctionalTestCase
         $schema = $tool->getSchema();
 
         // Should have language parameter with enum
-        $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
-        $this->assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertArrayHasKey('language', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
+        self::assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
 
         // Should have deprecated languageId parameter
-        $this->assertArrayHasKey('languageId', $schema['inputSchema']['properties']);
-        $this->assertTrue($schema['inputSchema']['properties']['languageId']['deprecated'] ?? false);
+        self::assertArrayHasKey('languageId', $schema['inputSchema']['properties']);
+        self::assertTrue($schema['inputSchema']['properties']['languageId']['deprecated'] ?? false);
     }
 
     /**
@@ -189,15 +189,15 @@ class GetPageLanguageTest extends FunctionalTestCase
             'uid' => 2,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show default English content
-        $this->assertStringContainsString('Title: About', $output);
-        $this->assertStringContainsString('Team Introduction', $output);
-        $this->assertStringContainsString('Meet our team', $output);
-        $this->assertStringNotContainsString('Language:', $output);
-        $this->assertStringNotContainsString('Translated:', $output);
+        self::assertStringContainsString('Title: About', $output);
+        self::assertStringContainsString('Team Introduction', $output);
+        self::assertStringContainsString('Meet our team', $output);
+        self::assertStringNotContainsString('Language:', $output);
+        self::assertStringNotContainsString('Translated:', $output);
     }
 
     /**
@@ -214,20 +214,20 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show German page title and subtitle
-        $this->assertStringContainsString('Title: Über uns', $output);
-        $this->assertStringContainsString('Subtitle: Erfahren Sie mehr über unser Unternehmen', $output);
+        self::assertStringContainsString('Title: Über uns', $output);
+        self::assertStringContainsString('Subtitle: Erfahren Sie mehr über unser Unternehmen', $output);
 
         // Should show language information
-        $this->assertStringContainsString('Language: DE (ID: 1)', $output);
-        $this->assertStringContainsString('Translated: Yes', $output);
+        self::assertStringContainsString('Language: DE (ID: 1)', $output);
+        self::assertStringContainsString('Translated: Yes', $output);
 
         // Should show German content
-        $this->assertStringContainsString('Willkommen auf der Über uns Seite', $output);
-        $this->assertStringContainsString('Nur auf Deutsch verfügbar', $output);
+        self::assertStringContainsString('Willkommen auf der Über uns Seite', $output);
+        self::assertStringContainsString('Nur auf Deutsch verfügbar', $output);
 
         // Should show both German content and fallback default content
         // This is intended behavior - untranslated content falls back to default language
@@ -247,20 +247,20 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show French page title and subtitle
-        $this->assertStringContainsString('Title: À propos', $output);
-        $this->assertStringContainsString('Subtitle: En savoir plus sur notre entreprise', $output);
+        self::assertStringContainsString('Title: À propos', $output);
+        self::assertStringContainsString('Subtitle: En savoir plus sur notre entreprise', $output);
 
         // Should show language information
-        $this->assertStringContainsString('Language: FR (ID: 2)', $output);
-        $this->assertStringContainsString('Translated: Yes', $output);
+        self::assertStringContainsString('Language: FR (ID: 2)', $output);
+        self::assertStringContainsString('Translated: Yes', $output);
 
         // French has no content translations, should show default content
-        $this->assertStringContainsString('Team Introduction', $output);
-        $this->assertStringContainsString('Meet our team', $output);
+        self::assertStringContainsString('Team Introduction', $output);
+        self::assertStringContainsString('Meet our team', $output);
     }
 
     /**
@@ -277,11 +277,11 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'en',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show available translations
-        $this->assertStringContainsString('Available Translations: DE, FR', $output);
+        self::assertStringContainsString('Available Translations: DE, FR', $output);
     }
 
     /**
@@ -296,9 +296,9 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'xx',
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? $result->content[0]->text;
-        $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
+        self::assertStringContainsString('Unknown language code: xx', $errorMessage);
     }
 
     /**
@@ -315,12 +315,12 @@ class GetPageLanguageTest extends FunctionalTestCase
             'languageId' => 1,  // Using deprecated parameter
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should work with numeric languageId
-        $this->assertStringContainsString('Title: Über uns', $output);
-        $this->assertStringContainsString('Language: DE (ID: 1)', $output);
+        self::assertStringContainsString('Title: Über uns', $output);
+        self::assertStringContainsString('Language: DE (ID: 1)', $output);
     }
 
     /**
@@ -337,11 +337,11 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should resolve URL and show German version
-        $this->assertStringContainsString('Title: Über uns', $output);
-        $this->assertStringContainsString('URL: https://example.com/', $output);
+        self::assertStringContainsString('Title: Über uns', $output);
+        self::assertStringContainsString('URL: https://example.com/', $output);
     }
 }

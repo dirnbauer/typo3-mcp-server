@@ -35,7 +35,7 @@ final class TableAccessServiceTest extends FunctionalTestCase
     {
         $result = TableAccessService::translateLabel('Plain Label');
 
-        $this->assertSame('Plain Label', $result);
+        self::assertSame('Plain Label', $result);
     }
 
     public function testTranslateLabelReturnsFallbackForDeprecatedKeys(): void
@@ -44,7 +44,7 @@ final class TableAccessServiceTest extends FunctionalTestCase
             'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:header_formlabel',
         );
 
-        $this->assertSame('Header', $result);
+        self::assertSame('Header', $result);
     }
 
     public function testParseSelectItemsWithAssociativeSyntax(): void
@@ -58,8 +58,8 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
         $result = $this->service->parseSelectItems($items);
 
-        $this->assertSame(['a', 'b', 'c'], $result['values']);
-        $this->assertSame('Option A', $result['labels']['a']);
+        self::assertSame(['a', 'b', 'c'], $result['values']);
+        self::assertSame('Option A', $result['labels']['a']);
     }
 
     public function testParseSelectItemsWithNumericSyntax(): void
@@ -71,8 +71,8 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
         $result = $this->service->parseSelectItems($items);
 
-        $this->assertSame(['val1', 'val2'], $result['values']);
-        $this->assertSame('Label One', $result['labels']['val1']);
+        self::assertSame(['val1', 'val2'], $result['values']);
+        self::assertSame('Label One', $result['labels']['val1']);
     }
 
     public function testParseSelectItemsIncludesDividersWhenRequested(): void
@@ -85,7 +85,7 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
         $result = $this->service->parseSelectItems($items, false);
 
-        $this->assertSame(['a', '--div--', 'b'], $result['values']);
+        self::assertSame(['a', '--div--', 'b'], $result['values']);
     }
 
     public function testParseSelectItemsSkipsNonArrayItems(): void
@@ -99,123 +99,123 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
         $result = $this->service->parseSelectItems($items);
 
-        $this->assertSame(['valid'], $result['values']);
+        self::assertSame(['valid'], $result['values']);
     }
 
     public function testParseSelectItemsWithEmptyArray(): void
     {
         $result = $this->service->parseSelectItems([]);
 
-        $this->assertSame([], $result['values']);
-        $this->assertSame([], $result['labels']);
+        self::assertSame([], $result['values']);
+        self::assertSame([], $result['labels']);
     }
 
     public function testCanAccessTableForPages(): void
     {
         $result = $this->service->canAccessTable('pages');
 
-        $this->assertTrue($result, 'Pages table should be accessible');
+        self::assertTrue($result, 'Pages table should be accessible');
     }
 
     public function testCanAccessTableRejectsNonexistentTable(): void
     {
         $result = $this->service->canAccessTable('table_that_does_not_exist');
 
-        $this->assertFalse($result, 'Nonexistent table should not be accessible');
+        self::assertFalse($result, 'Nonexistent table should not be accessible');
     }
 
     public function testCanAccessTableRejectsSystemLogTable(): void
     {
         $result = $this->service->canAccessTable('sys_log');
 
-        $this->assertFalse($result, 'sys_log should be restricted');
+        self::assertFalse($result, 'sys_log should be restricted');
     }
 
     public function testGetAccessibleTablesReturnsArray(): void
     {
         $tables = $this->service->getAccessibleTables();
 
-        $this->assertIsArray($tables);
-        $this->assertArrayHasKey('pages', $tables);
-        $this->assertArrayHasKey('tt_content', $tables);
+        self::assertIsArray($tables);
+        self::assertArrayHasKey('pages', $tables);
+        self::assertArrayHasKey('tt_content', $tables);
     }
 
     public function testGetTableTitleReturnsString(): void
     {
         $title = $this->service->getTableTitle('pages');
 
-        $this->assertNotEmpty($title);
+        self::assertNotEmpty($title);
     }
 
     public function testGetTableTitleReturnsTableNameForUnknownTable(): void
     {
         $title = $this->service->getTableTitle('nonexistent_table');
 
-        $this->assertSame('nonexistent_table', $title);
+        self::assertSame('nonexistent_table', $title);
     }
 
     public function testGetTypeFieldNameReturnsCTypeForTtContent(): void
     {
         $typeField = $this->service->getTypeFieldName('tt_content');
 
-        $this->assertSame('CType', $typeField);
+        self::assertSame('CType', $typeField);
     }
 
     public function testGetLabelFieldNameReturnsTitleForPages(): void
     {
         $labelField = $this->service->getLabelFieldName('pages');
 
-        $this->assertSame('title', $labelField);
+        self::assertSame('title', $labelField);
     }
 
     public function testGetAvailableTypesReturnsTypesForTtContent(): void
     {
         $types = $this->service->getAvailableTypes('tt_content');
 
-        $this->assertIsArray($types);
-        $this->assertArrayHasKey('text', $types);
-        $this->assertArrayHasKey('textmedia', $types);
+        self::assertIsArray($types);
+        self::assertArrayHasKey('text', $types);
+        self::assertArrayHasKey('textmedia', $types);
     }
 
     public function testIsDateFieldReturnsTrueForCommonDateFields(): void
     {
-        $this->assertTrue($this->service->isDateField('pages', 'tstamp'));
-        $this->assertTrue($this->service->isDateField('pages', 'crdate'));
+        self::assertTrue($this->service->isDateField('pages', 'tstamp'));
+        self::assertTrue($this->service->isDateField('pages', 'crdate'));
     }
 
     public function testIsDateFieldReturnsFalseForNonDateFields(): void
     {
-        $this->assertFalse($this->service->isDateField('pages', 'title'));
+        self::assertFalse($this->service->isDateField('pages', 'title'));
     }
 
     public function testGetSearchFieldsReturnsFieldsForPages(): void
     {
         $fields = $this->service->getSearchFields('pages');
 
-        $this->assertIsArray($fields);
-        $this->assertNotEmpty($fields);
+        self::assertIsArray($fields);
+        self::assertNotEmpty($fields);
     }
 
     public function testGetEssentialFieldsIncludesUidAndPid(): void
     {
         $fields = $this->service->getEssentialFields('pages');
 
-        $this->assertContains('uid', $fields);
-        $this->assertContains('pid', $fields);
+        self::assertContains('uid', $fields);
+        self::assertContains('pid', $fields);
     }
 
     public function testValidateFieldValueReturnsNullForValidData(): void
     {
         $result = $this->service->validateFieldValue('pages', 'title', 'A valid title');
 
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testValidateFieldValueReturnsErrorForNonexistentField(): void
     {
         $result = $this->service->validateFieldValue('pages', 'nonexistent_field_xyz', 'value');
 
-        $this->assertIsString($result);
-        $this->assertStringContainsString('does not exist', $result);
+        self::assertIsString($result);
+        self::assertStringContainsString('does not exist', $result);
     }
 }

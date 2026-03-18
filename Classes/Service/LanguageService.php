@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use Throwable;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
@@ -100,7 +99,7 @@ final class LanguageService
             if ($languageCode !== '' && \strlen($languageCode) === 2) {
                 return strtolower($languageCode);
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // Locale might not be properly configured
         }
 
@@ -115,7 +114,7 @@ final class LanguageService
 
         // 4. Try to parse locale string as fallback
         if (isset($languageConfig['locale']) && !empty($languageConfig['locale'])) {
-            $parts = preg_split('/[_\-\.]/', (string) $languageConfig['locale']);
+            $parts = preg_split('/[_\-\.]/', (string)$languageConfig['locale']);
             if (!empty($parts[0]) && \strlen($parts[0]) === 2) {
                 return strtolower($parts[0]);
             }
@@ -220,7 +219,7 @@ final class LanguageService
                         'uid' => $language->getLanguageId(),
                         'isoCode' => $isoCode,
                         'title' => $language->getTitle(),
-                        'locale' => (string) $language->getLocale(),
+                        'locale' => (string)$language->getLocale(),
                         'enabled' => $language->isEnabled(),
                     ];
                 }
@@ -260,7 +259,7 @@ final class LanguageService
                         'uid' => $uid,
                         'isoCode' => $isoCode,
                         'title' => $language->getTitle(),
-                        'locale' => (string) $language->getLocale(),
+                        'locale' => (string)$language->getLocale(),
                         'enabled' => $language->isEnabled(),
                     ];
                     $seen[$uid] = true;

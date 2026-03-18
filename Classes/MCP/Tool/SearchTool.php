@@ -14,9 +14,7 @@ use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Utility\RecordFormattingUtility;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -109,9 +107,9 @@ final class SearchTool extends AbstractRecordTool
     protected function getToolSchema(): array
     {
         $schema = [
-            'description' => "Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. "
-                . "Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, "
-                . "or for thorough duplicate checking after initial exploration.",
+            'description' => 'Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. '
+                . 'Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, '
+                . 'or for thorough duplicate checking after initial exploration.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -187,12 +185,12 @@ final class SearchTool extends AbstractRecordTool
             }
 
             $recommendation = "MULTILINGUAL SEARCH:\n";
-            $recommendation .= "• This site has " . \count($languages) . " languages configured:\n";
+            $recommendation .= '• This site has ' . \count($languages) . " languages configured:\n";
 
             foreach ($languages as $langId => $langInfo) {
                 $recommendation .= "  - {$langInfo['title']} ({$langInfo['iso']})";
                 if ($langId === 0) {
-                    $recommendation .= " [Default]";
+                    $recommendation .= ' [Default]';
                 }
                 $recommendation .= "\n";
             }
@@ -203,7 +201,7 @@ final class SearchTool extends AbstractRecordTool
 
             return $recommendation;
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // Log the error but return a helpful message
             $this->logException($e, 'language detection');
             return "LANGUAGES:\n• Could not detect language configuration\n• Try search terms in your site's primary language\n\n";
@@ -225,7 +223,7 @@ final class SearchTool extends AbstractRecordTool
         $terms = \is_array($params['terms'] ?? null) ? $params['terms'] : [];
         $termLogic = strtoupper(\is_string($params['termLogic'] ?? null) ? $params['termLogic'] : 'OR');
         $table = trim(\is_string($params['table'] ?? null) ? $params['table'] : '');
-        $pageId = isset($params['pageId']) && is_numeric($params['pageId']) ? (int) $params['pageId'] : null;
+        $pageId = isset($params['pageId']) && is_numeric($params['pageId']) ? (int)$params['pageId'] : null;
         $limit = 50;
 
         // Handle language parameter
@@ -426,7 +424,7 @@ final class SearchTool extends AbstractRecordTool
 
                     // Add the inline match info to each parent record
                     foreach ($parentRecords as $parentRecord) {
-                        $parentUid = is_numeric($parentRecord['uid'] ?? null) ? (int) $parentRecord['uid'] : 0;
+                        $parentUid = is_numeric($parentRecord['uid'] ?? null) ? (int)$parentRecord['uid'] : 0;
                         if ($parentUid <= 0) {
                             continue;
                         }
@@ -510,11 +508,11 @@ final class SearchTool extends AbstractRecordTool
         } elseif ($relationType === 'select') {
             // For select relations, find records that reference this inline record
             $inlineUid = $inlineRecord['uid'] ?? null;
-            if (\is_scalar($inlineUid) && (string) $inlineUid !== '') {
+            if (\is_scalar($inlineUid) && (string)$inlineUid !== '') {
                 $queryBuilder->where(
                     $queryBuilder->expr()->like(
                         $parentField,
-                        $queryBuilder->createNamedParameter('%' . (string) $inlineUid . '%'),
+                        $queryBuilder->createNamedParameter('%' . (string)$inlineUid . '%'),
                     ),
                 );
             } else {
@@ -529,7 +527,7 @@ final class SearchTool extends AbstractRecordTool
 
             // Enhance with page information
             return $this->enhanceRecordsWithPageInfo($parentRecords, $parentTable);
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // Log the error but continue without parent records
             $this->logException($e, 'finding parent records');
             return [];
@@ -548,7 +546,7 @@ final class SearchTool extends AbstractRecordTool
             // Validate table access using TableAccessService
             try {
                 $this->ensureTableAccess($specificTable, 'read');
-            } catch (InvalidArgumentException $e) {
+            } catch (\InvalidArgumentException $e) {
                 throw new ValidationException(['Cannot search table "' . $specificTable . '": ' . $e->getMessage()]);
             }
 
@@ -671,7 +669,7 @@ final class SearchTool extends AbstractRecordTool
             }
 
             return $validFields;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // Log validation error but continue with original fields
             $this->logException($e, 'validating searchable fields');
             return $searchableFields;
@@ -703,7 +701,6 @@ final class SearchTool extends AbstractRecordTool
 
         // Validate searchable fields exist in database
         $validSearchFields = $this->validateSearchableFields($table, $searchableFields);
-
 
         if (empty($validSearchFields)) {
             return [];
@@ -819,14 +816,14 @@ final class SearchTool extends AbstractRecordTool
             // For workspace transparency, replace workspace UID with live UID
             if (isset($record['t3ver_oid']) && $record['t3ver_oid'] > 0) {
                 // This is a workspace version - use the live UID instead
-                $record['uid'] = is_numeric($record['t3ver_oid']) ? (int) $record['t3ver_oid'] : $record['uid'];
+                $record['uid'] = is_numeric($record['t3ver_oid']) ? (int)$record['t3ver_oid'] : $record['uid'];
             } elseif (isset($record['t3ver_state']) && $record['t3ver_state'] == 1) {
                 // This is a new placeholder record - its UID is already the "live" UID
                 // No change needed
             }
 
             // De-duplicate records based on UID after processing
-            $uid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+            $uid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
             if (!isset($seenUids[$uid])) {
                 $processedRecords[] = $record;
                 $seenUids[$uid] = true;
@@ -838,8 +835,8 @@ final class SearchTool extends AbstractRecordTool
         // Get unique page IDs
         $pageIds = [];
         foreach ($records as $record) {
-            if (is_numeric($record['pid'] ?? null) && (int) $record['pid'] > 0) {
-                $pageIds[] = (int) $record['pid'];
+            if (is_numeric($record['pid'] ?? null) && (int)$record['pid'] > 0) {
+                $pageIds[] = (int)$record['pid'];
             }
         }
 
@@ -854,7 +851,7 @@ final class SearchTool extends AbstractRecordTool
 
         // Enhance records
         foreach ($records as &$record) {
-            $pid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
+            $pid = is_numeric($record['pid'] ?? null) ? (int)$record['pid'] : 0;
             if (isset($pageInfo[$pid])) {
                 $record['_page'] = $pageInfo[$pid];
             }
@@ -898,7 +895,7 @@ final class SearchTool extends AbstractRecordTool
         // Index by UID
         $pageInfo = [];
         foreach ($pages as $page) {
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
             if ($pageUid > 0) {
                 $pageInfo[$pageUid] = $page;
             }
@@ -922,16 +919,16 @@ final class SearchTool extends AbstractRecordTool
 
         // Display search terms
         if (\count($searchTerms) === 1) {
-            $result .= "Query: \"" . $searchTerms[0] . "\"\n";
+            $result .= 'Query: "' . $searchTerms[0] . "\"\n";
         } else {
-            $result .= "Search Terms: [" . implode(', ', array_map(fn($t) => '"' . $t . '"', $searchTerms)) . "]\n";
-            $result .= "Logic: " . $termLogic . " (records must match "
+            $result .= 'Search Terms: [' . implode(', ', array_map(fn($t) => '"' . $t . '"', $searchTerms)) . "]\n";
+            $result .= 'Logic: ' . $termLogic . ' (records must match '
                       . ($termLogic === 'AND' ? 'ALL terms' : 'ANY term') . ")\n";
         }
 
         if ($languageId !== null) {
             $isoCode = $this->languageService->getIsoCodeFromUid($languageId) ?? 'unknown';
-            $result .= "Language Filter: " . strtoupper($isoCode) . " (ID: $languageId)\n";
+            $result .= 'Language Filter: ' . strtoupper($isoCode) . " (ID: $languageId)\n";
         }
 
         $result .= "\n";
@@ -946,7 +943,7 @@ final class SearchTool extends AbstractRecordTool
         }
 
         $result .= "Total Results: $totalResults\n";
-        $result .= "Tables Searched: " . \count($searchResults) . "\n\n";
+        $result .= 'Tables Searched: ' . \count($searchResults) . "\n\n";
 
         // If no results, show no results message
         if ($totalResults === 0) {
@@ -985,7 +982,7 @@ final class SearchTool extends AbstractRecordTool
             $records = $tableData;
         }
 
-        $result .= "Found " . \count($records) . " record(s)\n\n";
+        $result .= 'Found ' . \count($records) . " record(s)\n\n";
 
         foreach ($records as $record) {
             if (!\is_array($record)) {
@@ -1009,31 +1006,31 @@ final class SearchTool extends AbstractRecordTool
     protected function formatRecord(string $table, array $record, array $searchTerms, ?int $languageId = null): string
     {
         $title = RecordFormattingUtility::getRecordTitle($table, $record);
-        $uid = \is_scalar($record['uid'] ?? null) ? (string) $record['uid'] : 'unknown';
+        $uid = \is_scalar($record['uid'] ?? null) ? (string)$record['uid'] : 'unknown';
 
         $result = "• [UID: $uid] $title\n";
 
         // Add page information if available
         if (isset($record['_page']) && \is_array($record['_page'])) {
             $pageInfo = $record['_page'];
-            $pageTitle = \is_scalar($pageInfo['title'] ?? null) ? (string) $pageInfo['title'] : 'Untitled Page';
-            $pageUid = \is_scalar($pageInfo['uid'] ?? null) ? (string) $pageInfo['uid'] : 'unknown';
+            $pageTitle = \is_scalar($pageInfo['title'] ?? null) ? (string)$pageInfo['title'] : 'Untitled Page';
+            $pageUid = \is_scalar($pageInfo['uid'] ?? null) ? (string)$pageInfo['uid'] : 'unknown';
             $result .= "  📍 Page: $pageTitle [UID: $pageUid]\n";
         }
 
         // Add record type information
         if ($table === 'tt_content' && isset($record['CType'])) {
-            $cType = \is_scalar($record['CType']) ? (string) $record['CType'] : 'unknown';
+            $cType = \is_scalar($record['CType']) ? (string)$record['CType'] : 'unknown';
             $cTypeLabel = RecordFormattingUtility::getContentTypeLabel($cType);
             $result .= "  🎯 Type: $cTypeLabel ($cType)\n";
         }
 
         // Add language information if table has language support
         if ($this->tableHasLanguageSupport($table) && isset($record['sys_language_uid'])) {
-            $recordLangId = is_numeric($record['sys_language_uid']) ? (int) $record['sys_language_uid'] : 0;
+            $recordLangId = is_numeric($record['sys_language_uid']) ? (int)$record['sys_language_uid'] : 0;
             if ($recordLangId > 0) {
                 $langCode = $this->languageService->getIsoCodeFromUid($recordLangId) ?? 'unknown';
-                $result .= "  🌐 Language: " . strtoupper($langCode) . "\n";
+                $result .= '  🌐 Language: ' . strtoupper($langCode) . "\n";
             } elseif ($recordLangId === -1) {
                 $result .= "  🌐 Language: All\n";
             }
@@ -1100,7 +1097,7 @@ final class SearchTool extends AbstractRecordTool
             if (!\is_scalar($record[$field])) {
                 continue;
             }
-            $content = (string) $record[$field];
+            $content = (string)$record[$field];
 
             // Remove HTML tags for preview
             $content = strip_tags($content);

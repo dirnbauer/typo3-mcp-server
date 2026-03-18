@@ -7,8 +7,8 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
-use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -120,7 +120,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $createData = json_decode($createResult->content[0]->text, true);
         $contentId = $createData['uid'];
 
@@ -136,7 +136,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($germanResult->isError, json_encode($germanResult->jsonSerialize()));
+        self::assertFalse($germanResult->isError, json_encode($germanResult->jsonSerialize()));
         $germanData = json_decode($germanResult->content[0]->text, true);
 
         // Verify it was created with correct language UID
@@ -152,8 +152,8 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertEquals(1, $record['sys_language_uid'], 'German ISO code should be converted to UID 1');
-        $this->assertEquals('Deutscher Header', $record['header']);
+        self::assertEquals(1, $record['sys_language_uid'], 'German ISO code should be converted to UID 1');
+        self::assertEquals('Deutscher Header', $record['header']);
     }
 
     /**
@@ -170,15 +170,15 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'pid' => 1,
         ]);
 
-        $this->assertFalse($allResult->isError, json_encode($allResult->jsonSerialize()));
+        self::assertFalse($allResult->isError, json_encode($allResult->jsonSerialize()));
         $allData = json_decode($allResult->content[0]->text, true);
 
         // Should find content in multiple languages
         $englishRecords = array_filter($allData['records'], fn($r) => $r['sys_language_uid'] == 0);
         $germanRecords = array_filter($allData['records'], fn($r) => $r['sys_language_uid'] == 1);
 
-        $this->assertNotEmpty($englishRecords, 'Should find English content');
-        $this->assertNotEmpty($germanRecords, 'Should find German content');
+        self::assertNotEmpty($englishRecords, 'Should find English content');
+        self::assertNotEmpty($germanRecords, 'Should find German content');
     }
 
     /**
@@ -198,7 +198,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $createData = json_decode($createResult->content[0]->text, true);
         $originalId = $createData['uid'];
 
@@ -213,7 +213,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
 
         // Verify translation was created
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -232,12 +232,12 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertIsArray($translation, 'Translation should exist');
+        self::assertIsArray($translation, 'Translation should exist');
         // The translation might have been created with a placeholder
         // or the actual translation depending on TYPO3 configuration
-        $this->assertNotEmpty($translation['header']);
-        $this->assertEquals(1, $translation['sys_language_uid']);
-        $this->assertEquals($originalId, $translation['l18n_parent']);
+        self::assertNotEmpty($translation['header']);
+        self::assertEquals(1, $translation['sys_language_uid']);
+        self::assertEquals($originalId, $translation['l18n_parent']);
     }
 
     /**
@@ -263,7 +263,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertIsArray($germanRecord, 'Should find German translation');
+        self::assertIsArray($germanRecord, 'Should find German translation');
 
         // Update the German translation
         $updateResult = $this->writeTool->execute([
@@ -275,7 +275,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         // Read it back to verify
         $readResult = $this->readTool->execute([
@@ -283,12 +283,12 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'uid' => $germanRecord['uid'],
         ]);
 
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = json_decode($readResult->content[0]->text, true);
 
-        $this->assertCount(1, $readData['records']);
+        self::assertCount(1, $readData['records']);
         // Verify we got the record back
-        $this->assertCount(1, $readData['records']);
+        self::assertCount(1, $readData['records']);
         // In test environment, the update might not reflect immediately
         // Just verify we can read and update translations without errors
     }
@@ -309,8 +309,8 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Unknown language code: invalid_code', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Unknown language code: invalid_code', $result->content[0]->text);
     }
 
     /**
@@ -331,7 +331,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
+        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
         $liveData = json_decode($liveResult->content[0]->text, true);
         $liveId = $liveData['uid'];
 
@@ -349,7 +349,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
 
         // Update original in workspace
         $updateResult = $this->writeTool->execute([
@@ -361,7 +361,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         // Read both versions through tool - should see workspace versions
         $englishRead = $this->readTool->execute([
@@ -369,9 +369,9 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'uid' => $liveId,
         ]);
 
-        $this->assertFalse($englishRead->isError, json_encode($englishRead->jsonSerialize()));
+        self::assertFalse($englishRead->isError, json_encode($englishRead->jsonSerialize()));
         $englishData = json_decode($englishRead->content[0]->text, true);
-        $this->assertEquals('Workspace English', $englishData['records'][0]['header']);
+        self::assertEquals('Workspace English', $englishData['records'][0]['header']);
 
         // Find and read German translation
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -396,10 +396,10 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
                 'uid' => $germanRecord['uid'],
             ]);
 
-            $this->assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize()));
+            self::assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize()));
             $germanData = json_decode($germanRead->content[0]->text, true);
             // The translation might have a placeholder text initially
-            $this->assertNotEmpty($germanData['records'][0]['header']);
+            self::assertNotEmpty($germanData['records'][0]['header']);
             // Just verify we can read the German translation
         }
     }

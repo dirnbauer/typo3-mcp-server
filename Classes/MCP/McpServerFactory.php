@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
-use InvalidArgumentException;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
 use Mcp\Server\Server;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use Throwable;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -118,12 +116,12 @@ final readonly class McpServerFactory
 
             $tool = $toolRegistry->getTool($toolName);
             if (!$tool) {
-                throw new InvalidArgumentException('Tool not found: ' . $toolName);
+                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
             }
 
             try {
                 return $tool->execute($arguments);
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 $debug('Error executing tool ' . $toolName . ': ' . $e->getMessage());
                 return new CallToolResult(
                     [new TextContent($e->getMessage())],

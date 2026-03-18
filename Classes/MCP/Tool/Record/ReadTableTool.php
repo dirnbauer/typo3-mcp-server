@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
-use DateTime;
-use DateTimeZone;
 use Doctrine\DBAL\ParameterType;
-use Exception;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
-use RuntimeException;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -51,7 +46,7 @@ final class ReadTableTool extends AbstractRecordTool
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
-            throw new RuntimeException('Backend user context not initialized');
+            throw new \RuntimeException('Backend user context not initialized');
         }
 
         return $backendUser;
@@ -208,13 +203,13 @@ final class ReadTableTool extends AbstractRecordTool
 
         // Execute main logic
         // Extract and validate parameters
-        $pid = isset($params['pid']) && is_numeric($params['pid']) ? (int) $params['pid'] : null;
-        $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int) $params['uid'] : null;
+        $pid = isset($params['pid']) && is_numeric($params['pid']) ? (int)$params['pid'] : null;
+        $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int)$params['uid'] : null;
         $condition = \is_string($params['where'] ?? null) ? $params['where'] : '';
-        $limit = isset($params['limit']) && is_numeric($params['limit']) ? (int) $params['limit'] : 20;
-        $offset = isset($params['offset']) && is_numeric($params['offset']) ? (int) $params['offset'] : 0;
+        $limit = isset($params['limit']) && is_numeric($params['limit']) ? (int)$params['limit'] : 20;
+        $offset = isset($params['offset']) && is_numeric($params['offset']) ? (int)$params['offset'] : 0;
         $language = \is_string($params['language'] ?? null) ? $params['language'] : null;
-        $includeTranslationSource = (bool) ($params['includeTranslationSource'] ?? false);
+        $includeTranslationSource = (bool)($params['includeTranslationSource'] ?? false);
         $rawRequestedFields = \is_array($params['fields'] ?? null) ? $params['fields'] : [];
         $requestedFields = $this->normalizeFieldNames(
             $table,
@@ -438,10 +433,10 @@ final class ReadTableTool extends AbstractRecordTool
             'table' => $table,
             'tableLabel' => $this->getTableLabel($table),
             'records' => $processedRecords,
-            'total' => is_numeric($totalCount) ? (int) $totalCount : 0,
+            'total' => is_numeric($totalCount) ? (int)$totalCount : 0,
             'limit' => $limit,
             'offset' => $offset,
-            'hasMore' => ($offset + \count($records)) < (is_numeric($totalCount) ? (int) $totalCount : 0),
+            'hasMore' => ($offset + \count($records)) < (is_numeric($totalCount) ? (int)$totalCount : 0),
         ];
     }
 
@@ -492,7 +487,7 @@ final class ReadTableTool extends AbstractRecordTool
         $hasValidTypeConfig = false;
 
         if ($typeField && isset($record[$typeField])) {
-            $recordType = \is_scalar($record[$typeField]) ? (string) $record[$typeField] : '';
+            $recordType = \is_scalar($record[$typeField]) ? (string)$record[$typeField] : '';
             $typeSpecificFields = $this->tableAccessService->getFieldNamesForType($table, $recordType);
             $hasValidTypeConfig = !empty($typeSpecificFields);
 
@@ -558,8 +553,8 @@ final class ReadTableTool extends AbstractRecordTool
     protected function getFlexFormIdentifierCandidates(array $record): array
     {
         $candidates = [];
-        $cType = \is_scalar($record['CType'] ?? null) ? (string) $record['CType'] : '';
-        $listType = \is_scalar($record['list_type'] ?? null) ? (string) $record['list_type'] : '';
+        $cType = \is_scalar($record['CType'] ?? null) ? (string)$record['CType'] : '';
+        $listType = \is_scalar($record['list_type'] ?? null) ? (string)$record['list_type'] : '';
 
         if ($listType !== '') {
             $candidates[] = $listType . ',list';
@@ -592,7 +587,7 @@ final class ReadTableTool extends AbstractRecordTool
             // Check eval rules for int
             $eval = \is_string($fieldOptions['eval'] ?? null) ? $fieldOptions['eval'] : '';
             if ($eval !== '' && str_contains($eval, 'int')) {
-                return is_numeric($value) ? (int) $value : $value;
+                return is_numeric($value) ? (int)$value : $value;
             }
 
             // Check if it's a select field with numeric string that should be integer
@@ -601,7 +596,7 @@ final class ReadTableTool extends AbstractRecordTool
                 if (is_numeric($value)) {
                     // Special handling for common integer fields
                     if (\in_array($field, ['type', 'sys_language_uid', 'colPos', 'layout', 'frame_class', 'space_before_class', 'space_after_class', 'header_layout'])) {
-                        return (int) $value;
+                        return (int)$value;
                     }
 
                     // Check if ALL items use integer values (not just one)
@@ -619,7 +614,7 @@ final class ReadTableTool extends AbstractRecordTool
 
                             if ($itemValue !== null && $itemValue !== '--div--') {
                                 $hasItems = true;
-                                if (!\is_int($itemValue) && !(\is_scalar($itemValue) && ctype_digit((string) $itemValue))) {
+                                if (!\is_int($itemValue) && !(\is_scalar($itemValue) && ctype_digit((string)$itemValue))) {
                                     $allIntegers = false;
                                     break;
                                 }
@@ -628,7 +623,7 @@ final class ReadTableTool extends AbstractRecordTool
 
                         // Only convert if all items are integers
                         if ($hasItems && $allIntegers) {
-                            return (int) $value;
+                            return (int)$value;
                         }
                     }
                 }
@@ -651,7 +646,7 @@ final class ReadTableTool extends AbstractRecordTool
                     // Check if this is a settings field (key starts with "settings")
                     if (str_starts_with($key, 'settings') && \strlen($key) > 8) {
                         // Extract the setting name (remove "settings" prefix)
-                        $settingName = (string) substr($key, 8);
+                        $settingName = (string)substr($key, 8);
                         // Convert first character to lowercase if it's uppercase
                         if ($settingName !== '' && ctype_upper($settingName[0])) {
                             $settingName = lcfirst($settingName);
@@ -668,7 +663,7 @@ final class ReadTableTool extends AbstractRecordTool
                 }
 
                 return $result;
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 // Log the error but continue with empty result
                 $this->logException($e, 'parsing flexform XML');
                 return [];
@@ -686,8 +681,8 @@ final class ReadTableTool extends AbstractRecordTool
         // Convert timestamps to ISO 8601 dates
         if (is_numeric($value) && $this->tableAccessService->isDateField($table, $field)) {
             if ($value > 0) {
-                $dateTime = new DateTime('@' . $value);
-                $dateTime->setTimezone(new DateTimeZone(date_default_timezone_get()));
+                $dateTime = new \DateTime('@' . $value);
+                $dateTime->setTimezone(new \DateTimeZone(date_default_timezone_get()));
                 return $dateTime->format('c');
             }
             return null;
@@ -890,7 +885,7 @@ final class ReadTableTool extends AbstractRecordTool
         $fieldOptions = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         // Check if this field supports multiple values
         $supportsMultiple = false;
-        if (is_numeric($fieldOptions['maxitems'] ?? null) && (int) $fieldOptions['maxitems'] > 1) {
+        if (is_numeric($fieldOptions['maxitems'] ?? null) && (int)$fieldOptions['maxitems'] > 1) {
             $supportsMultiple = true;
         }
         if (!empty($fieldOptions['multiple'])) {
@@ -908,7 +903,7 @@ final class ReadTableTool extends AbstractRecordTool
                     } elseif (\is_int($fieldValue)) {
                         $record[$fieldName] = [$fieldValue];
                     } else {
-                        $values = GeneralUtility::intExplode(',', (string) $fieldValue, true);
+                        $values = GeneralUtility::intExplode(',', (string)$fieldValue, true);
                         $record[$fieldName] = $values;
                     }
                 } else {
@@ -920,7 +915,7 @@ final class ReadTableTool extends AbstractRecordTool
                     } else {
                         // Convert to integer if numeric
                         if (is_numeric($record[$fieldName])) {
-                            $record[$fieldName] = (int) $record[$fieldName];
+                            $record[$fieldName] = (int)$record[$fieldName];
                         }
                     }
                 }
@@ -943,7 +938,7 @@ final class ReadTableTool extends AbstractRecordTool
             if (isset($record[$fieldName]) && \is_scalar($record[$fieldName]) && $record[$fieldName] !== '') {
                 // Convert to array if it's a multi-select field
                 if (!empty($fieldOptions['multiple'])) {
-                    $values = GeneralUtility::trimExplode(',', (string) $record[$fieldName], true);
+                    $values = GeneralUtility::trimExplode(',', (string)$record[$fieldName], true);
                     $record[$fieldName] = $values;
                 }
                 // Single select fields remain as single values
@@ -1049,7 +1044,6 @@ final class ReadTableTool extends AbstractRecordTool
                 ->addOrderBy('uid', 'ASC');  // Secondary sort by UID for consistency;
         }
 
-
         // Ensure we have the sort field in our select
         $records = $queryBuilder->select('*')
             ->from($table)
@@ -1061,8 +1055,6 @@ final class ReadTableTool extends AbstractRecordTool
             )
             ->executeQuery()
             ->fetchAllAssociative();
-
-
 
         // Process records for workspace transparency
         $processedRecords = [];
@@ -1151,7 +1143,7 @@ final class ReadTableTool extends AbstractRecordTool
         $values = [];
         while ($row = $result->fetchAssociative()) {
             if (is_numeric($row[$foreignColumn] ?? null)) {
-                $values[] = (int) $row[$foreignColumn];
+                $values[] = (int)$row[$foreignColumn];
             }
         }
 
@@ -1204,7 +1196,7 @@ final class ReadTableTool extends AbstractRecordTool
         foreach ($records as $record) {
             if (!empty($record[$translationParentField])) {
                 if (is_numeric($record[$translationParentField])) {
-                    $parentUids[] = (int) $record[$translationParentField];
+                    $parentUids[] = (int)$record[$translationParentField];
                 }
             }
         }
@@ -1219,8 +1211,8 @@ final class ReadTableTool extends AbstractRecordTool
         // Build translation metadata
         foreach ($records as $record) {
             if (!empty($record[$translationParentField])) {
-                $parentUid = is_numeric($record[$translationParentField]) ? (int) $record[$translationParentField] : 0;
-                $recordUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+                $parentUid = is_numeric($record[$translationParentField]) ? (int)$record[$translationParentField] : 0;
+                $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
                 if ($parentUid <= 0 || $recordUid <= 0) {
                     continue;
                 }
@@ -1290,7 +1282,7 @@ final class ReadTableTool extends AbstractRecordTool
         $indexedRecords = [];
         foreach ($records as $record) {
             $processedRecord = $this->processRecord($record, $table);
-            $processedUid = is_numeric($processedRecord['uid'] ?? null) ? (int) $processedRecord['uid'] : 0;
+            $processedUid = is_numeric($processedRecord['uid'] ?? null) ? (int)$processedRecord['uid'] : 0;
             if ($processedUid > 0) {
                 $indexedRecords[$processedUid] = $processedRecord;
             }
@@ -1307,12 +1299,12 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         if (preg_match(self::DISALLOWED_WHERE_PATTERN, $trimmedCondition) === 1) {
-            throw new InvalidArgumentException('The condition contains disallowed SQL keywords');
+            throw new \InvalidArgumentException('The condition contains disallowed SQL keywords');
         }
 
         $tokens = $this->tokenizeCondition($trimmedCondition);
         if (\count($tokens) > self::MAX_WHERE_TOKENS) {
-            throw new InvalidArgumentException('The condition is too complex');
+            throw new \InvalidArgumentException('The condition is too complex');
         }
 
         $offset = 0;
@@ -1320,11 +1312,11 @@ final class ReadTableTool extends AbstractRecordTool
         $expression = $this->parseConditionExpression($queryBuilder, $table, $tokens, $offset, $conditionCount);
 
         if ($offset !== \count($tokens)) {
-            throw new InvalidArgumentException('The condition uses unsupported syntax');
+            throw new \InvalidArgumentException('The condition uses unsupported syntax');
         }
 
         if ($conditionCount > self::MAX_WHERE_CONDITIONS) {
-            throw new InvalidArgumentException('The condition is too complex');
+            throw new \InvalidArgumentException('The condition is too complex');
         }
 
         $queryBuilder->andWhere($expression);
@@ -1345,7 +1337,7 @@ final class ReadTableTool extends AbstractRecordTool
             $offset = $match[0][1];
 
             if ($offset !== $cursor) {
-                throw new InvalidArgumentException('The condition uses unsupported syntax');
+                throw new \InvalidArgumentException('The condition uses unsupported syntax');
             }
 
             $cursor += \strlen($fullMatch);
@@ -1370,7 +1362,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         if ($cursor !== \strlen($condition)) {
-            throw new InvalidArgumentException('The condition uses unsupported syntax');
+            throw new \InvalidArgumentException('The condition uses unsupported syntax');
         }
 
         return $tokens;
@@ -1399,7 +1391,7 @@ final class ReadTableTool extends AbstractRecordTool
             return $parts[0];
         }
 
-        return (string) $queryBuilder->expr()->or(...$parts);
+        return (string)$queryBuilder->expr()->or(...$parts);
     }
 
     /**
@@ -1425,7 +1417,7 @@ final class ReadTableTool extends AbstractRecordTool
             return $parts[0];
         }
 
-        return (string) $queryBuilder->expr()->and(...$parts);
+        return (string)$queryBuilder->expr()->and(...$parts);
     }
 
     /**
@@ -1460,12 +1452,12 @@ final class ReadTableTool extends AbstractRecordTool
     ): string {
         $field = $this->expectToken($tokens, $offset, 'IDENTIFIER');
         if (!$this->isFilterableField($table, $field)) {
-            throw new InvalidArgumentException(\sprintf('The condition references an unsupported field: %s', $field));
+            throw new \InvalidArgumentException(\sprintf('The condition references an unsupported field: %s', $field));
         }
 
         $conditionCount++;
         if ($conditionCount > self::MAX_WHERE_CONDITIONS) {
-            throw new InvalidArgumentException('The condition is too complex');
+            throw new \InvalidArgumentException('The condition is too complex');
         }
 
         $keyword = $this->peekTokenValue($tokens, $offset);
@@ -1479,8 +1471,8 @@ final class ReadTableTool extends AbstractRecordTool
 
             $this->expectTokenValue($tokens, $offset, 'NULL');
             return $isNot
-                ? (string) $queryBuilder->expr()->isNotNull($field)
-                : (string) $queryBuilder->expr()->isNull($field);
+                ? (string)$queryBuilder->expr()->isNotNull($field)
+                : (string)$queryBuilder->expr()->isNull($field);
         }
 
         if ($keyword === 'IN') {
@@ -1497,26 +1489,26 @@ final class ReadTableTool extends AbstractRecordTool
             } while (true);
 
             $this->expectToken($tokens, $offset, 'RPAREN');
-            return (string) $queryBuilder->expr()->in($field, implode(', ', $parameters));
+            return (string)$queryBuilder->expr()->in($field, implode(', ', $parameters));
         }
 
         if ($keyword === 'LIKE') {
             $offset++;
             $parameter = $this->createLiteralParameter($queryBuilder, $tokens, $offset);
-            return (string) $queryBuilder->expr()->like($field, $parameter);
+            return (string)$queryBuilder->expr()->like($field, $parameter);
         }
 
         $operator = $this->expectToken($tokens, $offset, 'OP');
         $parameter = $this->createLiteralParameter($queryBuilder, $tokens, $offset);
 
         return match ($operator) {
-            '=' => (string) $queryBuilder->expr()->eq($field, $parameter),
-            '!=', '<>' => (string) $queryBuilder->expr()->neq($field, $parameter),
-            '>' => (string) $queryBuilder->expr()->gt($field, $parameter),
-            '>=' => (string) $queryBuilder->expr()->gte($field, $parameter),
-            '<' => (string) $queryBuilder->expr()->lt($field, $parameter),
-            '<=' => (string) $queryBuilder->expr()->lte($field, $parameter),
-            default => throw new InvalidArgumentException('The condition uses unsupported syntax'),
+            '=' => (string)$queryBuilder->expr()->eq($field, $parameter),
+            '!=', '<>' => (string)$queryBuilder->expr()->neq($field, $parameter),
+            '>' => (string)$queryBuilder->expr()->gt($field, $parameter),
+            '>=' => (string)$queryBuilder->expr()->gte($field, $parameter),
+            '<' => (string)$queryBuilder->expr()->lt($field, $parameter),
+            '<=' => (string)$queryBuilder->expr()->lte($field, $parameter),
+            default => throw new \InvalidArgumentException('The condition uses unsupported syntax'),
         };
     }
 
@@ -1530,16 +1522,16 @@ final class ReadTableTool extends AbstractRecordTool
 
         if ($tokenType === 'NUMBER' && $tokenValue !== null) {
             $offset++;
-            return (string) $queryBuilder->createNamedParameter((int) $tokenValue, ParameterType::INTEGER);
+            return (string)$queryBuilder->createNamedParameter((int)$tokenValue, ParameterType::INTEGER);
         }
 
         if ($tokenType === 'STRING' && $tokenValue !== null) {
             $offset++;
             $unquotedValue = substr($tokenValue, 1, -1);
-            return (string) $queryBuilder->createNamedParameter(stripcslashes($unquotedValue), ParameterType::STRING);
+            return (string)$queryBuilder->createNamedParameter(stripcslashes($unquotedValue), ParameterType::STRING);
         }
 
-        throw new InvalidArgumentException('The condition uses unsupported syntax');
+        throw new \InvalidArgumentException('The condition uses unsupported syntax');
     }
 
     private function isFilterableField(string $table, string $field): bool
@@ -1560,7 +1552,7 @@ final class ReadTableTool extends AbstractRecordTool
         $tokenType = $this->peekTokenType($tokens, $offset);
         $tokenValue = $this->peekTokenValue($tokens, $offset);
         if ($tokenType !== $expectedType || $tokenValue === null) {
-            throw new InvalidArgumentException('The condition uses unsupported syntax');
+            throw new \InvalidArgumentException('The condition uses unsupported syntax');
         }
 
         $offset++;
@@ -1574,7 +1566,7 @@ final class ReadTableTool extends AbstractRecordTool
     {
         $tokenValue = $this->peekTokenValue($tokens, $offset);
         if ($tokenValue !== $expectedValue) {
-            throw new InvalidArgumentException('The condition uses unsupported syntax');
+            throw new \InvalidArgumentException('The condition uses unsupported syntax');
         }
 
         $offset++;

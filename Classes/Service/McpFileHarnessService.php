@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Hn\McpServer\Exception\ValidationException;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Resource\File;
@@ -380,7 +379,7 @@ final readonly class McpFileHarnessService
             ]);
         }
 
-        $storageUid = (int) $matches[1];
+        $storageUid = (int)$matches[1];
         $fullPath = str_replace('\\', '/', $matches[2]);
         $fullPath = preg_replace('#/+#', '/', $fullPath) ?? $fullPath;
 
@@ -419,7 +418,7 @@ final readonly class McpFileHarnessService
             ]);
         }
 
-        $storageUid = (int) $matches[1];
+        $storageUid = (int)$matches[1];
         $folderPath = str_replace('\\', '/', $matches[2]);
         $folderPath = preg_replace('#/+#', '/', $folderPath) ?? $folderPath;
         $folderPath = '/' . trim($folderPath, '/') . '/';
@@ -437,7 +436,7 @@ final readonly class McpFileHarnessService
         try {
             $configuration = $this->extensionConfiguration->get('mcp_server');
             return \is_array($configuration) ? ($configuration[$key] ?? null) : null;
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return null;
         }
     }

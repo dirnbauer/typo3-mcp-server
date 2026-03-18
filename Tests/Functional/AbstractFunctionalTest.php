@@ -142,7 +142,7 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
             'pid' => 0,
         ]);
 
-        $workspaceId = (int) $connection->lastInsertId();
+        $workspaceId = (int)$connection->lastInsertId();
         $this->switchToWorkspace($workspaceId);
 
         return $workspaceId;

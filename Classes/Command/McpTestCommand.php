@@ -12,7 +12,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -125,7 +124,7 @@ final class McpTestCommand extends Command
             $output->writeln($this->getResultText($result));
 
             return Command::SUCCESS;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $output->writeln('<error>Error: ' . $e->getMessage() . '</error>');
             if ($output->isVerbose()) {
                 $output->writeln('<error>' . $e->getTraceAsString() . '</error>');

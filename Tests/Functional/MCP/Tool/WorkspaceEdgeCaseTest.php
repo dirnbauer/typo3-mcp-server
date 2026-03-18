@@ -7,8 +7,8 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
-use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -66,12 +66,12 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['title' => 'Update from Tool 1'],
         ]);
 
-        $this->assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
         $data1 = json_decode($result1->content[0]->text, true);
 
         // Get the workspace ID that was created/used
         $workspaceId = $this->workspaceService->getCurrentWorkspace();
-        $this->assertGreaterThan(0, $workspaceId, 'Workspace should have been created');
+        self::assertGreaterThan(0, $workspaceId, 'Workspace should have been created');
 
         // Second operation: Create new content (simulating concurrent access)
         $result2 = $this->writeTool->execute([
@@ -84,11 +84,11 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
+        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
 
         // Both operations should use the same workspace
         $currentWorkspaceId = $this->workspaceService->getCurrentWorkspace();
-        $this->assertEquals($workspaceId, $currentWorkspaceId, 'Both operations should use the same workspace');
+        self::assertEquals($workspaceId, $currentWorkspaceId, 'Both operations should use the same workspace');
 
         // Verify both changes are in the workspace
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -107,8 +107,8 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertIsArray($pageRecord);
-        $this->assertEquals('Update from Tool 1', $pageRecord['title']);
+        self::assertIsArray($pageRecord);
+        self::assertEquals('Update from Tool 1', $pageRecord['title']);
     }
 
     /**
@@ -131,7 +131,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
+        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
         $liveData = json_decode($liveResult->content[0]->text, true);
         $livePageId = $liveData['uid'];
 
@@ -149,7 +149,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($workspaceResult->isError, json_encode($workspaceResult->jsonSerialize()));
+        self::assertFalse($workspaceResult->isError, json_encode($workspaceResult->jsonSerialize()));
         $workspaceData = json_decode($workspaceResult->content[0]->text, true);
         $workspacePageId = $workspaceData['uid'];
 
@@ -161,7 +161,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['title' => 'Live Page Modified in Workspace'],
         ]);
 
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         // Read both pages
         $readLiveResult = $this->readTool->execute([
@@ -174,18 +174,18 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $workspacePageId,
         ]);
 
-        $this->assertFalse($readLiveResult->isError, json_encode($readLiveResult->jsonSerialize()));
-        $this->assertFalse($readWorkspaceResult->isError, json_encode($readWorkspaceResult->jsonSerialize()));
+        self::assertFalse($readLiveResult->isError, json_encode($readLiveResult->jsonSerialize()));
+        self::assertFalse($readWorkspaceResult->isError, json_encode($readWorkspaceResult->jsonSerialize()));
 
         $readLiveData = json_decode($readLiveResult->content[0]->text, true);
         $readWorkspaceData = json_decode($readWorkspaceResult->content[0]->text, true);
 
         // Live page should show workspace version
-        $this->assertEquals('Live Page Modified in Workspace', $readLiveData['records'][0]['title']);
+        self::assertEquals('Live Page Modified in Workspace', $readLiveData['records'][0]['title']);
 
         // Workspace page should be found
-        $this->assertCount(1, $readWorkspaceData['records']);
-        $this->assertEquals('Workspace Page', $readWorkspaceData['records'][0]['title']);
+        self::assertCount(1, $readWorkspaceData['records']);
+        self::assertEquals('Workspace Page', $readWorkspaceData['records'][0]['title']);
     }
 
     /**
@@ -213,7 +213,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertFalse($mcpWorkspace, 'No MCP workspace should exist initially');
+        self::assertFalse($mcpWorkspace, 'No MCP workspace should exist initially');
 
         // Perform write operation which should trigger workspace creation
         $result = $this->writeTool->execute([
@@ -226,18 +226,18 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify workspace was created
         $currentWorkspaceId = $this->workspaceService->getCurrentWorkspace();
-        $this->assertGreaterThan(0, $currentWorkspaceId, 'Workspace should have been created');
+        self::assertGreaterThan(0, $currentWorkspaceId, 'Workspace should have been created');
 
         // Verify it's an MCP workspace
         $workspace = BackendUtility::getRecord('sys_workspace', $currentWorkspaceId);
-        $this->assertIsArray($workspace);
+        self::assertIsArray($workspace);
         // The workspace might not have MCP in the title depending on test setup
-        $this->assertIsArray($workspace);
-        $this->assertNotEmpty($workspace['title']);
+        self::assertIsArray($workspace);
+        self::assertNotEmpty($workspace['title']);
     }
 
     /**
@@ -256,7 +256,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $liveUid,
         ]);
 
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         // Verify delete placeholder exists
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -277,8 +277,8 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertIsArray($deletePlaceholder, 'Delete placeholder should exist');
-        $this->assertEquals(2, $deletePlaceholder['t3ver_state'], 'Should be delete placeholder (state=2)');
+        self::assertIsArray($deletePlaceholder, 'Delete placeholder should exist');
+        self::assertEquals(2, $deletePlaceholder['t3ver_state'], 'Should be delete placeholder (state=2)');
 
         // Verify record is not visible through read tool
         $readResult = $this->readTool->execute([
@@ -286,9 +286,9 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $liveUid,
         ]);
 
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = json_decode($readResult->content[0]->text, true);
-        $this->assertCount(0, $readData['records'], 'Deleted record should not be visible');
+        self::assertCount(0, $readData['records'], 'Deleted record should not be visible');
     }
 
     /**
@@ -309,7 +309,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $createData = json_decode($createResult->content[0]->text, true);
         $uid = $createData['uid'];
 
@@ -346,10 +346,10 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
                 ->executeQuery()
                 ->fetchAssociative();
 
-            $this->assertIsArray($directRecord, 'Should have workspace record');
+            self::assertIsArray($directRecord, 'Should have workspace record');
         } else {
-            $this->assertIsArray($placeholder, 'NEW placeholder should exist in live');
-            $this->assertEquals(1, $placeholder['t3ver_state'], 'Should be NEW placeholder (state=1)');
+            self::assertIsArray($placeholder, 'NEW placeholder should exist in live');
+            self::assertEquals(1, $placeholder['t3ver_state'], 'Should be NEW placeholder (state=1)');
         }
 
         // Check for actual workspace record - the structure might vary
@@ -380,9 +380,9 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
                 ->fetchAssociative();
         }
 
-        $this->assertIsArray($workspaceRecord, 'Workspace record should exist');
-        $this->assertEquals('New Workspace Content', $workspaceRecord['header']);
-        $this->assertEquals('This is created in workspace', $workspaceRecord['bodytext']);
+        self::assertIsArray($workspaceRecord, 'Workspace record should exist');
+        self::assertEquals('New Workspace Content', $workspaceRecord['header']);
+        self::assertEquals('This is created in workspace', $workspaceRecord['bodytext']);
     }
 
     /**
@@ -401,7 +401,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['header' => 'First Update'],
         ]);
 
-        $this->assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
 
         // Second update
         $result2 = $this->writeTool->execute([
@@ -411,7 +411,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['header' => 'Second Update'],
         ]);
 
-        $this->assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
+        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
 
         // Third update with more fields
         $result3 = $this->writeTool->execute([
@@ -424,7 +424,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result3->isError, json_encode($result3->jsonSerialize()));
+        self::assertFalse($result3->isError, json_encode($result3->jsonSerialize()));
 
         // Verify only one workspace version exists
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -444,7 +444,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchOne();
 
-        $this->assertEquals(1, $count, 'Only one workspace version should exist');
+        self::assertEquals(1, $count, 'Only one workspace version should exist');
 
         // Verify latest update is reflected
         $readResult = $this->readTool->execute([
@@ -452,16 +452,16 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $uid,
         ]);
 
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = json_decode($readResult->content[0]->text, true);
 
         // The record might not have been properly updated in the test environment
         // Check that we at least got the record
-        $this->assertCount(1, $readData['records']);
+        self::assertCount(1, $readData['records']);
         $record = $readData['records'][0];
 
         // The header should reflect one of our updates
-        $this->assertContains($record['header'], ['First Update', 'Second Update', 'Final Update', 'Welcome Header']);
+        self::assertContains($record['header'], ['First Update', 'Second Update', 'Final Update', 'Welcome Header']);
     }
 
     /**
@@ -484,13 +484,13 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
                 ],
             ]);
 
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $data = json_decode($result->content[0]->text, true);
             $uids[] = $data['uid'];
         }
 
         // All returned UIDs should be unique
-        $this->assertCount(3, array_unique($uids), 'All UIDs should be unique');
+        self::assertCount(3, array_unique($uids), 'All UIDs should be unique');
 
         // Verify these are live UIDs (placeholders), not workspace UIDs
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -508,11 +508,11 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
                 ->executeQuery()
                 ->fetchAssociative();
 
-            $this->assertIsArray($record);
+            self::assertIsArray($record);
             // The record structure depends on TYPO3 version and configuration
             // Key point is that the UID returned to MCP client is consistent
-            $this->assertIsArray($record);
-            $this->assertEquals($uid, $record['uid'], 'UID should match what was returned');
+            self::assertIsArray($record);
+            self::assertEquals($uid, $record['uid'], 'UID should match what was returned');
 
             // The key is that we get consistent UIDs back from the tool
             // The internal workspace structure can vary
@@ -523,7 +523,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             // 3. Direct workspace record in some configurations
 
             // The important thing is UID consistency for MCP clients
-            $this->assertTrue(
+            self::assertTrue(
                 $record['t3ver_state'] == 1 // NEW placeholder
                 || $record['t3ver_wsid'] == 0 // Live record
                 || $record['t3ver_wsid'] > 0, // Workspace record

@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -53,10 +52,10 @@ final class OAuthManageCommand extends Command
                 case 'cleanup':
                     return $this->cleanupTokens($input, $output);
                 default:
-                    $output->writeln("<error>Invalid action. Use: url, list, revoke, or cleanup</error>");
+                    $output->writeln('<error>Invalid action. Use: url, list, revoke, or cleanup</error>');
                     return Command::FAILURE;
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $output->writeln("<error>Error: {$e->getMessage()}</error>");
             return Command::FAILURE;
         }
@@ -65,7 +64,7 @@ final class OAuthManageCommand extends Command
     private function generateAuthUrl(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for URL generation</error>");
+            $output->writeln('<error>Username is required for URL generation</error>');
             return Command::FAILURE;
         }
 
@@ -84,12 +83,12 @@ final class OAuthManageCommand extends Command
 
         $output->writeln("<info>OAuth Authorization URL for user '$username':</info>");
         $output->writeln("<info>$authUrl</info>");
-        $output->writeln("");
-        $output->writeln("Instructions:");
-        $output->writeln("1. Open this URL in your browser");
-        $output->writeln("2. Log in to TYPO3 backend if not already logged in");
-        $output->writeln("3. Authorize the MCP client access");
-        $output->writeln("4. Use the generated token in your MCP client configuration");
+        $output->writeln('');
+        $output->writeln('Instructions:');
+        $output->writeln('1. Open this URL in your browser');
+        $output->writeln('2. Log in to TYPO3 backend if not already logged in');
+        $output->writeln('3. Authorize the MCP client access');
+        $output->writeln('4. Use the generated token in your MCP client configuration');
 
         return Command::SUCCESS;
     }
@@ -97,7 +96,7 @@ final class OAuthManageCommand extends Command
     private function listTokens(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for token listing</error>");
+            $output->writeln('<error>Username is required for token listing</error>');
             return Command::FAILURE;
         }
 
@@ -116,7 +115,7 @@ final class OAuthManageCommand extends Command
         }
 
         $output->writeln("<info>Active tokens for user '$username':</info>");
-        $output->writeln("");
+        $output->writeln('');
 
         foreach ($tokens as $token) {
             $created = date('Y-m-d H:i:s', $token['crdate']);
@@ -128,8 +127,8 @@ final class OAuthManageCommand extends Command
             $output->writeln("Created: <info>$created</info>");
             $output->writeln("Expires: <info>$expires</info>");
             $output->writeln("Last Used: <info>$lastUsed</info>");
-            $output->writeln("Token: <comment>" . substr($token['token'], 0, 20) . "...</comment>");
-            $output->writeln("");
+            $output->writeln('Token: <comment>' . substr($token['token'], 0, 20) . '...</comment>');
+            $output->writeln('');
         }
 
         return Command::SUCCESS;
@@ -138,7 +137,7 @@ final class OAuthManageCommand extends Command
     private function revokeTokens(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for token revocation</error>");
+            $output->writeln('<error>Username is required for token revocation</error>');
             return Command::FAILURE;
         }
 
@@ -150,13 +149,13 @@ final class OAuthManageCommand extends Command
 
         $revokeAll = $input->getOption('all');
         $tokenIdOption = $input->getOption('token-id');
-        $tokenId = \is_string($tokenIdOption) || \is_int($tokenIdOption) ? (string) $tokenIdOption : null;
+        $tokenId = \is_string($tokenIdOption) || \is_int($tokenIdOption) ? (string)$tokenIdOption : null;
 
         if ($revokeAll) {
             $count = $this->oauthService->revokeAllUserTokens($user['uid']);
             $output->writeln("<info>Revoked $count tokens for user '$username'</info>");
         } elseif ($tokenId) {
-            $success = $this->oauthService->revokeToken((int) $tokenId, $user['uid']);
+            $success = $this->oauthService->revokeToken((int)$tokenId, $user['uid']);
             if ($success) {
                 $output->writeln("<info>Token $tokenId revoked successfully</info>");
             } else {
@@ -164,7 +163,7 @@ final class OAuthManageCommand extends Command
                 return Command::FAILURE;
             }
         } else {
-            $output->writeln("<error>Either --token-id or --all option is required for revocation</error>");
+            $output->writeln('<error>Either --token-id or --all option is required for revocation</error>');
             return Command::FAILURE;
         }
 
@@ -175,7 +174,7 @@ final class OAuthManageCommand extends Command
     {
         $this->oauthService->cleanupExpired();
 
-        $output->writeln("<info>Cleanup completed - expired tokens and authorization codes removed</info>");
+        $output->writeln('<info>Cleanup completed - expired tokens and authorization codes removed</info>');
         return Command::SUCCESS;
     }
 
@@ -206,7 +205,7 @@ final class OAuthManageCommand extends Command
         $resolvedUsername = $user['username'] ?? '';
 
         return [
-            'uid' => \is_int($uid) ? $uid : (is_numeric($uid) ? (int) $uid : 0),
+            'uid' => \is_int($uid) ? $uid : (is_numeric($uid) ? (int)$uid : 0),
             'username' => \is_string($resolvedUsername) ? $resolvedUsername : '',
         ];
     }

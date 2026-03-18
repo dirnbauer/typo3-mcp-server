@@ -98,21 +98,21 @@ class InvalidDataTest extends AbstractFunctionalTest
 
         if ($expectedError === 'empty_result') {
             // Special case for empty results
-            $this->assertFalse($result->isError);
+            self::assertFalse($result->isError);
             $data = json_decode($result->content[0]->text, true);
             // Check if it's a list response with empty records or just empty
             if (isset($data['records'])) {
-                $this->assertEmpty($data['records']);
+                self::assertEmpty($data['records']);
             } else {
-                $this->assertEmpty($data);
+                self::assertEmpty($data);
             }
         } elseif ($expectedError === 'success') {
             // Special case for operations that should succeed
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         } else {
             // Normal error case
-            $this->assertTrue($result->isError, "Expected error but got success");
-            $this->assertStringContainsString($expectedError, $result->content[0]->text);
+            self::assertTrue($result->isError, 'Expected error but got success');
+            self::assertStringContainsString($expectedError, $result->content[0]->text);
         }
     }
 
@@ -127,14 +127,14 @@ class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // Tool returns structured response with empty records array
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $data = json_decode($result->content[0]->text, true);
         // Check if it's a list response with empty records
         if (isset($data['records'])) {
-            $this->assertEmpty($data['records']);
+            self::assertEmpty($data['records']);
         } else {
             // Or it might be an empty object when filtering by UID
-            $this->assertEmpty($data);
+            self::assertEmpty($data);
         }
     }
 
@@ -151,7 +151,7 @@ class InvalidDataTest extends AbstractFunctionalTest
             'data' => ['title' => 'To be deleted'],
         ]);
 
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $data = json_decode($createResult->content[0]->text, true);
         $uid = $data['uid'];
 
@@ -162,7 +162,7 @@ class InvalidDataTest extends AbstractFunctionalTest
             'uid' => $uid,
         ]);
 
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         // Try to read the deleted record
         $readResult = $this->readTool->execute([
@@ -171,12 +171,12 @@ class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // Tool returns structured response with empty records for deleted records
-        $this->assertFalse($readResult->isError);
+        self::assertFalse($readResult->isError);
         $data = json_decode($readResult->content[0]->text, true);
         if (isset($data['records'])) {
-            $this->assertEmpty($data['records']);
+            self::assertEmpty($data['records']);
         } else {
-            $this->assertEmpty($data);
+            self::assertEmpty($data);
         }
     }
 
@@ -197,14 +197,14 @@ class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 might cast values automatically
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $data = json_decode($result->content[0]->text, true);
         // Values should be cast to integers
         if (isset($data['hidden'])) {
-            $this->assertIsInt($data['hidden']);
+            self::assertIsInt($data['hidden']);
         }
         if (isset($data['sorting'])) {
-            $this->assertIsInt($data['sorting']);
+            self::assertIsInt($data['sorting']);
         }
     }
 
@@ -223,10 +223,10 @@ class InvalidDataTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         // Check for validation error about doktype
         $errorText = $result->content[0]->text;
-        $this->assertTrue(
+        self::assertTrue(
             str_contains($errorText, 'doktype')
             || str_contains($errorText, 'Validation error')
             || str_contains($errorText, 'must be one of'),
@@ -249,8 +249,8 @@ class InvalidDataTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('can only be set during record creation', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('can only be set during record creation', $result->content[0]->text);
     }
 
     /**
@@ -270,8 +270,8 @@ class InvalidDataTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString("Field 'uid' cannot be modified", $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString("Field 'uid' cannot be modified", $result->content[0]->text);
     }
 
     /**
@@ -294,7 +294,7 @@ class InvalidDataTest extends AbstractFunctionalTest
 
         // The tool might handle this gracefully or error
         // TYPO3 typically expects XML for flexforms
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -328,7 +328,7 @@ class InvalidDataTest extends AbstractFunctionalTest
                     'table' => 'pages',
                     'uid' => 1,
                 ]);
-                $this->assertFalse($readResult->isError);
+                self::assertFalse($readResult->isError);
             }
         }
     }
@@ -350,13 +350,13 @@ class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 DataHandler might provide defaults
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Check what was actually created
         $data = json_decode($result->content[0]->text, true);
         if (isset($data['uid'])) {
             $record = BackendUtility::getRecord('tt_content', $data['uid']);
-            $this->assertNotEmpty($record['CType'], 'CType should have a default value');
+            self::assertNotEmpty($record['CType'], 'CType should have a default value');
         }
     }
 
@@ -377,7 +377,7 @@ class InvalidDataTest extends AbstractFunctionalTest
         // TYPO3 might convert array to string
         if ($result->isError) {
             $errorText = $result->content[0]->text;
-            $this->assertTrue(
+            self::assertTrue(
                 str_contains($errorText, 'Invalid') || str_contains($errorText, 'does not accept array values'),
                 'Unexpected validation error: ' . $errorText,
             );
@@ -385,7 +385,7 @@ class InvalidDataTest extends AbstractFunctionalTest
             // If it succeeded, check what was stored
             $data = json_decode($result->content[0]->text, true);
             if (isset($data['title'])) {
-                $this->assertIsString($data['title']);
+                self::assertIsString($data['title']);
             }
         }
     }
@@ -407,10 +407,10 @@ class InvalidDataTest extends AbstractFunctionalTest
 
         // TYPO3 might accept these values
         if ($result->isError) {
-            $this->assertStringContainsString('Invalid', $result->content[0]->text);
+            self::assertStringContainsString('Invalid', $result->content[0]->text);
         } else {
             // Values might be stored or clamped
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
     }
 
@@ -434,7 +434,7 @@ class InvalidDataTest extends AbstractFunctionalTest
         if ($result->isError) {
             // Check for relevant error message
             $errorText = $result->content[0]->text;
-            $this->assertTrue(
+            self::assertTrue(
                 str_contains($errorText, 'Invalid')
                 || str_contains($errorText, 'Error')
                 || str_contains($errorText, 'category')
@@ -443,7 +443,7 @@ class InvalidDataTest extends AbstractFunctionalTest
             );
         } else {
             // TYPO3 might filter out invalid UIDs
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
     }
 
@@ -463,14 +463,14 @@ class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 should sanitize the slug
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify the slug was sanitized
         $data = json_decode($result->content[0]->text, true);
         if (isset($data['uid'])) {
             $record = BackendUtility::getRecord('pages', $data['uid']);
-            $this->assertNotEquals('/../../../etc/passwd', $record['slug']);
-            $this->assertStringNotContainsString('..', $record['slug']);
+            self::assertNotEquals('/../../../etc/passwd', $record['slug']);
+            self::assertStringNotContainsString('..', $record['slug']);
         }
     }
 }

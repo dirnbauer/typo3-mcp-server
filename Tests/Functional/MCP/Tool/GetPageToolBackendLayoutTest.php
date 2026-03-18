@@ -77,19 +77,19 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
         // Test Contact page (uid=6) which has backend_layout=1 (2 Column Layout)
         $result = $tool->execute(['uid' => 6]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Should show custom column names from backend layout
-        $this->assertStringContainsString('Column: Main Content Area [colPos: 0]', $content);
-        $this->assertStringContainsString('Column: Sidebar Content [colPos: 1]', $content);
+        self::assertStringContainsString('Column: Main Content Area [colPos: 0]', $content);
+        self::assertStringContainsString('Column: Sidebar Content [colPos: 1]', $content);
 
         // Should NOT show default column names
-        $this->assertStringNotContainsString('Column: Main Content [colPos: 0]', $content);
-        $this->assertStringNotContainsString('Column: Left [colPos: 1]', $content);
+        self::assertStringNotContainsString('Column: Main Content [colPos: 0]', $content);
+        self::assertStringNotContainsString('Column: Left [colPos: 1]', $content);
     }
 
     /**
@@ -102,11 +102,11 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
         // Test News page (uid=7) which should inherit layout from Home (backend_layout_next_level=1)
         $result = $tool->execute(['uid' => 7]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Should inherit 2 Column Layout from root page
-        $this->assertStringContainsString('Column: Main Content Area [colPos: 0]', $content);
+        self::assertStringContainsString('Column: Main Content Area [colPos: 0]', $content);
     }
 
     /**
@@ -119,15 +119,15 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
         // Test About page (uid=2) which has backend_layout=2 (Single Column Layout)
         $result = $tool->execute(['uid' => 2]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Should show custom column name from single column layout
-        $this->assertStringContainsString('Column: Main Content Only [colPos: 0]', $content);
+        self::assertStringContainsString('Column: Main Content Only [colPos: 0]', $content);
 
         // Should NOT show column positions that don't exist in this layout
-        $this->assertStringNotContainsString('[colPos: 1]', $content);
-        $this->assertStringNotContainsString('[colPos: 2]', $content);
+        self::assertStringNotContainsString('[colPos: 1]', $content);
+        self::assertStringNotContainsString('[colPos: 2]', $content);
     }
 
     /**
@@ -153,13 +153,13 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
 
         $result = $tool->execute(['uid' => 2]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Should show the unused content with a warning
-        $this->assertStringContainsString('Column: Column 3 [colPos: 3]', $content);
-        $this->assertStringContainsString('⚠️  Note: This column is not defined in the current backend layout', $content);
-        $this->assertStringContainsString('Orphaned Content', $content);
+        self::assertStringContainsString('Column: Column 3 [colPos: 3]', $content);
+        self::assertStringContainsString('⚠️  Note: This column is not defined in the current backend layout', $content);
+        self::assertStringContainsString('Orphaned Content', $content);
     }
 
     /**
@@ -172,12 +172,12 @@ class GetPageToolBackendLayoutTest extends FunctionalTestCase
         // Test Article 1 page (uid=8) which has no backend layout and should inherit defaults
         $result = $tool->execute(['uid' => 8]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Since News page (parent) will be checked for TSConfig backend layout in another test,
         // let's just verify this page loads correctly
-        $this->assertStringContainsString('Article 1', $content);
+        self::assertStringContainsString('Article 1', $content);
     }
 
     /**
@@ -229,12 +229,12 @@ mod.web_layout.BackendLayouts {
         $tool = $this->createGetPageTool();
         $result = $tool->execute(['uid' => 7]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Should show custom column names from TSConfig layout
-        $this->assertStringContainsString('Column: News List [colPos: 0]', $content);
-        $this->assertStringContainsString('Column: News Sidebar [colPos: 1]', $content);
-        $this->assertStringContainsString('Column: Advertisement [colPos: 10]', $content);
+        self::assertStringContainsString('Column: News List [colPos: 0]', $content);
+        self::assertStringContainsString('Column: News Sidebar [colPos: 1]', $content);
+        self::assertStringContainsString('Column: Advertisement [colPos: 10]', $content);
     }
 }

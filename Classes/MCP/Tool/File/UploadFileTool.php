@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
-use TYPO3\CMS\Core\Resource\Folder;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\McpFileHarnessService;
@@ -13,6 +12,7 @@ use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;

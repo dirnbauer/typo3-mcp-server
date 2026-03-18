@@ -26,20 +26,20 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame('uploaded', $json['action']);
-        $this->assertGreaterThan(0, $json['workspaceId']);
-        $this->assertStringStartsWith('1:/mcp/workspaces/ws-' . $json['workspaceId'] . '/images/', $json['identifier']);
-        $this->assertSame('pixel.png', $json['originalFilename']);
-        $this->assertNotSame('pixel.png', $json['storedFilename']);
-        $this->assertSame('Pixel', $json['metadata']['title']);
+        self::assertSame('uploaded', $json['action']);
+        self::assertGreaterThan(0, $json['workspaceId']);
+        self::assertStringStartsWith('1:/mcp/workspaces/ws-' . $json['workspaceId'] . '/images/', $json['identifier']);
+        self::assertSame('pixel.png', $json['originalFilename']);
+        self::assertNotSame('pixel.png', $json['storedFilename']);
+        self::assertSame('Pixel', $json['metadata']['title']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $file = $storage->getFile(substr((string) $json['identifier'], 2));
-        $this->assertSame('Pixel', $file->getMetaData()->get()['title']);
-        $this->assertSame('Single pixel image', $file->getMetaData()->get()['alternative']);
+        $file = $storage->getFile(substr((string)$json['identifier'], 2));
+        self::assertSame('Pixel', $file->getMetaData()->get()['title']);
+        self::assertSame('Single pixel image', $file->getMetaData()->get()['alternative']);
     }
 
     #[Test]
@@ -51,8 +51,8 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             'content_base64' => 'not-base64',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('valid base64', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('valid base64', $result->content[0]->text);
     }
 
     #[Test]
@@ -64,8 +64,8 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
     }
 
     #[Test]
@@ -84,12 +84,12 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             $GLOBALS['BE_USER'] = $originalBackendUser;
         }
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame(0, $json['workspaceId']);
-        $this->assertStringStartsWith('1:/mcp/images/', (string) $json['identifier']);
-        $this->assertSame('1:/mcp/', $json['uploadFolder']);
+        self::assertSame(0, $json['workspaceId']);
+        self::assertStringStartsWith('1:/mcp/images/', (string)$json['identifier']);
+        self::assertSame('1:/mcp/', $json['uploadFolder']);
     }
 
     #[Test]
@@ -101,8 +101,8 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('filename extension', (string) $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('filename extension', (string)$result->content[0]->text);
     }
 
     #[Test]
@@ -118,9 +118,9 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame(['title' => 'Known title'], $json['metadata']);
+        self::assertSame(['title' => 'Known title'], $json['metadata']);
     }
 }

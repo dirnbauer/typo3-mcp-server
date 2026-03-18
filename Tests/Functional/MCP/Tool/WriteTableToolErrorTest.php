@@ -55,8 +55,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'data' => ['title' => 'Test'],
         ]);
 
-        $this->assertTrue($result->isError, 'Result should be an error');
-        $this->assertStringContainsString('Action is required', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Result should be an error');
+        self::assertStringContainsString('Action is required', $result->content[0]->text);
     }
 
     /**
@@ -70,8 +70,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'uid' => 1,
         ]);
 
-        $this->assertTrue($result->isError, 'Result should be an error');
-        $this->assertStringContainsString('Invalid action: invalid', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Result should be an error');
+        self::assertStringContainsString('Invalid action: invalid', $result->content[0]->text);
     }
 
     /**
@@ -85,8 +85,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'data' => ['title' => 'Test'],
         ]);
 
-        $this->assertTrue($result->isError, 'Result should be an error');
-        $this->assertStringContainsString('Table name is required', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Result should be an error');
+        self::assertStringContainsString('Table name is required', $result->content[0]->text);
     }
 
     /**
@@ -100,8 +100,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'table' => 'pages',
             'data' => ['title' => 'Test'],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Record UID is required for update action', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Record UID is required for update action', $result->content[0]->text);
 
         // Missing PID for create
         $result = $this->tool->execute([
@@ -109,8 +109,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'table' => 'pages',
             'data' => ['title' => 'Test'],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Page ID (pid) is required for create action', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Page ID (pid) is required for create action', $result->content[0]->text);
 
         // Missing data for update
         $result = $this->tool->execute([
@@ -118,8 +118,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'table' => 'pages',
             'uid' => 1,
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Data is required for update action', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Data is required for update action', $result->content[0]->text);
     }
 
     /**
@@ -135,8 +135,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'data' => 'not an array',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Invalid data parameter: Expected an object/array with field names as keys', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Invalid data parameter: Expected an object/array with field names as keys', $result->content[0]->text);
     }
 
     /**
@@ -151,9 +151,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'data' => ['title' => 'Test'],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Cannot access table', $result->content[0]->text);
-        $this->assertStringContainsString('non_existent_table', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Cannot access table', $result->content[0]->text);
+        self::assertStringContainsString('non_existent_table', $result->content[0]->text);
     }
 
     /**
@@ -178,9 +178,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'data' => ['title' => 'Test'],
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         // The error message may vary - sys_template is not workspace-capable
-        $this->assertStringContainsString('sys_template', $result->content[0]->text);
+        self::assertStringContainsString('sys_template', $result->content[0]->text);
     }
 
     /**
@@ -199,8 +199,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString("Field 'uid' cannot be modified directly", $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString("Field 'uid' cannot be modified directly", $result->content[0]->text);
 
         // Test 2: pid modification in update
         $result = $this->tool->execute([
@@ -213,8 +213,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString("Field 'pid' can only be set during record creation", $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString("Field 'pid' can only be set during record creation", $result->content[0]->text);
 
         // Test 3: Invalid field value (exceeds max length)
         $longTitle = str_repeat('x', 300); // Title field typically has max length of 255
@@ -227,8 +227,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('exceeds maximum length', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('exceeds maximum length', $result->content[0]->text);
     }
 
     /**
@@ -246,8 +246,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Unknown language code: invalid_lang_code', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Unknown language code: invalid_lang_code', $result->content[0]->text);
     }
 
     /**
@@ -268,8 +268,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString("not available for this record type", $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('not available for this record type', $result->content[0]->text);
     }
 
     /**
@@ -287,8 +287,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'File fields with non-array values should be rejected');
-        $this->assertStringContainsString('File field must be an array', $result->content[0]->text);
+        self::assertTrue($result->isError, 'File fields with non-array values should be rejected');
+        self::assertStringContainsString('File field must be an array', $result->content[0]->text);
     }
 
     /**
@@ -306,9 +306,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Cannot access table', $result->content[0]->text);
-        $this->assertStringContainsString('be_users', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Cannot access table', $result->content[0]->text);
+        self::assertStringContainsString('be_users', $result->content[0]->text);
     }
 
     /**
@@ -326,11 +326,11 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
 
         // The tool should handle this gracefully - DataHandler will fail
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // But the record shouldn't actually be created
         $record = BackendUtility::getRecord('pages', 99999);
-        $this->assertNull($record, 'Non-existent record should not be created');
+        self::assertNull($record, 'Non-existent record should not be created');
     }
 
     /**
@@ -345,10 +345,10 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
 
         // Should succeed but report no deletion
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals('delete', $data['action']);
-        $this->assertEquals(99999, $data['uid']);
+        self::assertEquals('delete', $data['action']);
+        self::assertEquals(99999, $data['uid']);
     }
 
     /**
@@ -366,8 +366,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Invalid parent pages should be rejected before DataHandler runs');
-        $this->assertStringContainsString('Invalid parent page', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Invalid parent pages should be rejected before DataHandler runs');
+        self::assertStringContainsString('Invalid parent page', $result->content[0]->text);
 
         // Verify no record was created
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -403,10 +403,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        // Should still work but ignore invalid position
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertIsInt($data['uid']);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('Invalid position: invalid:position', $result->content[0]->text);
     }
 
     /**
@@ -427,8 +425,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('exceeds maximum length', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('exceeds maximum length', $result->content[0]->text);
     }
 
     /**
@@ -449,14 +447,14 @@ class WriteTableToolErrorTest extends FunctionalTestCase
 
         // TYPO3 DataHandler might handle this differently
         // The tool itself doesn't enforce required fields, DataHandler does
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // But the page shouldn't be properly created without title
         $data = json_decode($result->content[0]->text, true);
         if (isset($data['uid']) && $data['uid'] > 0) {
             $record = BackendUtility::getRecord('pages', $data['uid']);
             // Record might be created but with empty title
-            $this->assertIsArray($record);
+            self::assertIsArray($record);
         }
     }
 
@@ -481,8 +479,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Should fail when search string not found');
-        $this->assertStringContainsString('not found', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Should fail when search string not found');
+        self::assertStringContainsString('not found', $result->content[0]->text);
     }
 
     /**
@@ -503,9 +501,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Should fail when search string matches multiple times');
-        $this->assertStringContainsString('times', $result->content[0]->text);
-        $this->assertStringContainsString('replaceAll', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Should fail when search string matches multiple times');
+        self::assertStringContainsString('times', $result->content[0]->text);
+        self::assertStringContainsString('replaceAll', $result->content[0]->text);
     }
 
     /**
@@ -526,8 +524,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'search-and-replace should not work with create action');
-        $this->assertStringContainsString('only supported for the "update" action', $result->content[0]->text);
+        self::assertTrue($result->isError, 'search-and-replace should not work with create action');
+        self::assertStringContainsString('only supported for the "update" action', $result->content[0]->text);
     }
 
     /**
@@ -546,8 +544,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Should fail with empty search string');
-        $this->assertStringContainsString('empty search string', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Should fail with empty search string');
+        self::assertStringContainsString('empty search string', $result->content[0]->text);
     }
 
     /**
@@ -566,8 +564,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Should fail on non-string field');
-        $this->assertStringContainsString('not supported for field', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Should fail on non-string field');
+        self::assertStringContainsString('not supported for field', $result->content[0]->text);
     }
 
     /**
@@ -586,7 +584,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Should fail on non-existent field');
-        $this->assertStringContainsString('does not exist', $result->content[0]->text);
+        self::assertTrue($result->isError, 'Should fail on non-existent field');
+        self::assertStringContainsString('does not exist', $result->content[0]->text);
     }
 }

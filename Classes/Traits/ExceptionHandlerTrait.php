@@ -5,15 +5,11 @@ declare(strict_types=1);
 namespace Hn\McpServer\Traits;
 
 use Doctrine\DBAL\Exception;
-use DomainException;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\McpException;
 use Hn\McpServer\Exception\ValidationException;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -44,11 +40,11 @@ trait ExceptionHandlerTrait
     /**
      * Handle exception and return appropriate error result
      *
-     * @param Throwable $e The exception to handle
+     * @param \Throwable $e The exception to handle
      * @param string $operation The operation being performed when the exception occurred
      * @return CallToolResult Error result with user-friendly message
      */
-    protected function handleException(Throwable $e, string $operation = ''): CallToolResult
+    protected function handleException(\Throwable $e, string $operation = ''): CallToolResult
     {
         // Log the exception
         $this->logException($e, $operation);
@@ -62,10 +58,10 @@ trait ExceptionHandlerTrait
     /**
      * Log exception with context
      *
-     * @param Throwable $e The exception to log
+     * @param \Throwable $e The exception to log
      * @param string $operation The operation being performed
      */
-    protected function logException(Throwable $e, string $operation = ''): void
+    protected function logException(\Throwable $e, string $operation = ''): void
     {
         $context = [
             'exception' => $e,
@@ -88,11 +84,11 @@ trait ExceptionHandlerTrait
     /**
      * Get user-friendly error message
      *
-     * @param Throwable $e The exception
+     * @param \Throwable $e The exception
      * @param string $operation The operation context
      * @return string User-friendly error message
      */
-    protected function getUserFriendlyMessage(Throwable $e, string $operation = ''): string
+    protected function getUserFriendlyMessage(\Throwable $e, string $operation = ''): string
     {
         // MCP exceptions have user-friendly messages
         if ($e instanceof McpException) {
@@ -106,9 +102,9 @@ trait ExceptionHandlerTrait
 
         // Map common exceptions to user-friendly messages only for unexpected errors
         return match (true) {
-            $e instanceof InvalidArgumentException => 'Invalid input provided' . ($operation ? ' for ' . $operation : ''),
-            $e instanceof RuntimeException => 'Operation failed' . ($operation ? ': ' . $operation : ''),
-            $e instanceof DomainException => 'Invalid operation requested',
+            $e instanceof \InvalidArgumentException => 'Invalid input provided' . ($operation ? ' for ' . $operation : ''),
+            $e instanceof \RuntimeException => 'Operation failed' . ($operation ? ': ' . $operation : ''),
+            $e instanceof \DomainException => 'Invalid operation requested',
             $e instanceof Exception => 'Database operation failed',
             default => 'An unexpected error occurred' . ($operation ? ' during ' . $operation : ''),
         };
@@ -117,14 +113,14 @@ trait ExceptionHandlerTrait
     /**
      * Check if exception is expected (for logging level)
      *
-     * @param Throwable $e The exception to check
+     * @param \Throwable $e The exception to check
      * @return bool True if this is an expected exception (client error)
      */
-    protected function isExpectedException(Throwable $e): bool
+    protected function isExpectedException(\Throwable $e): bool
     {
         return $e instanceof ValidationException
                || $e instanceof AccessDeniedException
-               || $e instanceof InvalidArgumentException
+               || $e instanceof \InvalidArgumentException
                || ($e instanceof McpException && $e->getCode() < 500);
     }
 

@@ -185,7 +185,7 @@ trait McpAssertionsTrait
 
         $this->assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
-            (string) $dateValue,
+            (string)$dateValue,
             "Field '$fieldName' is not in ISO 8601 format",
         );
     }

@@ -9,7 +9,6 @@ use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -45,7 +44,7 @@ final readonly class McpServerModuleController
             return new HtmlResponse('Access denied', 403);
         }
 
-        $userId = (int) ($backendUser->user['uid'] ?? 0);
+        $userId = (int)($backendUser->user['uid'] ?? 0);
         /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
         $tokens = $this->oauthService->getUserTokens($userId);
 
@@ -68,9 +67,9 @@ final readonly class McpServerModuleController
         $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
         $isLocalhost = $this->isLocalhostUrl($baseUrl);
 
-        $createWorkspaceUrl = (string) $this->uriBuilder->buildUriFromRoute('record_edit', [
+        $createWorkspaceUrl = (string)$this->uriBuilder->buildUriFromRoute('record_edit', [
             'edit' => ['sys_workspace' => [0 => 'new']],
-            'returnUrl' => (string) $request->getUri(),
+            'returnUrl' => (string)$request->getUri(),
         ]);
 
         $templateVariables = [
@@ -129,8 +128,8 @@ final readonly class McpServerModuleController
         }
 
         $tokenIdValue = $parsedBody['tokenId'] ?? '0';
-        $tokenId = is_numeric($tokenIdValue) ? (int) $tokenIdValue : 0;
-        $userId = (int) ($backendUser->user['uid'] ?? 0);
+        $tokenId = is_numeric($tokenIdValue) ? (int)$tokenIdValue : 0;
+        $userId = (int)($backendUser->user['uid'] ?? 0);
 
         if ($tokenId <= 0) {
             return new JsonResponse(['success' => false, 'message' => 'Invalid token ID'], 400);
@@ -144,13 +143,13 @@ final readonly class McpServerModuleController
                     'success' => true,
                     'message' => 'Token revoked successfully',
                 ]);
-            } else {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Token not found or access denied',
-                ], 404);
             }
-        } catch (Throwable) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Token not found or access denied',
+            ], 404);
+
+        } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to revoke the token right now.',
@@ -181,7 +180,7 @@ final readonly class McpServerModuleController
             return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
         }
 
-        $userId = (int) ($backendUser->user['uid'] ?? 0);
+        $userId = (int)($backendUser->user['uid'] ?? 0);
 
         try {
             $revokedCount = $this->oauthService->revokeAllUserTokens($userId);
@@ -191,13 +190,13 @@ final readonly class McpServerModuleController
                     'success' => true,
                     'message' => \sprintf('Successfully revoked %d token%s', $revokedCount, $revokedCount === 1 ? '' : 's'),
                 ]);
-            } else {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'No tokens found to revoke',
-                ], 404);
             }
-        } catch (Throwable) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'No tokens found to revoke',
+            ], 404);
+
+        } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to revoke tokens right now.',
@@ -255,7 +254,7 @@ final readonly class McpServerModuleController
         }
 
         try {
-            $userId = (int) ($backendUser->user['uid'] ?? 0);
+            $userId = (int)($backendUser->user['uid'] ?? 0);
             /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
             $tokens = $this->oauthService->getUserTokens($userId);
 
@@ -265,14 +264,14 @@ final readonly class McpServerModuleController
                 'created' => date('Y-m-d H:i:s', $token['crdate']),
                 'expires' => date('Y-m-d H:i:s', $token['expires']),
                 'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : 'Never',
-                'token_preview' => substr((string) $token['token'], 0, 20) . '...',
+                'token_preview' => substr((string)$token['token'], 0, 20) . '...',
             ], $tokens);
 
             return new JsonResponse([
                 'success' => true,
                 'tokens' => $formattedTokens,
             ]);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to load tokens right now.',
@@ -329,8 +328,8 @@ final readonly class McpServerModuleController
                 )
                 ->executeQuery()
                 ->fetchOne();
-            return is_numeric($count) && (int) $count > 0;
-        } catch (Throwable) {
+            return is_numeric($count) && (int)$count > 0;
+        } catch (\Throwable) {
             return false;
         }
     }
@@ -400,7 +399,7 @@ final readonly class McpServerModuleController
         }
 
         try {
-            $userId = (int) ($backendUser->user['uid'] ?? 0);
+            $userId = (int)($backendUser->user['uid'] ?? 0);
 
             $rawBody = $request->getBody()->getContents();
             $request->getBody()->rewind();
@@ -446,7 +445,7 @@ final readonly class McpServerModuleController
                 'message' => \sprintf('%s created successfully', $clientType),
                 'token' => $token,
             ]);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Unable to create a token right now.',

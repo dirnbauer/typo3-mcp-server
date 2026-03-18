@@ -19,9 +19,9 @@ final class FileHarnessToolTest extends AbstractFunctionalTest
         $tool = $this->get(BrowseFilesTool::class);
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('MCP FILE HARNESS', $result->content[0]->text);
-        $this->assertStringContainsString('1:/mcp/', $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('MCP FILE HARNESS', $result->content[0]->text);
+        self::assertStringContainsString('1:/mcp/', $result->content[0]->text);
     }
 
     #[Test]
@@ -32,17 +32,17 @@ final class FileHarnessToolTest extends AbstractFunctionalTest
             'path' => 'images/inside.txt',
             'content' => 'inside harness',
         ]);
-        $this->assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
 
         $tool = $this->get(ReadFileMetadataTool::class);
         $result = $tool->execute([
             'identifier' => 'images/inside.txt',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('1:/mcp/images/inside.txt', $json['identifier']);
-        $this->assertSame('txt', $json['extension']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('1:/mcp/images/inside.txt', $json['identifier']);
+        self::assertSame('txt', $json['extension']);
     }
 
     #[Test]
@@ -69,7 +69,7 @@ final class FileHarnessToolTest extends AbstractFunctionalTest
             'uid' => $file->getUid(),
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
     }
 }

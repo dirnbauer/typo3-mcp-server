@@ -45,26 +45,26 @@ class GetTableSchemaNewsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Verify bodytext field is present
-        $this->assertStringContainsString('bodytext', $content);
+        self::assertStringContainsString('bodytext', $content);
 
         // Verify richtext indicator is shown
-        $this->assertMatchesRegularExpression('/bodytext.*\[Richtext\/HTML\]/', $content);
+        self::assertMatchesRegularExpression('/bodytext.*\[Richtext\/HTML\]/', $content);
 
         // Verify typolink support is indicated
-        $this->assertMatchesRegularExpression('/bodytext.*\[Supports typolinks/', $content);
+        self::assertMatchesRegularExpression('/bodytext.*\[Supports typolinks/', $content);
 
         // Verify typolink examples are included
-        $this->assertStringContainsString('t3://page?uid=123', $content);
-        $this->assertStringContainsString('t3://record?identifier=table&uid=456', $content);
-        $this->assertStringContainsString('t3://file?uid=789', $content);
-        $this->assertStringContainsString('https://example.com', $content);
-        $this->assertStringContainsString('mailto:email@example.com', $content);
+        self::assertStringContainsString('t3://page?uid=123', $content);
+        self::assertStringContainsString('t3://record?identifier=table&uid=456', $content);
+        self::assertStringContainsString('t3://file?uid=789', $content);
+        self::assertStringContainsString('https://example.com', $content);
+        self::assertStringContainsString('mailto:email@example.com', $content);
     }
 }

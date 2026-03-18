@@ -25,7 +25,7 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
             'workspace_id' => $wsId,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     #[Test]
@@ -38,7 +38,7 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
             'workspace_id' => 99999,
         ]);
 
-        $this->assertTrue($result->isError, 'Expected error for invalid workspace ID');
+        self::assertTrue($result->isError, 'Expected error for invalid workspace ID');
     }
 
     #[Test]
@@ -53,7 +53,7 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
             'workspace_id' => 0,
         ]);
 
-        $this->assertTrue($result->isError, 'Expected error for live workspace selection');
+        self::assertTrue($result->isError, 'Expected error for live workspace selection');
     }
 
     #[Test]
@@ -68,6 +68,6 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
             'uid' => $this->getRootPageUid(),
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 }

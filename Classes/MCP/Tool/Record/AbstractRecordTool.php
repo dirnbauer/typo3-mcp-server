@@ -7,10 +7,8 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -35,7 +33,7 @@ abstract class AbstractRecordTool extends AbstractTool
     final public function execute(array $params): CallToolResult
     {
         if (isset($params['workspace_id']) && is_numeric($params['workspace_id'])) {
-            $this->requestedWorkspaceId = (int) $params['workspace_id'];
+            $this->requestedWorkspaceId = (int)$params['workspace_id'];
             unset($params['workspace_id']);
         } else {
             $this->requestedWorkspaceId = null;
@@ -53,8 +51,8 @@ abstract class AbstractRecordTool extends AbstractTool
         $schema = $this->getToolSchema();
         $inputSchema = isset($schema['inputSchema']) && \is_array($schema['inputSchema']) ? $schema['inputSchema'] : [];
 
-        if (isset($inputSchema['properties']) && $inputSchema['properties'] instanceof stdClass) {
-            $props = (array) $inputSchema['properties'];
+        if (isset($inputSchema['properties']) && $inputSchema['properties'] instanceof \stdClass) {
+            $props = (array)$inputSchema['properties'];
         } elseif (isset($inputSchema['properties']) && \is_array($inputSchema['properties'])) {
             $props = $inputSchema['properties'];
         } else {
@@ -102,7 +100,7 @@ abstract class AbstractRecordTool extends AbstractTool
      *
      * @param string $table Table name
      * @param string $operation Operation type (read, write, delete)
-     * @throws InvalidArgumentException If access is denied
+     * @throws \InvalidArgumentException If access is denied
      */
     protected function ensureTableAccess(string $table, string $operation = 'read'): void
     {
@@ -208,7 +206,6 @@ abstract class AbstractRecordTool extends AbstractTool
 
         return TableAccessService::translateLabel($this->tableAccessService->getTableTitle($table));
     }
-
 
     /**
      * Check if a table is hidden (not accessible through TableAccessService)

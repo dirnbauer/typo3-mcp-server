@@ -6,7 +6,6 @@ namespace Hn\McpServer\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
 use Psr\Log\LoggerInterface;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
@@ -100,18 +99,18 @@ final readonly class WorkspaceContextService
                         ->executeQuery()
                         ->fetchAssociative();
                     $description = \is_array($row) && \is_string($row['description'] ?? null) ? $row['description'] : '';
-                } catch (Throwable) {
+                } catch (\Throwable) {
                 }
 
                 $result[] = [
-                    'id' => \is_int($wsId) ? $wsId : (int) $wsId,
+                    'id' => \is_int($wsId) ? $wsId : (int)$wsId,
                     'title' => \is_string($title) ? $title : '',
                     'description' => $description,
                     'access' => \is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : 'unknown',
                     'active' => $wsId === $currentWs,
                 ];
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('Failed to list workspaces via WorkspaceService', ['exception' => $e]);
         }
 
@@ -131,7 +130,7 @@ final readonly class WorkspaceContextService
                     }
                 }
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return $this->getWorkspaceFromDatabase($beUser);
         }
 
@@ -151,7 +150,7 @@ final readonly class WorkspaceContextService
     {
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
-            $userId = (int) ($beUser->user['uid'] ?? 0);
+            $userId = (int)($beUser->user['uid'] ?? 0);
 
             $workspace = $queryBuilder
                 ->select('uid')
@@ -172,9 +171,9 @@ final readonly class WorkspaceContextService
 
             if (\is_array($workspace)) {
                 $workspaceUid = $workspace['uid'] ?? 0;
-                return is_numeric($workspaceUid) ? (int) $workspaceUid : 0;
+                return is_numeric($workspaceUid) ? (int)$workspaceUid : 0;
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
         }
 
         return 0;
@@ -231,9 +230,9 @@ final readonly class WorkspaceContextService
             $newUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
 
             if ($newUid && !$dataHandler->errorLog) {
-                return (int) $newUid;
+                return (int)$newUid;
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('MCP Workspace creation failed', ['exception' => $e]);
         }
 
@@ -280,13 +279,13 @@ final readonly class WorkspaceContextService
             if (\is_array($workspace)) {
                 $workspaceUid = $workspace['uid'] ?? $workspaceId;
                 return [
-                    'id' => is_numeric($workspaceUid) ? (int) $workspaceUid : $workspaceId,
+                    'id' => is_numeric($workspaceUid) ? (int)$workspaceUid : $workspaceId,
                     'title' => \is_string($workspace['title'] ?? null) ? $workspace['title'] : 'Unknown Workspace',
                     'description' => \is_string($workspace['description'] ?? null) ? $workspace['description'] : '',
                     'is_live' => false,
                 ];
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
         }
 
         return [

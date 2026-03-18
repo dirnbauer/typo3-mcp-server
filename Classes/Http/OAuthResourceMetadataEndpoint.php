@@ -59,7 +59,6 @@ final class OAuthResourceMetadataEndpoint
         return $this->addCorsHeaders($response);
     }
 
-
     private function getBaseUrl(ServerRequestInterface $request): string
     {
         $scheme = $request->getUri()->getScheme();

@@ -55,18 +55,18 @@ class GetPageTreeToolTest extends FunctionalTestCase
         ]);
 
         // Verify result structure
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Verify the tree contains expected pages
-        $this->assertStringContainsString('[1] Home', $content);
-        $this->assertStringContainsString('[2] About Us', $content);
-        $this->assertStringContainsString('[6] Contact', $content);
+        self::assertStringContainsString('[1] Home', $content);
+        self::assertStringContainsString('[2] About Us', $content);
+        self::assertStringContainsString('[6] Contact', $content);
 
         // Hidden page should now be included (always show hidden records)
-        $this->assertStringContainsString('[3] Hidden Page', $content);
+        self::assertStringContainsString('[3] Hidden Page', $content);
     }
 
     /**
@@ -85,13 +85,13 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Should contain subpages of Home (now includes Contact)
-        $this->assertStringContainsString('[2] About Us', $content);
-        $this->assertStringNotContainsString('[1] Home', $content);
-        $this->assertStringContainsString('[6] Contact', $content);
+        self::assertStringContainsString('[2] About Us', $content);
+        self::assertStringNotContainsString('[1] Home', $content);
+        self::assertStringContainsString('[6] Contact', $content);
 
         // Should include sub-subpages
-        $this->assertStringContainsString('[4] Our Team', $content);
-        $this->assertStringContainsString('[5] Mission', $content);
+        self::assertStringContainsString('[4] Our Team', $content);
+        self::assertStringContainsString('[5] Mission', $content);
     }
 
     /**
@@ -113,17 +113,17 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify only direct children are shown
-        $this->assertStringContainsString('[1001] Level 1 - Page A', $content);
-        $this->assertStringContainsString('[1002] Level 1 - Page B', $content);
+        self::assertStringContainsString('[1001] Level 1 - Page A', $content);
+        self::assertStringContainsString('[1002] Level 1 - Page B', $content);
 
         // Verify subpage count is shown
-        $this->assertStringContainsString('(2 subpages)', $content); // Page A has 2 children
-        $this->assertStringContainsString('(1 subpages)', $content); // Page B has 1 child (tool uses "subpages" even for 1)
+        self::assertStringContainsString('(2 subpages)', $content); // Page A has 2 children
+        self::assertStringContainsString('(1 subpages)', $content); // Page B has 1 child (tool uses "subpages" even for 1)
 
         // Verify grandchildren are NOT shown
-        $this->assertStringNotContainsString('[1003] Level 2 - Page A1', $content);
-        $this->assertStringNotContainsString('[1004] Level 2 - Page A2', $content);
-        $this->assertStringNotContainsString('[1005] Level 2 - Page B1', $content);
+        self::assertStringNotContainsString('[1003] Level 2 - Page A1', $content);
+        self::assertStringNotContainsString('[1004] Level 2 - Page A2', $content);
+        self::assertStringNotContainsString('[1005] Level 2 - Page B1', $content);
 
         // Test 2: Depth 2 - should show children and grandchildren
         $result = $tool->execute([
@@ -134,22 +134,22 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify children are shown
-        $this->assertStringContainsString('[1001] Level 1 - Page A', $content);
-        $this->assertStringContainsString('[1002] Level 1 - Page B', $content);
+        self::assertStringContainsString('[1001] Level 1 - Page A', $content);
+        self::assertStringContainsString('[1002] Level 1 - Page B', $content);
 
         // Verify grandchildren are shown with proper indentation (includes - prefix)
-        $this->assertStringContainsString('  - [1003] Level 2 - Page A1', $content);
-        $this->assertStringContainsString('  - [1004] Level 2 - Page A2', $content);
-        $this->assertStringContainsString('  - [1005] Level 2 - Page B1', $content);
+        self::assertStringContainsString('  - [1003] Level 2 - Page A1', $content);
+        self::assertStringContainsString('  - [1004] Level 2 - Page A2', $content);
+        self::assertStringContainsString('  - [1005] Level 2 - Page B1', $content);
 
         // Verify great-grandchildren are NOT shown
-        $this->assertStringNotContainsString('[1006] Level 3 - Page A1a', $content);
+        self::assertStringNotContainsString('[1006] Level 3 - Page A1a', $content);
 
         // But verify subpage count for pages that have deeper children
         $lines = explode("\n", $content);
         foreach ($lines as $line) {
             if (str_contains($line, '[1003] Level 2 - Page A1')) {
-                $this->assertStringContainsString('(1 subpages)', $line, 'Page A1 should show it has 1 subpage');
+                self::assertStringContainsString('(1 subpages)', $line, 'Page A1 should show it has 1 subpage');
             }
         }
 
@@ -162,9 +162,9 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify all levels are shown with proper indentation
-        $this->assertStringContainsString('[1001] Level 1 - Page A', $content);
-        $this->assertStringContainsString('  - [1003] Level 2 - Page A1', $content);
-        $this->assertStringContainsString('    - [1006] Level 3 - Page A1a', $content);
+        self::assertStringContainsString('[1001] Level 1 - Page A', $content);
+        self::assertStringContainsString('  - [1003] Level 2 - Page A1', $content);
+        self::assertStringContainsString('    - [1006] Level 3 - Page A1a', $content);
 
         // Verify proper nesting by checking indentation pattern
         $this->assertCorrectTreeStructure($content);
@@ -285,11 +285,11 @@ class GetPageTreeToolTest extends FunctionalTestCase
         foreach ($lines as $line) {
             if (preg_match('/^(\s*)(?:- )?\[(\d+)\]/', $line, $matches)) {
                 $indent = \strlen($matches[1]) / 2; // Assuming 2 spaces per level
-                $uid = (int) $matches[2];
+                $uid = (int)$matches[2];
 
                 // Verify indentation increases by at most 1 level
                 if ($currentIndent >= 0 && $indent > $currentIndent + 1) {
-                    $this->fail("Invalid tree structure: Indentation jumped from level $currentIndent to $indent at UID $uid");
+                    self::fail("Invalid tree structure: Indentation jumped from level $currentIndent to $indent at UID $uid");
                 }
 
                 // Track parent-child relationships
@@ -308,7 +308,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
             }
         }
 
-        $this->assertTrue(true, 'Tree structure is valid');
+        self::assertTrue(true, 'Tree structure is valid');
     }
 
     /**
@@ -322,8 +322,8 @@ class GetPageTreeToolTest extends FunctionalTestCase
 
         // Get tool from registry
         $tool = $registry->getTool('GetPageTree');
-        $this->assertNotNull($tool);
-        $this->assertInstanceOf(GetPageTreeTool::class, $tool);
+        self::assertNotNull($tool);
+        self::assertInstanceOf(GetPageTreeTool::class, $tool);
 
         // Execute through registry
         $result = $tool->execute([
@@ -332,8 +332,8 @@ class GetPageTreeToolTest extends FunctionalTestCase
         ]);
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('[1] Home', $content);
-        $this->assertStringNotContainsString('[6] Contact', $content); // Contact is now a subpage of Home
+        self::assertStringContainsString('[1] Home', $content);
+        self::assertStringNotContainsString('[6] Contact', $content); // Contact is now a subpage of Home
     }
 
     /**
@@ -342,7 +342,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
     public function testToolName(): void
     {
         $tool = $this->getService(GetPageTreeTool::class);
-        $this->assertEquals('GetPageTree', $tool->getName());
+        self::assertEquals('GetPageTree', $tool->getName());
     }
 
     /**
@@ -353,12 +353,12 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $tool = $this->getService(GetPageTreeTool::class);
         $schema = $tool->getSchema();
 
-        $this->assertIsArray($schema);
-        $this->assertArrayHasKey('description', $schema);
-        $this->assertArrayHasKey('inputSchema', $schema);
-        $this->assertArrayHasKey('properties', $schema['inputSchema']);
-        $this->assertArrayHasKey('startPage', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('depth', $schema['inputSchema']['properties']);
+        self::assertIsArray($schema);
+        self::assertArrayHasKey('description', $schema);
+        self::assertArrayHasKey('inputSchema', $schema);
+        self::assertArrayHasKey('properties', $schema['inputSchema']);
+        self::assertArrayHasKey('startPage', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('depth', $schema['inputSchema']['properties']);
     }
 
     /**
@@ -380,10 +380,10 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify doktype labels are included
-        $this->assertStringContainsString('[1] Home [Page]', $content);
-        $this->assertStringContainsString('[2] About Us [Page]', $content);
+        self::assertStringContainsString('[1] Home [Page]', $content);
+        self::assertStringContainsString('[2] About Us [Page]', $content);
 
         // Verify record counts are included (page 1 has 3 content elements)
-        $this->assertStringContainsString('[tt_content: 3]', $content);
+        self::assertStringContainsString('[tt_content: 3]', $content);
     }
 }

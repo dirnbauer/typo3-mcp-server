@@ -41,8 +41,8 @@ class SystemErrorTest extends AbstractFunctionalTest
                 'uid' => 1,
             ]);
 
-            $this->assertTrue($result->isError);
-            $this->assertStringContainsString('tt_content', $result->content[0]->text);
+            self::assertTrue($result->isError);
+            self::assertStringContainsString('tt_content', $result->content[0]->text);
 
         } finally {
             // Restore TCA
@@ -71,7 +71,7 @@ class SystemErrorTest extends AbstractFunctionalTest
             if ($result->isError) {
                 // Check for TCA or configuration error
                 $errorText = strtolower($result->content[0]->text);
-                $this->assertTrue(
+                self::assertTrue(
                     str_contains($errorText, 'configuration')
                     || str_contains($errorText, 'tca')
                     || str_contains($errorText, 'type')
@@ -81,7 +81,7 @@ class SystemErrorTest extends AbstractFunctionalTest
                 );
             } else {
                 // Or it might succeed if it doesn't rely on that specific config
-                $this->assertTrue(true);
+                self::assertTrue(true);
             }
 
         } finally {
@@ -89,7 +89,6 @@ class SystemErrorTest extends AbstractFunctionalTest
             $GLOBALS['TCA']['pages']['columns']['title'] = $originalTca;
         }
     }
-
 
     /**
      * Test handling of workspace service failures
@@ -111,7 +110,7 @@ class SystemErrorTest extends AbstractFunctionalTest
             ]);
 
             // Tool should handle this by creating workspace or switching to valid one
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         } finally {
             // Restore original workspace
@@ -138,8 +137,8 @@ class SystemErrorTest extends AbstractFunctionalTest
                 'uid' => 1,
             ]);
 
-            $this->assertTrue($result->isError);
-            $this->assertStringContainsString('table', strtolower($result->content[0]->text));
+            self::assertTrue($result->isError);
+            self::assertStringContainsString('table', strtolower($result->content[0]->text));
         }
     }
 
@@ -159,9 +158,9 @@ class SystemErrorTest extends AbstractFunctionalTest
 
         // Should handle gracefully
         if ($result->isError) {
-            $this->assertStringNotContainsString('Division by zero', $result->content[0]->text);
+            self::assertStringNotContainsString('Division by zero', $result->content[0]->text);
         } else {
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
 
         // 2. Invalid array access
@@ -172,10 +171,9 @@ class SystemErrorTest extends AbstractFunctionalTest
             'data' => null,  // Should be array
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('data', strtolower($result->content[0]->text));
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('data', strtolower($result->content[0]->text));
     }
-
 
     /**
      * Test handling of extension dependency issues
@@ -197,7 +195,7 @@ class SystemErrorTest extends AbstractFunctionalTest
 
             // Tool should detect missing extension
             if ($result->isError) {
-                $this->assertStringContainsString('workspace', strtolower($result->content[0]->text));
+                self::assertStringContainsString('workspace', strtolower($result->content[0]->text));
             }
 
         } finally {
@@ -207,7 +205,6 @@ class SystemErrorTest extends AbstractFunctionalTest
             }
         }
     }
-
 
     /**
      * Test handling of circular dependencies
@@ -226,7 +223,7 @@ class SystemErrorTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result1->isError);
+        self::assertFalse($result1->isError);
         $data1 = json_decode($result1->content[0]->text, true);
         $uid1 = $data1['uid'];
 
@@ -240,13 +237,13 @@ class SystemErrorTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result2->isError);
+        self::assertFalse($result2->isError);
         $data2 = json_decode($result2->content[0]->text, true);
         $uid2 = $data2['uid'];
 
         // Now try to create circular references (if the schema allows)
         // This is more of a data integrity test
-        $this->assertTrue(true, 'Circular dependency test completed');
+        self::assertTrue(true, 'Circular dependency test completed');
     }
 
     /**
@@ -259,7 +256,7 @@ class SystemErrorTest extends AbstractFunctionalTest
 
         // Simulate concurrent read-modify-write
         $read1 = $this->readTool->execute(['table' => 'pages', 'uid' => $uid]);
-        $this->assertFalse($read1->isError);
+        self::assertFalse($read1->isError);
         $data1 = json_decode($read1->content[0]->text, true);
 
         // Another "process" modifies the record
@@ -279,18 +276,18 @@ class SystemErrorTest extends AbstractFunctionalTest
         ]);
 
         // Should succeed (last write wins) but data integrity might be compromised
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify final state
         $finalRead = $this->readTool->execute(['table' => 'pages', 'uid' => $uid]);
-        $this->assertFalse($finalRead->isError, json_encode($finalRead->jsonSerialize()));
+        self::assertFalse($finalRead->isError, json_encode($finalRead->jsonSerialize()));
         $finalData = json_decode($finalRead->content[0]->text, true);
-        $this->assertIsArray($finalData);
+        self::assertIsArray($finalData);
         if (isset($finalData['title'])) {
-            $this->assertEquals('Modified by process 1', $finalData['title']);
+            self::assertEquals('Modified by process 1', $finalData['title']);
         } else {
             // Record might have been deleted or filtered
-            $this->assertTrue(true, 'Race condition test completed');
+            self::assertTrue(true, 'Race condition test completed');
         }
     }
 }

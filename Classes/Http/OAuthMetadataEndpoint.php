@@ -7,7 +7,6 @@ namespace Hn\McpServer\Http;
 use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 
@@ -64,7 +63,7 @@ final readonly class OAuthMetadataEndpoint
 
             return $this->addCorsHeaders($response);
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $errorData = [
                 'error' => 'server_error',
                 'error_description' => $e->getMessage(),

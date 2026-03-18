@@ -23,8 +23,8 @@ final class OAuthServiceTest extends TestCase
     {
         $url = $this->service->generateAuthorizationUrl('https://example.com');
 
-        $this->assertStringContainsString('client_id=typo3-mcp-server', $url);
-        $this->assertStringContainsString('response_type=code', $url);
+        self::assertStringContainsString('client_id=typo3-mcp-server', $url);
+        self::assertStringContainsString('response_type=code', $url);
     }
 
     public function testGenerateAuthorizationUrlContainsRedirectUri(): void
@@ -35,8 +35,8 @@ final class OAuthServiceTest extends TestCase
             'https://callback.example.com/oauth',
         );
 
-        $this->assertStringContainsString('redirect_uri=', $url);
-        $this->assertStringContainsString('callback.example.com', $url);
+        self::assertStringContainsString('redirect_uri=', $url);
+        self::assertStringContainsString('callback.example.com', $url);
     }
 
     public function testGenerateAuthorizationUrlContainsCodeChallenge(): void
@@ -49,8 +49,8 @@ final class OAuthServiceTest extends TestCase
             'S256',
         );
 
-        $this->assertStringContainsString('code_challenge=challenge-value-123', $url);
-        $this->assertStringContainsString('code_challenge_method=S256', $url);
+        self::assertStringContainsString('code_challenge=challenge-value-123', $url);
+        self::assertStringContainsString('code_challenge_method=S256', $url);
     }
 
     public function testGenerateAuthorizationUrlContainsState(): void
@@ -64,14 +64,14 @@ final class OAuthServiceTest extends TestCase
             'random-state-value',
         );
 
-        $this->assertStringContainsString('state=random-state-value', $url);
+        self::assertStringContainsString('state=random-state-value', $url);
     }
 
     public function testGenerateAuthorizationUrlStripsTrailingSlash(): void
     {
         $url = $this->service->generateAuthorizationUrl('https://example.com/');
 
-        $this->assertStringStartsWith('https://example.com/mcp_oauth/authorize?', $url);
+        self::assertStringStartsWith('https://example.com/mcp_oauth/authorize?', $url);
     }
 
     public function testGenerateAuthorizationUrlContainsClientName(): void
@@ -81,15 +81,15 @@ final class OAuthServiceTest extends TestCase
             'My Custom Client',
         );
 
-        $this->assertStringContainsString('client_name=My+Custom+Client', $url);
+        self::assertStringContainsString('client_name=My+Custom+Client', $url);
     }
 
     public function testGenerateAuthorizationUrlWithEmptyOptionalParams(): void
     {
         $url = $this->service->generateAuthorizationUrl('https://example.com');
 
-        $this->assertStringNotContainsString('redirect_uri=', $url);
-        $this->assertStringNotContainsString('code_challenge=', $url);
-        $this->assertStringNotContainsString('state=', $url);
+        self::assertStringNotContainsString('redirect_uri=', $url);
+        self::assertStringNotContainsString('code_challenge=', $url);
+        self::assertStringNotContainsString('state=', $url);
     }
 }

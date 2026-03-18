@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Utility;
 
-use Exception;
 use Hn\McpServer\Service\TableAccessService;
-use Throwable;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Backend\View\BackendLayoutView;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -114,14 +112,14 @@ final class RecordFormattingUtility
             if (!empty($title)) {
                 return $title;
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // Fall back to manual title detection
         }
 
         // Use the TCA label field if defined
         $labelField = self::getTableCtrl($table)['label'] ?? null;
         if (\is_string($labelField) && !empty($record[$labelField]) && \is_scalar($record[$labelField])) {
-            return (string) $record[$labelField];
+            return (string)$record[$labelField];
         }
 
         // Common title fields in TYPO3
@@ -129,12 +127,12 @@ final class RecordFormattingUtility
 
         foreach ($titleFields as $field) {
             if (!empty($record[$field])) {
-                return \is_scalar($record[$field]) ? (string) $record[$field] : 'Record';
+                return \is_scalar($record[$field]) ? (string)$record[$field] : 'Record';
             }
         }
 
         // Last resort, just return the UID
-        $recordUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+        $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
         return 'Record #' . $recordUid;
     }
 
@@ -145,10 +143,10 @@ final class RecordFormattingUtility
     {
         foreach (self::getSelectItems('tt_content', 'CType') as $item) {
             if (\is_array($item) && isset($item['value']) && $item['value'] === $cType && \is_scalar($item['label'] ?? null)) {
-                return TableAccessService::translateLabel((string) $item['label']);
+                return TableAccessService::translateLabel((string)$item['label']);
             }
             if (\is_array($item) && isset($item[1]) && $item[1] === $cType && \is_scalar($item[0] ?? null)) {
-                return TableAccessService::translateLabel((string) $item[0]);
+                return TableAccessService::translateLabel((string)$item[0]);
             }
         }
 
@@ -190,7 +188,7 @@ final class RecordFormattingUtility
                         return $layoutColumns;
                     }
                 }
-            } catch (Exception) {
+            } catch (\Exception) {
                 // Fall back to defaults on error
             }
         }
@@ -199,7 +197,7 @@ final class RecordFormattingUtility
         $tsconfigString = self::getDefaultPageTsconfig();
         if ($tsconfigString !== '' && preg_match_all('/mod\.wizards\.newContentElement\.wizardItems\..*?\.elements\..*?\.tt_content_defValues\.colPos\s*=\s*(\d+)/', $tsconfigString, $matches)) {
             foreach ($matches[1] as $colPos) {
-                $colPosInt = (int) $colPos;
+                $colPosInt = (int)$colPos;
                 if (!isset($colPosDefs[$colPosInt])) {
                     // Try to find the label for this column position
                     if (preg_match('/mod\.wizards\.newContentElement\.wizardItems\..*?\.elements\..*?\.title\s*=\s*(.+)/', $tsconfigString, $labelMatches)) {
@@ -213,10 +211,10 @@ final class RecordFormattingUtility
 
         // Check for backend layouts
         foreach (self::getSelectItems('backend_layout', 'config') as $item) {
-            if (\is_array($item) && isset($item[1]) && \is_scalar($item[1]) && preg_match('/colPos=(\d+)/', (string) $item[1], $matches)) {
-                $colPos = (int) $matches[1];
+            if (\is_array($item) && isset($item[1]) && \is_scalar($item[1]) && preg_match('/colPos=(\d+)/', (string)$item[1], $matches)) {
+                $colPos = (int)$matches[1];
                 if (!isset($colPosDefs[$colPos]) && \is_scalar($item[0] ?? null)) {
-                    $colPosDefs[$colPos] = TableAccessService::translateLabel((string) $item[0]);
+                    $colPosDefs[$colPos] = TableAccessService::translateLabel((string)$item[0]);
                 }
             }
         }
@@ -237,7 +235,6 @@ final class RecordFormattingUtility
 
         return !\in_array($table, $tablesWithoutPid);
     }
-
 
     /**
      * Apply default sorting from TCA to a query builder
@@ -346,10 +343,10 @@ final class RecordFormattingUtility
             }
 
             // First, try the simpler approach: check if backend_layout is set directly
-            $backendLayoutIdentifier = \is_scalar($pageRecord['backend_layout'] ?? null) ? (string) $pageRecord['backend_layout'] : '';
+            $backendLayoutIdentifier = \is_scalar($pageRecord['backend_layout'] ?? null) ? (string)$pageRecord['backend_layout'] : '';
 
             // If not set on this page, check parent pages for backend_layout_next_level
-            $parentPid = is_numeric($pageRecord['pid'] ?? null) ? (int) $pageRecord['pid'] : 0;
+            $parentPid = is_numeric($pageRecord['pid'] ?? null) ? (int)$pageRecord['pid'] : 0;
             if ($backendLayoutIdentifier === '' && $parentPid > 0) {
                 $backendLayoutIdentifier = self::getInheritedBackendLayout($parentPid);
             }
@@ -357,7 +354,7 @@ final class RecordFormattingUtility
             if (!empty($backendLayoutIdentifier)) {
                 // Check if it's a numeric ID (database record)
                 if (is_numeric($backendLayoutIdentifier)) {
-                    $layoutRecord = BackendUtility::getRecord('backend_layout', (int) $backendLayoutIdentifier);
+                    $layoutRecord = BackendUtility::getRecord('backend_layout', (int)$backendLayoutIdentifier);
                     if ($layoutRecord && \is_string($layoutRecord['config'] ?? null) && $layoutRecord['config'] !== '') {
                         // Parse the backend layout config directly
                         $config = self::parseBackendLayoutConfig($layoutRecord['config']);
@@ -386,10 +383,10 @@ final class RecordFormattingUtility
                 if ($backendLayout) {
                     return $backendLayout->getStructure();
                 }
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 // BackendLayoutView might not work in all contexts
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             GeneralUtility::makeInstance(LogManager::class)
                 ->getLogger(self::class)
                 ->warning('Backend layout detection failed', ['exception' => $e]);
@@ -411,11 +408,11 @@ final class RecordFormattingUtility
         if ($parentRecord) {
             // Check if parent has backend_layout_next_level set
             if (!empty($parentRecord['backend_layout_next_level']) && \is_scalar($parentRecord['backend_layout_next_level'])) {
-                return (string) $parentRecord['backend_layout_next_level'];
+                return (string)$parentRecord['backend_layout_next_level'];
             }
 
             // If parent has a parent, check recursively
-            $parentPid = is_numeric($parentRecord['pid'] ?? null) ? (int) $parentRecord['pid'] : 0;
+            $parentPid = is_numeric($parentRecord['pid'] ?? null) ? (int)$parentRecord['pid'] : 0;
             if ($parentPid > 0) {
                 return self::getInheritedBackendLayout($parentPid);
             }
@@ -444,8 +441,8 @@ final class RecordFormattingUtility
                     continue;
                 }
 
-                $colPos = is_numeric($column['colPos']) ? (int) $column['colPos'] : 0;
-                $name = \is_scalar($column['name'] ?? null) ? (string) $column['name'] : 'Column ' . $colPos;
+                $colPos = is_numeric($column['colPos']) ? (int)$column['colPos'] : 0;
+                $name = \is_scalar($column['name'] ?? null) ? (string)$column['name'] : 'Column ' . $colPos;
 
                 // Translate the name if it's a language label
                 if (str_starts_with($name, 'LLL:')) {

@@ -113,7 +113,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'table' => 'pages',
             'uid' => 1,
         ]);
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
 
         // Should NOT be able to update pages
         $updateResult = $this->writeTool->execute([
@@ -122,10 +122,10 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'uid' => 1,
             'data' => ['title' => 'Not Allowed'],
         ]);
-        $this->assertTrue($updateResult->isError);
+        self::assertTrue($updateResult->isError);
         // Check for permission error
         $errorText = $updateResult->content[0]->text;
-        $this->assertTrue(
+        self::assertTrue(
             str_contains($errorText, 'Cannot access table')
             || str_contains($errorText, 'not permitted')
             || str_contains($errorText, 'Operation'),
@@ -139,7 +139,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'uid' => 1,
             'data' => ['header' => 'Allowed Update'],
         ]);
-        $this->assertFalse($contentResult->isError, json_encode($contentResult->jsonSerialize()));
+        self::assertFalse($contentResult->isError, json_encode($contentResult->jsonSerialize()));
     }
 
     /**
@@ -168,20 +168,20 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
 
         // The tool might error if nav_title is not available
         if ($result->isError) {
-            $this->assertStringContainsString('nav_title', $result->content[0]->text);
+            self::assertStringContainsString('nav_title', $result->content[0]->text);
         } else {
             // If successful, tool should have filtered unauthorized fields
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
 
         // Verify only allowed fields were updated
         $record = BackendUtility::getRecord('pages', 1);
         // TYPO3 might not enforce field-level restrictions in all contexts
         if ($record['title'] === 'Allowed Field Update') {
-            $this->assertEquals('Allowed Field Update', $record['title']);
+            self::assertEquals('Allowed Field Update', $record['title']);
         } else {
             // If the update didn't work, that's also valid for permission test
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
     }
 
@@ -214,7 +214,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         if (!$result->isError) {
             $data = json_decode($result->content[0]->text, true);
             // Check if it created in a different workspace
-            $this->assertIsArray($data);
+            self::assertIsArray($data);
         }
     }
 
@@ -247,7 +247,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 0,
             ],
         ]);
-        $this->assertFalse($defaultContentResult->isError, json_encode($defaultContentResult->jsonSerialize()));
+        self::assertFalse($defaultContentResult->isError, json_encode($defaultContentResult->jsonSerialize()));
         $contentInLanguages[0] = json_decode($defaultContentResult->content[0]->text, true)['uid'];
 
         // Create content in German
@@ -261,7 +261,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 1,
             ],
         ]);
-        $this->assertFalse($germanContentResult->isError, json_encode($germanContentResult->jsonSerialize()));
+        self::assertFalse($germanContentResult->isError, json_encode($germanContentResult->jsonSerialize()));
         $contentInLanguages[1] = json_decode($germanContentResult->content[0]->text, true)['uid'];
 
         // Create content in French
@@ -275,14 +275,14 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 2,
             ],
         ]);
-        $this->assertFalse($frenchContentResult->isError, json_encode($frenchContentResult->jsonSerialize()));
+        self::assertFalse($frenchContentResult->isError, json_encode($frenchContentResult->jsonSerialize()));
         $contentInLanguages[2] = json_decode($frenchContentResult->content[0]->text, true)['uid'];
 
         // Verify that content was created with correct language UIDs
         foreach ($contentInLanguages as $langUid => $contentUid) {
             $record = BackendUtility::getRecord('tt_content', $contentUid);
-            $this->assertNotNull($record, "Content record $contentUid should exist");
-            $this->assertEquals($langUid, $record['sys_language_uid'], "Content should have correct language UID");
+            self::assertNotNull($record, "Content record $contentUid should exist");
+            self::assertEquals($langUid, $record['sys_language_uid'], 'Content should have correct language UID');
         }
 
         // Test reading content with language filter using ReadTableTool
@@ -292,26 +292,26 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'language' => 'de',  // Filter for German content
         ]);
 
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $data = json_decode($readResult->content[0]->text, true);
 
         // Should only return German content when filtering by German language
-        $this->assertCount(1, $data['records'], 'Should return only German content');
-        $this->assertEquals(1, $data['records'][0]['sys_language_uid'], 'Content should be in German');
-        $this->assertEquals('German Content', $data['records'][0]['header'], 'Should be the German content');
+        self::assertCount(1, $data['records'], 'Should return only German content');
+        self::assertEquals(1, $data['records'][0]['sys_language_uid'], 'Content should be in German');
+        self::assertEquals('German Content', $data['records'][0]['header'], 'Should be the German content');
 
         // Test that multi-language site configuration is working
         $languageService = $this->getService(LanguageService::class);
         $availableLanguages = $languageService->getAvailableIsoCodes();
 
-        $this->assertContains('en', $availableLanguages, 'English should be available');
-        $this->assertContains('de', $availableLanguages, 'German should be available');
-        $this->assertContains('fr', $availableLanguages, 'French should be available');
+        self::assertContains('en', $availableLanguages, 'English should be available');
+        self::assertContains('de', $availableLanguages, 'German should be available');
+        self::assertContains('fr', $availableLanguages, 'French should be available');
 
         // Verify language mappings work correctly
-        $this->assertEquals(0, $languageService->getUidFromIsoCode('en'), 'English should map to UID 0');
-        $this->assertEquals(1, $languageService->getUidFromIsoCode('de'), 'German should map to UID 1');
-        $this->assertEquals(2, $languageService->getUidFromIsoCode('fr'), 'French should map to UID 2');
+        self::assertEquals(0, $languageService->getUidFromIsoCode('en'), 'English should map to UID 0');
+        self::assertEquals(1, $languageService->getUidFromIsoCode('de'), 'German should map to UID 1');
+        self::assertEquals(2, $languageService->getUidFromIsoCode('fr'), 'French should map to UID 2');
     }
 
     /**
@@ -347,7 +347,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             // This might be blocked
             if ($writeResult->isError) {
                 $errorText = strtolower($writeResult->content[0]->text);
-                $this->assertTrue(
+                self::assertTrue(
                     str_contains($errorText, 'access')
                     || str_contains($errorText, 'permission')
                     || str_contains($errorText, 'attempt to modify'),
@@ -378,10 +378,10 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
 
         // Update might fail due to permissions
         if ($updateResult->isError) {
-            $this->assertStringContainsString('permission', strtolower($updateResult->content[0]->text));
+            self::assertStringContainsString('permission', strtolower($updateResult->content[0]->text));
         } else {
             // Or it might work
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
 
         // Creating new might be restricted by other means in TYPO3
@@ -395,7 +395,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         // Check if creation was allowed or blocked
         if ($createResult->isError) {
             $errorText = strtolower($createResult->content[0]->text);
-            $this->assertTrue(
+            self::assertTrue(
                 str_contains($errorText, 'permission')
                 || str_contains($errorText, 'error')
                 || str_contains($errorText, 'invalid')
@@ -424,8 +424,8 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'data' => ['title' => 'Should not be allowed'],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('sys_template', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('sys_template', $result->content[0]->text);
     }
 
     /**
@@ -441,7 +441,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'data' => ['title' => 'Parent Page'],
         ]);
 
-        $this->assertFalse($parentResult->isError);
+        self::assertFalse($parentResult->isError);
         $parentData = json_decode($parentResult->content[0]->text, true);
         $parentUid = $parentData['uid'];
 
@@ -453,13 +453,13 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'data' => ['title' => 'Child Page'],
         ]);
 
-        $this->assertFalse($childResult->isError);
+        self::assertFalse($childResult->isError);
         $childData = json_decode($childResult->content[0]->text, true);
         $childUid = $childData['uid'];
 
         // Now restrict access to parent
         $user = $this->setUpBackendUser(3);
-        $user->groupData['webmounts'] = (string) $childUid; // Only access to child
+        $user->groupData['webmounts'] = (string)$childUid; // Only access to child
         $user->groupData['tables_modify'] = 'pages';
 
         // Should not be able to modify parent
@@ -473,7 +473,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         // Might be blocked or might succeed depending on TYPO3 version
         if ($result->isError) {
             $errorText = strtolower($result->content[0]->text);
-            $this->assertTrue(
+            self::assertTrue(
                 str_contains($errorText, 'access')
                 || str_contains($errorText, 'permission')
                 || str_contains($errorText, 'attempt to modify'),
@@ -505,9 +505,9 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
 
         // Might fail due to table access
         if ($textResult->isError) {
-            $this->assertStringContainsString('tt_content', $textResult->content[0]->text);
+            self::assertStringContainsString('tt_content', $textResult->content[0]->text);
         } else {
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
 
         // Might be restricted from creating image content
@@ -523,11 +523,11 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
 
         // Check if it was blocked (depends on TYPO3 configuration)
         if ($imageResult->isError) {
-            $this->assertStringContainsString('permission', strtolower($imageResult->content[0]->text));
+            self::assertStringContainsString('permission', strtolower($imageResult->content[0]->text));
         } else {
             // Even if created, verify the CType
             $data = json_decode($imageResult->content[0]->text, true);
-            $this->assertEquals('image', $data['CType'] ?? '');
+            self::assertEquals('image', $data['CType'] ?? '');
         }
     }
 
@@ -545,7 +545,7 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'deleted' => 0,
         ]);
 
-        return (int) $connection->lastInsertId();
+        return (int)$connection->lastInsertId();
     }
 
     /**

@@ -14,8 +14,6 @@ use Mcp\Server\Transport\Http\StandardPhpAdapter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Context\Context;
@@ -51,7 +49,7 @@ final readonly class McpEndpoint
             $container = GeneralUtility::getContainer();
             $serverFactory = $container->get(McpServerFactory::class);
             if (!$serverFactory instanceof McpServerFactory) {
-                throw new RuntimeException('MCP server factory is not available');
+                throw new \RuntimeException('MCP server factory is not available');
             }
 
             // Debug: Log all request details
@@ -168,7 +166,7 @@ final readonly class McpEndpoint
                 ['Content-Type' => $contentType],
             );
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('MCP request failed', ['exception' => $e]);
             $stream = new Stream('php://temp', 'rw');
             $stream->write($this->encodeJson([

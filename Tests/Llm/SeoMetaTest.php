@@ -36,7 +36,7 @@ class SeoMetaTest extends LlmTestCase
         ];
 
         $firstToolCall = $response1->getToolCalls()[0]['name'] ?? '';
-        $this->assertContains($firstToolCall, $acceptableFirstSteps);
+        self::assertContains($firstToolCall, $acceptableFirstSteps);
 
         // Execute exploration
         $exploreResult = $this->executeToolCall($response1->getToolCalls()[0]);
@@ -59,7 +59,7 @@ class SeoMetaTest extends LlmTestCase
             if (!empty($finalContent)) {
                 // LLM might explain why no updates were made, or apologize for errors and retry
                 // Both are reasonable behaviors
-                $this->assertNotEmpty($finalContent, "Expected LLM to provide some response");
+                self::assertNotEmpty($finalContent, 'Expected LLM to provide some response');
 
                 // If the LLM mentions that pages already have descriptions, that's ideal
                 if (preg_match('/already|have|description|complete|found|none|all/i', $finalContent)) {
@@ -79,18 +79,18 @@ class SeoMetaTest extends LlmTestCase
             }
         }
 
-        $this->assertGreaterThan(
+        self::assertGreaterThan(
             0,
             \count($writeCalls),
-            "Expected at least one WriteTable call to add meta descriptions, or explanation why none needed",
+            'Expected at least one WriteTable call to add meta descriptions, or explanation why none needed',
         );
 
         // Verify it's updating pages with descriptions
         $writeCall = $writeCalls[0]['arguments'];
-        $this->assertEquals('update', $writeCall['action']);
-        $this->assertEquals('pages', $writeCall['table']);
-        $this->assertArrayHasKey('description', $writeCall['data']);
-        $this->assertNotEmpty($writeCall['data']['description']);
+        self::assertEquals('update', $writeCall['action']);
+        self::assertEquals('pages', $writeCall['table']);
+        self::assertArrayHasKey('description', $writeCall['data']);
+        self::assertNotEmpty($writeCall['data']['description']);
     }
 
     /**
@@ -98,7 +98,7 @@ class SeoMetaTest extends LlmTestCase
      */
     public function testLlmOptimizesPageTitles(): void
     {
-        $prompt = "Update the page title of the contact page to be more SEO-friendly";
+        $prompt = 'Update the page title of the contact page to be more SEO-friendly';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -111,9 +111,9 @@ class SeoMetaTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
         // Expect update to page title
@@ -127,7 +127,7 @@ class SeoMetaTest extends LlmTestCase
 
         // Should update either 'title' or 'seo_title' field
         $hasTitle = isset($writeCall['data']['title']) || isset($writeCall['data']['seo_title']);
-        $this->assertTrue($hasTitle, "Expected title or seo_title to be updated");
+        self::assertTrue($hasTitle, 'Expected title or seo_title to be updated');
     }
 
     /**
@@ -135,7 +135,7 @@ class SeoMetaTest extends LlmTestCase
      */
     public function testLlmAddsOpenGraphTags(): void
     {
-        $prompt = "Update the home page to add a meta description for social media sharing";
+        $prompt = 'Update the home page to add a meta description for social media sharing';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -148,15 +148,15 @@ class SeoMetaTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
         // LLM might check table schema to understand available fields
         $history = $this->getToolCallHistory();
         if (\in_array('GetTableSchema', $history)) {
-            $this->assertTrue(true, "LLM checked table schema to understand OG fields");
+            self::assertTrue(true, 'LLM checked table schema to understand OG fields');
         }
 
         // Expect update with OG fields
@@ -170,9 +170,9 @@ class SeoMetaTest extends LlmTestCase
         // Should set OG fields (og_title, og_description) or similar social media fields
         $hasOgFields = false;
         foreach ($writeCall['data'] as $field => $value) {
-            if (str_contains(strtolower((string) $field), 'og_')
-                || str_contains(strtolower((string) $field), 'twitter_')
-                || str_contains(strtolower((string) $field), 'social')) {
+            if (str_contains(strtolower((string)$field), 'og_')
+                || str_contains(strtolower((string)$field), 'twitter_')
+                || str_contains(strtolower((string)$field), 'social')) {
                 $hasOgFields = true;
                 break;
             }
@@ -180,10 +180,10 @@ class SeoMetaTest extends LlmTestCase
 
         // If no OG-specific fields, at least description should be set
         if (!$hasOgFields) {
-            $this->assertArrayHasKey(
+            self::assertArrayHasKey(
                 'description',
                 $writeCall['data'],
-                "Expected Open Graph or at least description field to be set",
+                'Expected Open Graph or at least description field to be set',
             );
         }
     }
@@ -193,7 +193,7 @@ class SeoMetaTest extends LlmTestCase
      */
     public function testLlmImprovesPageSlugs(): void
     {
-        $prompt = "Make the URL slug for the team page more SEO-friendly";
+        $prompt = 'Make the URL slug for the team page more SEO-friendly';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -206,9 +206,9 @@ class SeoMetaTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
         // Expect slug update
@@ -218,17 +218,17 @@ class SeoMetaTest extends LlmTestCase
         ]);
 
         $writeCall = $response->getToolCallsByName('WriteTable')[0]['arguments'];
-        $this->assertArrayHasKey('slug', $writeCall['data']);
+        self::assertArrayHasKey('slug', $writeCall['data']);
 
         // New slug should be different from original "/about/team"
         $newSlug = $writeCall['data']['slug'];
-        $this->assertNotEquals('/about/team', $newSlug);
+        self::assertNotEquals('/about/team', $newSlug);
 
         // Should be SEO-friendly (lowercase, hyphens, no special chars)
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/^[\/a-z0-9\-]+$/',
             $newSlug,
-            "Slug should contain only lowercase letters, numbers, hyphens, and slashes",
+            'Slug should contain only lowercase letters, numbers, hyphens, and slashes',
         );
     }
 }

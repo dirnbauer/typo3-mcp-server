@@ -6,9 +6,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Utility\TcaFormattingUtility;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
-use RuntimeException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -141,7 +139,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
         // Validate parameters
         if (empty($identifier)) {
-            throw new InvalidArgumentException('Identifier parameter is required');
+            throw new \InvalidArgumentException('Identifier parameter is required');
         }
 
         // Validate table access using TableAccessService
@@ -150,13 +148,13 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         // Check if the table and field exist
         $columnConfig = $this->getColumnConfig($table, $field);
         if ($columnConfig === []) {
-            throw new InvalidArgumentException("Field '$field' not found in table '$table'");
+            throw new \InvalidArgumentException("Field '$field' not found in table '$table'");
         }
 
         // Check if the field is a FlexForm field
         $flexFormConfig = isset($columnConfig['config']) && \is_array($columnConfig['config']) ? $columnConfig['config'] : [];
         if (($flexFormConfig['type'] ?? null) !== 'flex') {
-            throw new InvalidArgumentException("Field '$field' in table '$table' is not a FlexForm field");
+            throw new \InvalidArgumentException("Field '$field' in table '$table' is not a FlexForm field");
         }
 
         // Special handling for form_formframework
@@ -169,7 +167,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $dsValue = $resolution['dsValue'];
 
         if ($dsValue === null) {
-            throw new InvalidArgumentException("FlexForm schema not found for identifier: $resolvedIdentifier");
+            throw new \InvalidArgumentException("FlexForm schema not found for identifier: $resolvedIdentifier");
         }
 
         // Build the header
@@ -182,7 +180,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         if (\is_string($dsValue) && str_starts_with($dsValue, 'FILE:')) {
             $file = substr($dsValue, 5);
             $file = GeneralUtility::getFileAbsFileName($file);
-            $prefix = "Schema defined in file: " . $file . "\n\n";
+            $prefix = 'Schema defined in file: ' . $file . "\n\n";
 
             if (file_exists($file)) {
                 $content = file_get_contents($file);
@@ -195,11 +193,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                         $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                         return $this->createSuccessResult($result);
                     }
-                    throw new RuntimeException("Failed to parse XML schema from file: $file");
+                    throw new \RuntimeException("Failed to parse XML schema from file: $file");
                 }
-                throw new RuntimeException("FlexForm file is empty: $file");
+                throw new \RuntimeException("FlexForm file is empty: $file");
             }
-            throw new RuntimeException("FlexForm file not found: $file");
+            throw new \RuntimeException("FlexForm file not found: $file");
         }
 
         if (\is_string($dsValue)) {
@@ -213,7 +211,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                 $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                 return $this->createSuccessResult($result);
             }
-            throw new RuntimeException("Failed to parse inline XML schema");
+            throw new \RuntimeException('Failed to parse inline XML schema');
         }
 
         if (\is_array($dsValue)) {
@@ -224,7 +222,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             return $this->createSuccessResult($result);
         }
 
-        throw new RuntimeException('Unsupported FlexForm data structure configuration');
+        throw new \RuntimeException('Unsupported FlexForm data structure configuration');
     }
 
     /**
@@ -582,7 +580,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         }
 
         $result .= "\n\nNote: Field names with dots (e.g., \"settings.orderBy\") are automatically\n";
-        $result .= "converted to nested structures by TYPO3.";
+        $result .= 'converted to nested structures by TYPO3.';
 
         return $result;
     }

@@ -7,7 +7,6 @@ namespace Hn\McpServer\MCP\Tool;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 final class ListWorkspacesTool extends AbstractTool
@@ -25,7 +24,7 @@ final class ListWorkspacesTool extends AbstractTool
             'description' => 'List all workspaces accessible to the current user. Shows which workspace is currently active. Use this to find the workspace_id for other tools.',
             'inputSchema' => [
                 'type' => 'object',
-                'properties' => new stdClass(),
+                'properties' => new \stdClass(),
                 'required' => [],
             ],
             'annotations' => [
@@ -50,7 +49,7 @@ final class ListWorkspacesTool extends AbstractTool
         if (empty($workspaces)) {
             return new CallToolResult([new TextContent(
                 "No workspaces available.\n"
-                . "A workspace will be created automatically when you use a write tool.",
+                . 'A workspace will be created automatically when you use a write tool.',
             )]);
         }
 
@@ -58,7 +57,7 @@ final class ListWorkspacesTool extends AbstractTool
         foreach ($workspaces as $ws) {
             $marker = $ws['active'] ? ' [ACTIVE]' : '';
             $lines[] = \sprintf(
-                "- id=%d: %s (access: %s)%s%s",
+                '- id=%d: %s (access: %s)%s%s',
                 $ws['id'],
                 $ws['title'],
                 $ws['access'],

@@ -6,7 +6,6 @@ namespace Hn\McpServer\Service;
 
 use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -90,14 +89,14 @@ final class SiteInformationService
             // Get the appropriate language
             try {
                 $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
-            } catch (Throwable) {
+            } catch (\Throwable) {
                 // Fall back to default language if specified language not found
                 $language = $site->getDefaultLanguage();
             }
 
             // Generate the URI
             $uri = $site->getRouter()->generateUri($pageId, ['_language' => $language]);
-            $generatedUrl = (string) $uri;
+            $generatedUrl = (string)$uri;
 
             // Check if the generated URL is missing a host (e.g., just a path like "/page")
             if ($generatedUrl !== '' && !str_starts_with($generatedUrl, 'http')) {
@@ -122,14 +121,14 @@ final class SiteInformationService
             }
 
             return $generatedUrl;
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // Continue to fallback strategies
         }
 
         // Fallback: Try to get page record and build URL from slug
         try {
             $page = $this->getPageRecord($pageId);
-            $slug = \is_scalar($page['slug'] ?? null) ? (string) $page['slug'] : '';
+            $slug = \is_scalar($page['slug'] ?? null) ? (string)$page['slug'] : '';
             if ($page !== null && $slug !== '') {
                 $host = $this->getHostFromRequest();
                 if (!empty($host)) {
@@ -143,7 +142,7 @@ final class SiteInformationService
                 // If no host available, return just the slug
                 return $slug;
             }
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // Ignore and return null
         }
 

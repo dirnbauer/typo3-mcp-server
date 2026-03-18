@@ -88,7 +88,7 @@ final class WriteFileTool extends AbstractTool
     {
         $path = \is_string($params['path'] ?? null) ? $params['path'] : '';
         $content = \is_string($params['content'] ?? null) ? $params['content'] : null;
-        $overwrite = (bool) ($params['overwrite'] ?? false);
+        $overwrite = (bool)($params['overwrite'] ?? false);
         $metadata = \is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
 
         if ($path === '') {

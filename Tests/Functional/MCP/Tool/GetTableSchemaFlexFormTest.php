@@ -43,18 +43,18 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
             'type' => 'news_pi1',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Check if pi_flexform appears
         $hasFlexForm = str_contains($content, 'pi_flexform');
-        $this->assertTrue($hasFlexForm, 'Schema for list type should include pi_flexform field');
+        self::assertTrue($hasFlexForm, 'Schema for list type should include pi_flexform field');
 
-        $this->assertStringContainsString('news_pi1', $content);
+        self::assertStringContainsString('news_pi1', $content);
 
         // Check if it mentions GetFlexFormSchema tool
         $mentionsFlexFormTool = str_contains($content, 'GetFlexFormSchema');
-        $this->assertTrue($mentionsFlexFormTool, 'Schema should mention GetFlexFormSchema tool for FlexForm fields');
+        self::assertTrue($mentionsFlexFormTool, 'Schema should mention GetFlexFormSchema tool for FlexForm fields');
     }
 
     /**
@@ -73,15 +73,15 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Should show the plugin CType and FlexForm guidance
-        $this->assertStringContainsString('news_pi1', $content);
-        $this->assertStringContainsString('news_pi1', $content);
+        self::assertStringContainsString('news_pi1', $content);
+        self::assertStringContainsString('news_pi1', $content);
 
         // Should provide guidance on FlexForm discovery
         $hasFlexFormGuidance = str_contains($content, 'FlexForm')
                                || str_contains($content, 'flexform')
                                || str_contains($content, 'GetFlexFormSchema');
 
-        $this->assertTrue($hasFlexFormGuidance, 'Schema should provide guidance about FlexForm fields');
+        self::assertTrue($hasFlexFormGuidance, 'Schema should provide guidance about FlexForm fields');
     }
 
     /**
@@ -99,12 +99,12 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Should list available types including the News plugin CType
-        $this->assertStringContainsString('news_pi1', $content);
+        self::assertStringContainsString('news_pi1', $content);
 
         // Should mention that plugins may have FlexForm configuration
         $hasPluginInfo = str_contains($content, 'plugin')
                         || str_contains($content, 'Plugin');
 
-        $this->assertTrue($hasPluginInfo, 'Default schema should mention plugins');
+        self::assertTrue($hasPluginInfo, 'Default schema should mention plugins');
     }
 }

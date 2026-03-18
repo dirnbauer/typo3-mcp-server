@@ -36,7 +36,7 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
 
         $workspaceId = $this->service->switchToOptimalWorkspace($backendUser);
 
-        $this->assertGreaterThan(0, $workspaceId, 'Should create a workspace when none exist');
+        self::assertGreaterThan(0, $workspaceId, 'Should create a workspace when none exist');
     }
 
     public function testSwitchToOptimalWorkspaceReturnsCurrentWorkspaceIfAlreadySet(): void
@@ -44,10 +44,10 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $backendUser = $GLOBALS['BE_USER'];
 
         $first = $this->service->switchToOptimalWorkspace($backendUser);
-        $this->assertGreaterThan(0, $first);
+        self::assertGreaterThan(0, $first);
 
         $second = $this->service->switchToOptimalWorkspace($backendUser);
-        $this->assertSame($first, $second, 'Should return current workspace when already set');
+        self::assertSame($first, $second, 'Should return current workspace when already set');
     }
 
     public function testSwitchToWorkspaceWithExistingWorkspace(): void
@@ -58,7 +58,7 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
 
         $workspaceId = $this->service->switchToWorkspace($backendUser, 1);
 
-        $this->assertSame(1, $workspaceId);
+        self::assertSame(1, $workspaceId);
     }
 
     public function testSwitchToWorkspaceRejectsZeroId(): void
@@ -73,9 +73,9 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
     {
         $info = $this->service->getWorkspaceInfo();
 
-        $this->assertIsArray($info);
-        $this->assertArrayHasKey('id', $info);
-        $this->assertArrayHasKey('title', $info);
+        self::assertIsArray($info);
+        self::assertArrayHasKey('id', $info);
+        self::assertArrayHasKey('title', $info);
     }
 
     public function testGetAvailableWorkspacesReturnsArray(): void
@@ -84,13 +84,13 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
 
         $workspaces = $this->service->getAvailableWorkspaces($backendUser);
 
-        $this->assertIsArray($workspaces);
+        self::assertIsArray($workspaces);
     }
 
     public function testGetCurrentWorkspaceReturnsInt(): void
     {
         $wsId = $this->service->getCurrentWorkspace();
 
-        $this->assertIsInt($wsId);
+        self::assertIsInt($wsId);
     }
 }

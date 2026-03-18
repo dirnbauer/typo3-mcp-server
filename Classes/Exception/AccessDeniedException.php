@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
-use Throwable;
-
 /**
  * Exception for access-related errors
  *
@@ -17,9 +15,9 @@ class AccessDeniedException extends McpException
     /**
      * @param string $resource The resource being accessed (e.g., table name, record identifier)
      * @param string $operation The operation being attempted (e.g., read, write, delete)
-     * @param Throwable|null $previous Previous exception for chaining
+     * @param \Throwable|null $previous Previous exception for chaining
      */
-    public function __construct(string $resource, string $operation, ?Throwable $previous = null)
+    public function __construct(string $resource, string $operation, ?\Throwable $previous = null)
     {
         parent::__construct(
             "Access denied to {$resource} for operation {$operation}",

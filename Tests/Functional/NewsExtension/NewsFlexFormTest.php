@@ -88,7 +88,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read the plugin back
@@ -98,40 +98,40 @@ class NewsFlexFormTest extends FunctionalTestCase
             'uid' => $pluginUid,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $plugin = json_decode($result->content[0]->text, true)['records'][0];
 
         // Verify basic fields
-        $this->assertEquals('news_pi1', $plugin['CType']);
-        $this->assertEquals('Latest News', $plugin['header']);
+        self::assertEquals('news_pi1', $plugin['CType']);
+        self::assertEquals('Latest News', $plugin['header']);
 
         // Verify FlexForm was converted from array and stored
-        $this->assertArrayHasKey('pi_flexform', $plugin);
-        $this->assertIsArray($plugin['pi_flexform']);
+        self::assertArrayHasKey('pi_flexform', $plugin);
+        self::assertIsArray($plugin['pi_flexform']);
 
         // Verify FlexForm settings were preserved
-        $this->assertArrayHasKey('settings', $plugin['pi_flexform']);
+        self::assertArrayHasKey('settings', $plugin['pi_flexform']);
         $settings = $plugin['pi_flexform']['settings'];
 
         // Check display settings
-        $this->assertEquals('datetime', $settings['orderBy']);
-        $this->assertEquals('desc', $settings['orderDirection']);
-        $this->assertEquals('1', $settings['topNewsFirst']);
-        $this->assertEquals('10', $settings['limit']);
+        self::assertEquals('datetime', $settings['orderBy']);
+        self::assertEquals('desc', $settings['orderDirection']);
+        self::assertEquals('1', $settings['topNewsFirst']);
+        self::assertEquals('10', $settings['limit']);
 
         // Check page references
-        $this->assertEquals('20', $settings['detailPid']);
-        $this->assertEquals('15', $settings['listPid']);
-        $this->assertEquals('10', $settings['startingpoint']);
+        self::assertEquals('20', $settings['detailPid']);
+        self::assertEquals('15', $settings['listPid']);
+        self::assertEquals('10', $settings['startingpoint']);
 
         // Check category settings
-        $this->assertEquals('1,2', $settings['categories']);
-        $this->assertEquals('or', $settings['categoryConjunction']);
+        self::assertEquals('1,2', $settings['categories']);
+        self::assertEquals('or', $settings['categoryConjunction']);
 
         // Check nested media settings
-        $this->assertArrayHasKey('media', $settings);
-        $this->assertEquals('800', $settings['media']['maxWidth']);
-        $this->assertEquals('600', $settings['media']['maxHeight']);
+        self::assertArrayHasKey('media', $settings);
+        self::assertEquals('800', $settings['media']['maxWidth']);
+        self::assertEquals('600', $settings['media']['maxHeight']);
     }
 
     /**
@@ -159,7 +159,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Update the FlexForm settings
@@ -182,7 +182,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read and verify the update
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -195,13 +195,13 @@ class NewsFlexFormTest extends FunctionalTestCase
         $settings = $plugin['pi_flexform']['settings'];
 
         // Verify updates
-        $this->assertEquals('datetime', $settings['orderBy']);
-        $this->assertEquals('asc', $settings['orderDirection']);
-        $this->assertEquals('20', $settings['limit']);
-        $this->assertEquals('1,2,3', $settings['categories']);
-        $this->assertEquals('and', $settings['categoryConjunction']);
-        $this->assertEquals('25', $settings['detailPid']);
-        $this->assertEquals('200', $settings['templateLayout']);
+        self::assertEquals('datetime', $settings['orderBy']);
+        self::assertEquals('asc', $settings['orderDirection']);
+        self::assertEquals('20', $settings['limit']);
+        self::assertEquals('1,2,3', $settings['categories']);
+        self::assertEquals('and', $settings['categoryConjunction']);
+        self::assertEquals('25', $settings['detailPid']);
+        self::assertEquals('200', $settings['templateLayout']);
     }
 
     /**
@@ -247,7 +247,7 @@ class NewsFlexFormTest extends FunctionalTestCase
                 ],
             ]);
 
-            $this->assertFalse($result->isError, "Failed to create $modeName mode: " . json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, "Failed to create $modeName mode: " . json_encode($result->jsonSerialize()));
 
             // Read back and verify
             $pluginUid = json_decode($result->content[0]->text, true)['uid'];
@@ -258,12 +258,12 @@ class NewsFlexFormTest extends FunctionalTestCase
             ]);
 
             $plugin = json_decode($result->content[0]->text, true)['records'][0];
-            $this->assertArrayHasKey('pi_flexform', $plugin);
-            $this->assertArrayHasKey('settings', $plugin['pi_flexform']);
+            self::assertArrayHasKey('pi_flexform', $plugin);
+            self::assertArrayHasKey('settings', $plugin['pi_flexform']);
 
             // Verify mode-specific settings
             foreach ($modeSettings as $key => $value) {
-                $this->assertEquals(
+                self::assertEquals(
                     $value,
                     $plugin['pi_flexform']['settings'][$key],
                     "Setting $key not preserved for $modeName mode",
@@ -291,7 +291,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Update with empty settings
@@ -306,7 +306,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -326,7 +326,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Get FlexForm schema
@@ -338,18 +338,18 @@ class NewsFlexFormTest extends FunctionalTestCase
             'identifier' => '*,news_pi1',  // News uses this pattern
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Verify schema contains News-specific settings
-        $this->assertStringContainsString('orderBy', $content);
-        $this->assertStringContainsString('orderDirection', $content);
-        $this->assertStringContainsString('categories', $content);
-        $this->assertStringContainsString('detailPid', $content);
-        $this->assertStringContainsString('listPid', $content);
+        self::assertStringContainsString('orderBy', $content);
+        self::assertStringContainsString('orderDirection', $content);
+        self::assertStringContainsString('categories', $content);
+        self::assertStringContainsString('detailPid', $content);
+        self::assertStringContainsString('listPid', $content);
 
         // Check for sheet structure
-        $this->assertStringContainsString('SHEETS:', $content);
+        self::assertStringContainsString('SHEETS:', $content);
     }
 
     /**
@@ -376,7 +376,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Update in workspace
@@ -395,7 +395,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify workspace version has the updates
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -407,9 +407,9 @@ class NewsFlexFormTest extends FunctionalTestCase
         $plugin = json_decode($result->content[0]->text, true)['records'][0];
         $settings = $plugin['pi_flexform']['settings'];
 
-        $this->assertEquals('15', $settings['limit']);
-        $this->assertEquals('datetime', $settings['orderBy']);
-        $this->assertEquals('desc', $settings['orderDirection']);
+        self::assertEquals('15', $settings['limit']);
+        self::assertEquals('datetime', $settings['orderBy']);
+        self::assertEquals('desc', $settings['orderDirection']);
     }
 
     /**
@@ -480,7 +480,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pluginUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read and verify nested structures
@@ -494,19 +494,19 @@ class NewsFlexFormTest extends FunctionalTestCase
         $settings = $plugin['pi_flexform']['settings'];
 
         // Verify deep nesting
-        $this->assertArrayHasKey('media', $settings);
-        $this->assertArrayHasKey('image', $settings['media']);
-        $this->assertArrayHasKey('lightbox', $settings['media']['image']);
-        $this->assertEquals('1', $settings['media']['image']['lightbox']['enabled']);
-        $this->assertEquals('1920', $settings['media']['image']['lightbox']['width']);
+        self::assertArrayHasKey('media', $settings);
+        self::assertArrayHasKey('image', $settings['media']);
+        self::assertArrayHasKey('lightbox', $settings['media']['image']);
+        self::assertEquals('1', $settings['media']['image']['lightbox']['enabled']);
+        self::assertEquals('1920', $settings['media']['image']['lightbox']['width']);
 
         // Verify list configuration
-        $this->assertArrayHasKey('list', $settings);
-        $this->assertArrayHasKey('paginate', $settings['list']);
-        $this->assertEquals('10', $settings['list']['paginate']['itemsPerPage']);
+        self::assertArrayHasKey('list', $settings);
+        self::assertArrayHasKey('paginate', $settings['list']);
+        self::assertEquals('10', $settings['list']['paginate']['itemsPerPage']);
 
         // Verify detail configuration
-        $this->assertArrayHasKey('detail', $settings);
-        $this->assertEquals('1', $settings['detail']['showSocialShareButtons']);
+        self::assertArrayHasKey('detail', $settings);
+        self::assertEquals('1', $settings['detail']['showSocialShareButtons']);
     }
 }

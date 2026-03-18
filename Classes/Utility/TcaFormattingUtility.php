@@ -28,70 +28,70 @@ final class TcaFormattingUtility
         $type = \is_string($config['type'] ?? null) ? $config['type'] : '';
         $softref = \is_string($config['softref'] ?? null) ? $config['softref'] : '';
         $eval = \is_string($config['eval'] ?? null) ? $config['eval'] : '';
-        $size = \is_scalar($config['size'] ?? null) ? (string) $config['size'] : null;
-        $max = \is_scalar($config['max'] ?? null) ? (string) $config['max'] : null;
-        $cols = \is_scalar($config['cols'] ?? null) ? (string) $config['cols'] : null;
-        $rows = \is_scalar($config['rows'] ?? null) ? (string) $config['rows'] : null;
-        $defaultValue = \is_scalar($config['default'] ?? null) ? (string) $config['default'] : null;
-        $renderType = \is_scalar($config['renderType'] ?? null) ? (string) $config['renderType'] : null;
-        $foreignTable = \is_scalar($config['foreign_table'] ?? null) ? (string) $config['foreign_table'] : null;
-        $mmTable = \is_scalar($config['MM'] ?? null) ? (string) $config['MM'] : null;
-        $allowed = \is_scalar($config['allowed'] ?? null) ? (string) $config['allowed'] : null;
-        $dsPointerField = \is_scalar($config['ds_pointerField'] ?? null) ? (string) $config['ds_pointerField'] : null;
+        $size = \is_scalar($config['size'] ?? null) ? (string)$config['size'] : null;
+        $max = \is_scalar($config['max'] ?? null) ? (string)$config['max'] : null;
+        $cols = \is_scalar($config['cols'] ?? null) ? (string)$config['cols'] : null;
+        $rows = \is_scalar($config['rows'] ?? null) ? (string)$config['rows'] : null;
+        $defaultValue = \is_scalar($config['default'] ?? null) ? (string)$config['default'] : null;
+        $renderType = \is_scalar($config['renderType'] ?? null) ? (string)$config['renderType'] : null;
+        $foreignTable = \is_scalar($config['foreign_table'] ?? null) ? (string)$config['foreign_table'] : null;
+        $mmTable = \is_scalar($config['MM'] ?? null) ? (string)$config['MM'] : null;
+        $allowed = \is_scalar($config['allowed'] ?? null) ? (string)$config['allowed'] : null;
+        $dsPointerField = \is_scalar($config['ds_pointerField'] ?? null) ? (string)$config['ds_pointerField'] : null;
 
         // Add field details based on type
         switch ($type) {
             case 'input':
                 if ($size !== null) {
-                    $result .= " [size: " . $size . "]";
+                    $result .= ' [size: ' . $size . ']';
                 }
                 if ($max !== null) {
-                    $result .= " [max: " . $max . "]";
+                    $result .= ' [max: ' . $max . ']';
                 }
 
                 // Check for typolink support via softref
                 if ($softref !== '' && str_contains($softref, 'typolink_tag')) {
-                    $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
+                    $result .= ' [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]';
                 }
                 break;
 
             case 'text':
                 if ($cols !== null) {
-                    $result .= " [cols: " . $cols . "]";
+                    $result .= ' [cols: ' . $cols . ']';
                 }
                 if ($rows !== null) {
-                    $result .= " [rows: " . $rows . "]";
+                    $result .= ' [rows: ' . $rows . ']';
                 }
 
                 // Check for richtext enabled
                 if (isset($config['enableRichtext']) && $config['enableRichtext']) {
-                    $result .= " [Richtext/HTML]";
+                    $result .= ' [Richtext/HTML]';
                 }
 
                 // Check for typolink support via softref
                 if ($softref !== '' && str_contains($softref, 'typolink_tag')) {
-                    $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
+                    $result .= ' [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]';
                 }
                 break;
 
             case 'check':
                 if ($defaultValue !== null) {
-                    $result .= " [Default: " . $defaultValue . "]";
+                    $result .= ' [Default: ' . $defaultValue . ']';
                 }
                 break;
 
             case 'select':
                 // Add renderType if available
                 if ($renderType !== null) {
-                    $result .= " [renderType: " . $renderType . "]";
+                    $result .= ' [renderType: ' . $renderType . ']';
                 }
 
                 // Add foreign table and MM information
                 if ($foreignTable !== null) {
-                    $result .= " [foreign table: " . $foreignTable . "]";
+                    $result .= ' [foreign table: ' . $foreignTable . ']';
                 }
                 if ($mmTable !== null) {
-                    $result .= " [MM table: " . $mmTable . "]";
+                    $result .= ' [MM table: ' . $mmTable . ']';
                 }
 
                 // Add select options if available
@@ -121,12 +121,12 @@ final class TcaFormattingUtility
                         $label = $parsed['labels'][$value] ?? '';
                         if ($label) {
                             $translatedLabel = TableAccessService::translateLabel($label);
-                            $options[] = $value . " (" . $translatedLabel . ")";
+                            $options[] = $value . ' (' . $translatedLabel . ')';
                         }
                     }
 
                     if (!empty($options)) {
-                        $result .= " [Options: " . implode(', ', $options) . "]";
+                        $result .= ' [Options: ' . implode(', ', $options) . ']';
                     }
                 }
 
@@ -137,7 +137,7 @@ final class TcaFormattingUtility
                     $isoCodes = $languageService->getAvailableIsoCodes();
 
                     if (!empty($isoCodes)) {
-                        $result .= " [ISO codes accepted: " . implode(', ', $isoCodes) . "]";
+                        $result .= ' [ISO codes accepted: ' . implode(', ', $isoCodes) . ']';
                         $result .= " (Use ISO codes like 'de' instead of numeric IDs in WriteTable tool)";
                     }
                 }
@@ -146,21 +146,21 @@ final class TcaFormattingUtility
             case 'group':
                 // Add allowed table if available
                 if ($allowed !== null) {
-                    $result .= " [allowed: " . $allowed . "]";
+                    $result .= ' [allowed: ' . $allowed . ']';
                 }
                 break;
 
             case 'inline':
                 // Add foreign table if available
                 if ($foreignTable !== null) {
-                    $result .= " [foreign table: " . $foreignTable . "]";
+                    $result .= ' [foreign table: ' . $foreignTable . ']';
                 }
                 break;
 
             case 'flex':
                 // Only applicable for TCA
                 if ($dsPointerField !== null) {
-                    $result .= " [ds_pointerField: " . $dsPointerField . "]";
+                    $result .= ' [ds_pointerField: ' . $dsPointerField . ']';
                 }
                 break;
 
@@ -171,7 +171,7 @@ final class TcaFormattingUtility
                 $isoCodes = $languageService->getAvailableIsoCodes();
 
                 if (!empty($isoCodes)) {
-                    $result .= " [ISO codes accepted: " . implode(', ', $isoCodes) . "]";
+                    $result .= ' [ISO codes accepted: ' . implode(', ', $isoCodes) . ']';
                     $result .= " (Use ISO codes like 'de' instead of numeric IDs in WriteTable tool)";
                 }
                 break;
@@ -179,12 +179,12 @@ final class TcaFormattingUtility
 
         // Add required flag if set
         if ($eval !== '' && str_contains($eval, 'required')) {
-            $result .= " [Required]";
+            $result .= ' [Required]';
         }
 
         // Add default value if set
         if ($defaultValue !== null && $type !== 'check') {
-            $result .= " [Default: " . $defaultValue . "]";
+            $result .= ' [Default: ' . $defaultValue . ']';
         }
     }
 }

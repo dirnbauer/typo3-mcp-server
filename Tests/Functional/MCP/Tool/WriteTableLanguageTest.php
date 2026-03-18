@@ -130,20 +130,20 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode($result->content[0]->text, true);
 
-        $this->assertEquals('create', $data['action']);
-        $this->assertEquals('tt_content', $data['table']);
-        $this->assertIsInt($data['uid']);
+        self::assertEquals('create', $data['action']);
+        self::assertEquals('tt_content', $data['table']);
+        self::assertIsInt($data['uid']);
 
         // Verify the created record has correct language UID
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $record = $connection->select(['*'], 'tt_content', ['uid' => $data['uid']])->fetchAssociative();
 
-        $this->assertNotFalse($record);
-        $this->assertEquals(1, $record['sys_language_uid']); // German has UID 1
-        $this->assertEquals('Deutscher Titel', $record['header']);
+        self::assertNotFalse($record);
+        self::assertEquals(1, $record['sys_language_uid']); // German has UID 1
+        self::assertEquals('Deutscher Titel', $record['header']);
     }
 
     /**
@@ -164,8 +164,8 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Unknown language code: xx', $result->error ?? $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Unknown language code: xx', $result->error ?? $result->content[0]->text);
     }
 
     /**
@@ -187,7 +187,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
         $createData = json_decode($createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
 
@@ -201,29 +201,29 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
         $translateData = json_decode($translateResult->content[0]->text, true);
 
-        $this->assertEquals('translate', $translateData['action']);
-        $this->assertEquals('tt_content', $translateData['table']);
-        $this->assertEquals($originalUid, $translateData['sourceUid']);
-        $this->assertEquals('de', $translateData['targetLanguage']);
-        $this->assertNotEmpty($translateData['translationUid']);
+        self::assertEquals('translate', $translateData['action']);
+        self::assertEquals('tt_content', $translateData['table']);
+        self::assertEquals($originalUid, $translateData['sourceUid']);
+        self::assertEquals('de', $translateData['targetLanguage']);
+        self::assertNotEmpty($translateData['translationUid']);
 
         // Check if translation UID was found
         if (!\is_int($translateData['translationUid'])) {
-            $this->fail('Translation failed: ' . $translateData['translationUid']);
+            self::fail('Translation failed: ' . $translateData['translationUid']);
         }
 
         // Verify the translation was created - need to use BackendUtility to get workspace overlay
         $translation = BackendUtility::getRecord('tt_content', $translateData['translationUid']);
 
-        $this->assertNotFalse($translation, 'Translation record not found. UID was: ' . $translateData['translationUid']);
-        $this->assertIsArray($translation, 'Translation should be an array');
+        self::assertNotFalse($translation, 'Translation record not found. UID was: ' . $translateData['translationUid']);
+        self::assertIsArray($translation, 'Translation should be an array');
 
-        $this->assertEquals(1, $translation['sys_language_uid']); // German
-        $this->assertEquals($originalUid, $translation['l18n_parent']); // TYPO3 uses l18n_parent for tt_content
-        $this->assertStringContainsString('Original English Content', $translation['header']); // May have translation prefix
+        self::assertEquals(1, $translation['sys_language_uid']); // German
+        self::assertEquals($originalUid, $translation['l18n_parent']); // TYPO3 uses l18n_parent for tt_content
+        self::assertStringContainsString('Original English Content', $translation['header']); // May have translation prefix
     }
 
     /**
@@ -257,9 +257,9 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
-        $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
+        self::assertStringContainsString('Unknown language code: xx', $errorMessage);
     }
 
     /**
@@ -306,9 +306,9 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
-        $this->assertStringContainsString('Cannot translate a record that is already a translation', $errorMessage);
+        self::assertStringContainsString('Cannot translate a record that is already a translation', $errorMessage);
     }
 
     /**
@@ -342,7 +342,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($translateResult->isError);
+        self::assertFalse($translateResult->isError);
 
         // Try to translate to German again (should fail)
         $result = $tool->execute([
@@ -354,10 +354,10 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
         // TYPO3 returns a different error message when using DataHandler
-        $this->assertTrue(
+        self::assertTrue(
             str_contains($errorMessage, 'Translation already exists')
             || str_contains($errorMessage, 'already are localizations'),
             'Expected error about existing translation, got: ' . $errorMessage,
@@ -408,15 +408,15 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         // Verify the update - need to use BackendUtility to get workspace overlay
         $record = BackendUtility::getRecord('tt_content', $germanUid);
 
-        $this->assertNotFalse($record, 'German translation record not found');
-        $this->assertEquals('Aktualisierter deutscher Titel', $record['header']);
-        $this->assertEquals('Aktualisierter deutscher Inhalt', $record['bodytext']);
-        $this->assertEquals(1, $record['sys_language_uid']); // Still German
-        $this->assertEquals($originalUid, $record['l18n_parent']); // Still linked to original
+        self::assertNotFalse($record, 'German translation record not found');
+        self::assertEquals('Aktualisierter deutscher Titel', $record['header']);
+        self::assertEquals('Aktualisierter deutscher Inhalt', $record['bodytext']);
+        self::assertEquals(1, $record['sys_language_uid']); // Still German
+        self::assertEquals($originalUid, $record['l18n_parent']); // Still linked to original
     }
 }

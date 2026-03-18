@@ -44,21 +44,21 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Verify listing contains expected sections
-        $this->assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
-        $this->assertStringContainsString('=====================================', $content);
-        $this->assertStringContainsString('workspace-capable and accessible', $content);
+        self::assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
+        self::assertStringContainsString('=====================================', $content);
+        self::assertStringContainsString('workspace-capable and accessible', $content);
 
         // Verify core tables are present
-        $this->assertStringContainsString('pages', $content);
-        $this->assertStringContainsString('tt_content', $content);
-        $this->assertStringContainsString('sys_category', $content);
+        self::assertStringContainsString('pages', $content);
+        self::assertStringContainsString('tt_content', $content);
+        self::assertStringContainsString('sys_category', $content);
     }
 
     /**
@@ -70,18 +70,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify extension grouping
-        $this->assertStringContainsString('CORE TABLES:', $content);
-        $this->assertStringContainsString('EXTENSION: unknown', $content);
+        self::assertStringContainsString('CORE TABLES:', $content);
+        self::assertStringContainsString('EXTENSION: unknown', $content);
 
         // Verify core tables are under core section
-        $this->assertMatchesRegularExpression('/CORE TABLES:.*?pages/s', $content);
-        $this->assertMatchesRegularExpression('/CORE TABLES:.*?tt_content/s', $content);
-        $this->assertMatchesRegularExpression('/CORE TABLES:.*?sys_category/s', $content);
+        self::assertMatchesRegularExpression('/CORE TABLES:.*?pages/s', $content);
+        self::assertMatchesRegularExpression('/CORE TABLES:.*?tt_content/s', $content);
+        self::assertMatchesRegularExpression('/CORE TABLES:.*?sys_category/s', $content);
     }
 
     /**
@@ -93,18 +93,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify table information contains required fields
-        $this->assertStringContainsString('pages (Page)', $content);
-        $this->assertStringContainsString('tt_content (Page Content)', $content);
-        $this->assertStringContainsString('sys_category (Category)', $content);
+        self::assertStringContainsString('pages (Page)', $content);
+        self::assertStringContainsString('tt_content (Page Content)', $content);
+        self::assertStringContainsString('sys_category (Category)', $content);
 
         // Verify table type information is present
-        $this->assertStringContainsString('[content]', $content);
-        $this->assertStringContainsString('[system]', $content);
+        self::assertStringContainsString('[content]', $content);
+        self::assertStringContainsString('[system]', $content);
     }
 
     /**
@@ -116,18 +116,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify access information - currently the tool shows workspace-capable tables
         // and mentions [READ-ONLY] marker exists but we need to see if it's actually used
-        $this->assertStringContainsString('Tables marked as [READ-ONLY]', $content);
+        self::assertStringContainsString('Tables marked as [READ-ONLY]', $content);
 
         // Core tables should be workspace-capable (no [READ-ONLY] marker)
-        $this->assertStringContainsString('pages (Page)', $content);
-        $this->assertStringContainsString('tt_content (Page Content)', $content);
-        $this->assertStringContainsString('sys_category (Category)', $content);
+        self::assertStringContainsString('pages (Page)', $content);
+        self::assertStringContainsString('tt_content (Page Content)', $content);
+        self::assertStringContainsString('sys_category (Category)', $content);
     }
 
     /**
@@ -139,16 +139,16 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify workspace information - the tool states "workspace-capable and accessible"
-        $this->assertStringContainsString('workspace-capable and accessible', $content);
+        self::assertStringContainsString('workspace-capable and accessible', $content);
 
         // All listed tables should be workspace-capable since that's the filtering criteria
-        $this->assertStringContainsString('pages (Page)', $content);
-        $this->assertStringContainsString('tt_content (Page Content)', $content);
+        self::assertStringContainsString('pages (Page)', $content);
+        self::assertStringContainsString('tt_content (Page Content)', $content);
     }
 
     /**
@@ -160,18 +160,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify table types are shown in brackets
-        $this->assertStringContainsString('[content]', $content);
-        $this->assertStringContainsString('[system]', $content);
+        self::assertStringContainsString('[content]', $content);
+        self::assertStringContainsString('[system]', $content);
 
         // Verify specific table types
-        $this->assertMatchesRegularExpression('/pages.*?\[content\]/s', $content);
-        $this->assertMatchesRegularExpression('/tt_content.*?\[content\]/s', $content);
-        $this->assertMatchesRegularExpression('/sys_category.*?\[content\]/s', $content);
+        self::assertMatchesRegularExpression('/pages.*?\[content\]/s', $content);
+        self::assertMatchesRegularExpression('/tt_content.*?\[content\]/s', $content);
+        self::assertMatchesRegularExpression('/sys_category.*?\[content\]/s', $content);
     }
 
     /**
@@ -183,18 +183,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // ⚠️ POTENTIAL ISSUE: The tool shows internal TCA display conditions
         // instead of user-friendly descriptions. This might not be ideal for LLM usage.
-        $this->assertStringContainsString('Field \'', $content);
-        $this->assertStringContainsString('has display conditions', $content);
+        self::assertStringContainsString('Field \'', $content);
+        self::assertStringContainsString('has display conditions', $content);
 
         // Verify table names contain descriptive labels
-        $this->assertStringContainsString('pages (Page)', $content);
-        $this->assertStringContainsString('tt_content (Page Content)', $content);
+        self::assertStringContainsString('pages (Page)', $content);
+        self::assertStringContainsString('tt_content (Page Content)', $content);
     }
 
     /**
@@ -206,19 +206,19 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // ⚠️ ISSUE: The tool doesn't provide summary statistics like total count
         // This might be useful for LLM context. For now, just verify some tables exist.
-        $this->assertStringContainsString('pages', $content);
-        $this->assertStringContainsString('tt_content', $content);
-        $this->assertStringContainsString('sys_category', $content);
+        self::assertStringContainsString('pages', $content);
+        self::assertStringContainsString('tt_content', $content);
+        self::assertStringContainsString('sys_category', $content);
 
         // Count tables manually by looking at the format
         $tableCount = substr_count($content, '- ');
-        $this->assertGreaterThanOrEqual(3, $tableCount);
+        self::assertGreaterThanOrEqual(3, $tableCount);
     }
 
     /**
@@ -230,18 +230,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // ⚠️ ISSUE: No extension count statistics provided
         // Verify extension grouping exists
-        $this->assertStringContainsString('CORE TABLES:', $content);
-        $this->assertStringContainsString('EXTENSION:', $content);
+        self::assertStringContainsString('CORE TABLES:', $content);
+        self::assertStringContainsString('EXTENSION:', $content);
 
         // Should have at least core and one extension section
         $extensionCount = substr_count($content, 'EXTENSION:');
-        $this->assertGreaterThanOrEqual(1, $extensionCount);
+        self::assertGreaterThanOrEqual(1, $extensionCount);
     }
 
     /**
@@ -253,18 +253,18 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // ⚠️ ISSUE: No summary statistics provided by the tool
         // This would be useful for LLM context. For now, verify basic functionality.
-        $this->assertStringContainsString('workspace-capable and accessible', $content);
+        self::assertStringContainsString('workspace-capable and accessible', $content);
         // Note: [READ-ONLY] is mentioned in the description but not shown in actual data
 
         // Verify we have core tables
-        $this->assertStringContainsString('pages', $content);
-        $this->assertStringContainsString('tt_content', $content);
+        self::assertStringContainsString('pages', $content);
+        self::assertStringContainsString('tt_content', $content);
     }
 
     /**
@@ -276,20 +276,20 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify proper formatting
-        $this->assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
-        $this->assertStringContainsString('=====================================', $content);
-        $this->assertStringContainsString('CORE TABLES:', $content);
-        $this->assertStringContainsString('EXTENSION:', $content);
+        self::assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
+        self::assertStringContainsString('=====================================', $content);
+        self::assertStringContainsString('CORE TABLES:', $content);
+        self::assertStringContainsString('EXTENSION:', $content);
 
         // Verify table entries are properly formatted
-        $this->assertMatchesRegularExpression('/^- \w+/m', $content);
-        $this->assertStringContainsString('(', $content); // Table labels in parentheses
-        $this->assertStringContainsString('[', $content); // Type information in brackets
+        self::assertMatchesRegularExpression('/^- \w+/m', $content);
+        self::assertStringContainsString('(', $content); // Table labels in parentheses
+        self::assertStringContainsString('[', $content); // Type information in brackets
     }
 
     /**
@@ -302,8 +302,8 @@ class ListTablesToolTest extends FunctionalTestCase
         // Should work in workspace context
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
     }
 
     /**

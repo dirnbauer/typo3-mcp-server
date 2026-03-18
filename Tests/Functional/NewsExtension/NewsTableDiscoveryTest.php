@@ -43,7 +43,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
 
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
         $content = $result->content[0]->text;
 
         // Expected News tables (News uses sys_category and sys_file_reference, not custom tables)
@@ -54,7 +54,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         ];
 
         foreach ($expectedTables as $table) {
-            $this->assertStringContainsString(
+            self::assertStringContainsString(
                 $table,
                 $content,
                 "Expected News table '$table' not found in ListTablesTool output",
@@ -62,7 +62,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         }
 
         // Verify News table is present
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             'tx_news_domain_model_news',
             $content,
             'News table should be present in the output',
@@ -80,7 +80,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Should have a News extension section
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             'EXTENSION: news',
             $content,
             'News tables should be grouped under News extension',
@@ -88,11 +88,11 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
 
         // Check that News tables appear after the extension header
         $newsSection = strstr($content, 'EXTENSION: news');
-        $this->assertNotFalse($newsSection, 'News extension section not found');
+        self::assertNotFalse($newsSection, 'News extension section not found');
 
         // All News tables should be in this section
-        $this->assertStringContainsString('tx_news_domain_model_news', $newsSection);
-        $this->assertStringContainsString('tx_news_domain_model_tag', $newsSection);
+        self::assertStringContainsString('tx_news_domain_model_news', $newsSection);
+        self::assertStringContainsString('tx_news_domain_model_tag', $newsSection);
     }
 
     /**

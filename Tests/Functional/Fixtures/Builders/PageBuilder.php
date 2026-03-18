@@ -51,11 +51,9 @@ class PageBuilder
         'categories' => 0,
         'rowDescription' => null,
     ];
-    
-    public function __construct(private readonly ConnectionPool $connectionPool)
-    {
-    }
-    
+
+    public function __construct(private readonly ConnectionPool $connectionPool) {}
+
     /**
      * Set the page title
      */
@@ -64,7 +62,7 @@ class PageBuilder
         $this->data['title'] = $title;
         return $this;
     }
-    
+
     /**
      * Set the parent page ID
      */
@@ -73,7 +71,7 @@ class PageBuilder
         $this->data['pid'] = $pid;
         return $this;
     }
-    
+
     /**
      * Set the page as hidden
      */
@@ -82,7 +80,7 @@ class PageBuilder
         $this->data['hidden'] = 1;
         return $this;
     }
-    
+
     /**
      * Set the page as visible
      */
@@ -91,7 +89,7 @@ class PageBuilder
         $this->data['hidden'] = 0;
         return $this;
     }
-    
+
     /**
      * Set the page doktype
      */
@@ -100,7 +98,7 @@ class PageBuilder
         $this->data['doktype'] = $doktype;
         return $this;
     }
-    
+
     /**
      * Set as site root
      */
@@ -109,7 +107,7 @@ class PageBuilder
         $this->data['is_siteroot'] = 1;
         return $this;
     }
-    
+
     /**
      * Set the URL slug
      */
@@ -118,7 +116,7 @@ class PageBuilder
         $this->data['slug'] = $slug;
         return $this;
     }
-    
+
     /**
      * Set navigation title
      */
@@ -127,7 +125,7 @@ class PageBuilder
         $this->data['nav_title'] = $navTitle;
         return $this;
     }
-    
+
     /**
      * Set backend layout
      */
@@ -136,7 +134,7 @@ class PageBuilder
         $this->data['backend_layout'] = $layout;
         return $this;
     }
-    
+
     /**
      * Set backend layout for subpages
      */
@@ -145,7 +143,7 @@ class PageBuilder
         $this->data['backend_layout_next_level'] = $layout;
         return $this;
     }
-    
+
     /**
      * Set language UID
      */
@@ -154,7 +152,7 @@ class PageBuilder
         $this->data['sys_language_uid'] = $languageUid;
         return $this;
     }
-    
+
     /**
      * Set l10n parent for translations
      */
@@ -164,7 +162,7 @@ class PageBuilder
         $this->data['l10n_source'] = $parentUid;
         return $this;
     }
-    
+
     /**
      * Set page as deleted
      */
@@ -173,7 +171,7 @@ class PageBuilder
         $this->data['deleted'] = 1;
         return $this;
     }
-    
+
     /**
      * Set custom data field
      */
@@ -182,7 +180,7 @@ class PageBuilder
         $this->data[$field] = $value;
         return $this;
     }
-    
+
     /**
      * Create the page record and return its UID
      */
@@ -192,20 +190,20 @@ class PageBuilder
         if (empty($this->data['slug'])) {
             $this->data['slug'] = '/' . strtolower(str_replace(' ', '-', $this->data['title']));
         }
-        
+
         // Set timestamps
         $this->data['tstamp'] = time();
         $this->data['crdate'] = time();
-        
+
         $connection = $this->connectionPool->getConnectionForTable('pages');
         $connection->insert('pages', $this->data);
-        
+
         return (int)$connection->lastInsertId();
     }
-    
+
     /**
      * Create multiple pages with incremented titles
-     * 
+     *
      * @param int $count Number of pages to create
      * @return array Array of created UIDs
      */
@@ -213,15 +211,15 @@ class PageBuilder
     {
         $uids = [];
         $baseTitle = $this->data['title'];
-        
+
         for ($i = 1; $i <= $count; $i++) {
             $this->data['title'] = $baseTitle . ' ' . $i;
             $uids[] = $this->create();
         }
-        
+
         // Reset title
         $this->data['title'] = $baseTitle;
-        
+
         return $uids;
     }
 }

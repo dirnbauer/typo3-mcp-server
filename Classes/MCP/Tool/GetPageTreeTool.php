@@ -11,7 +11,6 @@ use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Context\Context;
@@ -88,15 +87,15 @@ final class GetPageTreeTool extends AbstractRecordTool
     protected function doExecute(array $params): CallToolResult
     {
 
-        $startPage = is_numeric($params['startPage'] ?? null) ? (int) $params['startPage'] : 0;
-        $depth = is_numeric($params['depth'] ?? null) ? (int) $params['depth'] : 3;
+        $startPage = is_numeric($params['startPage'] ?? null) ? (int)$params['startPage'] : 0;
+        $depth = is_numeric($params['depth'] ?? null) ? (int)$params['depth'] : 3;
         $languageUid = null;
 
         // Handle language parameter if provided
         if (isset($params['language']) && \is_string($params['language'])) {
             $languageUid = $this->languageService->getUidFromIsoCode($params['language']);
             if ($languageUid === null) {
-                throw new InvalidArgumentException('Unknown language code: ' . $params['language']);
+                throw new \InvalidArgumentException('Unknown language code: ' . $params['language']);
             }
         }
 
@@ -186,14 +185,14 @@ final class GetPageTreeTool extends AbstractRecordTool
         $pageTree = [];
         foreach ($pages as $page) {
             $pageData = [
-                'uid' => is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0,
-                'pid' => is_numeric($page['pid'] ?? null) ? (int) $page['pid'] : 0,
-                'title' => \is_scalar($page['title'] ?? null) ? (string) $page['title'] : '',
-                'nav_title' => \is_scalar($page['nav_title'] ?? null) ? (string) $page['nav_title'] : '',
-                'hidden' => (bool) ($page['hidden'] ?? false),
-                'doktype' => is_numeric($page['doktype'] ?? null) ? (int) $page['doktype'] : 0,
+                'uid' => is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0,
+                'pid' => is_numeric($page['pid'] ?? null) ? (int)$page['pid'] : 0,
+                'title' => \is_scalar($page['title'] ?? null) ? (string)$page['title'] : '',
+                'nav_title' => \is_scalar($page['nav_title'] ?? null) ? (string)$page['nav_title'] : '',
+                'hidden' => (bool)($page['hidden'] ?? false),
+                'doktype' => is_numeric($page['doktype'] ?? null) ? (int)$page['doktype'] : 0,
                 'subpageCount' => 0,
-                'url' => $this->siteInformationService->generatePageUrl(is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0),
+                'url' => $this->siteInformationService->generatePageUrl(is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0),
             ];
 
             // Get language overlay if language specified
@@ -202,9 +201,9 @@ final class GetPageTreeTool extends AbstractRecordTool
 
                 if ($overlaidPage !== $page) {
                     // Apply overlay data
-                    $pageData['title'] = \is_scalar($overlaidPage['title'] ?? null) && (string) $overlaidPage['title'] !== '' ? (string) $overlaidPage['title'] : $pageData['title'];
-                    $pageData['nav_title'] = \is_scalar($overlaidPage['nav_title'] ?? null) && (string) $overlaidPage['nav_title'] !== '' ? (string) $overlaidPage['nav_title'] : $pageData['nav_title'];
-                    $pageData['hidden'] = (bool) ($overlaidPage['hidden'] ?? false);
+                    $pageData['title'] = \is_scalar($overlaidPage['title'] ?? null) && (string)$overlaidPage['title'] !== '' ? (string)$overlaidPage['title'] : $pageData['title'];
+                    $pageData['nav_title'] = \is_scalar($overlaidPage['nav_title'] ?? null) && (string)$overlaidPage['nav_title'] !== '' ? (string)$overlaidPage['nav_title'] : $pageData['nav_title'];
+                    $pageData['hidden'] = (bool)($overlaidPage['hidden'] ?? false);
                     $pageData['_translated'] = true;
                 } else {
                     $pageData['_translated'] = false;
@@ -247,9 +246,8 @@ final class GetPageTreeTool extends AbstractRecordTool
             );
 
         $count = $query->executeQuery()->fetchOne();
-        return is_numeric($count) ? (int) $count : 0;
+        return is_numeric($count) ? (int)$count : 0;
     }
-
 
     /**
      * Collect all page UIDs from the tree structure
@@ -262,7 +260,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         $uids = [];
 
         foreach ($pageTree as $page) {
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
             if ($pageUid > 0) {
                 $uids[] = $pageUid;
             }
@@ -328,8 +326,8 @@ final class GetPageTreeTool extends AbstractRecordTool
 
             // Store counts
             foreach ($counts as $row) {
-                $pid = is_numeric($row['pid'] ?? null) ? (int) $row['pid'] : 0;
-                $count = is_numeric($row['count'] ?? null) ? (int) $row['count'] : 0;
+                $pid = is_numeric($row['pid'] ?? null) ? (int)$row['pid'] : 0;
+                $count = is_numeric($row['count'] ?? null) ? (int)$row['count'] : 0;
 
                 if (!isset($recordCounts[$pid])) {
                     $recordCounts[$pid] = [];
@@ -378,7 +376,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             if ($pluginIdentifier === 'news_pi1' && $pluginFlexform !== '') {
                 // Simple regex to extract startingpoint value
                 if (preg_match('/<field index="settings\.startingpoint">.*?<value[^>]*>(\d+)<\/value>/s', $pluginFlexform, $matches)) {
-                    $storagePid = (int) $matches[1];
+                    $storagePid = (int)$matches[1];
                     $hints .= ' [news plugin → pid:' . $storagePid . ']';
                 }
             }
@@ -400,13 +398,13 @@ final class GetPageTreeTool extends AbstractRecordTool
      */
     protected function getPluginIdentifier(array $plugin): string
     {
-        $cType = \is_scalar($plugin['CType'] ?? null) ? (string) $plugin['CType'] : '';
+        $cType = \is_scalar($plugin['CType'] ?? null) ? (string)$plugin['CType'] : '';
         if ($cType !== '' && $cType !== 'list') {
             return $cType;
         }
 
         if ($cType === 'list' && \is_scalar($plugin['list_type'] ?? null)) {
-            return (string) $plugin['list_type'];
+            return (string)$plugin['list_type'];
         }
 
         return $cType;
@@ -442,12 +440,12 @@ final class GetPageTreeTool extends AbstractRecordTool
         $indent = str_repeat('  ', $level);
 
         foreach ($pageTree as $page) {
-            $pageTitle = \is_scalar($page['title'] ?? null) ? (string) $page['title'] : '';
-            $pageNavTitle = \is_scalar($page['nav_title'] ?? null) ? (string) $page['nav_title'] : '';
-            $pageUid = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
+            $pageTitle = \is_scalar($page['title'] ?? null) ? (string)$page['title'] : '';
+            $pageNavTitle = \is_scalar($page['nav_title'] ?? null) ? (string)$page['nav_title'] : '';
+            $pageUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
             $title = $pageNavTitle !== '' ? $pageNavTitle : $pageTitle;
             $hiddenMark = !empty($page['hidden']) ? ' [HIDDEN]' : '';
-            $doktypeLabel = $this->getDoktypeLabel(is_numeric($page['doktype'] ?? null) ? (int) $page['doktype'] : 0);
+            $doktypeLabel = $this->getDoktypeLabel(is_numeric($page['doktype'] ?? null) ? (int)$page['doktype'] : 0);
 
             // Start building the line: [uid] Title [Type]
             $result .= $indent . '- [' . $pageUid . '] ' . $title . ' [' . $doktypeLabel . ']' . $hiddenMark;
@@ -467,12 +465,12 @@ final class GetPageTreeTool extends AbstractRecordTool
             }
 
             // Add URL if available
-            if (\is_scalar($page['url'] ?? null) && (string) $page['url'] !== '') {
-                $result .= ' - ' . (string) $page['url'];
+            if (\is_scalar($page['url'] ?? null) && (string)$page['url'] !== '') {
+                $result .= ' - ' . (string)$page['url'];
             }
 
             // If the page has subpages but we've reached max depth, show the count
-            $subpageCount = is_numeric($page['subpageCount'] ?? null) ? (int) $page['subpageCount'] : 0;
+            $subpageCount = is_numeric($page['subpageCount'] ?? null) ? (int)$page['subpageCount'] : 0;
             if (empty($page['subpages']) && $subpageCount > 0) {
                 $result .= ' (' . $subpageCount . ' subpages)';
             }

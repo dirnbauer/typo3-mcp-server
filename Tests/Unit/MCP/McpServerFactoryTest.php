@@ -20,28 +20,28 @@ final class McpServerFactoryTest extends TestCase
     {
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] = 'My Test Site';
 
-        $this->assertSame('My Test Site', $this->createFactory()->getServerName());
+        self::assertSame('My Test Site', $this->createFactory()->getServerName());
     }
 
     public function testGetServerNameReturnsFallbackWhenNoSiteName(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] = '';
 
-        $this->assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
+        self::assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
     }
 
     public function testGetServerNameReturnsFallbackWhenNoConfig(): void
     {
         unset($GLOBALS['TYPO3_CONF_VARS']);
 
-        $this->assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
+        self::assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
     }
 
     public function testGetServerNameReturnsFallbackWhenSysIsNotArray(): void
     {
         $GLOBALS['TYPO3_CONF_VARS'] = ['SYS' => 'invalid'];
 
-        $this->assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
+        self::assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
     }
 
     protected function tearDown(): void

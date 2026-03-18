@@ -146,11 +146,11 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
         $schema = $tool->getSchema();
 
         // Should have language parameter with enum
-        $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
-        $this->assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertArrayHasKey('language', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
+        self::assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
     }
 
     /**
@@ -166,13 +166,13 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'depth' => 1,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show default language titles
-        $this->assertStringContainsString('[2] About', $output);
-        $this->assertStringNotContainsString('[TRANSLATED]', $output);
-        $this->assertStringNotContainsString('[NOT TRANSLATED]', $output);
+        self::assertStringContainsString('[2] About', $output);
+        self::assertStringNotContainsString('[TRANSLATED]', $output);
+        self::assertStringNotContainsString('[NOT TRANSLATED]', $output);
     }
 
     /**
@@ -189,18 +189,18 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show German titles where available
         // German translation has nav_title "Über", should use that instead of title
-        $this->assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
+        self::assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
 
         // Page 2 should be marked as translated
-        $this->assertStringContainsString('Über [Page] [TRANSLATED]', $output);
+        self::assertStringContainsString('Über [Page] [TRANSLATED]', $output);
 
         // Pages without translations should be marked as not translated
-        $this->assertStringContainsString('[6] Contact [Page] [NOT TRANSLATED]', $output);
+        self::assertStringContainsString('[6] Contact [Page] [NOT TRANSLATED]', $output);
     }
 
     /**
@@ -227,14 +227,14 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show French title for page 2
-        $this->assertStringContainsString('[2] À propos [Page] [TRANSLATED]', $output);
+        self::assertStringContainsString('[2] À propos [Page] [TRANSLATED]', $output);
 
         // Page 3 has no French translation
-        $this->assertStringContainsString('[3] Hidden Page [Page] [HIDDEN] [NOT TRANSLATED]', $output);
+        self::assertStringContainsString('[3] Hidden Page [Page] [HIDDEN] [NOT TRANSLATED]', $output);
     }
 
     /**
@@ -248,9 +248,9 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'xx',
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? $result->content[0]->text;
-        $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
+        self::assertStringContainsString('Unknown language code: xx', $errorMessage);
     }
 
     /**
@@ -267,11 +267,11 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // German translation has nav_title "Über", should use that instead of title
-        $this->assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
-        $this->assertStringNotContainsString('Über uns', $output);
+        self::assertStringContainsString('[2] Über [Page] [TRANSLATED]', $output);
+        self::assertStringNotContainsString('Über uns', $output);
     }
 }

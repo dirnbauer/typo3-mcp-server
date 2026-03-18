@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Doctrine\DBAL\ParameterType;
-use Exception;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
@@ -17,8 +16,6 @@ use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Psr\Http\Message\ServerRequestInterface;
-use RuntimeException;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
@@ -101,7 +98,7 @@ final class GetPageTool extends AbstractRecordTool
             }
 
             $itemValue = $item['value'] ?? $item[1] ?? null;
-            if (!\is_scalar($itemValue) || (string) $itemValue !== $value) {
+            if (!\is_scalar($itemValue) || (string)$itemValue !== $value) {
                 continue;
             }
 
@@ -110,7 +107,7 @@ final class GetPageTool extends AbstractRecordTool
                 return null;
             }
 
-            return TableAccessService::translateLabel((string) $label);
+            return TableAccessService::translateLabel((string)$label);
         }
 
         return null;
@@ -186,35 +183,35 @@ final class GetPageTool extends AbstractRecordTool
             // Convert ISO code to language UID
             $languageId = $this->languageService->getUidFromIsoCode($params['language']);
             if ($languageId === null) {
-                throw new InvalidArgumentException('Unknown language code: ' . $params['language']);
+                throw new \InvalidArgumentException('Unknown language code: ' . $params['language']);
             }
         } elseif (isset($params['languageId']) && is_numeric($params['languageId'])) {
             // Backward compatibility with numeric languageId
-            $languageId = (int) $params['languageId'];
+            $languageId = (int)$params['languageId'];
         }
 
         // Determine page UID from either uid parameter or url parameter
         $uid = 0;
         if (isset($params['uid']) && is_numeric($params['uid'])) {
-            $uid = (int) $params['uid'];
+            $uid = (int)$params['uid'];
         } elseif (isset($params['url']) && \is_string($params['url'])) {
             try {
                 $uid = $this->resolveUrlToPageUid($params['url'], $languageId);
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 // Re-throw as InvalidArgumentException to preserve the message in error handling
-                throw new InvalidArgumentException($e->getMessage(), 0, $e);
+                throw new \InvalidArgumentException($e->getMessage(), 0, $e);
             }
         }
 
         if ($uid <= 0) {
-            throw new InvalidArgumentException('Invalid page UID or URL. Please provide a valid page ID or URL.');
+            throw new \InvalidArgumentException('Invalid page UID or URL. Please provide a valid page ID or URL.');
         }
 
         // Get page data (with language overlay if applicable)
         $pageData = $this->getPageData($uid, $languageId);
 
         // Get page URL using SiteInformationService
-        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int) $pageData['uid'] : 0;
+        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int)$pageData['uid'] : 0;
         $pageUrl = $this->siteInformationService->generatePageUrl($pageUid, $languageId);
 
         // Get records on this page (filtered by language if specified)
@@ -272,12 +269,12 @@ final class GetPageTool extends AbstractRecordTool
         $page = $queryBuilder->executeQuery()->fetchAssociative();
 
         if (!$page) {
-            throw new RuntimeException('Page not found: ' . $uid);
+            throw new \RuntimeException('Page not found: ' . $uid);
         }
 
         // Apply workspace transparency - return live UID for consistency
         // For workspace versions of existing records, use the live UID
-        $originalUid = is_numeric($page['t3ver_oid'] ?? null) ? (int) $page['t3ver_oid'] : 0;
+        $originalUid = is_numeric($page['t3ver_oid'] ?? null) ? (int)$page['t3ver_oid'] : 0;
         if ($originalUid > 0) {
             $page['uid'] = $originalUid;
         }
@@ -314,15 +311,13 @@ final class GetPageTool extends AbstractRecordTool
         }
 
         // Convert some values to their proper types
-        $page['uid'] = is_numeric($page['uid'] ?? null) ? (int) $page['uid'] : 0;
-        $page['pid'] = is_numeric($page['pid'] ?? null) ? (int) $page['pid'] : 0;
-        $page['hidden'] = (bool) $page['hidden'];
-        $page['deleted'] = (bool) ($page['deleted'] ?? false);
+        $page['uid'] = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+        $page['pid'] = is_numeric($page['pid'] ?? null) ? (int)$page['pid'] : 0;
+        $page['hidden'] = (bool)$page['hidden'];
+        $page['deleted'] = (bool)($page['deleted'] ?? false);
 
         return $page;
     }
-
-
 
     /**
      * Get available translations for a page
@@ -354,7 +349,7 @@ final class GetPageTool extends AbstractRecordTool
 
         $result = [];
         foreach ($translations as $translation) {
-            $languageId = is_numeric($translation['sys_language_uid'] ?? null) ? (int) $translation['sys_language_uid'] : 0;
+            $languageId = is_numeric($translation['sys_language_uid'] ?? null) ? (int)$translation['sys_language_uid'] : 0;
             $isoCode = $this->languageService->getIsoCodeFromUid($languageId);
             if ($isoCode) {
                 $result[] = [
@@ -496,14 +491,14 @@ final class GetPageTool extends AbstractRecordTool
 
         // Apply workspace transparency - use live UID for workspace versions
         foreach ($records as &$record) {
-            $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int) $record['t3ver_oid'] : 0;
+            $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int)$record['t3ver_oid'] : 0;
             if ($originalUid > 0) {
                 $record['uid'] = $originalUid;
             }
         }
 
         return [
-            'total' => is_numeric($totalCount) ? (int) $totalCount : 0,
+            'total' => is_numeric($totalCount) ? (int)$totalCount : 0,
             'records' => $records,
         ];
     }
@@ -538,7 +533,7 @@ final class GetPageTool extends AbstractRecordTool
         $filteredRecords = [];
 
         foreach ($tableInfo['records'] as $record) {
-            $recordLang = is_numeric($record['sys_language_uid'] ?? null) ? (int) $record['sys_language_uid'] : 0;
+            $recordLang = is_numeric($record['sys_language_uid'] ?? null) ? (int)$record['sys_language_uid'] : 0;
 
             if ($languageId === 0) {
                 // Default language: only show records with sys_language_uid = 0
@@ -572,48 +567,48 @@ final class GetPageTool extends AbstractRecordTool
         $result = "PAGE INFORMATION\n";
         $result .= "================\n\n";
 
-        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int) $pageData['uid'] : 0;
-        $pageTitle = \is_scalar($pageData['title'] ?? null) ? (string) $pageData['title'] : '';
-        $pageNavTitle = \is_scalar($pageData['nav_title'] ?? null) ? (string) $pageData['nav_title'] : '';
-        $pageSubtitle = \is_scalar($pageData['subtitle'] ?? null) ? (string) $pageData['subtitle'] : '';
-        $pagePid = is_numeric($pageData['pid'] ?? null) ? (int) $pageData['pid'] : 0;
-        $pageDoktype = \is_scalar($pageData['doktype'] ?? null) ? (string) $pageData['doktype'] : '';
-        $pageHidden = (bool) ($pageData['hidden'] ?? false);
-        $pageCrdate = is_numeric($pageData['crdate'] ?? null) ? (int) $pageData['crdate'] : 0;
-        $pageTstamp = is_numeric($pageData['tstamp'] ?? null) ? (int) $pageData['tstamp'] : 0;
+        $pageUid = is_numeric($pageData['uid'] ?? null) ? (int)$pageData['uid'] : 0;
+        $pageTitle = \is_scalar($pageData['title'] ?? null) ? (string)$pageData['title'] : '';
+        $pageNavTitle = \is_scalar($pageData['nav_title'] ?? null) ? (string)$pageData['nav_title'] : '';
+        $pageSubtitle = \is_scalar($pageData['subtitle'] ?? null) ? (string)$pageData['subtitle'] : '';
+        $pagePid = is_numeric($pageData['pid'] ?? null) ? (int)$pageData['pid'] : 0;
+        $pageDoktype = \is_scalar($pageData['doktype'] ?? null) ? (string)$pageData['doktype'] : '';
+        $pageHidden = (bool)($pageData['hidden'] ?? false);
+        $pageCrdate = is_numeric($pageData['crdate'] ?? null) ? (int)$pageData['crdate'] : 0;
+        $pageTstamp = is_numeric($pageData['tstamp'] ?? null) ? (int)$pageData['tstamp'] : 0;
 
         // Basic page info
-        $result .= "UID: " . $pageUid . "\n";
-        $result .= "Title: " . $pageTitle . "\n";
+        $result .= 'UID: ' . $pageUid . "\n";
+        $result .= 'Title: ' . $pageTitle . "\n";
 
         if ($pageUrl !== null) {
-            $result .= "URL: " . $pageUrl . "\n";
+            $result .= 'URL: ' . $pageUrl . "\n";
         }
 
         if ($pageNavTitle !== '') {
-            $result .= "Navigation Title: " . $pageNavTitle . "\n";
+            $result .= 'Navigation Title: ' . $pageNavTitle . "\n";
         }
 
         if ($pageSubtitle !== '') {
-            $result .= "Subtitle: " . $pageSubtitle . "\n";
+            $result .= 'Subtitle: ' . $pageSubtitle . "\n";
         }
 
-        $result .= "Parent Page (PID): " . $pagePid . "\n";
-        $result .= "Doktype: " . $pageDoktype . "\n";
-        $result .= "Hidden: " . ($pageHidden ? 'Yes' : 'No') . "\n";
-        $result .= "Created: " . date('Y-m-d H:i:s', $pageCrdate) . "\n";
-        $result .= "Last Modified: " . date('Y-m-d H:i:s', $pageTstamp) . "\n";
+        $result .= 'Parent Page (PID): ' . $pagePid . "\n";
+        $result .= 'Doktype: ' . $pageDoktype . "\n";
+        $result .= 'Hidden: ' . ($pageHidden ? 'Yes' : 'No') . "\n";
+        $result .= 'Created: ' . date('Y-m-d H:i:s', $pageCrdate) . "\n";
+        $result .= 'Last Modified: ' . date('Y-m-d H:i:s', $pageTstamp) . "\n";
 
         // Add language/translation information
         if ($languageId > 0) {
             $isoCode = $this->languageService->getIsoCodeFromUid($languageId) ?? 'unknown';
-            $result .= "Language: " . strtoupper($isoCode) . " (ID: $languageId)\n";
-            $result .= "Translated: " . (($pageData['_translated'] ?? false) ? 'Yes' : 'No') . "\n";
+            $result .= 'Language: ' . strtoupper($isoCode) . " (ID: $languageId)\n";
+            $result .= 'Translated: ' . (($pageData['_translated'] ?? false) ? 'Yes' : 'No') . "\n";
         }
 
         // Show available translations
         if (!empty($translations)) {
-            $result .= "Available Translations: ";
+            $result .= 'Available Translations: ';
             $translationList = [];
             foreach ($translations as $translation) {
                 $translationList[] = strtoupper($translation['isoCode']);
@@ -640,17 +635,17 @@ final class GetPageTool extends AbstractRecordTool
             $totalCount = $tableInfo['total'];
             $records = $tableInfo['records'];
             $displayCount = \count($records);
-            $result .= "Table: " . $tableLabel . " (" . $table . ") - " . $totalCount . " total records\n";
+            $result .= 'Table: ' . $tableLabel . ' (' . $table . ') - ' . $totalCount . " total records\n";
 
             if ($displayCount > 0) {
                 foreach ($records as $record) {
                     $title = RecordFormattingUtility::getRecordTitle($table, $record);
-                    $recordUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
-                    $result .= "- [" . $recordUid . "] " . $title . "\n";
+                    $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
+                    $result .= '- [' . $recordUid . '] ' . $title . "\n";
                 }
 
                 if ($displayCount < $totalCount) {
-                    $result .= "  (showing " . $displayCount . " of " . $totalCount . " records)\n";
+                    $result .= '  (showing ' . $displayCount . ' of ' . $totalCount . " records)\n";
                 }
             } else {
                 $result .= "  No records found\n";
@@ -672,12 +667,12 @@ final class GetPageTool extends AbstractRecordTool
     {
         $result = "Content Elements (tt_content)\n";
         $result .= "----------------------------\n";
-        $result .= "Total: " . $contentInfo['total'] . " elements\n\n";
+        $result .= 'Total: ' . $contentInfo['total'] . " elements\n\n";
         $imageCounts = $this->countVisibleFileReferencesByParentUid(
             'tt_content',
             array_values(array_filter(
                 array_map(
-                    static fn(array $record): int => is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0,
+                    static fn(array $record): int => is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0,
                     $contentInfo['records'],
                 ),
                 static fn(int $uid): bool => $uid > 0,
@@ -694,7 +689,7 @@ final class GetPageTool extends AbstractRecordTool
         // Group content elements by column position
         $groupedElements = [];
         foreach ($contentInfo['records'] as $record) {
-            $colPos = is_numeric($record['colPos'] ?? null) ? (int) $record['colPos'] : 0;
+            $colPos = is_numeric($record['colPos'] ?? null) ? (int)$record['colPos'] : 0;
             if (!isset($groupedElements[$colPos])) {
                 $groupedElements[$colPos] = [];
             }
@@ -707,7 +702,7 @@ final class GetPageTool extends AbstractRecordTool
         // Output each column with its elements
         foreach ($groupedElements as $colPos => $elements) {
             $colPosName = $colPosDefs[$colPos] ?? 'Column ' . $colPos;
-            $result .= "Column: " . $colPosName . " [colPos: " . $colPos . "] - " . \count($elements) . " elements\n";
+            $result .= 'Column: ' . $colPosName . ' [colPos: ' . $colPos . '] - ' . \count($elements) . " elements\n";
 
             // Check if this column exists in the backend layout (only warn if custom layout is in use)
             if ($hasCustomLayout && !\in_array($colPos, $definedColumns)) {
@@ -717,20 +712,20 @@ final class GetPageTool extends AbstractRecordTool
 
             foreach ($elements as $element) {
                 $title = RecordFormattingUtility::getRecordTitle('tt_content', $element);
-                $cType = \is_scalar($element['CType'] ?? null) ? (string) $element['CType'] : 'unknown';
+                $cType = \is_scalar($element['CType'] ?? null) ? (string)$element['CType'] : 'unknown';
                 $cTypeLabel = RecordFormattingUtility::getContentTypeLabel($cType);
-                $elementUid = is_numeric($element['uid'] ?? null) ? (int) $element['uid'] : 0;
-                $result .= "- [" . $elementUid . "] " . $title . " (Type: " . $cTypeLabel . " [" . $cType . "])\n";
+                $elementUid = is_numeric($element['uid'] ?? null) ? (int)$element['uid'] : 0;
+                $result .= '- [' . $elementUid . '] ' . $title . ' (Type: ' . $cTypeLabel . ' [' . $cType . "])\n";
 
                 if (\in_array($cType, ['text', 'textpic', 'textmedia'], true) && \is_string($element['bodytext'] ?? null) && $element['bodytext'] !== '') {
                     $bodytext = strip_tags($element['bodytext']);
                     $bodytext = mb_substr($bodytext, 0, 100) . (mb_strlen($bodytext) > 100 ? '...' : '');
-                    $result .= "  Text: " . $bodytext . "\n";
+                    $result .= '  Text: ' . $bodytext . "\n";
                 }
 
                 $imageCount = $imageCounts[$elementUid] ?? 0;
                 if (\in_array($cType, ['image', 'textpic', 'textmedia'], true) && $imageCount > 0) {
-                    $result .= "  Images: " . $imageCount . "\n";
+                    $result .= '  Images: ' . $imageCount . "\n";
                 }
 
                 if ($cType === 'html' && \is_string($element['bodytext'] ?? null) && $element['bodytext'] !== '') {
@@ -741,7 +736,7 @@ final class GetPageTool extends AbstractRecordTool
                     $pluginIdentifier = $this->getPluginIdentifier($element);
                     if ($pluginIdentifier !== null) {
                         $pluginName = $this->getPluginLabel($pluginIdentifier);
-                        $result .= "  Plugin: " . $pluginName . " [" . $pluginIdentifier . "]\n";
+                        $result .= '  Plugin: ' . $pluginName . ' [' . $pluginIdentifier . "]\n";
 
                         $pluginTable = $this->getPluginDataTable($pluginIdentifier);
                         if ($pluginTable) {
@@ -797,14 +792,14 @@ final class GetPageTool extends AbstractRecordTool
         $counts = [];
         $seenLogicalReferenceUids = [];
         foreach ($references as $reference) {
-            $parentUid = is_numeric($reference['uid_foreign'] ?? null) ? (int) $reference['uid_foreign'] : 0;
+            $parentUid = is_numeric($reference['uid_foreign'] ?? null) ? (int)$reference['uid_foreign'] : 0;
             if ($parentUid <= 0) {
                 continue;
             }
 
-            $logicalReferenceUid = is_numeric($reference['t3ver_oid'] ?? null) && (int) $reference['t3ver_oid'] > 0
-                ? (int) $reference['t3ver_oid']
-                : (is_numeric($reference['uid'] ?? null) ? (int) $reference['uid'] : 0);
+            $logicalReferenceUid = is_numeric($reference['t3ver_oid'] ?? null) && (int)$reference['t3ver_oid'] > 0
+                ? (int)$reference['t3ver_oid']
+                : (is_numeric($reference['uid'] ?? null) ? (int)$reference['uid'] : 0);
 
             if ($logicalReferenceUid <= 0 || isset($seenLogicalReferenceUids[$parentUid][$logicalReferenceUid])) {
                 continue;
@@ -823,7 +818,7 @@ final class GetPageTool extends AbstractRecordTool
      * @param string $url The URL to resolve (can be full URL, path, or slug)
      * @param int $languageId The language ID to use for resolution
      * @return int The resolved page UID
-     * @throws Exception If the URL cannot be resolved
+     * @throws \Exception If the URL cannot be resolved
      */
     protected function resolveUrlToPageUid(string $url, int $languageId = 0): int
     {
@@ -878,7 +873,7 @@ final class GetPageTool extends AbstractRecordTool
                 if ($pageArguments instanceof PageArguments) {
                     return $pageArguments->getPageId();
                 }
-            } catch (Throwable) {
+            } catch (\Throwable) {
                 // Continue to next site
                 continue;
             }
@@ -886,7 +881,7 @@ final class GetPageTool extends AbstractRecordTool
 
         // If host was specified and didn't match any site, don't try generic fallback
         if (\is_array($parsedUrl) && isset($parsedUrl['host']) && \is_string($parsedUrl['host']) && !$matchedAnySite) {
-            throw new RuntimeException('Could not resolve URL "' . $url . '" to a page. The domain does not match any configured site.');
+            throw new \RuntimeException('Could not resolve URL "' . $url . '" to a page. The domain does not match any configured site.');
         }
 
         // If no match found via router AND no host was specified, try to find by slug directly in the database
@@ -907,10 +902,10 @@ final class GetPageTool extends AbstractRecordTool
             ->fetchAssociative();
 
         if (\is_array($page) && is_numeric($page['uid'] ?? null)) {
-            return (int) $page['uid'];
+            return (int)$page['uid'];
         }
 
-        throw new RuntimeException('Could not resolve URL "' . $url . '" to a page. The path does not match any page.');
+        throw new \RuntimeException('Could not resolve URL "' . $url . '" to a page. The path does not match any page.');
     }
 
     /**
@@ -944,7 +939,7 @@ final class GetPageTool extends AbstractRecordTool
         try {
             $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
             $request = $request->withAttribute('language', $language);
-        } catch (Throwable) {
+        } catch (\Throwable) {
             // If language not found, use default
             $request = $request->withAttribute('language', $site->getDefaultLanguage());
         }
@@ -1038,13 +1033,13 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function getPluginIdentifier(array $element): ?string
     {
-        $cType = \is_scalar($element['CType'] ?? null) ? (string) $element['CType'] : '';
+        $cType = \is_scalar($element['CType'] ?? null) ? (string)$element['CType'] : '';
         if ($cType === '') {
             return null;
         }
 
         if ($cType === 'list' && !empty($element['list_type'])) {
-            return \is_scalar($element['list_type']) ? (string) $element['list_type'] : null;
+            return \is_scalar($element['list_type']) ? (string)$element['list_type'] : null;
         }
 
         if (!empty($element['pi_flexform'])) {

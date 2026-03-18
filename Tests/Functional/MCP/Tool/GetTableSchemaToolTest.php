@@ -47,18 +47,18 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'tt_content',
         ]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Verify essential schema information is present
-        $this->assertStringContainsString('TABLE SCHEMA: tt_content', $content);
-        $this->assertStringContainsString('CURRENT RECORD TYPE:', $content);
-        $this->assertStringContainsString('FIELDS:', $content);
-        $this->assertStringContainsString('header', $content);
-        $this->assertStringContainsString('CType', $content);
+        self::assertStringContainsString('TABLE SCHEMA: tt_content', $content);
+        self::assertStringContainsString('CURRENT RECORD TYPE:', $content);
+        self::assertStringContainsString('FIELDS:', $content);
+        self::assertStringContainsString('header', $content);
+        self::assertStringContainsString('CType', $content);
     }
 
     /**
@@ -74,16 +74,16 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'type' => 'textmedia',
         ]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
 
         // Verify type-specific information
-        $this->assertStringContainsString('TABLE SCHEMA: tt_content', $content);
-        $this->assertStringContainsString('Type: textmedia (Text & Media)', $content);
-        $this->assertStringContainsString('header', $content);
-        $this->assertStringContainsString('bodytext', $content);
+        self::assertStringContainsString('TABLE SCHEMA: tt_content', $content);
+        self::assertStringContainsString('Type: textmedia (Text & Media)', $content);
+        self::assertStringContainsString('header', $content);
+        self::assertStringContainsString('bodytext', $content);
     }
 
     /**
@@ -98,16 +98,16 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'pages',
         ]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
 
         // Verify pages table information
-        $this->assertStringContainsString('TABLE SCHEMA: pages', $content);
-        $this->assertStringContainsString('title', $content);
-        $this->assertStringContainsString('slug', $content);
-        $this->assertStringContainsString('doktype', $content);
+        self::assertStringContainsString('TABLE SCHEMA: pages', $content);
+        self::assertStringContainsString('title', $content);
+        self::assertStringContainsString('slug', $content);
+        self::assertStringContainsString('doktype', $content);
     }
 
     /**
@@ -125,15 +125,15 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         ]);
 
         // sys_category doesn't have a type field, but should work now
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
 
         // Verify basic schema information is present
-        $this->assertStringContainsString('TABLE SCHEMA: sys_category', $content);
-        $this->assertStringContainsString('title', $content);
-        $this->assertStringContainsString('parent', $content);
+        self::assertStringContainsString('TABLE SCHEMA: sys_category', $content);
+        self::assertStringContainsString('title', $content);
+        self::assertStringContainsString('parent', $content);
     }
 
     /**
@@ -145,9 +145,9 @@ class GetTableSchemaToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertTrue($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertStringContainsString('Table parameter is required', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertStringContainsString('Table parameter is required', $result->content[0]->text);
     }
 
     /**
@@ -161,9 +161,9 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => '',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertStringContainsString('Table parameter is required', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertStringContainsString('Table parameter is required', $result->content[0]->text);
     }
 
     /**
@@ -177,9 +177,9 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'nonexistent_table',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertStringContainsString('Cannot access table \'nonexistent_table\'', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertStringContainsString('Cannot access table \'nonexistent_table\'', $result->content[0]->text);
     }
 
     /**
@@ -193,9 +193,9 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'sys_log',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertStringContainsString('Cannot access table \'sys_log\'', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertStringContainsString('Cannot access table \'sys_log\'', $result->content[0]->text);
     }
 
     /**
@@ -212,15 +212,15 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         ]);
 
         // The tool handles invalid types gracefully by returning an error message as content
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
 
         // Should show an error about the invalid type
-        $this->assertStringContainsString('ERROR:', $content);
-        $this->assertStringContainsString('nonexistent_type', $content);
-        $this->assertStringContainsString('does not exist', $content);
+        self::assertStringContainsString('ERROR:', $content);
+        self::assertStringContainsString('nonexistent_type', $content);
+        self::assertStringContainsString('does not exist', $content);
     }
 
     /**
@@ -234,21 +234,21 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'tt_content',
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
 
         $content = $result->content[0]->text;
 
         // Verify schema structure contains expected sections
-        $this->assertStringContainsString('TABLE SCHEMA: tt_content', $content);
-        $this->assertStringContainsString('=======================================', $content);
-        $this->assertStringContainsString('CONTROL FIELDS:', $content);
-        $this->assertStringContainsString('CURRENT RECORD TYPE:', $content);
-        $this->assertStringContainsString('FIELDS:', $content);
+        self::assertStringContainsString('TABLE SCHEMA: tt_content', $content);
+        self::assertStringContainsString('=======================================', $content);
+        self::assertStringContainsString('CONTROL FIELDS:', $content);
+        self::assertStringContainsString('CURRENT RECORD TYPE:', $content);
+        self::assertStringContainsString('FIELDS:', $content);
 
         // Verify field information is present
-        $this->assertStringContainsString('Type:', $content);
-        $this->assertStringContainsString('header', $content);
-        $this->assertStringContainsString('CType', $content);
+        self::assertStringContainsString('Type:', $content);
+        self::assertStringContainsString('header', $content);
+        self::assertStringContainsString('CType', $content);
     }
 
     /**
@@ -263,8 +263,8 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'pages',
         ]);
 
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
+        self::assertFalse($result->isError);
+        self::assertCount(1, $result->content);
     }
 
     /**
@@ -280,16 +280,16 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'type' => 'textmedia',
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
         // Verify bodytext field shows richtext indicator
-        $this->assertMatchesRegularExpression('/bodytext.*\[Richtext\/HTML\]/', $content);
+        self::assertMatchesRegularExpression('/bodytext.*\[Richtext\/HTML\]/', $content);
 
         // Verify typolink support is indicated
-        $this->assertStringContainsString('[Supports typolinks', $content);
-        $this->assertStringContainsString('t3://page?uid=123', $content);
-        $this->assertStringContainsString('t3://record?identifier=table&uid=456', $content);
+        self::assertStringContainsString('[Supports typolinks', $content);
+        self::assertStringContainsString('t3://page?uid=123', $content);
+        self::assertStringContainsString('t3://record?identifier=table&uid=456', $content);
     }
 
     /**

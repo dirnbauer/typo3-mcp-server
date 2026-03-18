@@ -38,9 +38,9 @@ class ContentElementTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context before creating content. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context before creating content. Tools used: ' . implode(', ', $history),
         );
 
         // Verify WriteTable was called for content
@@ -53,45 +53,45 @@ class ContentElementTest extends LlmTestCase
         // Accept both 'create' and 'update' actions
         // The LLM might reasonably choose to update existing content if it finds
         // a suitable content element on the contact page (e.g., updating "Office Hours")
-        $this->assertContains(
+        self::assertContains(
             $writeCall['action'],
             ['create', 'update'],
-            "Expected create or update action for content element",
+            'Expected create or update action for content element',
         );
 
         // Verify CType is a text type (text or textmedia) only for new content
         if ($writeCall['action'] === 'create') {
-            $this->assertContains(
+            self::assertContains(
                 $writeCall['data']['CType'],
                 ['text', 'textmedia'],
-                "Expected text or textmedia content type for new content",
+                'Expected text or textmedia content type for new content',
             );
         }
 
         // Execute write and verify
         $writeResult = $this->executeToolCall($response->getToolCalls()[0]);
-        $this->assertFalse(
+        self::assertFalse(
             $writeResult['isError'] ?? false,
             'WriteTable failed: ' . $writeResult['content'],
         );
 
         // Since we removed data from the response, we need to verify the content was created/updated
         // by checking the tool call arguments instead
-        $writeData = json_decode((string) $writeResult['content'], true);
-        $this->assertEquals($writeCall['action'], $writeData['action']);
-        $this->assertEquals('tt_content', $writeData['table']);
-        $this->assertArrayHasKey('uid', $writeData);
+        $writeData = json_decode((string)$writeResult['content'], true);
+        self::assertEquals($writeCall['action'], $writeData['action']);
+        self::assertEquals('tt_content', $writeData['table']);
+        self::assertArrayHasKey('uid', $writeData);
 
         // Check the input data that was sent (from writeCall, not response)
         $bodytext = $writeCall['data']['bodytext'] ?? '';
 
         // Check for day mentions
-        $this->assertStringContainsString('Monday', $bodytext);
-        $this->assertStringContainsString('Friday', $bodytext);
+        self::assertStringContainsString('Monday', $bodytext);
+        self::assertStringContainsString('Friday', $bodytext);
 
         // Check for time mentions (9 and 5 should appear somewhere)
-        $this->assertMatchesRegularExpression('/9|nine/i', $bodytext, "Should mention 9 AM");
-        $this->assertMatchesRegularExpression('/5|five/i', $bodytext, "Should mention 5 PM");
+        self::assertMatchesRegularExpression('/9|nine/i', $bodytext, 'Should mention 9 AM');
+        self::assertMatchesRegularExpression('/5|five/i', $bodytext, 'Should mention 5 PM');
     }
 
     /**
@@ -99,7 +99,7 @@ class ContentElementTest extends LlmTestCase
      */
     public function testLlmCreatesContentInRightColumn(): void
     {
-        $prompt = "Add our business hours (weekdays 8:30 AM to 6:00 PM, closed weekends) to the right column of the contact page";
+        $prompt = 'Add our business hours (weekdays 8:30 AM to 6:00 PM, closed weekends) to the right column of the contact page';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -112,56 +112,56 @@ class ContentElementTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
         // LLM should also check existing content to understand column layout
         $history = $this->getToolCallHistory();
         if (\in_array('ReadTable', $history)) {
             // Good - LLM checked existing content
-            $this->assertTrue(true, "LLM checked existing content to understand layout");
+            self::assertTrue(true, 'LLM checked existing content to understand layout');
         }
 
         // Now verify content creation in right column
         $writeTableCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertCount(1, $writeTableCalls, "Expected WriteTable call");
+        self::assertCount(1, $writeTableCalls, 'Expected WriteTable call');
 
         $writeCall = $writeTableCalls[0]['arguments'];
 
         // Accept both create and update - LLM might update existing "Office Hours" content
         // in the right column instead of creating new content
-        $this->assertContains(
+        self::assertContains(
             $writeCall['action'],
             ['create', 'update'],
-            "Expected create or update action",
+            'Expected create or update action',
         );
-        $this->assertEquals('tt_content', $writeCall['table']);
+        self::assertEquals('tt_content', $writeCall['table']);
 
         // For right column placement:
         // - If creating new content, it should specify colPos=2
         // - If updating existing content, it might already be in the right column
         if ($writeCall['action'] === 'create') {
             // Right column is colPos=2 in TYPO3 (though some systems use 1)
-            $this->assertContains(
+            self::assertContains(
                 $writeCall['data']['colPos'],
                 [1, 2],
-                "Content should be created in right column (colPos=1 or 2)",
+                'Content should be created in right column (colPos=1 or 2)',
             );
         } elseif ($writeCall['action'] === 'update') {
             // For updates, the content might already be in the right column
             // Check if the LLM is updating uid=108 which is already in colPos=1
             if (isset($writeCall['where']['uid']) && $writeCall['where']['uid'] == 108) {
                 // This is fine - updating existing office hours in right column
-                $this->assertTrue(true, "Updating existing Office Hours content in right column");
+                self::assertTrue(true, 'Updating existing Office Hours content in right column');
             } else {
                 // Otherwise, verify colPos is being set to right column
                 if (isset($writeCall['data']['colPos'])) {
-                    $this->assertContains(
+                    self::assertContains(
                         $writeCall['data']['colPos'],
                         [1, 2],
-                        "Content should be moved to right column",
+                        'Content should be moved to right column',
                     );
                 }
             }
@@ -186,9 +186,9 @@ class ContentElementTest extends LlmTestCase
         $hasExploration = \in_array('GetPage', $history)
                          || \in_array('GetPageTree', $history)
                          || \in_array('Search', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore page context. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
         // Check for WriteTable
@@ -203,15 +203,15 @@ class ContentElementTest extends LlmTestCase
 
         // Accept both create and update actions
         // LLM might choose to update an existing header instead of creating a new one
-        $this->assertContains(
+        self::assertContains(
             $writeCall['action'],
             ['create', 'update'],
-            "Expected create or update action",
+            'Expected create or update action',
         );
 
         // Execute and verify
         $writeResult = $this->executeToolCall($response->getToolCalls()[0]);
-        $this->assertFalse($writeResult['isError'] ?? false);
+        self::assertFalse($writeResult['isError'] ?? false);
     }
 
     /**
@@ -219,7 +219,7 @@ class ContentElementTest extends LlmTestCase
      */
     public function testLlmUpdatesExistingContent(): void
     {
-        $prompt = "Make the welcome header on the home page sound more friendly";
+        $prompt = 'Make the welcome header on the home page sound more friendly';
 
         $response1 = $this->callLlm($prompt);
 
@@ -246,9 +246,9 @@ class ContentElementTest extends LlmTestCase
         $newHeader = $writeCall['data']['header'] ?? '';
 
         // Should be different from original "Welcome Header"
-        $this->assertNotEquals('Welcome Header', $newHeader);
+        self::assertNotEquals('Welcome Header', $newHeader);
         // Could check for friendly words, but LLM interpretation varies
-        $this->assertNotEmpty($newHeader);
+        self::assertNotEmpty($newHeader);
     }
 
     /**
@@ -256,7 +256,7 @@ class ContentElementTest extends LlmTestCase
      */
     public function testLlmReordersContent(): void
     {
-        $prompt = "On the team page, change the order of content elements so the team introduction appears before the team members";
+        $prompt = 'On the team page, change the order of content elements so the team introduction appears before the team members';
 
         $response1 = $this->callLlm($prompt);
 
@@ -279,7 +279,7 @@ class ContentElementTest extends LlmTestCase
         // Should have found at least one WriteTable call
         if ($foundWriteTable) {
             $writeCalls = $currentResponse->getToolCallsByName('WriteTable');
-            $this->assertGreaterThan(0, \count($writeCalls), "Expected WriteTable calls");
+            self::assertGreaterThan(0, \count($writeCalls), 'Expected WriteTable calls');
 
             // Verify it's updating content order
             $hasOrderingChange = false;
@@ -292,14 +292,14 @@ class ContentElementTest extends LlmTestCase
                 }
             }
 
-            $this->assertTrue($hasOrderingChange, "Expected content ordering to be changed");
+            self::assertTrue($hasOrderingChange, 'Expected content ordering to be changed');
         } else {
             // If no WriteTable found, at least verify the LLM understood the task
             $finalContent = $currentResponse->getContent();
-            $this->assertNotEmpty($finalContent, "Expected LLM to provide response about reordering");
+            self::assertNotEmpty($finalContent, 'Expected LLM to provide response about reordering');
 
             // Skip the strict assertion if LLM chose to just describe the change
-            $this->markTestIncomplete("LLM described the change but didn't execute it");
+            self::markTestIncomplete("LLM described the change but didn't execute it");
         }
     }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Mcp\Types\CallToolResult;
-use stdClass;
 
 /**
  * Tool for listing available tables in TYPO3
@@ -23,7 +22,7 @@ final class ListTablesTool extends AbstractRecordTool
             'description' => 'List available tables in TYPO3 that can be accessed via MCP, organized by extension.',
             'inputSchema' => [
                 'type' => 'object',
-                'properties' => new stdClass(),
+                'properties' => new \stdClass(),
                 'required' => [],
             ],
             'annotations' => [
@@ -70,10 +69,10 @@ final class ListTablesTool extends AbstractRecordTool
                 'label' => $this->getTableLabel($table),
                 'extension' => $this->getExtensionFromTable($table),
                 'description' => $this->getTableDescription($table),
-                'readOnly' => (bool) ($accessInfo['read_only'] ?? false),
+                'readOnly' => (bool)($accessInfo['read_only'] ?? false),
                 'type' => $this->getTableType($table),
-                'workspace_capable' => (bool) ($accessInfo['workspace_capable'] ?? false),
-                'workspace_info' => (bool) ($accessInfo['workspace_capable'] ?? false)
+                'workspace_capable' => (bool)($accessInfo['workspace_capable'] ?? false),
+                'workspace_info' => (bool)($accessInfo['workspace_capable'] ?? false)
                     ? 'Workspace-capable'
                     : 'Not workspace-capable',
                 'restrictions' => \is_array($accessInfo['restrictions'] ?? null) ? $accessInfo['restrictions'] : [],
@@ -132,25 +131,25 @@ final class ListTablesTool extends AbstractRecordTool
             if ($extension === 'core') {
                 $result .= "CORE TABLES:\n";
             } else {
-                $result .= "EXTENSION: " . $extension . " (" . $extensionLabel . ")\n";
+                $result .= 'EXTENSION: ' . $extension . ' (' . $extensionLabel . ")\n";
             }
 
             foreach ($extensionInfo['tables'] as $tableName => $tableInfo) {
-                $result .= "- " . $tableName . " (" . $tableInfo['label'] . ")";
+                $result .= '- ' . $tableName . ' (' . $tableInfo['label'] . ')';
 
                 if (!empty($tableInfo['description'])) {
-                    $result .= ": " . $tableInfo['description'];
+                    $result .= ': ' . $tableInfo['description'];
                 }
 
-                $result .= " [" . $tableInfo['type'] . "]";
+                $result .= ' [' . $tableInfo['type'] . ']';
 
                 if ($tableInfo['readOnly']) {
-                    $result .= " [READ-ONLY]";
+                    $result .= ' [READ-ONLY]';
                 }
 
                 // Show any restrictions
                 if (!empty($tableInfo['restrictions'])) {
-                    $result .= " [" . implode(', ', $tableInfo['restrictions']) . "]";
+                    $result .= ' [' . implode(', ', $tableInfo['restrictions']) . ']';
                 }
 
                 $result .= "\n";
@@ -185,7 +184,6 @@ final class ListTablesTool extends AbstractRecordTool
         // This is a simplified approach
         return ucfirst(str_replace('_', ' ', $extension));
     }
-
 
     /**
      * Get the type of a table (content, system, etc.)

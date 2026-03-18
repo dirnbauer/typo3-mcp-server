@@ -59,7 +59,7 @@ class MmRelationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $createdNews = json_decode($result->content[0]->text);
         $newsUid = $createdNews->uid;
 
@@ -79,11 +79,11 @@ class MmRelationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertCount(2, $mmRecords);
-        $this->assertEquals(1, $mmRecords[0]['uid_local']); // Category 1
-        $this->assertEquals(2, $mmRecords[1]['uid_local']); // Category 2
-        $this->assertEquals(1, $mmRecords[0]['sorting_foreign']);
-        $this->assertEquals(2, $mmRecords[1]['sorting_foreign']);
+        self::assertCount(2, $mmRecords);
+        self::assertEquals(1, $mmRecords[0]['uid_local']); // Category 1
+        self::assertEquals(2, $mmRecords[1]['uid_local']); // Category 2
+        self::assertEquals(1, $mmRecords[0]['sorting_foreign']);
+        self::assertEquals(2, $mmRecords[1]['sorting_foreign']);
 
         // Read back with relations
         $result = $readTool->execute([
@@ -92,14 +92,14 @@ class MmRelationTest extends FunctionalTestCase
             'includeRelations' => true,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $readResult = json_decode($result->content[0]->text);
         $news = $readResult->records[0];
 
         // Check categories are returned as array of UIDs
-        $this->assertIsArray($news->categories);
-        $this->assertCount(2, $news->categories);
-        $this->assertEquals([1, 2], $news->categories);
+        self::assertIsArray($news->categories);
+        self::assertCount(2, $news->categories);
+        self::assertEquals([1, 2], $news->categories);
     }
 
     /**
@@ -122,7 +122,7 @@ class MmRelationTest extends FunctionalTestCase
                 ],
             ]);
 
-            $this->assertFalse($result->isError);
+            self::assertFalse($result->isError);
             $tag = json_decode($result->content[0]->text);
             $tagUids[] = $tag->uid;
         }
@@ -139,7 +139,7 @@ class MmRelationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $createdNews = json_decode($result->content[0]->text);
         $newsUid = $createdNews->uid;
 
@@ -157,13 +157,13 @@ class MmRelationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertCount(3, $mmRecords);
-        $this->assertEquals($tagUids[0], $mmRecords[0]['uid_foreign']);
-        $this->assertEquals($tagUids[1], $mmRecords[1]['uid_foreign']);
-        $this->assertEquals($tagUids[2], $mmRecords[2]['uid_foreign']);
-        $this->assertEquals(1, $mmRecords[0]['sorting']);
-        $this->assertEquals(2, $mmRecords[1]['sorting']);
-        $this->assertEquals(3, $mmRecords[2]['sorting']);
+        self::assertCount(3, $mmRecords);
+        self::assertEquals($tagUids[0], $mmRecords[0]['uid_foreign']);
+        self::assertEquals($tagUids[1], $mmRecords[1]['uid_foreign']);
+        self::assertEquals($tagUids[2], $mmRecords[2]['uid_foreign']);
+        self::assertEquals(1, $mmRecords[0]['sorting']);
+        self::assertEquals(2, $mmRecords[1]['sorting']);
+        self::assertEquals(3, $mmRecords[2]['sorting']);
 
         // Read back with relations
         $result = $readTool->execute([
@@ -172,14 +172,14 @@ class MmRelationTest extends FunctionalTestCase
             'includeRelations' => true,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $readResult = json_decode($result->content[0]->text);
         $news = $readResult->records[0];
 
         // Check tags are returned as array of UIDs
-        $this->assertIsArray($news->tags);
-        $this->assertCount(3, $news->tags);
-        $this->assertEquals($tagUids, $news->tags);
+        self::assertIsArray($news->tags);
+        self::assertCount(3, $news->tags);
+        self::assertEquals($tagUids, $news->tags);
     }
 
     /**
@@ -202,10 +202,10 @@ class MmRelationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, 'Failed to create content: ' . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'Failed to create content: ' . json_encode($result->jsonSerialize()));
         $createdContent = json_decode($result->content[0]->text);
-        $this->assertNotNull($createdContent, 'Failed to decode content response');
-        $this->assertObjectHasProperty('uid', $createdContent, 'Content response missing UID');
+        self::assertNotNull($createdContent, 'Failed to decode content response');
+        self::assertObjectHasProperty('uid', $createdContent, 'Content response missing UID');
         $contentUid = $createdContent->uid;
 
         // Create a news record with different categories
@@ -220,7 +220,7 @@ class MmRelationTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $createdNews = json_decode($result->content[0]->text);
         $newsUid = $createdNews->uid;
 
@@ -240,9 +240,9 @@ class MmRelationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertCount(2, $contentMMRecords);
-        $this->assertEquals('tt_content', $contentMMRecords[0]['tablenames']);
-        $this->assertEquals('categories', $contentMMRecords[0]['fieldname']);
+        self::assertCount(2, $contentMMRecords);
+        self::assertEquals('tt_content', $contentMMRecords[0]['tablenames']);
+        self::assertEquals('categories', $contentMMRecords[0]['fieldname']);
 
         // Check news categories
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -259,9 +259,9 @@ class MmRelationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertCount(2, $newsMMRecords);
-        $this->assertEquals('tx_news_domain_model_news', $newsMMRecords[0]['tablenames']);
-        $this->assertEquals('categories', $newsMMRecords[0]['fieldname']);
+        self::assertCount(2, $newsMMRecords);
+        self::assertEquals('tx_news_domain_model_news', $newsMMRecords[0]['tablenames']);
+        self::assertEquals('categories', $newsMMRecords[0]['fieldname']);
 
         // Read back both records with relations
         $result = $readTool->execute([
@@ -270,10 +270,10 @@ class MmRelationTest extends FunctionalTestCase
             'includeRelations' => true,
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $contentResult = json_decode($result->content[0]->text);
         $content = $contentResult->records[0];
-        $this->assertEquals([1, 3], $content->categories);
+        self::assertEquals([1, 3], $content->categories);
 
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -281,9 +281,9 @@ class MmRelationTest extends FunctionalTestCase
             'includeRelations' => true,
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $newsResult = json_decode($result->content[0]->text);
         $news = $newsResult->records[0];
-        $this->assertEquals([2, 4], $news->categories);
+        self::assertEquals([2, 4], $news->categories);
     }
 }

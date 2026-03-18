@@ -8,7 +8,6 @@ use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 
@@ -81,7 +80,7 @@ final readonly class OAuthTokenEndpoint
 
             return $this->addCorsHeaders($response);
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('OAuth token exchange failed', ['exception' => $e]);
             return $this->createErrorResponse('server_error', 'Token exchange failed', 500);
         }

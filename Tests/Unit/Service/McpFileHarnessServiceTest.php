@@ -150,7 +150,7 @@ final class McpFileHarnessServiceTest extends TestCase
         $workspaceContextService = new WorkspaceContextService(
             $this->createMock(ConnectionPool::class),
             new Context(),
-            $this->createStub(LoggerInterface::class),
+            self::createStub(LoggerInterface::class),
             $this->createMock(\TYPO3\CMS\Workspaces\Service\WorkspaceService::class),
         );
 

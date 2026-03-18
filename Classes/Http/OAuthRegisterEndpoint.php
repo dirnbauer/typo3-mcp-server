@@ -8,7 +8,6 @@ use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use Throwable;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 
@@ -60,7 +59,6 @@ final readonly class OAuthRegisterEndpoint
             $clientData['response_types'] ??= ['code'];
             $clientData['scope'] ??= 'mcp_access';
             /** @var array{client_name: string, redirect_uris: list<string>, grant_types: list<string>, response_types: list<string>, scope: string} $clientData */
-
             $clientInfo = $this->oauthService->registerClient($clientData);
 
             // Return client registration response
@@ -80,7 +78,7 @@ final readonly class OAuthRegisterEndpoint
 
             return $this->addCorsHeaders($response);
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error('OAuth client registration failed', ['exception' => $e]);
 
             return $this->createErrorResponse('server_error', 'Unable to register the client right now.', 500);

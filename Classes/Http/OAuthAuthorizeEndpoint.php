@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use TYPO3\CMS\Core\Crypto\HashAlgo;
 use Hn\McpServer\Service\OAuthService;
-use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Crypto\HashAlgo;
 use TYPO3\CMS\Core\Crypto\HashService;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
@@ -50,7 +48,7 @@ final readonly class OAuthAuthorizeEndpoint
             if (!$beUser instanceof BackendUserAuthentication || !\is_array($beUser->user)) {
                 return $this->createErrorResponse('server_error', 'Backend user context could not be initialized');
             }
-            $beUserId = (int) $beUser->user['uid'];
+            $beUserId = (int)$beUser->user['uid'];
 
             // Handle authorization approval
             if ($request->getMethod() === 'POST' && isset($postParams['approve'])) {
@@ -60,9 +58,9 @@ final readonly class OAuthAuthorizeEndpoint
             // Show consent form
             return $this->showConsentForm($request);
 
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return $this->createErrorResponse('invalid_request', 'Invalid redirect_uri');
-        } catch (Throwable) {
+        } catch (\Throwable) {
             return $this->createErrorResponse('server_error', 'Authorization failed');
         }
     }
@@ -134,7 +132,6 @@ final readonly class OAuthAuthorizeEndpoint
 
         return $url;
     }
-
 
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
     {
@@ -289,7 +286,6 @@ final readonly class OAuthAuthorizeEndpoint
         );
     }
 
-
     private function createErrorResponse(string $error, string $description = ''): ResponseInterface
     {
         $errorData = [
@@ -307,7 +303,6 @@ final readonly class OAuthAuthorizeEndpoint
             ['Content-Type' => 'application/json'],
         );
     }
-
 
     /**
      * @param array{
@@ -609,19 +604,19 @@ final readonly class OAuthAuthorizeEndpoint
 
     private function validateRedirectUri(?string $redirectUri): string
     {
-        $trimmedRedirectUri = trim((string) $redirectUri);
+        $trimmedRedirectUri = trim((string)$redirectUri);
         if ($trimmedRedirectUri === '') {
             return '';
         }
 
         $parsedUrl = parse_url($trimmedRedirectUri);
         if (!\is_array($parsedUrl)) {
-            throw new InvalidArgumentException('Invalid redirect_uri');
+            throw new \InvalidArgumentException('Invalid redirect_uri');
         }
 
         $scheme = \is_string($parsedUrl['scheme'] ?? null) ? strtolower($parsedUrl['scheme']) : '';
         if ($scheme === '') {
-            throw new InvalidArgumentException('Invalid redirect_uri');
+            throw new \InvalidArgumentException('Invalid redirect_uri');
         }
 
         if (!\in_array($scheme, ['http', 'https'], true)) {
@@ -634,6 +629,6 @@ final readonly class OAuthAuthorizeEndpoint
             return $trimmedRedirectUri;
         }
 
-        throw new InvalidArgumentException('Invalid redirect_uri');
+        throw new \InvalidArgumentException('Invalid redirect_uri');
     }
 }

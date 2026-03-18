@@ -164,11 +164,11 @@ class SearchLanguageTest extends FunctionalTestCase
         $schema = $tool->getSchema();
 
         // Should have language parameter with enum
-        $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
-        $this->assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertArrayHasKey('language', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
+        self::assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('fr', $schema['inputSchema']['properties']['language']['enum']);
     }
 
     /**
@@ -183,21 +183,21 @@ class SearchLanguageTest extends FunctionalTestCase
             'terms' => ['team'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should find results in all languages
-        $this->assertStringContainsString('Team Introduction', $output); // English
-        $this->assertStringContainsString('Team Einführung', $output); // German
-        $this->assertStringContainsString('Team Members', $output); // English only
+        self::assertStringContainsString('Team Introduction', $output); // English
+        self::assertStringContainsString('Team Einführung', $output); // German
+        self::assertStringContainsString('Team Members', $output); // English only
         // French translation doesn't contain "team" so won't be found
 
         // Should show language indicators for found content
-        $this->assertStringContainsString('🌐 Language: DE', $output);
+        self::assertStringContainsString('🌐 Language: DE', $output);
         // French content won't be found because it doesn't contain "team"
 
         // Should not have language filter in output
-        $this->assertStringNotContainsString('Language Filter:', $output);
+        self::assertStringNotContainsString('Language Filter:', $output);
     }
 
     /**
@@ -213,19 +213,19 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show language filter
-        $this->assertStringContainsString('Language Filter: DE (ID: 1)', $output);
+        self::assertStringContainsString('Language Filter: DE (ID: 1)', $output);
 
         // Should find German and default language content
-        $this->assertStringContainsString('Team Einführung', $output); // German translation
-        $this->assertStringContainsString('Team Introduction', $output); // Default fallback
-        $this->assertStringContainsString('Team Members', $output); // Default fallback
+        self::assertStringContainsString('Team Einführung', $output); // German translation
+        self::assertStringContainsString('Team Introduction', $output); // Default fallback
+        self::assertStringContainsString('Team Members', $output); // Default fallback
 
         // Should NOT find French content
-        $this->assertStringNotContainsString('Introduction de l\'équipe', $output);
+        self::assertStringNotContainsString('Introduction de l\'équipe', $output);
     }
 
     /**
@@ -242,21 +242,21 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show language filter
-        $this->assertStringContainsString('Language Filter: FR (ID: 2)', $output);
+        self::assertStringContainsString('Language Filter: FR (ID: 2)', $output);
 
         // Should find French content when searching for French term
-        $this->assertStringContainsString('Introduction de l\'équipe', $output); // French translation
+        self::assertStringContainsString('Introduction de l\'équipe', $output); // French translation
         // Preview has highlighted terms with asterisks
-        $this->assertStringContainsString('Rencontrez notre', $output);
-        $this->assertStringContainsString('équipe', $output);
+        self::assertStringContainsString('Rencontrez notre', $output);
+        self::assertStringContainsString('équipe', $output);
 
         // Should NOT find German or default content when searching French term
-        $this->assertStringNotContainsString('Team Einführung', $output);
-        $this->assertStringNotContainsString('Team Introduction', $output);
+        self::assertStringNotContainsString('Team Einführung', $output);
+        self::assertStringNotContainsString('Team Introduction', $output);
     }
 
     /**
@@ -272,19 +272,19 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'en',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should show language filter
-        $this->assertStringContainsString('Language Filter: EN (ID: 0)', $output);
+        self::assertStringContainsString('Language Filter: EN (ID: 0)', $output);
 
         // Should find only default language content
-        $this->assertStringContainsString('Team Introduction', $output);
-        $this->assertStringContainsString('Team Members', $output);
+        self::assertStringContainsString('Team Introduction', $output);
+        self::assertStringContainsString('Team Members', $output);
 
         // Should NOT find translated content
-        $this->assertStringNotContainsString('Team Einführung', $output);
-        $this->assertStringNotContainsString('Introduction de l\'équipe', $output);
+        self::assertStringNotContainsString('Team Einführung', $output);
+        self::assertStringNotContainsString('Introduction de l\'équipe', $output);
     }
 
     /**
@@ -301,12 +301,12 @@ class SearchLanguageTest extends FunctionalTestCase
             'terms' => ['Kontaktformular'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should find German-only content
-        $this->assertStringContainsString('Kontaktformular', $output);
-        $this->assertStringContainsString('🌐 Language: DE', $output);
+        self::assertStringContainsString('Kontaktformular', $output);
+        self::assertStringContainsString('🌐 Language: DE', $output);
 
         // Search with English filter
         $result = $tool->execute([
@@ -317,7 +317,7 @@ class SearchLanguageTest extends FunctionalTestCase
         $output = $result->content[0]->text;
 
         // Should NOT find German-only content when filtering for English
-        $this->assertStringContainsString('No results found', $output);
+        self::assertStringContainsString('No results found', $output);
     }
 
     /**
@@ -336,12 +336,12 @@ class SearchLanguageTest extends FunctionalTestCase
                 'language' => $lang,
             ]);
 
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $output = $result->content[0]->text;
 
             // Should find content marked for all languages
-            $this->assertStringContainsString('Global Announcement', $output);
-            $this->assertStringContainsString('🌐 Language: All', $output);
+            self::assertStringContainsString('Global Announcement', $output);
+            self::assertStringContainsString('🌐 Language: All', $output);
         }
     }
 
@@ -356,9 +356,9 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'xx',
         ]);
 
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->error ?? $result->content[0]->text;
-        $this->assertStringContainsString('Unknown language code: xx', $errorMessage);
+        self::assertStringContainsString('Unknown language code: xx', $errorMessage);
     }
 
     /**
@@ -375,16 +375,16 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Should find German content with both terms
-        $this->assertStringContainsString('Team Einführung', $output);
+        self::assertStringContainsString('Team Einführung', $output);
         // Preview shows highlighted terms with asterisks
-        $this->assertStringContainsString('Lernen Sie unser', $output);
-        $this->assertStringContainsString('kennen', $output);
+        self::assertStringContainsString('Lernen Sie unser', $output);
+        self::assertStringContainsString('kennen', $output);
 
         // Should not find English content (doesn't have "kennen")
-        $this->assertStringNotContainsString('Team Introduction', $output);
+        self::assertStringNotContainsString('Team Introduction', $output);
     }
 }

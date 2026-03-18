@@ -109,17 +109,17 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
             'type' => 'text',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // Check that sys_language_uid field is shown
-        $this->assertStringContainsString('sys_language_uid', $output);
+        self::assertStringContainsString('sys_language_uid', $output);
 
         // Check that it shows ISO codes
-        $this->assertStringContainsString('[ISO codes accepted: en, de, fr]', $output);
+        self::assertStringContainsString('[ISO codes accepted: en, de, fr]', $output);
 
         // Check that it includes the hint about WriteTable tool
-        $this->assertStringContainsString("Use ISO codes like 'de' instead of numeric IDs in WriteTable tool", $output);
+        self::assertStringContainsString("Use ISO codes like 'de' instead of numeric IDs in WriteTable tool", $output);
     }
 
     /**
@@ -134,16 +134,16 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
             'table' => 'sys_category',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
 
         // sys_category may have language support but not in visible fields
         // So we just check that if sys_language_uid appears, it has ISO codes
         if (str_contains($output, '- sys_language_uid')) {
-            $this->assertStringContainsString('[ISO codes accepted:', $output);
+            self::assertStringContainsString('[ISO codes accepted:', $output);
         } else {
             // If no sys_language_uid in fields, that's also fine
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
     }
 
@@ -167,12 +167,12 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
             $isoCodes = array_map(trim(...), explode(',', $matches[1]));
 
             // Should have exactly the configured languages
-            $this->assertCount(3, $isoCodes);
-            $this->assertContains('en', $isoCodes);
-            $this->assertContains('de', $isoCodes);
-            $this->assertContains('fr', $isoCodes);
+            self::assertCount(3, $isoCodes);
+            self::assertContains('en', $isoCodes);
+            self::assertContains('de', $isoCodes);
+            self::assertContains('fr', $isoCodes);
         } else {
-            $this->fail('ISO codes not found in output');
+            self::fail('ISO codes not found in output');
         }
     }
 }

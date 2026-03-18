@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use InvalidArgumentException;
-use RuntimeException;
-use Throwable;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -152,7 +149,7 @@ final class TableAccessService
     {
         if ($this->backendUser === null) {
             if (!isset($GLOBALS['BE_USER']) || !$GLOBALS['BE_USER'] instanceof BackendUserAuthentication) {
-                throw new RuntimeException('Backend user context not properly initialized. Make sure authentication is set up.');
+                throw new \RuntimeException('Backend user context not properly initialized. Make sure authentication is set up.');
             }
             $this->backendUser = $GLOBALS['BE_USER'];
         }
@@ -307,7 +304,7 @@ final class TableAccessService
      *
      * @param string $table Table name
      * @param string $operation Optional operation being attempted (read, write, delete)
-     * @throws InvalidArgumentException If table cannot be accessed
+     * @throws \InvalidArgumentException If table cannot be accessed
      */
     public function validateTableAccess(string $table, string $operation = 'read'): void
     {
@@ -315,14 +312,14 @@ final class TableAccessService
 
         if (!$accessInfo['accessible']) {
             $reasons = implode(', ', $accessInfo['reasons']);
-            throw new InvalidArgumentException(
+            throw new \InvalidArgumentException(
                 "Cannot access table '{$table}': {$reasons}",
             );
         }
 
         // Check specific operation permission
         if ($operation !== 'read' && !$accessInfo['permissions'][$operation]) {
-            throw new InvalidArgumentException(
+            throw new \InvalidArgumentException(
                 "Operation '{$operation}' not permitted on table '{$table}'",
             );
         }
@@ -334,7 +331,7 @@ final class TableAccessService
      * @param string $table Table name
      * @param string $type Record type (optional)
      * @return array{table: string, type: string, fields: array<string, array<string, mixed>>, ctrl: array<string, mixed>} Schema information
-     * @throws InvalidArgumentException If table is not accessible
+     * @throws \InvalidArgumentException If table is not accessible
      */
     public function getTableSchema(string $table, string $type = ''): array
     {
@@ -473,7 +470,7 @@ final class TableAccessService
                         // Common patterns: "*,plugin_key" or "type,plugin_key" or just "plugin_key"
                         $subtypeFieldConfig = $columns[$subtypeField] ?? [];
                         $subtypeFieldOptions = isset($subtypeFieldConfig['config']) && \is_array($subtypeFieldConfig['config']) ? $subtypeFieldConfig['config'] : [];
-                        if (str_contains((string) $dsKey, ',') || isset($subtypeFieldOptions['items'])) {
+                        if (str_contains((string)$dsKey, ',') || isset($subtypeFieldOptions['items'])) {
                             $hasSubtypeDS = true;
                             break;
                         }
@@ -497,7 +494,7 @@ final class TableAccessService
             // For general schema purposes, we could include all possible fields from all subtypes
             foreach ($subtypesAddlist as $subtypeValue => $addFields) {
                 if (!empty($addFields)) {
-                    $addFieldsList = GeneralUtility::trimExplode(',', \is_scalar($addFields) ? (string) $addFields : '', true);
+                    $addFieldsList = GeneralUtility::trimExplode(',', \is_scalar($addFields) ? (string)$addFields : '', true);
                     foreach ($addFieldsList as $fieldName) {
                         if (isset($columns[$fieldName]) && !isset($fields[$fieldName])) {
                             $fields[$fieldName] = $columns[$fieldName];
@@ -542,7 +539,6 @@ final class TableAccessService
 
         return $restrictions;
     }
-
 
     /**
      * Check if a table is truly restricted and should not be accessible via MCP
@@ -874,7 +870,6 @@ final class TableAccessService
         return $fieldConfig[$setting] ?? null;
     }
 
-
     /**
      * Get control information for a table
      *
@@ -902,7 +897,6 @@ final class TableAccessService
 
         return $controlInfo;
     }
-
 
     // =============================================================================
     // UTILITY METHODS FOR COMMON TCA OPERATIONS
@@ -1044,7 +1038,7 @@ final class TableAccessService
 
         $config = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         $behaviour = isset($config['behaviour']) && \is_array($config['behaviour']) ? $config['behaviour'] : [];
-        return (bool) ($behaviour['allowLanguageSynchronization'] ?? false);
+        return (bool)($behaviour['allowLanguageSynchronization'] ?? false);
     }
 
     /**
@@ -1147,7 +1141,7 @@ final class TableAccessService
         // Convert to the expected format (value => label)
         $types = [];
         foreach ($parsed['values'] as $value) {
-            $types[(string) $value] = $parsed['labels'][$value] ?? $value;
+            $types[(string)$value] = $parsed['labels'][$value] ?? $value;
         }
 
         return $types;
@@ -1312,9 +1306,9 @@ final class TableAccessService
             }
 
             if ($itemValue !== '') {
-                $normalizedValue = (string) $itemValue;
+                $normalizedValue = (string)$itemValue;
                 $result['values'][] = $normalizedValue;
-                $result['labels'][$normalizedValue] = \is_scalar($itemLabel) ? (string) $itemLabel : '';
+                $result['labels'][$normalizedValue] = \is_scalar($itemLabel) ? (string)$itemLabel : '';
             }
         }
 
@@ -1376,7 +1370,7 @@ final class TableAccessService
 
         // Check max length for string fields
         if (\in_array($fieldType, ['input', 'text', 'email', 'link', 'slug', 'color']) && \is_string($value)) {
-            $maxLength = is_numeric($config['max'] ?? null) ? (int) $config['max'] : 0;
+            $maxLength = is_numeric($config['max'] ?? null) ? (int)$config['max'] : 0;
             if ($maxLength > 0 && mb_strlen($value) > $maxLength) {
                 return "Field '{$fieldName}' value exceeds maximum length of {$maxLength} characters";
             }
@@ -1390,7 +1384,7 @@ final class TableAccessService
                 $values = \is_string($value) ? GeneralUtility::trimExplode(',', $value, true) : [$value];
 
                 foreach ($values as $val) {
-                    $normalizedValue = \is_scalar($val) ? (string) $val : '';
+                    $normalizedValue = \is_scalar($val) ? (string)$val : '';
                     if (!\in_array($normalizedValue, $allowedValues, true)) {
                         $allowedList = implode(', ', array_map(static fn(string $v): string => "'{$v}'", $allowedValues));
                         return "Field '{$fieldName}' value '{$normalizedValue}' must be one of: {$allowedList}";
@@ -1400,7 +1394,7 @@ final class TableAccessService
         }
 
         // Validate required fields
-        $required = (bool) ($config['required'] ?? false);
+        $required = (bool)($config['required'] ?? false);
         $eval = \is_string($config['eval'] ?? null) ? $config['eval'] : '';
         if ($required || $eval !== '') {
             $evalRules = GeneralUtility::trimExplode(',', $eval, true);
@@ -1439,7 +1433,7 @@ final class TableAccessService
                 try {
                     $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
                     $GLOBALS['LANG'] = $languageServiceFactory->create('default');
-                } catch (Throwable) {
+                } catch (\Throwable) {
                     // If initialization fails, return a fallback
                     // Extract the last part of the LLL path as fallback
                     if (preg_match('/\.([^:]+):?$/', $label, $matches)) {

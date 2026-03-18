@@ -56,11 +56,11 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, "Write operation failed: " . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'Write operation failed: ' . json_encode($result->jsonSerialize()));
         $writeResponse = $result->content[0]->text;
         $createdRecord = json_decode($writeResponse);
-        $this->assertNotNull($createdRecord, "Could not decode write response: " . $writeResponse);
-        $this->assertObjectHasProperty('uid', $createdRecord, "Write response missing UID: " . $writeResponse);
+        self::assertNotNull($createdRecord, 'Could not decode write response: ' . $writeResponse);
+        self::assertObjectHasProperty('uid', $createdRecord, 'Write response missing UID: ' . $writeResponse);
         $pageUid = $createdRecord->uid;
 
         // Read it back
@@ -69,23 +69,22 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             'uid' => $pageUid,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $readResult = json_decode($result->content[0]->text);
-        $this->assertNotNull($readResult);
-        $this->assertIsObject($readResult);
-        $this->assertObjectHasProperty('records', $readResult);
-        $this->assertIsArray($readResult->records);
+        self::assertNotNull($readResult);
+        self::assertIsObject($readResult);
+        self::assertObjectHasProperty('records', $readResult);
+        self::assertIsArray($readResult->records);
 
-
-        $this->assertCount(1, $readResult->records, 'Should have one record');
+        self::assertCount(1, $readResult->records, 'Should have one record');
 
         $page = $readResult->records[0];
-        $this->assertIsObject($page);
+        self::assertIsObject($page);
 
         // doktype should be converted to integer because all page types use integers
-        $this->assertObjectHasProperty('doktype', $page);
-        $this->assertIsInt($page->doktype, 'doktype should be converted to integer');
-        $this->assertEquals(1, $page->doktype);
+        self::assertObjectHasProperty('doktype', $page);
+        self::assertIsInt($page->doktype, 'doktype should be converted to integer');
+        self::assertEquals(1, $page->doktype);
     }
 
     /**
@@ -113,7 +112,7 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $createdRecord = json_decode($result->content[0]->text);
         $contentUid = $createdRecord->uid;
 
@@ -123,13 +122,13 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             'uid' => $contentUid,
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $readResult = json_decode($result->content[0]->text);
         $content = $readResult->records[0];
 
         // frame_class should remain a string because it uses string values
-        $this->assertIsString($content->frame_class, 'frame_class should remain a string');
-        $this->assertEquals('default', $content->frame_class);
+        self::assertIsString($content->frame_class, 'frame_class should remain a string');
+        self::assertEquals('default', $content->frame_class);
     }
 
     /**
@@ -153,7 +152,7 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $createdRecord = json_decode($result->content[0]->text);
         $contentUid = $createdRecord->uid;
 
@@ -163,12 +162,12 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             'uid' => $contentUid,
         ]);
 
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $readResult = json_decode($result->content[0]->text);
         $content = $readResult->records[0];
 
         // sorting should be integer due to eval=int
-        $this->assertIsInt($content->sorting, 'sorting should be integer due to eval=int');
-        $this->assertEquals(256, $content->sorting);
+        self::assertIsInt($content->sorting, 'sorting should be integer due to eval=int');
+        self::assertEquals(256, $content->sorting);
     }
 }

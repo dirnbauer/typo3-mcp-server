@@ -42,7 +42,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $canAccess = $this->service->canAccessField('pages', 'media');
 
-        $this->assertTrue($canAccess, 'File fields should be accessible (handled via WriteTable file relations)');
+        self::assertTrue($canAccess, 'File fields should be accessible (handled via WriteTable file relations)');
     }
 
     /**
@@ -52,7 +52,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        $this->assertArrayHasKey('media', $fields, 'File field "media" should be in available fields');
+        self::assertArrayHasKey('media', $fields, 'File field "media" should be in available fields');
     }
 
     /**
@@ -62,7 +62,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $canAccess = $this->service->canAccessTable('sys_file_reference');
 
-        $this->assertFalse($canAccess, 'sys_file_reference table should be restricted');
+        self::assertFalse($canAccess, 'sys_file_reference table should be restricted');
     }
 
     /**
@@ -71,16 +71,16 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
      */
     public function testFileRelationsAreAccessible(): void
     {
-        $this->assertArrayHasKey('assets', $GLOBALS['TCA']['tt_content']['columns'] ?? []);
+        self::assertArrayHasKey('assets', $GLOBALS['TCA']['tt_content']['columns'] ?? []);
         $fieldConfig = $GLOBALS['TCA']['tt_content']['columns']['assets'] ?? [];
         $config = \is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
         $fieldType = \is_string($config['type'] ?? null) ? $config['type'] : '';
 
-        $this->assertContains($fieldType, ['file', 'inline']);
+        self::assertContains($fieldType, ['file', 'inline']);
 
         $canAccess = $this->service->canAccessField('tt_content', 'assets');
 
-        $this->assertTrue($canAccess, 'File relation fields should be accessible for file handling');
+        self::assertTrue($canAccess, 'File relation fields should be accessible for file handling');
     }
 
     /**
@@ -96,7 +96,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
 
         // Then verify that inline to restricted table doesn't work
         // This is implicitly tested by sys_file_reference test above
-        $this->assertTrue(true, 'Inline relation filtering is tested via sys_file_reference test');
+        self::assertTrue(true, 'Inline relation filtering is tested via sys_file_reference test');
     }
 
     /**
@@ -108,8 +108,8 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
         $canAccessTitle = $this->service->canAccessField('pages', 'title');
         $canAccessDescription = $this->service->canAccessField('pages', 'description');
 
-        $this->assertTrue($canAccessTitle, 'Regular text field "title" should be accessible');
-        $this->assertTrue($canAccessDescription, 'Regular text field "description" should be accessible');
+        self::assertTrue($canAccessTitle, 'Regular text field "title" should be accessible');
+        self::assertTrue($canAccessDescription, 'Regular text field "description" should be accessible');
     }
 
     /**
@@ -119,9 +119,9 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        $this->assertArrayHasKey('title', $fields, 'Title field should be available');
-        $this->assertArrayHasKey('description', $fields, 'Description field should be available');
-        $this->assertArrayHasKey('media', $fields, 'Media file field should be available');
+        self::assertArrayHasKey('title', $fields, 'Title field should be available');
+        self::assertArrayHasKey('description', $fields, 'Description field should be available');
+        self::assertArrayHasKey('media', $fields, 'Media file field should be available');
     }
 
     /**
@@ -131,11 +131,11 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $fields = $this->service->getAvailableFields('tt_content', 'textmedia');
 
-        $this->assertArrayHasKey('header', $fields, 'Header field should be available');
-        $this->assertArrayHasKey('bodytext', $fields, 'Bodytext field should be available');
+        self::assertArrayHasKey('header', $fields, 'Header field should be available');
+        self::assertArrayHasKey('bodytext', $fields, 'Bodytext field should be available');
 
         if (isset($GLOBALS['TCA']['tt_content']['columns']['assets'])) {
-            $this->assertArrayHasKey('assets', $fields, 'Assets field should be available for file handling');
+            self::assertArrayHasKey('assets', $fields, 'Assets field should be available for file handling');
         }
     }
 }

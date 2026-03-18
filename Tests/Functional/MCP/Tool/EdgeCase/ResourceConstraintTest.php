@@ -66,14 +66,14 @@ class ResourceConstraintTest extends AbstractFunctionalTest
             'where' => 'pid = 1',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode($result->content[0]->text, true);
 
         // Tool should limit results automatically
-        $this->assertIsArray($data);
+        self::assertIsArray($data);
         if (\count($data) > 100) {
             // If more than 100 records, there should be some indication
-            $this->assertLessThanOrEqual(1000, \count($data), 'Results should be limited');
+            self::assertLessThanOrEqual(1000, \count($data), 'Results should be limited');
         }
     }
 
@@ -92,7 +92,7 @@ class ResourceConstraintTest extends AbstractFunctionalTest
         ]);
 
         // Should handle this gracefully (maybe by batching)
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -129,7 +129,7 @@ class ResourceConstraintTest extends AbstractFunctionalTest
         ]);
 
         // Should handle deep structures without stack overflow
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -174,7 +174,7 @@ class ResourceConstraintTest extends AbstractFunctionalTest
             ]);
 
             // Should handle all queries without errors
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         }
     }
 
@@ -218,14 +218,13 @@ class ResourceConstraintTest extends AbstractFunctionalTest
             }
 
             // We should have created some pages
-            $this->assertGreaterThan(0, $count);
+            self::assertGreaterThan(0, $count);
 
         } finally {
             // Restore original time limit
-            set_time_limit((int) $originalTimeLimit);
+            set_time_limit((int)$originalTimeLimit);
         }
     }
-
 
     /**
      * Test handling of file system constraints
@@ -247,7 +246,7 @@ class ResourceConstraintTest extends AbstractFunctionalTest
         ]);
 
         // Should handle large content gracefully
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify it was stored (possibly truncated)
         $data = json_decode($result->content[0]->text, true);
@@ -257,13 +256,13 @@ class ResourceConstraintTest extends AbstractFunctionalTest
                 'uid' => $data['uid'],
             ]);
 
-            $this->assertFalse($readResult->isError);
+            self::assertFalse($readResult->isError);
             $recordData = json_decode($readResult->content[0]->text, true);
             if (isset($recordData['bodytext'])) {
-                $this->assertNotEmpty($recordData['bodytext']);
+                self::assertNotEmpty($recordData['bodytext']);
             } else {
                 // Field might have been truncated or filtered
-                $this->assertTrue(true);
+                self::assertTrue(true);
             }
         }
     }
@@ -326,9 +325,9 @@ class ResourceConstraintTest extends AbstractFunctionalTest
 
         // Should handle complex queries or fail gracefully
         if ($result->isError) {
-            $this->assertStringContainsString('complex', $result->content[0]->text);
+            self::assertStringContainsString('complex', $result->content[0]->text);
         } else {
-            $this->assertIsArray(json_decode($result->content[0]->text, true));
+            self::assertIsArray(json_decode($result->content[0]->text, true));
         }
     }
 }

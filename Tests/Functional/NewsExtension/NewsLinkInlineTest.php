@@ -70,7 +70,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read the news record (ReadTableTool will automatically use the same workspace)
@@ -79,49 +79,49 @@ class NewsLinkInlineTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $response = json_decode($result->content[0]->text, true);
-        $this->assertArrayHasKey('records', $response, 'Response should have records key. Got: ' . json_encode($response));
-        $this->assertNotEmpty($response['records'], 'Records array should not be empty');
+        self::assertArrayHasKey('records', $response, 'Response should have records key. Got: ' . json_encode($response));
+        self::assertNotEmpty($response['records'], 'Records array should not be empty');
         $news = $response['records'][0];
 
         // Verify related_links contains full embedded records
-        $this->assertArrayHasKey('related_links', $news, 'News should have related_links field');
-        $this->assertIsArray($news['related_links']);
-        $this->assertCount(3, $news['related_links']);
+        self::assertArrayHasKey('related_links', $news, 'News should have related_links field');
+        self::assertIsArray($news['related_links']);
+        self::assertCount(3, $news['related_links']);
 
         // Create a map of links by title for order-independent testing
         $linksByTitle = [];
         foreach ($news['related_links'] as $link) {
-            $this->assertIsArray($link);
-            $this->assertArrayHasKey('title', $link);
+            self::assertIsArray($link);
+            self::assertArrayHasKey('title', $link);
             $linksByTitle[$link['title']] = $link;
         }
 
         // Verify External link
-        $this->assertArrayHasKey('External link', $linksByTitle);
+        self::assertArrayHasKey('External link', $linksByTitle);
         $externalLink = $linksByTitle['External link'];
-        $this->assertArrayHasKey('uid', $externalLink);
-        $this->assertArrayHasKey('uri', $externalLink);
-        $this->assertArrayHasKey('description', $externalLink);
-        $this->assertArrayHasKey('parent', $externalLink);
-        $this->assertEquals('https://example.com', $externalLink['uri']);
-        $this->assertEquals('Link to external website', $externalLink['description']);
-        $this->assertEquals($newsUid, $externalLink['parent']);
+        self::assertArrayHasKey('uid', $externalLink);
+        self::assertArrayHasKey('uri', $externalLink);
+        self::assertArrayHasKey('description', $externalLink);
+        self::assertArrayHasKey('parent', $externalLink);
+        self::assertEquals('https://example.com', $externalLink['uri']);
+        self::assertEquals('Link to external website', $externalLink['description']);
+        self::assertEquals($newsUid, $externalLink['parent']);
 
         // Verify Internal page link
-        $this->assertArrayHasKey('Internal page', $linksByTitle);
+        self::assertArrayHasKey('Internal page', $linksByTitle);
         $internalLink = $linksByTitle['Internal page'];
-        $this->assertEquals('t3://page?uid=42', $internalLink['uri']);
-        $this->assertEquals('Link to internal page', $internalLink['description']);
-        $this->assertEquals($newsUid, $internalLink['parent']);
+        self::assertEquals('t3://page?uid=42', $internalLink['uri']);
+        self::assertEquals('Link to internal page', $internalLink['description']);
+        self::assertEquals($newsUid, $internalLink['parent']);
 
         // Verify Email link (no description)
-        $this->assertArrayHasKey('Email link', $linksByTitle);
+        self::assertArrayHasKey('Email link', $linksByTitle);
         $emailLink = $linksByTitle['Email link'];
-        $this->assertEquals('mailto:info@example.com', $emailLink['uri']);
-        $this->assertEquals($newsUid, $emailLink['parent']);
+        self::assertEquals('mailto:info@example.com', $emailLink['uri']);
+        self::assertEquals($newsUid, $emailLink['parent']);
     }
 
     /**
@@ -140,7 +140,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'title' => 'News to update with links',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Update with embedded links
@@ -162,7 +162,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read and verify
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -172,7 +172,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(2, $news['related_links']);
+        self::assertCount(2, $news['related_links']);
 
         // Create a map by title to check order-independently
         $linksByTitle = [];
@@ -180,11 +180,11 @@ class NewsLinkInlineTest extends FunctionalTestCase
             $linksByTitle[$link['title']] = $link;
         }
 
-        $this->assertArrayHasKey('Documentation', $linksByTitle);
-        $this->assertArrayHasKey('GitHub', $linksByTitle);
-        $this->assertEquals('https://docs.typo3.org', $linksByTitle['Documentation']['uri']);
-        $this->assertEquals('TYPO3 documentation', $linksByTitle['Documentation']['description']);
-        $this->assertEquals('https://github.com/typo3/typo3', $linksByTitle['GitHub']['uri']);
+        self::assertArrayHasKey('Documentation', $linksByTitle);
+        self::assertArrayHasKey('GitHub', $linksByTitle);
+        self::assertEquals('https://docs.typo3.org', $linksByTitle['Documentation']['uri']);
+        self::assertEquals('TYPO3 documentation', $linksByTitle['Documentation']['description']);
+        self::assertEquals('https://github.com/typo3/typo3', $linksByTitle['GitHub']['uri']);
     }
 
     /**
@@ -218,7 +218,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'related_links' => [],  // Empty array removes all
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify links are removed
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -228,8 +228,8 @@ class NewsLinkInlineTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('related_links', $news, 'Should have related_links field');
-        $this->assertEmpty($news['related_links'], 'related_links should be empty when all are removed');
+        self::assertArrayHasKey('related_links', $news, 'Should have related_links field');
+        self::assertEmpty($news['related_links'], 'related_links should be empty when all are removed');
     }
 
     /**
@@ -263,13 +263,13 @@ class NewsLinkInlineTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(3, $news['related_links']);
+        self::assertCount(3, $news['related_links']);
 
         // Verify all links are present (order may vary)
         $titles = array_column($news['related_links'], 'title');
-        $this->assertContains('First link', $titles);
-        $this->assertContains('Second link', $titles);
-        $this->assertContains('Third link', $titles);
+        self::assertContains('First link', $titles);
+        self::assertContains('Second link', $titles);
+        self::assertContains('Third link', $titles);
     }
 
     /**
@@ -290,8 +290,8 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'related_links' => 'not-an-array',
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be an array', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be an array', $result->jsonSerialize()['content'][0]->text);
 
         // Test array with non-array items
         $result = $writeTool->execute([
@@ -306,8 +306,8 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain record data arrays', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must contain record data arrays', $result->jsonSerialize()['content'][0]->text);
 
         // Test empty record data
         $result = $writeTool->execute([
@@ -321,7 +321,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('is empty', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('is empty', $result->jsonSerialize()['content'][0]->text);
     }
 }

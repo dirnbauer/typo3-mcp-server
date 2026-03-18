@@ -32,7 +32,7 @@ class NewsTest extends LlmTestCase
      */
     public function testLlmCreatesWebsiteLaunchNews(): void
     {
-        $prompt = "Write a news article that the website launched today (21 July 2025)";
+        $prompt = 'Write a news article that the website launched today (21 July 2025)';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -46,42 +46,42 @@ class NewsTest extends LlmTestCase
                          || \in_array('Search', $history)
                          || \in_array('ListTables', $history)
                          || \in_array('GetPage', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore and discover news functionality. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore and discover news functionality. Tools used: ' . implode(', ', $history),
         );
 
         // Verify content creation - should create news record
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertGreaterThan(
+        self::assertGreaterThan(
             0,
             \count($writeCalls),
-            "Expected WriteTable call but none found. Tool history: " . implode(' → ', $this->getToolCallHistory())
+            'Expected WriteTable call but none found. Tool history: ' . implode(' → ', $this->getToolCallHistory())
             . "\nFinal response: " . $response->getContent(),
         );
 
         $writeCall = $writeCalls[0];
-        $this->assertEquals('create', $writeCall['arguments']['action']);
+        self::assertEquals('create', $writeCall['arguments']['action']);
 
         // Should create news record, not content element
         $table = $writeCall['arguments']['table'];
-        $this->assertEquals(
+        self::assertEquals(
             'tx_news_domain_model_news',
             $table,
-            "Expected news record creation when asked for a news article",
+            'Expected news record creation when asked for a news article',
         );
 
         // Should be created in a reasonable location for news
         $acceptablePids = [8, 12, 30]; // Blog, Press, or Storage folder
-        $this->assertContains(
+        self::assertContains(
             $writeCall['arguments']['pid'],
             $acceptablePids,
-            "News articles should be created on Blog (8), Press (12), or in the storage folder (30)",
+            'News articles should be created on Blog (8), Press (12), or in the storage folder (30)',
         );
 
         // Execute write and verify
         $writeResult = $this->executeToolCall($writeCall);
-        $this->assertFalse(
+        self::assertFalse(
             $writeResult['isError'] ?? false,
             'WriteTable failed: ' . $writeResult['content'],
         );
@@ -94,21 +94,21 @@ class NewsTest extends LlmTestCase
                      . ($data['teaser'] ?? '') . ' '
                      . ($data['bodytext'] ?? '');
 
-        $this->assertNotEmpty($allContent, "Content should not be empty");
-        $this->assertMatchesRegularExpression(
+        self::assertNotEmpty($allContent, 'Content should not be empty');
+        self::assertMatchesRegularExpression(
             '/launch|website|site|online|live|released|today/i',
             $allContent,
-            "Content should mention the website launch",
+            'Content should mention the website launch',
         );
 
         // Check date handling for news records
         if (isset($data['datetime'])) {
             $datetime = is_numeric($data['datetime'])
-                ? (int) $data['datetime']
-                : strtotime((string) $data['datetime']);
+                ? (int)$data['datetime']
+                : strtotime((string)$data['datetime']);
 
             // Just verify a date was set (LLM might use current date)
-            $this->assertGreaterThan(0, $datetime, "News should have a valid date");
+            self::assertGreaterThan(0, $datetime, 'News should have a valid date');
         }
     }
 
@@ -117,7 +117,7 @@ class NewsTest extends LlmTestCase
      */
     public function testLlmCreatesNewsWithCategory(): void
     {
-        $prompt = "Create a company announcement about our new product launch next week and categorize it appropriately";
+        $prompt = 'Create a company announcement about our new product launch next week and categorize it appropriately';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -128,9 +128,9 @@ class NewsTest extends LlmTestCase
         // Verify exploration
         $history = $this->getToolCallHistory();
         $hasExploration = \count($history) > 1; // Should do more than just write
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
-            "Expected LLM to explore before creating news. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore before creating news. Tools used: ' . implode(', ', $history),
         );
 
         // Find news creation
@@ -144,22 +144,22 @@ class NewsTest extends LlmTestCase
             }
         }
 
-        $this->assertNotNull(
+        self::assertNotNull(
             $newsWriteCall,
-            "Expected news record creation but none found. Tool history: " . implode(' → ', $this->getToolCallHistory())
+            'Expected news record creation but none found. Tool history: ' . implode(' → ', $this->getToolCallHistory())
             . "\nAll WriteTable calls: " . json_encode(array_map(fn($c) => $c['arguments']['table'] ?? 'unknown', $writeCalls)),
         );
-        $this->assertEquals('create', $newsWriteCall['arguments']['action']);
+        self::assertEquals('create', $newsWriteCall['arguments']['action']);
         $acceptablePids = [8, 12, 30]; // Blog, Press, or Storage folder
-        $this->assertContains(
+        self::assertContains(
             $newsWriteCall['arguments']['pid'],
             $acceptablePids,
-            "News articles should be created on Blog (8), Press (12), or in the storage folder (30)",
+            'News articles should be created on Blog (8), Press (12), or in the storage folder (30)',
         );
 
         // Execute and verify
         $writeResult = $this->executeToolCall($newsWriteCall);
-        $this->assertFalse(
+        self::assertFalse(
             $writeResult['isError'] ?? false,
             'WriteTable failed: ' . $writeResult['content'],
         );
@@ -171,10 +171,10 @@ class NewsTest extends LlmTestCase
                      . ($data['teaser'] ?? '') . ' '
                      . ($data['bodytext'] ?? '');
 
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/product|launch|new|announcement|release/i',
             $allContent,
-            "Content should mention product launch",
+            'Content should mention product launch',
         );
 
         // Check if LLM attempted category handling
@@ -188,7 +188,7 @@ class NewsTest extends LlmTestCase
         // 3. Simply creating the news in an appropriate location/section
         // All are valid interpretations
         if ($hasCategories || \count($createdCategories) > 0) {
-            $this->assertTrue(true, "LLM handled categories by assigning or creating them");
+            self::assertTrue(true, 'LLM handled categories by assigning or creating them');
         }
     }
 
@@ -197,7 +197,7 @@ class NewsTest extends LlmTestCase
      */
     public function testLlmAddsNewsToNewsSection(): void
     {
-        $prompt = "Add a news article about our summer sale to the website where news and announcements go";
+        $prompt = 'Add a news article about our summer sale to the website where news and announcements go';
 
         // Execute until WriteTable is found
         $response = $this->executeUntilToolFound(
@@ -211,9 +211,9 @@ class NewsTest extends LlmTestCase
                              || \in_array('GetPage', $history)
                              || \in_array('Search', $history)
                              || \in_array('ListTables', $history);
-        $this->assertTrue(
+        self::assertTrue(
             $hasPageExploration,
-            "Expected LLM to explore to find appropriate location. Tools used: " . implode(', ', $history),
+            'Expected LLM to explore to find appropriate location. Tools used: ' . implode(', ', $history),
         );
 
         // Verify news creation
@@ -227,22 +227,22 @@ class NewsTest extends LlmTestCase
             }
         }
 
-        $this->assertNotNull(
+        self::assertNotNull(
             $newsWriteCall,
-            "Expected news record creation but none found. Tool history: " . implode(' → ', $this->getToolCallHistory())
+            'Expected news record creation but none found. Tool history: ' . implode(' → ', $this->getToolCallHistory())
             . "\nAll WriteTable calls: " . json_encode(array_map(fn($c) => $c['arguments']['table'] ?? 'unknown', $writeCalls)),
         );
-        $this->assertEquals('create', $newsWriteCall['arguments']['action']);
+        self::assertEquals('create', $newsWriteCall['arguments']['action']);
         $acceptablePids = [8, 12, 30]; // Blog, Press, or Storage folder
-        $this->assertContains(
+        self::assertContains(
             $newsWriteCall['arguments']['pid'],
             $acceptablePids,
-            "News articles should be created on Blog (8), Press (12), or in the storage folder (30)",
+            'News articles should be created on Blog (8), Press (12), or in the storage folder (30)',
         );
 
         // Execute and verify
         $writeResult = $this->executeToolCall($newsWriteCall);
-        $this->assertFalse(
+        self::assertFalse(
             $writeResult['isError'] ?? false,
             'WriteTable failed: ' . $writeResult['content'],
         );
@@ -254,10 +254,10 @@ class NewsTest extends LlmTestCase
                      . ($data['teaser'] ?? '') . ' '
                      . ($data['bodytext'] ?? '');
 
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/summer|sale|discount|offer|special/i',
             $allContent,
-            "Content should mention summer sale",
+            'Content should mention summer sale',
         );
     }
 }

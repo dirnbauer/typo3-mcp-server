@@ -25,11 +25,9 @@ class WorkspaceBuilder
         'custom_stages' => 0,
         'deleted' => 0,
     ];
-    
-    public function __construct(private readonly ConnectionPool $connectionPool)
-    {
-    }
-    
+
+    public function __construct(private readonly ConnectionPool $connectionPool) {}
+
     /**
      * Set workspace title
      */
@@ -38,7 +36,7 @@ class WorkspaceBuilder
         $this->data['title'] = $title;
         return $this;
     }
-    
+
     /**
      * Set workspace description
      */
@@ -47,7 +45,7 @@ class WorkspaceBuilder
         $this->data['description'] = $description;
         return $this;
     }
-    
+
     /**
      * Set admin users (comma-separated UIDs)
      */
@@ -56,7 +54,7 @@ class WorkspaceBuilder
         $this->data['adminusers'] = $adminUsers;
         return $this;
     }
-    
+
     /**
      * Set member users (comma-separated UIDs)
      */
@@ -65,7 +63,7 @@ class WorkspaceBuilder
         $this->data['members'] = $members;
         return $this;
     }
-    
+
     /**
      * Set DB mount points
      */
@@ -74,7 +72,7 @@ class WorkspaceBuilder
         $this->data['db_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Set file mount points
      */
@@ -83,7 +81,7 @@ class WorkspaceBuilder
         $this->data['file_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Set publish time
      */
@@ -92,7 +90,7 @@ class WorkspaceBuilder
         $this->data['publish_time'] = $timestamp;
         return $this;
     }
-    
+
     /**
      * Set custom data field
      */
@@ -101,7 +99,7 @@ class WorkspaceBuilder
         $this->data[$field] = $value;
         return $this;
     }
-    
+
     /**
      * Create the workspace record and return its UID
      */
@@ -110,10 +108,10 @@ class WorkspaceBuilder
         // Set timestamps
         $this->data['tstamp'] = time();
         $this->data['crdate'] = time();
-        
+
         $connection = $this->connectionPool->getConnectionForTable('sys_workspace');
         $connection->insert('sys_workspace', $this->data);
-        
+
         return (int)$connection->lastInsertId();
     }
 }

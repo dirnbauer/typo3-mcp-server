@@ -25,24 +25,24 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
                 'alternative' => 'Pixel alternative text',
             ],
         ]);
-        $this->assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
 
-        $uploaded = json_decode((string) $uploadResult->content[0]->text, true);
+        $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
 
         $tool = $this->get(ReadFileMetadataTool::class);
         $result = $tool->execute([
-            'identifier' => (string) $uploaded['identifier'],
+            'identifier' => (string)$uploaded['identifier'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame((string) $uploaded['identifier'], $json['identifier']);
-        $this->assertSame('image/png', $json['mimeType']);
-        $this->assertSame(1, $json['width']);
-        $this->assertSame(1, $json['height']);
-        $this->assertSame('Pixel Title', $json['metadata']['title']);
-        $this->assertSame('Pixel alternative text', $json['metadata']['alternative']);
+        self::assertSame((string)$uploaded['identifier'], $json['identifier']);
+        self::assertSame('image/png', $json['mimeType']);
+        self::assertSame(1, $json['width']);
+        self::assertSame(1, $json['height']);
+        self::assertSame('Pixel Title', $json['metadata']['title']);
+        self::assertSame('Pixel alternative text', $json['metadata']['alternative']);
     }
 
     #[Test]
@@ -53,10 +53,10 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'path' => 'images/relations-pixel.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        $this->assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
 
-        $uploaded = json_decode((string) $uploadResult->content[0]->text, true);
-        $fileUid = (int) $uploaded['uid'];
+        $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
+        $fileUid = (int)$uploaded['uid'];
         $now = time();
 
         $categoryConnection = $this->getConnectionForTable('sys_category');
@@ -70,7 +70,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'parent' => 0,
             'items' => 0,
         ]);
-        $categoryUid = (int) $categoryConnection->lastInsertId();
+        $categoryUid = (int)$categoryConnection->lastInsertId();
 
         $this->getConnectionForTable('sys_category_record_mm')->insert('sys_category_record_mm', [
             'uid_local' => $categoryUid,
@@ -96,13 +96,13 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'uid' => $fileUid,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame('Hero Images', $json['categories'][0]['title']);
-        $this->assertSame('tt_content', $json['usedIn'][0]['table']);
-        $this->assertSame(100, $json['usedIn'][0]['uid']);
-        $this->assertSame('image', $json['usedIn'][0]['field']);
+        self::assertSame('Hero Images', $json['categories'][0]['title']);
+        self::assertSame('tt_content', $json['usedIn'][0]['table']);
+        self::assertSame(100, $json['usedIn'][0]['uid']);
+        self::assertSame('image', $json['usedIn'][0]['field']);
     }
 
     #[Test]
@@ -111,8 +111,8 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
         $tool = $this->get(ReadFileMetadataTool::class);
         $result = $tool->execute([]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Either uid or identifier must be provided', (string) $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Either uid or identifier must be provided', (string)$result->content[0]->text);
     }
 
     #[Test]
@@ -123,10 +123,10 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'identifier' => '1:/user_upload/outside.png',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString(
+        self::assertTrue($result->isError);
+        self::assertStringContainsString(
             'restricted to the configured MCP harness',
-            (string) $result->content[0]->text,
+            (string)$result->content[0]->text,
         );
     }
 }

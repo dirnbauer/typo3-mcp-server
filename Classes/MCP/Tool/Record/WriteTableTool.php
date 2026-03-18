@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
-use DateTime;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\ParameterType;
-use Exception;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
-use LogicException;
 use Mcp\Types\CallToolResult;
-use RuntimeException;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -51,7 +47,7 @@ final class WriteTableTool extends AbstractRecordTool
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
-            throw new RuntimeException('Backend user context not initialized');
+            throw new \RuntimeException('Backend user context not initialized');
         }
 
         return $backendUser;
@@ -89,7 +85,7 @@ final class WriteTableTool extends AbstractRecordTool
             return null;
         }
 
-        return is_numeric($value) ? (int) $value : null;
+        return is_numeric($value) ? (int)$value : null;
     }
 
     protected function isValidCreatePosition(string $position): bool
@@ -228,8 +224,8 @@ final class WriteTableTool extends AbstractRecordTool
                 $dataType = \gettype($params['data']);
                 throw new ValidationException([
                     "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. "
-                    . "The data parameter must be an object like {\"title\": \"My Title\", \"bodytext\": \"Content\"}, "
-                    . "not a plain string. Each field name should be a key with its corresponding value.",
+                    . 'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, '
+                    . 'not a plain string. Each field name should be a key with its corresponding value.',
                 ]);
             }
         }
@@ -319,13 +315,13 @@ final class WriteTableTool extends AbstractRecordTool
         switch ($action) {
             case 'create':
                 if ($pid === null) {
-                    throw new LogicException('PID must be validated before create');
+                    throw new \LogicException('PID must be validated before create');
                 }
                 return $this->createRecord($table, $pid, $data, $position);
 
             case 'update':
                 if ($uid === null) {
-                    throw new LogicException('UID must be validated before update');
+                    throw new \LogicException('UID must be validated before update');
                 }
                 // Resolve search_replace into concrete field values and merge into data
                 if (!empty($searchReplace)) {
@@ -336,21 +332,21 @@ final class WriteTableTool extends AbstractRecordTool
 
             case 'delete':
                 if ($uid === null) {
-                    throw new LogicException('UID must be validated before delete');
+                    throw new \LogicException('UID must be validated before delete');
                 }
                 return $this->deleteRecord($table, $uid);
 
             case 'translate':
                 if ($uid === null) {
-                    throw new LogicException('UID must be validated before translate');
+                    throw new \LogicException('UID must be validated before translate');
                 }
                 // The language UID has already been converted from ISO code if needed
-                $targetLanguageUid = is_numeric($data['sys_language_uid'] ?? null) ? (int) $data['sys_language_uid'] : 0;
+                $targetLanguageUid = is_numeric($data['sys_language_uid'] ?? null) ? (int)$data['sys_language_uid'] : 0;
                 return $this->translateRecord($table, $uid, $targetLanguageUid);
 
             default:
                 // This should never happen due to earlier validation
-                throw new LogicException('Invalid action: ' . $action);
+                throw new \LogicException('Invalid action: ' . $action);
         }
     }
 
@@ -414,13 +410,13 @@ final class WriteTableTool extends AbstractRecordTool
                 $maxSorting = $this->getVisibleMaxSortingValue($table, $effectivePid, $sortingField);
 
                 if ($maxSorting !== false && is_numeric($maxSorting)) {
-                    $newRecordData[$sortingField] = (int) $maxSorting + 128; // Add some space for future insertions
+                    $newRecordData[$sortingField] = (int)$maxSorting + 128; // Add some space for future insertions
                 }
             } elseif ($position === 'top') {
                 $minSorting = $this->getVisibleMinSortingValue($table, $effectivePid, $sortingField);
 
                 if ($minSorting !== false && is_numeric($minSorting)) {
-                    $newRecordData[$sortingField] = max(0, (int) $minSorting - 128);
+                    $newRecordData[$sortingField] = max(0, (int)$minSorting - 128);
                 }
             }
         }
@@ -460,14 +456,12 @@ final class WriteTableTool extends AbstractRecordTool
             $childDataMap = [];
             $this->processInlineRelations($childDataMap, $table, $parentUid, $pid, $inlineRelations);
 
-
             if (!empty($childDataMap)) {
                 // Create a new DataHandler instance for child records
                 $childDataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $this->assignBackendUser($childDataHandler);
                 $childDataHandler->start($childDataMap, []);
                 $childDataHandler->process_datamap();
-
 
                 // Check for errors in child creation
                 if (!empty($childDataHandler->errorLog)) {
@@ -496,7 +490,7 @@ final class WriteTableTool extends AbstractRecordTool
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
                             if (\is_string($newId) && str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId]) && is_numeric($realId)) {
-                                $childUids[] = (int) $realId;
+                                $childUids[] = (int)$realId;
                             }
                         }
 
@@ -519,16 +513,15 @@ final class WriteTableTool extends AbstractRecordTool
             }
         }
 
-
         // Process file relations with the resolved parent UID
         // For new records: parentUid is the live UID (t3ver_state=1 new placeholders are their own live UID)
         if (!empty($fileRelations)) {
-            $this->processFileRelations($table, (int) $parentUid, (int) $parentUid, $effectivePid, $fileRelations);
+            $this->processFileRelations($table, (int)$parentUid, (int)$parentUid, $effectivePid, $fileRelations);
         }
 
         // Get the live UID for workspace transparency
         $liveUid = $this->getLiveUid($table, $parentUid);
-        $createdRecordInfo = $this->getCreatedRecordInfo($table, (int) $parentUid, $effectivePid);
+        $createdRecordInfo = $this->getCreatedRecordInfo($table, (int)$parentUid, $effectivePid);
 
         // Return the result with live UID
         return $this->createJsonResult([
@@ -556,20 +549,20 @@ final class WriteTableTool extends AbstractRecordTool
             return 'Invalid position: ' . $position;
         }
 
-        $referenceUid = (int) $matches[2];
+        $referenceUid = (int)$matches[2];
         $referenceRecord = $this->findVisiblePositionRecord($table, $referenceUid);
         if ($referenceRecord === null) {
             return 'Position reference record not found: uid=' . $referenceUid . ' in table ' . $table;
         }
 
-        $referencePid = is_numeric($referenceRecord['pid'] ?? null) ? (int) $referenceRecord['pid'] : 0;
+        $referencePid = is_numeric($referenceRecord['pid'] ?? null) ? (int)$referenceRecord['pid'] : 0;
         if ($referencePid !== $requestedPid) {
             return 'Position reference record uid=' . $referenceUid . ' belongs to pid=' . $referencePid
                 . ', but the create request specified pid=' . $requestedPid . '.'
                 . ' Use the reference record\'s parent pid or remove the conflicting position.';
         }
 
-        $referenceActualUid = is_numeric($referenceRecord['uid'] ?? null) ? (int) $referenceRecord['uid'] : 0;
+        $referenceActualUid = is_numeric($referenceRecord['uid'] ?? null) ? (int)$referenceRecord['uid'] : 0;
         if ($referenceActualUid <= 0) {
             return 'Position reference record uid=' . $referenceUid . ' could not be resolved in the active workspace.';
         }
@@ -629,15 +622,15 @@ final class WriteTableTool extends AbstractRecordTool
 
         $previousActualUid = null;
         foreach ($records as $record) {
-            $logicalUid = is_numeric($record['t3ver_oid'] ?? null) && (int) $record['t3ver_oid'] > 0
-                ? (int) $record['t3ver_oid']
-                : (is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0);
+            $logicalUid = is_numeric($record['t3ver_oid'] ?? null) && (int)$record['t3ver_oid'] > 0
+                ? (int)$record['t3ver_oid']
+                : (is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0);
 
             if ($logicalUid === $referenceUid) {
                 return $previousActualUid;
             }
 
-            $actualUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+            $actualUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
             if ($actualUid > 0) {
                 $previousActualUid = $actualUid;
             }
@@ -744,8 +737,8 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         return [
-            'pid' => is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : $fallbackPid,
-            'sorting' => $sortingField !== null && is_numeric($record[$sortingField] ?? null) ? (int) $record[$sortingField] : null,
+            'pid' => is_numeric($record['pid'] ?? null) ? (int)$record['pid'] : $fallbackPid,
+            'sorting' => $sortingField !== null && is_numeric($record[$sortingField] ?? null) ? (int)$record[$sortingField] : null,
         ];
     }
 
@@ -794,7 +787,7 @@ final class WriteTableTool extends AbstractRecordTool
         // Parent count update uses workspace UID so DataHandler creates proper overlay
         if (!empty($fileRelations)) {
             $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
-            $filePid = is_numeric($record['pid'] ?? null) ? (int) $record['pid'] : 0;
+            $filePid = is_numeric($record['pid'] ?? null) ? (int)$record['pid'] : 0;
             $this->processFileRelations($table, $uid, $workspaceUid, $filePid, $fileRelations);
         }
 
@@ -837,7 +830,7 @@ final class WriteTableTool extends AbstractRecordTool
                         $childUids = [];
                         foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
                             if (\is_string($newId) && str_starts_with($newId, 'NEW') && isset($childDataMap[$foreignTable][$newId]) && is_numeric($realId)) {
-                                $childUids[] = (int) $realId;
+                                $childUids[] = (int)$realId;
                             }
                         }
 
@@ -921,11 +914,11 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Record not found (uid=' . $uid . ')');
         }
 
-        if (!empty($record[$translationParentField]) && (int) $record[$translationParentField] > 0) {
+        if (!empty($record[$translationParentField]) && (int)$record[$translationParentField] > 0) {
             return $this->createErrorResult('Cannot translate a record that is already a translation. Translate the original record (uid=' . $record[$translationParentField] . ') instead.');
         }
 
-        if (!empty($record[$languageField]) && (int) $record[$languageField] > 0) {
+        if (!empty($record[$languageField]) && (int)$record[$languageField] > 0) {
             return $this->createErrorResult('Record uid=' . $uid . ' is already in language ' . $record[$languageField] . '. Only default-language records can be translated.');
         }
 
@@ -946,8 +939,8 @@ final class WriteTableTool extends AbstractRecordTool
             ->fetchAssociative();
 
         if ($existingTranslation) {
-            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string) $targetLanguageUid;
-            $existingTranslationUid = is_numeric($existingTranslation['uid'] ?? null) ? (int) $existingTranslation['uid'] : 0;
+            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
+            $existingTranslationUid = is_numeric($existingTranslation['uid'] ?? null) ? (int)$existingTranslation['uid'] : 0;
             return $this->createErrorResult(
                 'Translation already exists for language "' . $targetIsoCode . '" (uid=' . $existingTranslationUid . ')',
             );
@@ -968,7 +961,7 @@ final class WriteTableTool extends AbstractRecordTool
             $dataHandler->start([], $cmdMap);
             $dataHandler->process_cmdmap();
         } catch (UniqueConstraintViolationException) {
-            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string) $targetLanguageUid;
+            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
             return $this->createErrorResult(
                 'Translation already exists for language "' . $targetIsoCode . '"',
             );
@@ -999,7 +992,7 @@ final class WriteTableTool extends AbstractRecordTool
                 ->fetchOne();
         }
 
-        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string) $targetLanguageUid;
+        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? (string)$targetLanguageUid;
 
         return $this->createJsonResult([
             'action' => 'translate',
@@ -1056,9 +1049,9 @@ final class WriteTableTool extends AbstractRecordTool
                 if (array_intersect(['date', 'datetime', 'time'], $evalRules)) {
                     if (\is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $value)) {
                         try {
-                            $dateTime = new DateTime($value);
+                            $dateTime = new \DateTime($value);
                             $data[$fieldName] = $dateTime->getTimestamp();
-                        } catch (Exception $e) {
+                        } catch (\Exception $e) {
                             // Log the error but let DataHandler handle the invalid date
                             $this->logException($e, 'parsing date value');
                         }
@@ -1085,11 +1078,11 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
             // Convert arrays to comma-separated strings for multi-value fields
-            elseif (\is_array($value)) {
+            if (\is_array($value)) {
                 $fieldType = \is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
                 if (\in_array($fieldType, ['select', 'category'])
                     || ($fieldType === 'group' && !empty($fieldOptions['multiple']))) {
-                    $data[$fieldName] = implode(',', array_map(static fn(mixed $item): string => \is_scalar($item) ? (string) $item : '', $value));
+                    $data[$fieldName] = implode(',', array_map(static fn(mixed $item): string => \is_scalar($item) ? (string)$item : '', $value));
                     continue;
                 }
 
@@ -1110,15 +1103,15 @@ final class WriteTableTool extends AbstractRecordTool
                 // For updates, fetch the current record type
                 $currentRecord = BackendUtility::getRecord($table, $uid, $typeField);
                 if ($currentRecord && isset($currentRecord[$typeField])) {
-                    $recordType = \is_scalar($currentRecord[$typeField]) ? (string) $currentRecord[$typeField] : '';
+                    $recordType = \is_scalar($currentRecord[$typeField]) ? (string)$currentRecord[$typeField] : '';
                 }
                 // If type is being changed in the update, use the new type
                 if (isset($data[$typeField])) {
-                    $recordType = \is_scalar($data[$typeField]) ? (string) $data[$typeField] : '';
+                    $recordType = \is_scalar($data[$typeField]) ? (string)$data[$typeField] : '';
                 }
             } else {
                 // For creates, get type from data
-                $recordType = isset($data[$typeField]) && \is_scalar($data[$typeField]) ? (string) $data[$typeField] : '';
+                $recordType = isset($data[$typeField]) && \is_scalar($data[$typeField]) ? (string)$data[$typeField] : '';
             }
         }
 
@@ -1157,7 +1150,6 @@ final class WriteTableTool extends AbstractRecordTool
                     continue;
                 }
 
-
                 // If we have available fields configured and this field is not in the list
                 if (!empty($availableFields) && !isset($availableFields[$fieldName])) {
                     return "Field '{$fieldName}' is not available for this record type";
@@ -1167,7 +1159,6 @@ final class WriteTableTool extends AbstractRecordTool
 
         return true;
     }
-
 
     /**
      * Extract inline relations from data array
@@ -1277,7 +1268,7 @@ final class WriteTableTool extends AbstractRecordTool
 
             // If we have a sorting field, set it
             if (\is_string($config['foreign_sortby'] ?? null) && $config['foreign_sortby'] !== '') {
-                $recordData[$config['foreign_sortby']] = ((int) $index + 1) * 256;
+                $recordData[$config['foreign_sortby']] = ((int)$index + 1) * 256;
             }
 
             // Add to data map
@@ -1314,7 +1305,7 @@ final class WriteTableTool extends AbstractRecordTool
             $updateMap = [];
             foreach ($uids as $uid) {
                 if (is_numeric($uid) && $uid > 0) {
-                    $normalizedUid = (int) $uid;
+                    $normalizedUid = (int)$uid;
                     $updateMap[$foreignTable][$normalizedUid] = [
                         $foreignField => $liveUid ?? $parentUid,
                     ];
@@ -1358,7 +1349,7 @@ final class WriteTableTool extends AbstractRecordTool
 
             $updateMap = [];
             foreach ($existingRecords as $record) {
-                $recordUid = is_numeric($record['uid'] ?? null) ? (int) $record['uid'] : 0;
+                $recordUid = is_numeric($record['uid'] ?? null) ? (int)$record['uid'] : 0;
                 if ($recordUid <= 0) {
                     continue;
                 }
@@ -1408,14 +1399,14 @@ final class WriteTableTool extends AbstractRecordTool
             $keepUids = [];
             foreach ($newRecords as $record) {
                 if (\is_array($record) && isset($record['uid']) && is_numeric($record['uid'])) {
-                    $keepUids[] = (int) $record['uid'];
+                    $keepUids[] = (int)$record['uid'];
                 }
             }
 
             // Delete records that are not in the new set
             $deleteUids = [];
             foreach ($existingRecords as $existingRecord) {
-                $existingUid = is_numeric($existingRecord['uid'] ?? null) ? (int) $existingRecord['uid'] : 0;
+                $existingUid = is_numeric($existingRecord['uid'] ?? null) ? (int)$existingRecord['uid'] : 0;
                 if ($existingUid > 0 && !\in_array($existingUid, $keepUids, true)) {
                     $deleteUids[] = $existingUid;
                 }
@@ -1452,12 +1443,12 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         foreach ($value as $index => $item) {
-            if (is_numeric($item) && (int) $item > 0) {
+            if (is_numeric($item) && (int)$item > 0) {
                 continue;
             }
             if (\is_array($item)) {
                 $uid = $item['uid'] ?? null;
-                if (!is_numeric($uid) || (int) $uid <= 0) {
+                if (!is_numeric($uid) || (int)$uid <= 0) {
                     return "File reference at index {$index} must have a positive integer 'uid' (sys_file UID)";
                 }
                 continue;
@@ -1534,9 +1525,9 @@ final class WriteTableTool extends AbstractRecordTool
                 $metadata = [];
 
                 if (is_numeric($item)) {
-                    $fileUid = (int) $item;
+                    $fileUid = (int)$item;
                 } elseif (\is_array($item)) {
-                    $fileUid = isset($item['uid']) && is_numeric($item['uid']) ? (int) $item['uid'] : null;
+                    $fileUid = isset($item['uid']) && is_numeric($item['uid']) ? (int)$item['uid'] : null;
                     unset($item['uid']);
                     $metadata = $item;
                 }
@@ -1553,7 +1544,7 @@ final class WriteTableTool extends AbstractRecordTool
                     'tablenames' => $parentTable,
                     'fieldname' => $fieldName,
                     'pid' => $pid,
-                    'sorting_foreign' => ((int) $index + 1) * 256,
+                    'sorting_foreign' => ((int)$index + 1) * 256,
                 ];
 
                 $allowedMetadataFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
@@ -1578,7 +1569,7 @@ final class WriteTableTool extends AbstractRecordTool
                 $createdRefUids = [];
                 foreach ($refDataHandler->substNEWwithIDs as $newId => $realId) {
                     if (\is_string($newId) && str_starts_with($newId, 'NEW_file_') && is_numeric($realId)) {
-                        $createdRefUids[] = (int) $realId;
+                        $createdRefUids[] = (int)$realId;
                     }
                 }
 
@@ -1796,7 +1787,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         $resolved = [];
         foreach ($searchReplace as $fieldName => $operations) {
-            $currentValue = (string) ($record[$fieldName] ?? '');
+            $currentValue = (string)($record[$fieldName] ?? '');
 
             foreach ($operations as $index => $operation) {
                 $search = $operation['search'];
@@ -1939,14 +1930,14 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // If this is a workspace record with an original, return the original UID
-        $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int) $record['t3ver_oid'] : 0;
+        $originalUid = is_numeric($record['t3ver_oid'] ?? null) ? (int)$record['t3ver_oid'] : 0;
         if ($originalUid > 0) {
             return $originalUid;
         }
 
         // For new records (t3ver_state = 1), the workspace UID IS the UID we should use
         // New records don't have a live counterpart until published
-        if (is_numeric($record['t3ver_state'] ?? null) && (int) $record['t3ver_state'] === 1) {
+        if (is_numeric($record['t3ver_state'] ?? null) && (int)$record['t3ver_state'] === 1) {
             return $workspaceUid;
         }
 
@@ -1978,7 +1969,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         // If we got a different UID, that's the workspace version
         if (isset($record['_ORIG_uid']) && $record['_ORIG_uid'] != $liveUid) {
-            return (int) $record['uid'];
+            return (int)$record['uid'];
         }
 
         return $liveUid;
@@ -2020,7 +2011,7 @@ final class WriteTableTool extends AbstractRecordTool
         $typeFieldName = $this->tableAccessService->getTypeFieldName($table);
         $type = '';
         if ($typeFieldName !== null && isset($data[$typeFieldName])) {
-            $type = \is_scalar($data[$typeFieldName]) ? (string) $data[$typeFieldName] : '';
+            $type = \is_scalar($data[$typeFieldName]) ? (string)$data[$typeFieldName] : '';
         }
 
         // Check if the language field is actually available for this record type
@@ -2104,7 +2095,7 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            $authValue = \is_scalar($value) || $value === null ? (string) $value : '';
+            $authValue = \is_scalar($value) || $value === null ? (string)$value : '';
 
             // Check if user has permission for this value
             if (!$beUser->checkAuthMode($table, $fieldName, $authValue)) {

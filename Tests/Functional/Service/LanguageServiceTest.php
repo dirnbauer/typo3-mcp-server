@@ -116,17 +116,17 @@ class LanguageServiceTest extends FunctionalTestCase
     public function testGetUidFromIsoCode(): void
     {
         // Test valid ISO codes
-        $this->assertEquals(0, $this->languageService->getUidFromIsoCode('en'));
-        $this->assertEquals(1, $this->languageService->getUidFromIsoCode('de'));
-        $this->assertEquals(2, $this->languageService->getUidFromIsoCode('fr'));
-        $this->assertEquals(3, $this->languageService->getUidFromIsoCode('es'));
+        self::assertEquals(0, $this->languageService->getUidFromIsoCode('en'));
+        self::assertEquals(1, $this->languageService->getUidFromIsoCode('de'));
+        self::assertEquals(2, $this->languageService->getUidFromIsoCode('fr'));
+        self::assertEquals(3, $this->languageService->getUidFromIsoCode('es'));
 
         // Test case insensitivity
-        $this->assertEquals(1, $this->languageService->getUidFromIsoCode('DE'));
-        $this->assertEquals(2, $this->languageService->getUidFromIsoCode('Fr'));
+        self::assertEquals(1, $this->languageService->getUidFromIsoCode('DE'));
+        self::assertEquals(2, $this->languageService->getUidFromIsoCode('Fr'));
 
         // Test invalid ISO code
-        $this->assertNull($this->languageService->getUidFromIsoCode('xx'));
+        self::assertNull($this->languageService->getUidFromIsoCode('xx'));
     }
 
     /**
@@ -134,13 +134,13 @@ class LanguageServiceTest extends FunctionalTestCase
      */
     public function testGetIsoCodeFromUid(): void
     {
-        $this->assertEquals('en', $this->languageService->getIsoCodeFromUid(0));
-        $this->assertEquals('de', $this->languageService->getIsoCodeFromUid(1));
-        $this->assertEquals('fr', $this->languageService->getIsoCodeFromUid(2));
-        $this->assertEquals('es', $this->languageService->getIsoCodeFromUid(3));
+        self::assertEquals('en', $this->languageService->getIsoCodeFromUid(0));
+        self::assertEquals('de', $this->languageService->getIsoCodeFromUid(1));
+        self::assertEquals('fr', $this->languageService->getIsoCodeFromUid(2));
+        self::assertEquals('es', $this->languageService->getIsoCodeFromUid(3));
 
         // Test invalid UID
-        $this->assertNull($this->languageService->getIsoCodeFromUid(99));
+        self::assertNull($this->languageService->getIsoCodeFromUid(99));
     }
 
     /**
@@ -150,12 +150,12 @@ class LanguageServiceTest extends FunctionalTestCase
     {
         $isoCodes = $this->languageService->getAvailableIsoCodes();
 
-        $this->assertIsArray($isoCodes);
-        $this->assertCount(4, $isoCodes);
-        $this->assertContains('en', $isoCodes);
-        $this->assertContains('de', $isoCodes);
-        $this->assertContains('fr', $isoCodes);
-        $this->assertContains('es', $isoCodes);
+        self::assertIsArray($isoCodes);
+        self::assertCount(4, $isoCodes);
+        self::assertContains('en', $isoCodes);
+        self::assertContains('de', $isoCodes);
+        self::assertContains('fr', $isoCodes);
+        self::assertContains('es', $isoCodes);
     }
 
     /**
@@ -165,7 +165,7 @@ class LanguageServiceTest extends FunctionalTestCase
     {
         $defaultIsoCode = $this->languageService->getDefaultIsoCode();
 
-        $this->assertEquals('en', $defaultIsoCode);
+        self::assertEquals('en', $defaultIsoCode);
     }
 
     /**
@@ -173,12 +173,12 @@ class LanguageServiceTest extends FunctionalTestCase
      */
     public function testIsIsoCodeAvailable(): void
     {
-        $this->assertTrue($this->languageService->isIsoCodeAvailable('en'));
-        $this->assertTrue($this->languageService->isIsoCodeAvailable('de'));
-        $this->assertTrue($this->languageService->isIsoCodeAvailable('DE')); // Case insensitive
+        self::assertTrue($this->languageService->isIsoCodeAvailable('en'));
+        self::assertTrue($this->languageService->isIsoCodeAvailable('de'));
+        self::assertTrue($this->languageService->isIsoCodeAvailable('DE')); // Case insensitive
 
-        $this->assertFalse($this->languageService->isIsoCodeAvailable('xx'));
-        $this->assertFalse($this->languageService->isIsoCodeAvailable('jp'));
+        self::assertFalse($this->languageService->isIsoCodeAvailable('xx'));
+        self::assertFalse($this->languageService->isIsoCodeAvailable('jp'));
     }
 
     /**
@@ -188,13 +188,13 @@ class LanguageServiceTest extends FunctionalTestCase
     {
         $mappings = $this->languageService->getAllMappings();
 
-        $this->assertIsArray($mappings);
-        $this->assertCount(4, $mappings);
+        self::assertIsArray($mappings);
+        self::assertCount(4, $mappings);
 
-        $this->assertEquals(0, $mappings['en']);
-        $this->assertEquals(1, $mappings['de']);
-        $this->assertEquals(2, $mappings['fr']);
-        $this->assertEquals(3, $mappings['es']);
+        self::assertEquals(0, $mappings['en']);
+        self::assertEquals(1, $mappings['de']);
+        self::assertEquals(2, $mappings['fr']);
+        self::assertEquals(3, $mappings['es']);
     }
 
     /**
@@ -204,22 +204,22 @@ class LanguageServiceTest extends FunctionalTestCase
     {
         $languages = $this->languageService->getAllLanguageInfo();
 
-        $this->assertIsArray($languages);
-        $this->assertCount(4, $languages);
+        self::assertIsArray($languages);
+        self::assertCount(4, $languages);
 
         // Check first language (English)
         $english = $languages[0];
-        $this->assertEquals(0, $english['uid']);
-        $this->assertEquals('en', $english['isoCode']);
-        $this->assertEquals('English', $english['title']);
+        self::assertEquals(0, $english['uid']);
+        self::assertEquals('en', $english['isoCode']);
+        self::assertEquals('English', $english['title']);
         // TYPO3 Locale object toString returns format like 'en-US' not 'en_US.UTF-8'
-        $this->assertEquals('en-US', $english['locale']);
-        $this->assertTrue($english['enabled']);
+        self::assertEquals('en-US', $english['locale']);
+        self::assertTrue($english['enabled']);
 
         // Check sorting by UID
-        $this->assertEquals(1, $languages[1]['uid']);
-        $this->assertEquals(2, $languages[2]['uid']);
-        $this->assertEquals(3, $languages[3]['uid']);
+        self::assertEquals(1, $languages[1]['uid']);
+        self::assertEquals(2, $languages[2]['uid']);
+        self::assertEquals(3, $languages[3]['uid']);
     }
 
     /**
@@ -274,8 +274,8 @@ class LanguageServiceTest extends FunctionalTestCase
         $newLanguageService = new LanguageService($siteFinder);
 
         // Test that all formats are properly extracted
-        $this->assertEquals(10, $newLanguageService->getUidFromIsoCode('it'));
-        $this->assertEquals(11, $newLanguageService->getUidFromIsoCode('ja'));
-        $this->assertEquals(12, $newLanguageService->getUidFromIsoCode('zh'));
+        self::assertEquals(10, $newLanguageService->getUidFromIsoCode('it'));
+        self::assertEquals(11, $newLanguageService->getUidFromIsoCode('ja'));
+        self::assertEquals(12, $newLanguageService->getUidFromIsoCode('zh'));
     }
 }

@@ -7,8 +7,6 @@ namespace Hn\McpServer\MCP\Tool;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use ReflectionClass;
-use Throwable;
 
 /**
  * Abstract base class for MCP tools
@@ -26,7 +24,7 @@ abstract class AbstractTool implements ToolInterface
      */
     public function getName(): string
     {
-        $className = (new ReflectionClass($this))->getShortName();
+        $className = (new \ReflectionClass($this))->getShortName();
         return str_replace('Tool', '', $className);
     }
 
@@ -49,7 +47,7 @@ abstract class AbstractTool implements ToolInterface
         try {
             $this->initialize();
             return $this->doExecute($params);
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             return $this->handleException($e, $this->getName());
         }
     }

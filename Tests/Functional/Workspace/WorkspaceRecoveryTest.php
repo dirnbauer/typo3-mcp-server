@@ -61,21 +61,21 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             // Intentionally missing some fields that might be required
         ]);
 
-        $incompleteId = (int) $connection->lastInsertId();
-        $this->assertGreaterThan(0, $incompleteId, 'Incomplete workspace should be created');
+        $incompleteId = (int)$connection->lastInsertId();
+        self::assertGreaterThan(0, $incompleteId, 'Incomplete workspace should be created');
 
         // Now try to use the workspace service
         // It should either fix the incomplete workspace or create a new one
         $workspaceId = $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         // Should have a valid workspace
-        $this->assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
+        self::assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
 
         // Verify workspace is properly initialized
         $workspace = BackendUtility::getRecord('sys_workspace', $workspaceId);
-        $this->assertIsArray($workspace);
-        $this->assertNotEmpty($workspace['title']);
-        $this->assertEquals(0, $workspace['deleted']);
+        self::assertIsArray($workspace);
+        self::assertNotEmpty($workspace['title']);
+        self::assertEquals(0, $workspace['deleted']);
 
         // Try to perform an operation to ensure workspace is functional
         $tool = GeneralUtility::makeInstance(WriteTableTool::class);
@@ -89,7 +89,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, 'Should be able to create content after recovery: ' . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'Should be able to create content after recovery: ' . json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -116,7 +116,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
         ]);
 
         // Operation should report an error
-        $this->assertTrue($result->isError, 'Operation should fail with invalid table');
+        self::assertTrue($result->isError, 'Operation should fail with invalid table');
 
         // Just verify we got an error - the exact message format may vary
         // The important thing is that the operation failed and didn't create partial records
@@ -132,7 +132,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($testResult->isError, 'Should be able to create valid content after failure');
+        self::assertFalse($testResult->isError, 'Should be able to create valid content after failure');
     }
 
     /**
@@ -157,14 +157,14 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             'publish_time' => 0,
         ]);
 
-        $firstId = (int) $connection->lastInsertId();
+        $firstId = (int)$connection->lastInsertId();
 
         // Now try to create another with the same title using WorkspaceContextService
         // This simulates what would happen if the service tried to create a duplicate
         $workspaceId = $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         // Should either use the existing workspace or handle the duplicate gracefully
-        $this->assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
+        self::assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
 
         // Count how many workspaces exist with MCP in the title
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
@@ -180,7 +180,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ->fetchOne();
 
         // Should have handled the duplicate situation gracefully
-        $this->assertGreaterThan(0, $count, 'Should have at least one MCP workspace');
+        self::assertGreaterThan(0, $count, 'Should have at least one MCP workspace');
 
         // Verify workspace is functional
         $tool = GeneralUtility::makeInstance(WriteTableTool::class);
@@ -191,7 +191,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             'data' => ['title' => 'Updated after duplicate handling'],
         ]);
 
-        $this->assertFalse($result->isError, 'Workspace should be functional');
+        self::assertFalse($result->isError, 'Workspace should be functional');
     }
 
     /**
@@ -217,7 +217,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
 
         // Simulate a scenario where workspace record might be partially corrupted
         // by directly manipulating database (this simulates database inconsistency)
@@ -243,13 +243,13 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
         ]);
 
         // Should not crash despite data inconsistency
-        $this->assertFalse($readResult->isError, 'Should handle data inconsistency gracefully');
+        self::assertFalse($readResult->isError, 'Should handle data inconsistency gracefully');
 
         $data = json_decode($readResult->content[0]->text, true);
 
         // The orphaned record should not appear in results
         $headers = array_column($data['records'], 'header');
-        $this->assertNotContains('Orphaned Workspace Record', $headers, 'Orphaned record should not be in results');
+        self::assertNotContains('Orphaned Workspace Record', $headers, 'Orphaned record should not be in results');
 
         // Verify we can still create new records
         $result2 = $tool->execute([
@@ -262,7 +262,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result2->isError, 'Should still be able to create records');
+        self::assertFalse($result2->isError, 'Should still be able to create records');
     }
 
     /**
@@ -286,13 +286,13 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             'publish_time' => 0,
         ]);
 
-        $invalidWorkspaceId = (int) $connection->lastInsertId();
+        $invalidWorkspaceId = (int)$connection->lastInsertId();
 
         // Try to use workspace service - it should handle the invalid workspace gracefully
         $workspaceId = $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         // Should either create a new workspace or find a valid one
-        $this->assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
+        self::assertGreaterThan(0, $workspaceId, 'Should have a valid workspace');
 
         // If it's using the invalid workspace, verify it's been made functional
         if ($workspaceId === $invalidWorkspaceId) {
@@ -305,7 +305,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
                 'data' => ['title' => 'Page in recovered workspace', 'doktype' => 1],
             ]);
 
-            $this->assertFalse($result->isError, 'Should be able to use recovered workspace');
+            self::assertFalse($result->isError, 'Should be able to use recovered workspace');
         }
     }
 
@@ -337,7 +337,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
 
         // All operations should complete successfully
         foreach ($operations as $index => $result) {
-            $this->assertFalse($result->isError, "Operation $index should succeed: " . json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, "Operation $index should succeed: " . json_encode($result->jsonSerialize()));
         }
 
         // Verify data integrity
@@ -355,7 +355,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchOne();
 
-        $this->assertEquals(1, $count, 'Should have exactly one workspace version');
+        self::assertEquals(1, $count, 'Should have exactly one workspace version');
     }
 
     /**
@@ -393,7 +393,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             'data' => ['title' => 'Normal Page After Incomplete', 'doktype' => 1],
         ]);
 
-        $this->assertFalse($result->isError, 'Should be able to create pages after incomplete operation');
+        self::assertFalse($result->isError, 'Should be able to create pages after incomplete operation');
 
         // Verify the system didn't create duplicate or conflicting records
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
@@ -409,13 +409,13 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ->fetchAllAssociative();
 
         // Should have our pages but no duplicates or conflicts
-        $this->assertGreaterThan(0, \count($pages), 'Should have workspace pages');
+        self::assertGreaterThan(0, \count($pages), 'Should have workspace pages');
 
         // Each page should have proper structure
         foreach ($pages as $page) {
             if ($page['t3ver_state'] == 1) {
                 // NEW records might not have t3ver_oid in some TYPO3 versions
-                $this->assertTrue(
+                self::assertTrue(
                     $page['t3ver_oid'] >= 0,
                     'NEW placeholder should have valid structure',
                 );

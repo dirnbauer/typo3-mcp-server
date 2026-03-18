@@ -6,7 +6,6 @@ namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Utility\TcaFormattingUtility;
-use InvalidArgumentException;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -145,7 +144,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
         $table = \is_string($params['table'] ?? null) ? $params['table'] : '';
 
         if (empty($table)) {
-            throw new InvalidArgumentException('Table parameter is required');
+            throw new \InvalidArgumentException('Table parameter is required');
         }
 
         // Validate table access using TableAccessService
@@ -162,21 +161,21 @@ final class GetTableSchemaTool extends AbstractRecordTool
      */
     protected function generateTableSchema(string $table, string $filterType = ''): string
     {
-        $result = "";
+        $result = '';
 
         // Basic table info using TableAccessService
         $tableLabel = TableAccessService::translateLabel($this->tableAccessService->getTableTitle($table));
 
-        $result .= "TABLE SCHEMA: " . $table . " (" . $tableLabel . ")\n";
+        $result .= 'TABLE SCHEMA: ' . $table . ' (' . $tableLabel . ")\n";
         $result .= "=======================================\n\n";
 
         // Get access info from TableAccessService
         $accessInfo = $this->tableAccessService->getTableAccessInfo($table);
 
         $result .= "Type: content\n";
-        $result .= "Read-Only: " . ($accessInfo['read_only'] ? "Yes" : "No") . "\n";
+        $result .= 'Read-Only: ' . ($accessInfo['read_only'] ? 'Yes' : 'No') . "\n";
         if (!empty($accessInfo['restrictions'])) {
-            $result .= "Restrictions: " . implode(', ', $accessInfo['restrictions']) . "\n";
+            $result .= 'Restrictions: ' . implode(', ', $accessInfo['restrictions']) . "\n";
         }
         $result .= "\n";
 
@@ -201,7 +200,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                     // Translate LLL keys
                     $value = TableAccessService::translateLabel($value);
                 }
-                $result .= $key . ": " . (\is_scalar($value) ? (string) $value : '') . "\n";
+                $result .= $key . ': ' . (\is_scalar($value) ? (string)$value : '') . "\n";
             }
         }
 
@@ -229,7 +228,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
         // If no types are available after filtering, show an error
         if (empty($types)) {
-            return "ERROR: No valid types available for this table after applying excludeTypes filter.";
+            return 'ERROR: No valid types available for this table after applying excludeTypes filter.';
         }
 
         $result .= "AVAILABLE TYPES:\n";
@@ -239,7 +238,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 continue;
             }
 
-            $result .= "- " . $typeValue . " (" . $availableTypeLabel . ")\n";
+            $result .= '- ' . $typeValue . ' (' . $availableTypeLabel . ")\n";
         }
         $result .= "\n";
 
@@ -257,7 +256,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
             // Skip dividers when selecting the default type
             foreach ($types as $typeValue => $typeLabel) {
                 if ($typeValue !== '--div--') {
-                    $filterType = (string) $typeValue;
+                    $filterType = (string)$typeValue;
                     break;
                 }
             }
@@ -269,7 +268,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
         // Add current record type section
         $result .= "CURRENT RECORD TYPE:\n";
         $result .= "-------------------\n";
-        $result .= "Type: " . $filterType . " (" . $typeLabel . ")\n\n";
+        $result .= 'Type: ' . $filterType . ' (' . $typeLabel . ")\n\n";
 
         // Add fields section
         $result .= "FIELDS:\n";
@@ -319,7 +318,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
         foreach ($tabFields as $tabName => $tabFieldsList) {
             // Translate the tab name
             $translatedTabName = TableAccessService::translateLabel($tabName);
-            $result .= "  (" . $translatedTabName . "):\n";
+            $result .= '  (' . $translatedTabName . "):\n";
 
             foreach ($tabFieldsList as $item) {
                 $itemParts = GeneralUtility::trimExplode(';', $item, true);
@@ -344,7 +343,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
                     if ($paletteName !== '' && $this->getPaletteConfig($table, $paletteName) !== []) {
                         // Add the palette to the current tab's fields
-                        $result .= "    ┌─ (" . $paletteLabel . ")\n";
+                        $result .= '    ┌─ (' . $paletteLabel . ")\n";
 
                         // Get the palette fields
                         $paletteConfig = $this->getPaletteConfig($table, $paletteName);
@@ -372,12 +371,12 @@ final class GetTableSchemaTool extends AbstractRecordTool
                                 $processedFields[$paletteFieldName] = true;
 
                                 // Add the field to the result with proper indentation
-                                $prefix = ($paletteItem === $lastPaletteField) ? "└─ " : "├─ ";
+                                $prefix = ($paletteItem === $lastPaletteField) ? '└─ ' : '├─ ';
                                 $fieldLabel = \is_string($fieldConfig['label'] ?? null) ? TableAccessService::translateLabel($fieldConfig['label']) : $paletteFieldName;
                                 // TcaSchemaFactory returns flattened config where type is at top level
                                 $nestedConfig = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
                                 $fieldType = \is_string($fieldConfig['type'] ?? null) ? $fieldConfig['type'] : (\is_string($nestedConfig['type'] ?? null) ? $nestedConfig['type'] : 'unknown');
-                                $result .= "    " . $prefix . $paletteFieldName . " (" . $fieldLabel . "): " . $fieldType;
+                                $result .= '    ' . $prefix . $paletteFieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                                 // Add field details inline
                                 $this->addFieldDetailsInline($result, $fieldConfig, $paletteFieldName, $table, $filterType);
@@ -398,7 +397,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                         // TcaSchemaFactory returns flattened config where type is at top level
                         $nestedConfig = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
                         $fieldType = \is_string($fieldConfig['type'] ?? null) ? $fieldConfig['type'] : (\is_string($nestedConfig['type'] ?? null) ? $nestedConfig['type'] : 'unknown');
-                        $result .= "    - " . $fieldName . " (" . $fieldLabel . "): " . $fieldType;
+                        $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                         // Add field details inline
                         $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType);
@@ -423,7 +422,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 $fieldLabel = \is_string($fieldConfig['label'] ?? null) ? TableAccessService::translateLabel($fieldConfig['label']) : $fieldName;
                 $nestedConfig = isset($fieldConfig['config']) && \is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
                 $fieldType = \is_string($fieldConfig['type'] ?? null) ? $fieldConfig['type'] : (\is_string($nestedConfig['type'] ?? null) ? $nestedConfig['type'] : 'unknown');
-                $result .= "    - " . $fieldName . " (" . $fieldLabel . "): " . $fieldType;
+                $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                 // Add field details inline
                 $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType);
@@ -463,7 +462,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
      */
     protected function addFlexFormIdentifiers(string &$result, array $config, string $table, string $fieldName, string $filterType = ''): void
     {
-        $result .= " (FlexForm)";
+        $result .= ' (FlexForm)';
 
         // Get available FlexForm identifiers
         if (isset($config['ds']) && \is_array($config['ds'])) {
@@ -478,8 +477,8 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 // Either directly or with a wildcard
                 $filteredIdentifiers = [];
                 foreach ($identifiers as $id) {
-                    if (str_contains((string) $id, ',')) {
-                        $parts = explode(',', (string) $id);
+                    if (str_contains((string)$id, ',')) {
+                        $parts = explode(',', (string)$id);
                         // Check if the identifier matches the current type
                         // Either directly or with a wildcard
                         if (($parts[0] === '*' && $parts[1] === $filterType)
@@ -500,19 +499,19 @@ final class GetTableSchemaTool extends AbstractRecordTool
             }
 
             if (!empty($identifiers)) {
-                $result .= " [Identifiers: " . implode(', ', $identifiers) . "]";
-                $result .= " (Use GetFlexFormSchema tool with these identifiers for details)";
+                $result .= ' [Identifiers: ' . implode(', ', $identifiers) . ']';
+                $result .= ' (Use GetFlexFormSchema tool with these identifiers for details)';
             }
         } elseif ($filterType !== '') {
-            $result .= " [Identifiers: *," . $filterType . "]";
-            $result .= " (Use GetFlexFormSchema tool with these identifiers for details)";
+            $result .= ' [Identifiers: *,' . $filterType . ']';
+            $result .= ' (Use GetFlexFormSchema tool with these identifiers for details)';
         }
 
         // Add ds_pointerField information if available
         if (\is_string($config['ds_pointerField'] ?? null)) {
-            $result .= " [ds_pointerField: " . $config['ds_pointerField'] . "]";
+            $result .= ' [ds_pointerField: ' . $config['ds_pointerField'] . ']';
         } elseif ($table === 'tt_content' && $filterType !== '') {
-            $result .= " [ds_pointerField: CType]";
+            $result .= ' [ds_pointerField: CType]';
         }
     }
 
@@ -536,7 +535,6 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
         return array_replace_recursive($config, $overrideConfig);
     }
-
 
     /**
      * Get types that are removed by TSconfig

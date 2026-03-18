@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 
-use Exception;
 use Doctrine\DBAL\Connection;
+use Exception;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
@@ -43,8 +43,8 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             'uid' => 1,
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('does not exist', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('does not exist', $result->content[0]->text);
     }
 
     /**
@@ -73,7 +73,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // Should handle even complex queries
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -104,7 +104,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 DataHandler might handle this by modifying the slug
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Check if TYPO3 modified the slug
         $data = json_decode($result->content[0]->text, true);
@@ -113,11 +113,11 @@ class DatabaseErrorTest extends AbstractFunctionalTest
                 'table' => 'pages',
                 'uid' => $data['uid'],
             ]);
-            $this->assertFalse($record->isError);
+            self::assertFalse($record->isError);
             $recordData = json_decode($record->content[0]->text, true);
             // TYPO3 should have appended a number to make it unique
             if (isset($recordData['slug'])) {
-                $this->assertNotEquals('/unique-alias', $recordData['slug']);
+                self::assertNotEquals('/unique-alias', $recordData['slug']);
             }
         }
     }
@@ -148,15 +148,15 @@ class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // The operation should fail due to validation
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('doktype', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('doktype', $result->content[0]->text);
 
         // Verify no new record was created
         $countAfter = $this->connectionPool
             ->getConnectionForTable('pages')
             ->count('*', 'pages', ['deleted' => 0]);
 
-        $this->assertEquals($countBefore, $countAfter, 'Transaction should be rolled back');
+        self::assertEquals($countBefore, $countAfter, 'Transaction should be rolled back');
     }
 
     /**
@@ -184,9 +184,9 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             $conn1->commit();
             $conn2->commit();
 
-            $this->assertTrue(true, 'Deadlock handling test completed');
+            self::assertTrue(true, 'Deadlock handling test completed');
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // Rollback on any exception
             if ($conn1->isTransactionActive()) {
                 $conn1->rollBack();
@@ -197,7 +197,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
 
             // Check if it's a deadlock exception
             if (stripos($e->getMessage(), 'deadlock') !== false) {
-                $this->assertTrue(true, 'Deadlock detected and handled');
+                self::assertTrue(true, 'Deadlock detected and handled');
             } else {
                 throw $e;
             }
@@ -230,14 +230,14 @@ class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // Tool should handle corrupted data gracefully
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode($result->content[0]->text, true);
 
         // Verify the tool returns the data even if references are invalid
         if (isset($data['uid'])) {
-            $this->assertEquals(99999, $data['uid']);
-            $this->assertEquals(999999, $data['pid']);
-            $this->assertEquals('invalid_type', $data['CType']);
+            self::assertEquals(99999, $data['uid']);
+            self::assertEquals(999999, $data['pid']);
+            self::assertEquals('invalid_type', $data['CType']);
         }
     }
 
@@ -261,15 +261,15 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             // For this test, we just verify transaction handling
 
             $connection->commit();
-            $this->assertTrue(true, 'Transaction handling tested');
+            self::assertTrue(true, 'Transaction handling tested');
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
             }
 
             // Handle any database errors
-            $this->assertTrue(true, 'Database error handled: ' . $e->getMessage());
+            self::assertTrue(true, 'Database error handled: ' . $e->getMessage());
         }
     }
 
@@ -289,7 +289,7 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             }
 
             // All connections created successfully
-            $this->assertCount(100, $connections);
+            self::assertCount(100, $connections);
 
             // Try one more operation
             $result = $this->readTool->execute([
@@ -298,13 +298,13 @@ class DatabaseErrorTest extends AbstractFunctionalTest
             ]);
 
             // Should still work even with many connections
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // If we hit a connection limit, that's what we're testing for
             if (stripos($e->getMessage(), 'connection') !== false
                 || stripos($e->getMessage(), 'too many') !== false) {
-                $this->assertTrue(true, 'Connection pool limit detected');
+                self::assertTrue(true, 'Connection pool limit detected');
             } else {
                 throw $e;
             }

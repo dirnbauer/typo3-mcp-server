@@ -50,7 +50,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pageUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Create a news record
@@ -63,7 +63,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'bodytext' => 'Test news body',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Create content elements with foreign field set
@@ -81,7 +81,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'sorting' => $i * 256,
                 ],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
         }
 
@@ -91,26 +91,26 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
 
         // Verify content_elements field contains UIDs
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertIsArray($news['content_elements']);
-        $this->assertCount(2, $news['content_elements']);
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertIsArray($news['content_elements']);
+        self::assertCount(2, $news['content_elements']);
 
         // Verify we get UIDs, not full records
         foreach ($news['content_elements'] as $uid) {
-            $this->assertIsInt($uid);
-            $this->assertContains($uid, $contentUids);
+            self::assertIsInt($uid);
+            self::assertContains($uid, $contentUids);
         }
 
         // Verify all created content elements are included (order doesn't matter)
         sort($contentUids);
         $actualUids = $news['content_elements'];
         sort($actualUids);
-        $this->assertEquals($contentUids, $actualUids);
+        self::assertEquals($contentUids, $actualUids);
     }
 
     /**
@@ -131,8 +131,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'sys_file_reference writes should be rejected');
-        $this->assertStringContainsString('restricted', strtolower($result->content[0]->text));
+        self::assertTrue($result->isError, 'sys_file_reference writes should be rejected');
+        self::assertStringContainsString('restricted', strtolower($result->content[0]->text));
     }
 
     /**
@@ -152,7 +152,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $pageUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Create a news record
@@ -164,7 +164,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News to update with inline content',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Create content elements separately
@@ -179,7 +179,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'CType' => 'text',
                 ],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
         }
 
@@ -192,7 +192,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $contentUids,  // Array of UIDs
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify the inline relations were set
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -200,17 +200,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
 
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertIsArray($news['content_elements']);
-        $this->assertCount(3, $news['content_elements']);
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertIsArray($news['content_elements']);
+        self::assertCount(3, $news['content_elements']);
 
         // Verify all UIDs are present
         foreach ($contentUids as $uid) {
-            $this->assertContains($uid, $news['content_elements']);
+            self::assertContains($uid, $news['content_elements']);
         }
     }
 
@@ -265,7 +265,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'tx_news_related_news' => 0,  // Remove relation
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify relation is removed
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -275,8 +275,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news, 'Should have content_elements field');
-        $this->assertEmpty($news['content_elements'], 'content_elements should be empty after removal');
+        self::assertArrayHasKey('content_elements', $news, 'Should have content_elements field');
+        self::assertEmpty($news['content_elements'], 'content_elements should be empty after removal');
     }
 
     /**
@@ -327,7 +327,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ]),
             ]);
-            $this->assertFalse($result->isError);
+            self::assertFalse($result->isError);
             $uid = json_decode($result->content[0]->text, true)['uid'];
             $createdUids[$data['header']] = $uid;
         }
@@ -340,8 +340,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertCount(3, $news['content_elements']);
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertCount(3, $news['content_elements']);
 
         // Check actual order
         $actualOrder = [];
@@ -369,7 +369,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         // Verify that the content elements are returned in ascending sorting order
         // The actual sorting values may differ from what we set due to DataHandler processing
-        $this->assertEquals(
+        self::assertEquals(
             ['First', 'Second', 'Third'],
             $actualOrder,
             'Content elements should be returned in sorting order. '
@@ -421,7 +421,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ],
             ]);
-            $this->assertFalse($result->isError);
+            self::assertFalse($result->isError);
             $allContentUids[] = json_decode($result->content[0]->text, true)['uid'];
         }
 
@@ -435,7 +435,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $keptUids,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify only the specified UIDs remain
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -448,7 +448,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ]);
             $response = json_decode($result->content[0]->text, true);
             if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
+                self::fail("No record found for content element {$allContentUids[$index]}");
             }
             $content = $response['records'][0];
             // Check if the foreign field is returned
@@ -466,7 +466,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             } else {
                 $relatedNews = $content['tx_news_related_news'];
             }
-            $this->assertEquals(
+            self::assertEquals(
                 $newsUid,
                 $relatedNews,
                 "Content element {$allContentUids[$index]} should still be related to news",
@@ -481,7 +481,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ]);
             $response = json_decode($result->content[0]->text, true);
             if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
+                self::fail("No record found for content element {$allContentUids[$index]}");
             }
             $content = $response['records'][0];
             // Check if the foreign field is returned
@@ -499,7 +499,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             } else {
                 $relatedNews = $content['tx_news_related_news'];
             }
-            $this->assertEquals(
+            self::assertEquals(
                 0,
                 $relatedNews,
                 "Content element {$allContentUids[$index]} should no longer be related to news",
@@ -523,10 +523,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()) ?: '');
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()) ?: '');
         $pageData = json_decode($pageResult->content[0]->text, true);
-        $pageUid = \is_array($pageData) && isset($pageData['uid']) ? (int) $pageData['uid'] : 0;
-        $this->assertGreaterThan(0, $pageUid);
+        $pageUid = \is_array($pageData) && isset($pageData['uid']) ? (int)$pageData['uid'] : 0;
+        self::assertGreaterThan(0, $pageUid);
 
         // Create a news record first
         $result = $writeTool->execute([
@@ -548,8 +548,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => 'not-an-array',
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be an array of UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be an array of UIDs', $result->jsonSerialize()['content'][0]->text);
 
         // Test 2: Array with non-numeric values
         $result = $writeTool->execute([
@@ -560,8 +560,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => [1, 'invalid', 3],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
 
         // Test 3: Array with negative values
         $result = $writeTool->execute([
@@ -572,8 +572,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => [1, -5, 3],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
 
         // Test 4: Array with data objects (not supported yet)
         $result = $writeTool->execute([
@@ -586,7 +586,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
     }
 }

@@ -25,6 +25,7 @@
         "phpat/phpat": "^0.12.3",
         "phpstan/phpstan": "^2.1",
         "ssch/typo3-rector": "^3.0",
+        "typo3/coding-standards": "^0.8",
         "typo3/cms-extbase": "^14.0",
         "typo3/cms-fluid": "^14.0",
         "typo3/cms-frontend": "^14.0",
@@ -76,10 +77,10 @@
             "phpstan analyse --no-progress"
         ],
         "php-cs-fixer": [
-            "php-cs-fixer fix --dry-run --diff"
+            "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff"
         ],
         "php-cs-fixer:fix": [
-            "php-cs-fixer fix"
+            "php-cs-fixer fix --config=.php-cs-fixer.dist.php"
         ],
         "rector": [
             "rector process --dry-run"

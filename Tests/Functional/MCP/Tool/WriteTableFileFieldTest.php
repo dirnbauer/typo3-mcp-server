@@ -51,8 +51,8 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('File field must be an array', $result->content[0]->text);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('File field must be an array', $result->content[0]->text);
     }
 
     public function testFileFieldRejectsNonIntegerUids(): void
@@ -67,8 +67,8 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('UIDs', $result->content[0]->text);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('UIDs', $result->content[0]->text);
     }
 
     public function testFileFieldRejectsObjectWithoutUid(): void
@@ -83,8 +83,8 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('uid', $result->content[0]->text);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('uid', $result->content[0]->text);
     }
 
     public function testFileFieldAcceptsArrayOfUids(): void
@@ -102,7 +102,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     public function testFileFieldAcceptsObjectsWithUidAndMetadata(): void
@@ -122,11 +122,11 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $json = json_decode($result->content[0]->text, true);
         $uid = $json['uid'] ?? 0;
-        $this->assertGreaterThan(0, $uid);
+        self::assertGreaterThan(0, $uid);
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_file_reference');
@@ -140,12 +140,12 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertNotEmpty($refs);
+        self::assertNotEmpty($refs);
 
         $ref = $refs[0];
-        $this->assertSame(1, (int) $ref['uid_local']);
-        $this->assertSame('My Image', $ref['title']);
-        $this->assertSame('Alt text for image', $ref['alternative']);
+        self::assertSame(1, (int)$ref['uid_local']);
+        self::assertSame('My Image', $ref['title']);
+        self::assertSame('Alt text for image', $ref['alternative']);
     }
 
     public function testFileFieldEmptyArrayCreatesNoReferences(): void
@@ -161,6 +161,6 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 }

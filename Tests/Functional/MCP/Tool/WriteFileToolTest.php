@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
-use Hn\McpServer\MCP\Tool\File\WriteFileTool;
 use Hn\McpServer\MCP\Tool\File\UploadFileTool;
+use Hn\McpServer\MCP\Tool\File\WriteFileTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Resource\StorageRepository;
@@ -23,15 +23,15 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'Hello from MCP',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('created', $json['action']);
-        $this->assertSame('1:/mcp/notes/test-mcp.txt', $json['identifier']);
-        $this->assertGreaterThan(0, $json['uid']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('created', $json['action']);
+        self::assertSame('1:/mcp/notes/test-mcp.txt', $json['identifier']);
+        self::assertGreaterThan(0, $json['uid']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         $file = $storage->getFile('/mcp/notes/test-mcp.txt');
-        $this->assertSame('Hello from MCP', $file->getContents());
+        self::assertSame('Hello from MCP', $file->getContents());
     }
 
     #[Test]
@@ -43,19 +43,19 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'notes/overwrite-me.txt',
             'content' => 'original',
         ]);
-        $this->assertFalse($first->isError, json_encode($first->jsonSerialize()));
+        self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
 
         $second = $tool->execute([
             'path' => 'notes/overwrite-me.txt',
             'content' => 'replaced',
             'overwrite' => true,
         ]);
-        $this->assertFalse($second->isError, json_encode($second->jsonSerialize()));
-        $json = json_decode((string) $second->content[0]->text, true);
-        $this->assertSame('overwritten', $json['action']);
+        self::assertFalse($second->isError, json_encode($second->jsonSerialize()));
+        $json = json_decode((string)$second->content[0]->text, true);
+        self::assertSame('overwritten', $json['action']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $this->assertSame('replaced', $storage->getFile('/mcp/notes/overwrite-me.txt')->getContents());
+        self::assertSame('replaced', $storage->getFile('/mcp/notes/overwrite-me.txt')->getContents());
     }
 
     #[Test]
@@ -67,14 +67,14 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'notes/no-overwrite.txt',
             'content' => 'original',
         ]);
-        $this->assertFalse($first->isError, json_encode($first->jsonSerialize()));
+        self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
 
         $second = $tool->execute([
             'path' => 'notes/no-overwrite.txt',
             'content' => 'should fail',
         ]);
-        $this->assertTrue($second->isError);
-        $this->assertStringContainsString('already exists', $second->content[0]->text);
+        self::assertTrue($second->isError);
+        self::assertStringContainsString('already exists', $second->content[0]->text);
     }
 
     #[Test]
@@ -86,8 +86,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => '<?php echo "nope";',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('not allowed', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('not allowed', $result->content[0]->text);
     }
 
     #[Test]
@@ -99,8 +99,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'test',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Directory traversal', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Directory traversal', $result->content[0]->text);
     }
 
     #[Test]
@@ -112,13 +112,13 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => '{"created": true}',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('created', $json['action']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('created', $json['action']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $this->assertTrue($storage->hasFolder('/mcp/deep/nested/'));
-        $this->assertSame('{"created": true}', $storage->getFile('/mcp/deep/nested/data.json')->getContents());
+        self::assertTrue($storage->hasFolder('/mcp/deep/nested/'));
+        self::assertSame('{"created": true}', $storage->getFile('/mcp/deep/nested/data.json')->getContents());
     }
 
     #[Test]
@@ -129,8 +129,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'test',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('path', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('path', $result->content[0]->text);
     }
 
     #[Test]
@@ -144,10 +144,10 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => $jsonContent,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $this->assertSame($jsonContent, $storage->getFile('/mcp/config.json')->getContents());
+        self::assertSame($jsonContent, $storage->getFile('/mcp/config.json')->getContents());
     }
 
     #[Test]
@@ -164,17 +164,17 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('created', $json['action']);
-        $this->assertSame('My Document', $json['metadata']['title']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('created', $json['action']);
+        self::assertSame('My Document', $json['metadata']['title']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         $file = $storage->getFile('/mcp/documented.txt');
         $meta = $file->getMetaData()->get();
-        $this->assertSame('My Document', $meta['title']);
-        $this->assertSame('A test document created via MCP', $meta['description']);
-        $this->assertSame('Document alt text', $meta['alternative']);
+        self::assertSame('My Document', $meta['title']);
+        self::assertSame('A test document created via MCP', $meta['description']);
+        self::assertSame('Document alt text', $meta['alternative']);
     }
 
     #[Test]
@@ -195,15 +195,15 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('metadata_updated', $json['action']);
-        $this->assertSame('Updated Title', $json['metadata']['title']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('metadata_updated', $json['action']);
+        self::assertSame('Updated Title', $json['metadata']['title']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         $file = $storage->getFile('/mcp/keep-content.txt');
-        $this->assertSame('Original content stays', $file->getContents());
-        $this->assertSame('Updated Title', $file->getMetaData()->get()['title']);
+        self::assertSame('Original content stays', $file->getContents());
+        self::assertSame('Updated Title', $file->getMetaData()->get()['title']);
     }
 
     #[Test]
@@ -215,8 +215,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'metadata' => ['title' => 'Nope'],
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('not found', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('not found', $result->content[0]->text);
     }
 
     #[Test]
@@ -227,8 +227,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'empty-call.txt',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('content', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('content', $result->content[0]->text);
     }
 
     #[Test]
@@ -240,8 +240,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'not allowed',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
     }
 
     #[Test]
@@ -253,12 +253,12 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'absolute target',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('1:/mcp/absolute/location.txt', $json['identifier']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('1:/mcp/absolute/location.txt', $json['identifier']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $this->assertSame('absolute target', $storage->getFile('/mcp/absolute/location.txt')->getContents());
+        self::assertSame('absolute target', $storage->getFile('/mcp/absolute/location.txt')->getContents());
     }
 
     #[Test]
@@ -269,11 +269,11 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'images/update-me.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        $this->assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
 
-        $uploaded = json_decode((string) $uploadResult->content[0]->text, true);
-        $identifier = (string) $uploaded['identifier'];
-        $originalSize = (int) $uploaded['size'];
+        $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
+        $identifier = (string)$uploaded['identifier'];
+        $originalSize = (int)$uploaded['size'];
 
         $tool = $this->get(WriteFileTool::class);
         $result = $tool->execute([
@@ -284,15 +284,15 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $json = json_decode((string) $result->content[0]->text, true);
-        $this->assertSame('metadata_updated', $json['action']);
-        $this->assertSame('Updated image title', $json['metadata']['title']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $json = json_decode((string)$result->content[0]->text, true);
+        self::assertSame('metadata_updated', $json['action']);
+        self::assertSame('Updated image title', $json['metadata']['title']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         $file = $storage->getFile(substr($identifier, 2));
-        $this->assertSame($originalSize, $file->getSize());
-        $this->assertSame('Updated image title', $file->getMetaData()->get()['title']);
-        $this->assertSame('Updated image alt text', $file->getMetaData()->get()['alternative']);
+        self::assertSame($originalSize, $file->getSize());
+        self::assertSame('Updated image title', $file->getMetaData()->get()['title']);
+        self::assertSame('Updated image alt text', $file->getMetaData()->get()['alternative']);
     }
 }

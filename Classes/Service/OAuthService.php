@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use InvalidArgumentException;
-use TYPO3\CMS\Core\Database\Connection;
-use Exception;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -56,7 +54,7 @@ final class OAuthService
     public function createAuthorizationCode(int $beUserId, string $clientName, string $redirectUri = '', string $pkceChallenge = '', string $challengeMethod = 'S256'): string
     {
         if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
-            throw new InvalidArgumentException('Only S256 PKCE challenges are supported');
+            throw new \InvalidArgumentException('Only S256 PKCE challenges are supported');
         }
 
         $code = $this->generateSecureToken();
@@ -210,9 +208,9 @@ final class OAuthService
             ->executeStatement();
 
         return [
-            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int) $tokenRecord['be_user_uid'] : 0,
+            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int)$tokenRecord['be_user_uid'] : 0,
             'client_name' => \is_string($tokenRecord['client_name'] ?? null) ? $tokenRecord['client_name'] : '',
-            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int) $tokenRecord['uid'] : 0,
+            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int)$tokenRecord['uid'] : 0,
         ];
     }
 
@@ -242,12 +240,12 @@ final class OAuthService
         $normalizedTokens = [];
         foreach ($tokens as $token) {
             $normalizedTokens[] = [
-                'uid' => is_numeric($token['uid'] ?? null) ? (int) $token['uid'] : 0,
+                'uid' => is_numeric($token['uid'] ?? null) ? (int)$token['uid'] : 0,
                 'client_name' => \is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
                 'token' => \is_string($token['token'] ?? null) ? $token['token'] : '',
-                'crdate' => is_numeric($token['crdate'] ?? null) ? (int) $token['crdate'] : 0,
-                'expires' => is_numeric($token['expires'] ?? null) ? (int) $token['expires'] : 0,
-                'last_used' => is_numeric($token['last_used'] ?? null) ? (int) $token['last_used'] : 0,
+                'crdate' => is_numeric($token['crdate'] ?? null) ? (int)$token['crdate'] : 0,
+                'expires' => is_numeric($token['expires'] ?? null) ? (int)$token['expires'] : 0,
+                'last_used' => is_numeric($token['last_used'] ?? null) ? (int)$token['last_used'] : 0,
             ];
         }
 
@@ -368,7 +366,7 @@ final class OAuthService
                     'scope' => $clientData['scope'] ?? 'mcp_access',
                 ],
             );
-        } catch (Exception) {
+        } catch (\Exception) {
             // If table doesn't exist, we'll use the fixed client approach for now
             return [
                 'client_id' => self::CLIENT_ID,

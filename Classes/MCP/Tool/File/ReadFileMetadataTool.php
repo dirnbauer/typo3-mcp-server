@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
-use Exception;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\McpFileHarnessService;
@@ -63,7 +62,7 @@ final class ReadFileMetadataTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int) $params['uid'] : null;
+        $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int)$params['uid'] : null;
         $identifier = \is_string($params['identifier'] ?? null) ? $params['identifier'] : null;
 
         if ($uid === null && $identifier === null) {
@@ -77,7 +76,7 @@ final class ReadFileMetadataTool extends AbstractTool
                 $resolved = $this->fileHarnessService->resolveFileTarget($identifier);
                 $file = $this->resourceFactory->getFileObjectFromCombinedIdentifier($resolved['combinedIdentifier']);
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new ValidationException(['File not found: ' . $e->getMessage()]);
         }
 
@@ -102,15 +101,15 @@ final class ReadFileMetadataTool extends AbstractTool
         ];
 
         if (str_starts_with($file->getMimeType(), 'image/')) {
-            $result['width'] = is_numeric($props['width'] ?? null) ? (int) $props['width'] : 0;
-            $result['height'] = is_numeric($props['height'] ?? null) ? (int) $props['height'] : 0;
+            $result['width'] = is_numeric($props['width'] ?? null) ? (int)$props['width'] : 0;
+            $result['height'] = is_numeric($props['height'] ?? null) ? (int)$props['height'] : 0;
         }
 
         $result['metadata'] = [
-            'title' => \is_scalar($metaData['title'] ?? null) ? (string) $metaData['title'] : '',
-            'description' => \is_scalar($metaData['description'] ?? null) ? (string) $metaData['description'] : '',
-            'alternative' => \is_scalar($metaData['alternative'] ?? null) ? (string) $metaData['alternative'] : '',
-            'copyright' => \is_scalar($metaData['copyright'] ?? null) ? (string) $metaData['copyright'] : '',
+            'title' => \is_scalar($metaData['title'] ?? null) ? (string)$metaData['title'] : '',
+            'description' => \is_scalar($metaData['description'] ?? null) ? (string)$metaData['description'] : '',
+            'alternative' => \is_scalar($metaData['alternative'] ?? null) ? (string)$metaData['alternative'] : '',
+            'copyright' => \is_scalar($metaData['copyright'] ?? null) ? (string)$metaData['copyright'] : '',
         ];
 
         $categories = $this->getFileCategories($file->getUid());
@@ -146,8 +145,8 @@ final class ReadFileMetadataTool extends AbstractTool
 
         return array_map(
             static fn(array $r): array => [
-                'uid' => is_numeric($r['uid'] ?? null) ? (int) $r['uid'] : 0,
-                'title' => \is_scalar($r['title'] ?? null) ? (string) $r['title'] : '',
+                'uid' => is_numeric($r['uid'] ?? null) ? (int)$r['uid'] : 0,
+                'title' => \is_scalar($r['title'] ?? null) ? (string)$r['title'] : '',
             ],
             $rows,
         );
@@ -171,9 +170,9 @@ final class ReadFileMetadataTool extends AbstractTool
             ->fetchAllAssociative();
 
         return array_map(static fn(array $r): array => [
-            'table' => \is_scalar($r['tablenames'] ?? null) ? (string) $r['tablenames'] : '',
-            'uid' => is_numeric($r['uid_foreign'] ?? null) ? (int) $r['uid_foreign'] : 0,
-            'field' => \is_scalar($r['fieldname'] ?? null) ? (string) $r['fieldname'] : '',
+            'table' => \is_scalar($r['tablenames'] ?? null) ? (string)$r['tablenames'] : '',
+            'uid' => is_numeric($r['uid_foreign'] ?? null) ? (int)$r['uid_foreign'] : 0,
+            'field' => \is_scalar($r['fieldname'] ?? null) ? (string)$r['fieldname'] : '',
         ], $rows);
     }
 }

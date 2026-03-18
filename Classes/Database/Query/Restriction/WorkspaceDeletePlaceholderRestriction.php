@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Database\Query\Restriction;
 
-use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -64,11 +63,11 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
                     ->where(
                         $subQueryBuilder->expr()->eq(
                             't3ver_state',
-                            $subQueryBuilder->expr()->literal((string) VersionState::DELETE_PLACEHOLDER->value),
+                            $subQueryBuilder->expr()->literal((string)VersionState::DELETE_PLACEHOLDER->value),
                         ),
                         $subQueryBuilder->expr()->eq(
                             't3ver_wsid',
-                            $subQueryBuilder->expr()->literal((string) $this->workspaceId),
+                            $subQueryBuilder->expr()->literal((string)$this->workspaceId),
                         ),
                         $subQueryBuilder->expr()->gt(
                             't3ver_oid',
@@ -81,7 +80,7 @@ final class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInt
                     $tableAlias . '.uid',
                     $subQuery->getSQL(),
                 );
-            } catch (Throwable) {
+            } catch (\Throwable) {
                 // If the subquery fails (e.g., table doesn't have workspace fields), skip this constraint
                 // This provides resilience for edge cases
             }

@@ -6,11 +6,9 @@ namespace Hn\McpServer\Command;
 
 use Hn\McpServer\MCP\McpServerFactory;
 use Mcp\Server\ServerRunner;
-use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -41,7 +39,7 @@ final class McpServerCommand extends Command
             // Ensure TCA is loaded using proper TYPO3 core method
             $tcaFactory = GeneralUtility::getContainer()->get(TcaFactory::class);
             if (!$tcaFactory instanceof TcaFactory) {
-                throw new RuntimeException('TcaFactory service is not available');
+                throw new \RuntimeException('TcaFactory service is not available');
             }
             $GLOBALS['TCA'] = $tcaFactory->get();
 
@@ -63,7 +61,7 @@ final class McpServerCommand extends Command
             $runner->run();
 
             return Command::SUCCESS;
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             // Log the error to stderr, not stdout (to avoid corrupting MCP protocol)
             file_put_contents('php://stderr', 'MCP Server Error: ' . $e->getMessage() . PHP_EOL . $e->getTraceAsString() . PHP_EOL);
             return Command::FAILURE;

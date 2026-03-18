@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Exception;
 
-use Throwable;
-
 /**
  * Exception for validation errors
  *
@@ -16,9 +14,9 @@ class ValidationException extends McpException
 {
     /**
      * @param list<string> $errors Array of validation error messages
-     * @param Throwable|null $previous Previous exception for chaining
+     * @param \Throwable|null $previous Previous exception for chaining
      */
-    public function __construct(private readonly array $errors, ?Throwable $previous = null)
+    public function __construct(private readonly array $errors, ?\Throwable $previous = null)
     {
         $errorList = implode(', ', $this->errors);
 

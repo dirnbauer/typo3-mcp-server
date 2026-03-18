@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
-use Exception;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Llm\Client\LlmClientInterface;
 use Hn\McpServer\Tests\Llm\Client\LlmResponse;
@@ -87,7 +86,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             return;
         }
 
-        $this->markTestSkipped('No LLM API key configured. Set OPENROUTER_API_KEY.');
+        self::markTestSkipped('No LLM API key configured. Set OPENROUTER_API_KEY.');
     }
 
     /**
@@ -193,18 +192,18 @@ abstract class LlmTestCase extends FunctionalTestCase
 
                     // Check if expected params are present in actual params
                     foreach ($expectedParams as $key => $value) {
-                        $this->assertArrayHasKey($key, $actualParams, "Expected parameter '$key' not found in tool call '$toolName'");
+                        self::assertArrayHasKey($key, $actualParams, "Expected parameter '$key' not found in tool call '$toolName'");
 
                         // For nested arrays, do partial matching
                         if (\is_array($value) && \is_array($actualParams[$key])) {
                             foreach ($value as $nestedKey => $nestedValue) {
                                 if (\is_string($nestedKey)) {
-                                    $this->assertArrayHasKey($nestedKey, $actualParams[$key]);
-                                    $this->assertEquals($nestedValue, $actualParams[$key][$nestedKey]);
+                                    self::assertArrayHasKey($nestedKey, $actualParams[$key]);
+                                    self::assertEquals($nestedValue, $actualParams[$key][$nestedKey]);
                                 }
                             }
                         } else {
-                            $this->assertEquals($value, $actualParams[$key], "Parameter '$key' value mismatch in tool call '$toolName'");
+                            self::assertEquals($value, $actualParams[$key], "Parameter '$key' value mismatch in tool call '$toolName'");
                         }
                     }
                 }
@@ -214,9 +213,9 @@ abstract class LlmTestCase extends FunctionalTestCase
         }
 
         if (!$found) {
-            $this->fail(
+            self::fail(
                 "Expected tool '$toolName' was not called.\n\n"
-                . "Prompt: " . $this->lastPrompt . "\n\n"
+                . 'Prompt: ' . $this->lastPrompt . "\n\n"
                 . $this->getToolCallsDebugString($response),
             );
         }
@@ -235,7 +234,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         $actualSequence = array_map(fn($call) => $call['name'], $toolCalls);
 
         if ($strict) {
-            $this->assertEquals($expectedSequence, $actualSequence);
+            self::assertEquals($expectedSequence, $actualSequence);
         } else {
             // Check that expected tools appear in order (but allow other tools between)
             $lastIndex = -1;
@@ -248,7 +247,7 @@ abstract class LlmTestCase extends FunctionalTestCase
                         break;
                     }
                 }
-                $this->assertTrue($found, "Expected tool '$expectedTool' not found in sequence or out of order");
+                self::assertTrue($found, "Expected tool '$expectedTool' not found in sequence or out of order");
             }
         }
     }
@@ -294,12 +293,12 @@ abstract class LlmTestCase extends FunctionalTestCase
         }
 
         // No pattern matched
-        $this->fail(
-            "Response does not follow any acceptable pattern" . ($description ? " ($description)" : "") . ".\n\n"
+        self::fail(
+            'Response does not follow any acceptable pattern' . ($description ? " ($description)" : '') . ".\n\n"
             . "Expected patterns:\n"
             . implode("\n", array_map(fn($p) => '  - ' . implode(' → ', $p), $acceptablePatterns)) . "\n\n"
-            . "Actual sequence: " . implode(' → ', $actualSequence) . "\n\n"
-            . "Prompt: " . $this->lastPrompt . "\n\n"
+            . 'Actual sequence: ' . implode(' → ', $actualSequence) . "\n\n"
+            . 'Prompt: ' . $this->lastPrompt . "\n\n"
             . $this->getToolCallsDebugString($response),
         );
     }
@@ -334,7 +333,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         if (!$tool) {
             return [
                 'error' => "Tool '{$toolCall['name']}' not found",
-                'content' => "Error: Tool not found",
+                'content' => 'Error: Tool not found',
             ];
         }
 
@@ -360,10 +359,10 @@ abstract class LlmTestCase extends FunctionalTestCase
                 'content' => $content,
                 'isError' => $result->isError || $hasErrorContent,
             ];
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return [
                 'error' => $e->getMessage(),
-                'content' => "Error: " . $e->getMessage(),
+                'content' => 'Error: ' . $e->getMessage(),
             ];
         }
     }
@@ -498,14 +497,14 @@ abstract class LlmTestCase extends FunctionalTestCase
         $secondIndex = array_search($secondTool, $history);
 
         if ($firstIndex === false) {
-            $this->fail($message ?: "Expected tool '$firstTool' was not called");
+            self::fail($message ?: "Expected tool '$firstTool' was not called");
         }
 
         if ($secondIndex === false) {
-            $this->fail($message ?: "Expected tool '$secondTool' was not called");
+            self::fail($message ?: "Expected tool '$secondTool' was not called");
         }
 
-        $this->assertLessThan(
+        self::assertLessThan(
             $secondIndex,
             $firstIndex,
             $message ?: "Expected '$firstTool' to be called before '$secondTool'",
@@ -521,7 +520,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected function assertToolWasCalled(string $toolName, string $message = ''): void
     {
         $history = $this->getToolCallHistory();
-        $this->assertContains(
+        self::assertContains(
             $toolName,
             $history,
             $message ?: "Expected tool '$toolName' to be called during exploration",

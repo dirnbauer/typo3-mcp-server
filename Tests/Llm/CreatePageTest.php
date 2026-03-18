@@ -33,7 +33,7 @@ class CreatePageTest extends LlmTestCase
 
         // Execute GetPageTree
         $treeResult = $this->executeToolCall($response1->getToolCalls()[0]);
-        $this->assertFalse($treeResult['isError'] ?? false);
+        self::assertFalse($treeResult['isError'] ?? false);
 
         // Continue conversation
         $response2 = $this->continueWithToolResult($response1, $treeResult);
@@ -52,17 +52,17 @@ class CreatePageTest extends LlmTestCase
             $writeResult = $this->executeToolCall($response2->getToolCalls()[0]);
 
             // The write should succeed - if it fails, the test should fail
-            $this->assertFalse(
+            self::assertFalse(
                 $writeResult['isError'] ?? false,
                 'WriteTable failed: ' . $writeResult['content'],
             );
 
             // Verify page was created
-            $writeResultData = json_decode((string) $writeResult['content'], true);
-            $this->assertEquals('create', $writeResultData['action']);
-            $this->assertEquals('pages', $writeResultData['table']);
-            $this->assertArrayHasKey('uid', $writeResultData);
-            $this->assertIsInt($writeResultData['uid']);
+            $writeResultData = json_decode((string)$writeResult['content'], true);
+            self::assertEquals('create', $writeResultData['action']);
+            self::assertEquals('pages', $writeResultData['table']);
+            self::assertArrayHasKey('uid', $writeResultData);
+            self::assertIsInt($writeResultData['uid']);
         }
     }
 
@@ -84,8 +84,8 @@ class CreatePageTest extends LlmTestCase
         $treeResult = $this->executeToolCall($toolCalls[0]);
 
         // Verify we got page tree data
-        $this->assertStringContainsString('About Us', $treeResult['content']);
-        $this->assertFalse($treeResult['isError'] ?? false);
+        self::assertStringContainsString('About Us', $treeResult['content']);
+        self::assertFalse($treeResult['isError'] ?? false);
 
         // Step 4: Continue conversation with tree result
         $response2 = $this->continueWithToolResult($response1, $treeResult);
@@ -105,7 +105,7 @@ class CreatePageTest extends LlmTestCase
             $writeResult = $this->executeToolCall($response2->getToolCalls()[0]);
 
             // The write should succeed - if it fails, the test should fail
-            $this->assertFalse(
+            self::assertFalse(
                 $writeResult['isError'] ?? false,
                 'WriteTable failed: ' . $writeResult['content'],
             );
@@ -127,14 +127,14 @@ class CreatePageTest extends LlmTestCase
             }
 
             // Verify the page was created (check the WriteTable result)
-            $writeResultData = json_decode((string) $writeResult['content'], true);
-            $this->assertEquals('create', $writeResultData['action']);
-            $this->assertEquals('pages', $writeResultData['table']);
-            $this->assertArrayHasKey('uid', $writeResultData);
-            $this->assertIsInt($writeResultData['uid']);
+            $writeResultData = json_decode((string)$writeResult['content'], true);
+            self::assertEquals('create', $writeResultData['action']);
+            self::assertEquals('pages', $writeResultData['table']);
+            self::assertArrayHasKey('uid', $writeResultData);
+            self::assertIsInt($writeResultData['uid']);
 
             // And verify LLM acknowledges the creation
-            $this->assertNotEmpty($finalContent);
+            self::assertNotEmpty($finalContent);
         }
     }
 
@@ -158,22 +158,22 @@ class CreatePageTest extends LlmTestCase
 
         // Now check WriteTable call
         $writeTableCalls = $response2->getToolCallsByName('WriteTable');
-        $this->assertCount(1, $writeTableCalls, "Expected exactly one WriteTable call");
+        self::assertCount(1, $writeTableCalls, 'Expected exactly one WriteTable call');
 
         $writeCall = $writeTableCalls[0]['arguments'];
-        $this->assertEquals('create', $writeCall['action']);
-        $this->assertEquals('pages', $writeCall['table']);
+        self::assertEquals('create', $writeCall['action']);
+        self::assertEquals('pages', $writeCall['table']);
 
         // LLM might reasonably use either "Products" or "Our Products" as the title
-        $this->assertContains(
+        self::assertContains(
             $writeCall['data']['title'],
             ['Products', 'Our Products'],
             "Title should be either 'Products' or 'Our Products'",
         );
-        $this->assertEquals('Our Products', $writeCall['data']['nav_title']);
+        self::assertEquals('Our Products', $writeCall['data']['nav_title']);
 
         // Accept either 'products' or '/products' for slug
-        $this->assertContains(
+        self::assertContains(
             $writeCall['data']['slug'],
             ['products', '/products'],
             "Slug should be either 'products' or '/products'",
@@ -187,7 +187,7 @@ class CreatePageTest extends LlmTestCase
      */
     public function testLlmCreatesNestedPages(): void
     {
-        $this->markTestSkipped(
+        self::markTestSkipped(
             'Creating nested pages in a single prompt is challenging for LLMs '
             . 'as they cannot get the ID from the first WriteTable call. '
             . 'In real usage, this would be done in multiple steps with user feedback.',
@@ -217,12 +217,12 @@ class CreatePageTest extends LlmTestCase
         $this->assertFollowsPattern(
             $response,
             $acceptablePatterns,
-            "checking for duplicates before creating",
+            'checking for duplicates before creating',
         );
 
         // Regardless of how they checked, they should NOT create a duplicate
         $writeTableCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertCount(
+        self::assertCount(
             0,
             $writeTableCalls,
             "LLM should not create duplicate 'About Us' page. " . $this->getToolCallsDebugString($response),

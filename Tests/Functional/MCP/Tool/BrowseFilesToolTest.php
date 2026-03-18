@@ -20,13 +20,13 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'path' => 'browse/root.txt',
             'content' => 'root file',
         ]);
-        $this->assertFalse($rootWrite->isError, json_encode($rootWrite->jsonSerialize()));
+        self::assertFalse($rootWrite->isError, json_encode($rootWrite->jsonSerialize()));
 
         $nestedWrite = $writeTool->execute([
             'path' => 'browse/nested/deeper.txt',
             'content' => 'nested file',
         ]);
-        $this->assertFalse($nestedWrite->isError, json_encode($nestedWrite->jsonSerialize()));
+        self::assertFalse($nestedWrite->isError, json_encode($nestedWrite->jsonSerialize()));
 
         $browseTool = $this->get(BrowseFilesTool::class);
         $result = $browseTool->execute([
@@ -34,13 +34,13 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'recursive' => true,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $content = (string) $result->content[0]->text;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $content = (string)$result->content[0]->text;
 
-        $this->assertStringContainsString('FOLDER: /mcp/browse/', $content);
-        $this->assertStringContainsString('[DIR] nested', $content);
-        $this->assertStringContainsString('(1 files)', $content);
-        $this->assertStringContainsString('root.txt', $content);
+        self::assertStringContainsString('FOLDER: /mcp/browse/', $content);
+        self::assertStringContainsString('[DIR] nested', $content);
+        self::assertStringContainsString('(1 files)', $content);
+        self::assertStringContainsString('root.txt', $content);
     }
 
     #[Test]
@@ -51,8 +51,8 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'path' => 'missing-folder/',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Folder not found', (string) $result->content[0]->text);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Folder not found', (string)$result->content[0]->text);
     }
 
     #[Test]
@@ -63,10 +63,10 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'path' => '1:/user_upload/',
         ]);
 
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString(
+        self::assertTrue($result->isError);
+        self::assertStringContainsString(
             'restricted to the configured MCP harness',
-            (string) $result->content[0]->text,
+            (string)$result->content[0]->text,
         );
     }
 }
