@@ -21,6 +21,62 @@ General notes
 - Several tools return human-readable text, while record and file write tools
   typically return JSON encoded into MCP text content.
 
+Tool names (MCP ``tools/list``)
+===============================
+
+Exact names match the PHP tool classes (e.g. ``ReadTableTool`` → ``ReadTable``).
+Use this overview for discoverability (aligned with MCP tool-naming guidance):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 12 66
+
+   * - Tool name
+     - Access
+     - Summary
+   * - ``ListWorkspaces``
+     - Read
+     - List workspaces; use for optional ``workspace_id`` on record tools
+   * - ``GetPageTree``
+     - Read
+     - Page tree with depth control (workspace overlay)
+   * - ``GetPage``
+     - Read
+     - Resolve page by UID or URL; content context
+   * - ``ListTables``
+     - Read
+     - Tables available to the current user via MCP
+   * - ``GetTableSchema``
+     - Read
+     - TCA fields, types, and relations for one table
+   * - ``GetFlexFormSchema``
+     - Read
+     - FlexForm structure for a plugin/content type
+   * - ``ReadTable``
+     - Read
+     - Query records with filters, limit/offset, language options
+   * - ``Search``
+     - Read
+     - Cross-table LIKE search (per-table cap)
+   * - ``WriteTable``
+     - Write
+     - Create/update/translate/delete in workspace (not live)
+   * - ``BrowseFiles``
+     - Read
+     - List MCP file harness folders
+   * - ``ReadFileMetadata``
+     - Read
+     - Metadata for a file in the harness
+   * - ``UploadFile``
+     - Write
+     - Upload via base64 into harness
+   * - ``UploadFileFromUrl``
+     - Write
+     - Fetch URL server-side into harness (SSRF-protected)
+   * - ``WriteFile``
+     - Write
+     - Create/replace text file in harness
+
 Record-backed tools
 ===================
 

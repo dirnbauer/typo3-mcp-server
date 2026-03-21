@@ -186,7 +186,9 @@ final class WriteTableTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => false,
+                'destructiveHint' => true,
                 'idempotentHint' => false,
+                'openWorldHint' => true,
             ],
         ];
     }

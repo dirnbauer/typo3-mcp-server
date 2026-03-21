@@ -852,29 +852,32 @@ function checkMcpEndpointAuth(element, endpoint) {
         credentials: 'same-origin'
     })
     .then(response => {
-        // We expect this to fail with 401 since it's a fake token
-        // But we can check if our test mode returns header info
         return response.json().then(data => {
-            // Check if the response indicates the header was received
-            if (data.headers_received && data.headers_received.authorization) {
+            if (response.status === 403 && data.error === 'forbidden') {
+                setEndpointStatus(element, 'warning', data.message || 'Auth header diagnostic is disabled in extension settings.');
+                const warningDiv = document.getElementById('auth-header-warning');
+                if (warningDiv) {
+                    warningDiv.style.display = 'none';
+                }
+                return;
+            }
+            const headerOk = (data.headers_received && data.headers_received.authorization)
+                || data.auth_header_detected === true;
+            if (headerOk) {
                 setEndpointStatus(element, 'success', 'MCP endpoint is accessible and can receive Authorization headers');
-                // Hide the warning since headers work
                 const warningDiv = document.getElementById('auth-header-warning');
                 if (warningDiv) {
                     warningDiv.style.display = 'none';
                 }
             } else {
                 setEndpointStatus(element, 'error', 'MCP endpoint cannot receive Authorization headers - see warning below');
-                // Show the warning
                 const warningDiv = document.getElementById('auth-header-warning');
                 if (warningDiv) {
                     warningDiv.style.display = 'block';
                 }
             }
         }).catch(() => {
-            // If JSON parsing fails, check the status code
             if (response.status === 401) {
-                // This is expected for a fake token, but we need to know if headers were passed
                 setEndpointStatus(element, 'warning', 'MCP endpoint is reachable but Authorization header status unknown');
             } else {
                 setEndpointStatus(element, 'error', `MCP endpoint returned ${response.status} ${response.statusText}`);

@@ -435,7 +435,7 @@ final class TableAccessService
      * Add fields that should be available based on subtype configuration.
      *
      * TYPO3 v14 primarily uses CType-driven plugin types. This helper keeps the
-     * legacy subtype/list_type path working for TYPO3 v13-compatible setups.
+     * legacy subtype/list_type path for TYPO3 v14-compatible setups.
      *
      * @param string $table Table name
      * @param string $type Record type

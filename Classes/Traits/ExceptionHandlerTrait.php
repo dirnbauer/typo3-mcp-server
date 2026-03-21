@@ -102,11 +102,14 @@ trait ExceptionHandlerTrait
 
         // Map common exceptions to user-friendly messages only for unexpected errors
         return match (true) {
-            $e instanceof \InvalidArgumentException => 'Invalid input provided' . ($operation ? ' for ' . $operation : ''),
-            $e instanceof \RuntimeException => 'Operation failed' . ($operation ? ': ' . $operation : ''),
-            $e instanceof \DomainException => 'Invalid operation requested',
-            $e instanceof Exception => 'Database operation failed',
-            default => 'An unexpected error occurred' . ($operation ? ' during ' . $operation : ''),
+            $e instanceof \InvalidArgumentException => 'Invalid input provided' . ($operation ? ' for ' . $operation : '')
+                . '. Check required parameters and types against the tool schema.',
+            $e instanceof \RuntimeException => 'Operation failed' . ($operation ? ' (' . $operation . ')' : '')
+                . '. Retry or narrow the request; check TYPO3 logs if it persists.',
+            $e instanceof \DomainException => 'Invalid operation requested. Verify the record exists and your permissions.',
+            $e instanceof Exception => 'Database operation failed. Verify table/column names, workspace context, and permissions.',
+            default => 'An unexpected error occurred' . ($operation ? ' during ' . $operation : '')
+                . '. Retry with narrower parameters or check TYPO3 logs if it persists.',
         };
     }
 

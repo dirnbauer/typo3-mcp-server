@@ -6,6 +6,8 @@ namespace Hn\McpServer\Tests\Unit\MCP;
 
 use Hn\McpServer\MCP\McpServerFactory;
 use Hn\McpServer\MCP\ToolRegistry;
+use Mcp\Types\CallToolRequestParams;
+use Mcp\Types\CallToolResult;
 use PHPUnit\Framework\TestCase;
 
 final class McpServerFactoryTest extends TestCase
@@ -42,6 +44,22 @@ final class McpServerFactoryTest extends TestCase
         $GLOBALS['TYPO3_CONF_VARS'] = ['SYS' => 'invalid'];
 
         self::assertSame('TYPO3 MCP Server', $this->createFactory()->getServerName());
+    }
+
+    public function testToolsCallReturnsErrorResultForUnknownTool(): void
+    {
+        $factory = $this->createFactory();
+        $server = $factory->createServer();
+        $handlers = $server->getHandlers();
+        self::assertIsCallable($handlers['tools/call']);
+
+        $params = new CallToolRequestParams('NonExistentTool', []);
+        $result = $handlers['tools/call']($params);
+
+        self::assertInstanceOf(CallToolResult::class, $result);
+        self::assertTrue((bool)$result->isError);
+        self::assertStringContainsString('NonExistentTool', (string)$result->content[0]->text);
+        self::assertStringContainsString('tools/list', (string)$result->content[0]->text);
     }
 
     protected function tearDown(): void

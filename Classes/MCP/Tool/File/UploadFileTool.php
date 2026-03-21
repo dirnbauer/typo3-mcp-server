@@ -64,7 +64,9 @@ final class UploadFileTool extends AbstractTool
             ],
             'annotations' => [
                 'readOnlyHint' => false,
+                'destructiveHint' => true,
                 'idempotentHint' => false,
+                'openWorldHint' => true,
             ],
         ];
     }

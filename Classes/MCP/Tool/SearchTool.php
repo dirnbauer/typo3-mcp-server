@@ -134,7 +134,8 @@ final class SearchTool extends AbstractRecordTool
                     ],
                     'limit' => [
                         'type' => 'integer',
-                        'description' => 'Maximum number of records to return per table (default: 50)',
+                        'description' => 'Maximum number of records to return per table (default: 50). '
+                            . 'Totals can exceed this cap; narrow terms, table, or pageId and run again if needed.',
                     ],
                 ],
                 'required' => ['terms'],
@@ -154,7 +155,9 @@ final class SearchTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
+            'destructiveHint' => false,
             'idempotentHint' => true,
+            'openWorldHint' => true,
         ];
 
         return $schema;

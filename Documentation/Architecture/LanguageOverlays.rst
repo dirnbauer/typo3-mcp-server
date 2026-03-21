@@ -51,7 +51,7 @@ Benefits
 ========
 
 - Less custom code for language behavior
-- Better compatibility with TYPO3 v13 and v14
+- Aligned with TYPO3 v14 PageRepository and overlay behaviour
 - Correct handling of fallbacks and overlay modes
 - Lower maintenance cost when TYPO3 evolves
 

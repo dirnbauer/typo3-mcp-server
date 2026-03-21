@@ -7,12 +7,13 @@ Security audit
 Date
 ====
 
-2026-03-13
+2026-03-15 (TYPO3 v14-only extension; transport/logging hardening)
 
 Scope
 =====
 
-``Classes/`` directory, OAuth implementation, and MCP endpoints
+``Classes/`` directory, OAuth implementation, MCP HTTP endpoint, file harness
+URL download tool, and extension settings.
 
 Findings and remediation
 ========================
@@ -34,9 +35,25 @@ Fixed findings
    Status: Fixed. Generic responses are returned and details are logged
    server-side.
 
-4. Access tokens in URL query parameters remained possible.
+4. Access tokens in URL query parameters.
 
-   Status: Mitigated. The behavior is deprecated and logged for future removal.
+   Status: Fixed for default configuration. Query-string tokens are **disabled**
+   unless ``allowMcpTokenInQueryString`` is enabled in extension settings (off by
+   default). When enabled, acceptance is logged at notice level.
+
+5. Debug logging of MCP requests could leak secrets.
+
+   Status: Fixed. ``Authorization``, cookies, and related sensitive headers are
+   redacted; the ``token`` query parameter is redacted in logged query params.
+   Implementation: ``Classes/Http/McpHttpLogRedactor.php`` (covered by unit tests).
+
+6. Unauthenticated ``?test=auth`` probe exposed server fingerprint data.
+
+   Status: Mitigated. The diagnostic can be disabled via
+   ``enableMcpAuthHeaderDiagnostic`` (default on for the backend MCP module).
+   When disabled, the endpoint returns **403** without detail. When enabled,
+   the JSON response is minimal (header presence only; no ``server_software`` or
+   similar fingerprint fields).
 
 Accepted risks
 --------------
@@ -60,6 +77,21 @@ Accepted risks
 
    Rationale: bearer-token usage makes this acceptable at the current risk
    profile.
+
+5. ``UploadFileFromUrl`` resolves hostnames before download (SSRF mitigation) but
+   cannot fully eliminate DNS rebinding races without additional infrastructure.
+
+   Rationale: documented limits; private/reserved resolved IPs are rejected;
+   redirects/size limits apply. Extend functional coverage when changing this
+   code path.
+
+Structured MCP results
+======================
+
+The bundled ``logiscape/mcp-sdk-php`` build in this project does not expose
+``outputSchema`` / structured content on ``CallToolResult``. Tools therefore
+return JSON in ``TextContent``; keep schemas and descriptions accurate for client
+parsing.
 
 No issues found
 ===============

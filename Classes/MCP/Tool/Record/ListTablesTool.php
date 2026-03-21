@@ -27,7 +27,9 @@ final class ListTablesTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
+                'destructiveHint' => false,
                 'idempotentHint' => true,
+                'openWorldHint' => true,
             ],
         ];
     }

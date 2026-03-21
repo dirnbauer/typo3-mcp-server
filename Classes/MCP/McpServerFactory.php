@@ -14,7 +14,11 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Factory for creating and configuring MCP Server instances
+ * Factory for creating and configuring MCP Server instances.
+ *
+ * Tool dispatch follows MCP ergonomics guidance (Anthropic mcp-builder skill):
+ * https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md
+ * — including actionable client errors without JSON-RPC internal failures when possible.
  */
 final readonly class McpServerFactory
 {
@@ -116,18 +120,28 @@ final readonly class McpServerFactory
 
             $tool = $toolRegistry->getTool($toolName);
             if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
-            }
+                // Return CallToolResult instead of throwing: Server::handleMessage maps generic
+                // exceptions to JSON-RPC -32603 and exposes the raw message. Tool-level isError
+                // matches MCP/mcp-builder expectations for recoverable agent mistakes.
+                $debug('Unknown tool name: ' . $toolName);
+                $safeName = \is_string($toolName) ? $toolName : '';
+                $hint = 'Call tools/list for the exact tool names exposed by this server '
+                    . '(see TYPO3 docs: Documentation/Tools/Index.rst). '
+                    . 'Optional: use a consistent prefix pattern if you rename tools for LLM ergonomics '
+                    . '(mcp-builder skill: https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).';
 
-            try {
-                return $tool->execute($arguments);
-            } catch (\Throwable $e) {
-                $debug('Error executing tool ' . $toolName . ': ' . $e->getMessage());
                 return new CallToolResult(
-                    [new TextContent($e->getMessage())],
+                    [new TextContent(
+                        $safeName !== ''
+                            ? 'Unknown tool "' . $safeName . '". ' . $hint
+                            : 'Unknown tool (missing name). ' . $hint,
+                    )],
                     true,
                 );
             }
+
+            // Exceptions are normalized to CallToolResult by AbstractTool::executeInternal().
+            return $tool->execute($arguments);
         });
     }
 }

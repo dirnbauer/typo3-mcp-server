@@ -172,14 +172,22 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         return [
-            'description' => 'Read records from TYPO3 tables with filtering, pagination, and relation embedding. By default, returns records from ALL languages mixed together (matching TYPO3\'s list module behavior). Use the language parameter to filter to a specific language. For page content, use pid filter instead of individual record lookups.',
+            'description' => 'Read records from TYPO3 tables with filtering, pagination, and relation embedding. '
+                . 'Uses the current workspace overlay (draft), not live-only data. '
+                . 'By default, returns records from ALL languages mixed together (matching TYPO3 list module behavior). '
+                . 'Use the language parameter to filter to a specific language. '
+                . 'For page content, prefer a pid filter over single-uid lookups. '
+                . 'Use limit (default 20) and offset together for pagination when result sets are large. '
+                . 'The JSON response includes total, limit, offset, and hasMore so you can fetch the next page.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => $properties,
             ],
             'annotations' => [
                 'readOnlyHint' => true,
+                'destructiveHint' => false,
                 'idempotentHint' => true,
+                'openWorldHint' => true,
             ],
         ];
     }

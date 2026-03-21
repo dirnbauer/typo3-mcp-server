@@ -6,6 +6,12 @@ selected file operations through the
 clients and LLMs a structured TYPO3 interface without bypassing TYPO3 core
 APIs, permissions, or editorial review workflows.
 
+**TYPO3 v14:** This line targets **TYPO3 v14** first. Expect **ongoing change**
+as the ecosystem matures: MCP tool names, JSON schemas, OAuth hardening, and
+TYPO3 core APIs **must and will** be adjusted across releases when that improves
+security, clarity, or real editor workflows. Pin versions in Composer for
+production sites and read release notes when upgrading.
+
 This extension is built for real editor-facing work:
 
 - navigate the page tree and inspect page context
@@ -57,6 +63,11 @@ The implementation is split into a few clear layers:
   writes go through `DataHandler`, table/schema introspection uses TCA and
   `TcaSchemaFactory`, page language overlays use `PageRepository`, and file
   handling goes through TYPO3 FAL.
+
+Tool design (schemas, MCP annotations, pagination hints, errors) is aligned with
+common MCP server guidance; see **§ MCP ergonomics (mcp-builder alignment)** in
+[`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md) and
+[`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst).
 
 ## Behavioral guarantees
 
@@ -231,7 +242,7 @@ Additional useful commands:
 
 ```bash
 composer test:llm
-composer docs:check
+composer docs:check   # RST render check; needs Docker (see “Documentation” below)
 composer phpstan
 ```
 
@@ -274,6 +285,30 @@ A rendered feature video is included in the repository:
 
 ## Documentation
 
+### Render documentation locally
+
+`composer docs:check` runs the official TYPO3 documentation container and fails
+on RST issues:
+
+```bash
+composer docs:check
+```
+
+This spawns `ghcr.io/typo3-documentation/render-guides` via Docker on the machine
+where you run the command (project directory is bind-mounted). It does **not**
+use the PHP interpreter from DDEV—use a host shell with Docker available (e.g.
+Docker Desktop).
+
+**DDEV and PHP:** For Composer scripts that run PHP on this project (`composer test`, `composer phpstan`, …), use a DDEV PHP version that matches the extension requirement (**PHP ≥ 8.2**). The repo ships `.ddev/config.yaml` with `php_version` (e.g. `8.3`); change it if needed, then restart:
+
+```bash
+ddev config --php-version=8.3
+ddev restart
+ddev exec composer test
+```
+
+### Doc sources
+
 Start with:
 
 - `Documentation/Index.rst`
@@ -292,8 +327,11 @@ Implementation details and design rationale:
 
 ## Acknowledgements
 
-This repository is based on
-[hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server).
+**Thank you to [hauptsacheNet](https://github.com/hauptsacheNet)** and the
+maintainers of
+[hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server)
+for creating and sharing the original TYPO3 MCP Server. This project builds on
+that foundation.
 
 ## License
 

@@ -29,6 +29,27 @@ Remote MCP requests follow this path:
 Local stdio requests skip the HTTP/OAuth layer and start at
 ``Classes/Command/McpServerCommand.php``.
 
+MCP ergonomics (external guidance)
+==================================
+
+Tool design is checked against the public `mcp-builder` skill (Anthropic,
+https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md ):
+clear descriptions, JSON Schema properties, the four MCP tool **annotations**
+on every tool, pagination hints where results are bounded (e.g. ``ReadTable``
+``hasMore``), and actionable errors via :php:`AbstractTool` /
+:php:`ExceptionHandlerTrait`. For an unknown tool name, :php:`McpServerFactory`
+returns a ``CallToolResult`` with ``isError`` instead of throwing (so the client
+gets a normal tool error, not a JSON-RPC internal error).
+
+**Naming:** Tools use PascalCase names aligned with TYPO3 concepts
+(``ReadTable``, ``GetPageTree``, …), not a ``prefix_action`` pattern; the
+official tools table in :doc:`../Tools/Index` lists names and access mode for
+LLM discoverability.
+
+**Structured outputs:** The bundled PHP MCP SDK does not advertise
+``outputSchema`` on tool results; outputs remain JSON-in-text (or plain text)
+as documented in :doc:`SecurityAudit`.
+
 Main layers
 ===========
 

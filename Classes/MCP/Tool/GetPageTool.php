@@ -162,7 +162,9 @@ final class GetPageTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
+            'destructiveHint' => false,
             'idempotentHint' => true,
+            'openWorldHint' => true,
         ];
 
         return $schema;

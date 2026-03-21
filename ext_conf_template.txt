@@ -3,3 +3,9 @@ fileHarnessRoot = 1:/mcp/
 
 # cat=paths//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.workspaceUploadSubfolders
 workspaceUploadSubfolders = 1
+
+# cat=security//a; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.allowMcpTokenInQueryString
+allowMcpTokenInQueryString = 0
+
+# cat=security//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enableMcpAuthHeaderDiagnostic
+enableMcpAuthHeaderDiagnostic = 1

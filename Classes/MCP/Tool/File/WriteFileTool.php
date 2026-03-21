@@ -76,7 +76,9 @@ final class WriteFileTool extends AbstractTool
             ],
             'annotations' => [
                 'readOnlyHint' => false,
+                'destructiveHint' => true,
                 'idempotentHint' => false,
+                'openWorldHint' => true,
             ],
         ];
     }

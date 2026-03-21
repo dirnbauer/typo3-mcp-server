@@ -15,7 +15,6 @@ Architecture
    LanguageOverlays
    InlineRelations
    SecurityAudit
-   Audits/Index
 
 Design decisions
 ================
@@ -38,6 +37,12 @@ Language overlay
    Language overlays use TYPO3's ``PageRepository`` API. Workspace overlays
    use a custom implementation for transparency. See
    :doc:`LanguageOverlays` for details.
+
+MCP tool ergonomics
+   Tool schemas, annotations, pagination hints, and error shaping follow MCP
+   best-practice guidance (see the public ``mcp-builder`` skill). Details:
+   :doc:`ImplementationOverview` (“MCP ergonomics”) and the tools overview
+   :doc:`../Tools/Index`.
 
 Implementation layers
 =====================
@@ -87,7 +92,7 @@ areas.
 Security
 ========
 
-See :doc:`SecurityAudit` for the full security audit report.
+See :doc:`SecurityAudit` for the security notes and accepted risks.
 
 Key security measures:
 
@@ -99,9 +104,3 @@ Key security measures:
 - File access is restricted to the MCP file harness instead of unrestricted
   ``fileadmin`` paths
 - Uploads use randomized stored filenames to reduce predictable file exposure
-
-Audit reports
-=============
-
-See :doc:`Audits/Index` for dated upgrade, conformance, security, and
-testing audit reports from the current TYPO3 v13/v14 update cycle.

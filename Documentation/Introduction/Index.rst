@@ -111,3 +111,8 @@ Supported versions
 
 - TYPO3 v14
 - PHP 8.2 or higher
+
+The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
+clients evolve: tool names, parameters, and behavior **may change** between
+releases when that improves safety or LLM ergonomics (see also the project
+``README.md``).

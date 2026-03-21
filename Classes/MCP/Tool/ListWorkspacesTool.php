@@ -29,7 +29,9 @@ final class ListWorkspacesTool extends AbstractTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
+                'destructiveHint' => false,
                 'idempotentHint' => true,
+                'openWorldHint' => true,
             ],
         ];
     }

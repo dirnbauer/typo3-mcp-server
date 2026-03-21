@@ -43,7 +43,9 @@ final class GetPageTreeTool extends AbstractRecordTool
     protected function getToolSchema(): array
     {
         $schema = [
-            'description' => 'Get the TYPO3 page tree structure as a readable text tree.Essential for understanding page hierarchy before creating new pages, finding pages by their position, and verifying parent-child relationships.',
+            'description' => 'Get the TYPO3 page tree structure as a readable text tree. '
+                . 'Essential for understanding page hierarchy before creating new pages, finding pages by their position, and verifying parent-child relationships. '
+                . 'Uses workspace overlay data. Increase depth carefully on large sites (deeper trees return more text).',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -73,7 +75,9 @@ final class GetPageTreeTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
+            'destructiveHint' => false,
             'idempotentHint' => true,
+            'openWorldHint' => true,
         ];
 
         return $schema;

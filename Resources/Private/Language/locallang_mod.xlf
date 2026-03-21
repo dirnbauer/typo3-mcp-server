@@ -72,6 +72,12 @@
 			<trans-unit id="extconf.workspaceUploadSubfolders">
 				<source>Store MCP uploads in workspace-specific subfolders below the harness root for safer draft handling.</source>
 			</trans-unit>
+			<trans-unit id="extconf.allowMcpTokenInQueryString">
+				<source>Allow passing the MCP bearer token as a query parameter (insecure: URLs are logged by proxies). Use only for legacy clients; prefer the Authorization header.</source>
+			</trans-unit>
+			<trans-unit id="extconf.enableMcpAuthHeaderDiagnostic">
+				<source>Enable the public ?test=auth diagnostic on the MCP endpoint (used by the backend connection check). Disable on hardened sites if you do not need it.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

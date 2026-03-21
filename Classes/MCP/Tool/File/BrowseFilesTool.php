@@ -50,7 +50,9 @@ final class BrowseFilesTool extends AbstractTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
+                'destructiveHint' => false,
                 'idempotentHint' => true,
+                'openWorldHint' => true,
             ],
         ];
     }

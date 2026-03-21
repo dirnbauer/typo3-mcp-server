@@ -112,6 +112,54 @@ The complexity of TYPO3 is hidden through carefully crafted data representations
 - Automatic handling of relations and references
 - Tab and palette groupings preserved to maintain semantic relationships
 
+### 9. MCP ergonomics (mcp-builder alignment)
+
+This extension is reviewed against the public
+[mcp-builder skill](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md)
+(Model Context Protocol — tool design, schemas, annotations, errors, pagination).
+
+**What matches the guide**
+
+- **Tool schemas**: Each tool exposes a top-level `description`, JSON Schema
+  `inputSchema` with per-field descriptions, and `required` where appropriate.
+  Record-backed tools share an optional `workspace_id` (see `AbstractRecordTool`).
+- **Annotations**: Every registered tool sets all four hints —
+  `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint` — so
+  clients can classify calls without guessing.
+- **Actionable errors**: `AbstractTool` + `ExceptionHandlerTrait` map exceptions
+  to `CallToolResult` errors with user-facing text; `McpException` /
+  `ValidationException` carry editor-oriented messages. Server-side details stay
+  in logs. Unknown tool names in ``tools/call`` are answered the same way: a
+  tool result with ``isError`` and a hint to call ``tools/list`` (avoids a
+  JSON-RPC ``-32603`` from the PHP SDK’s generic exception path — see
+  [mcp-builder](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md)
+  on recoverable agent mistakes).
+- **Context / pagination**: `ReadTable` returns `total`, `limit`, `offset`, and
+  `hasMore` in JSON (see tool description). `Search` documents per-table
+  `limit` and when to narrow and re-run. Tree tools warn about depth vs. site size.
+- **Transport**: Remote HTTP (OAuth) for hosted use; local `stdio` via
+  `McpServerCommand` for trusted environments — consistent with the guide’s
+  HTTP vs. stdio split.
+
+**Intentional differences**
+
+- **Naming**: mcp-builder often recommends a `service_action` prefix (e.g.
+  `github_list_repos`). Here tools use stable **PascalCase** names derived from
+  class names (`ReadTable`, `WriteTable`, …) to match TYPO3 vocabulary and
+  existing clients. Discoverability is documented in
+  `Documentation/Tools/Index.rst` (tool table) and this file.
+- **Structured tool output**: The PHP SDK in use does not expose
+  `outputSchema` / structured content on `CallToolResult` the way some TS/Python
+  stacks do. Successful tools return **JSON (or text) inside `TextContent`**;
+  schemas describe *inputs*; models should parse JSON from the text payload.
+  See also `Documentation/Architecture/SecurityAudit.rst`.
+
+**Security and “open world”**
+
+- File and URL tools are harness-bound and SSRF-limited (`UploadFileFromUrl`).
+- Record writes are workspace-first; live rows are not edited directly through
+  these tools.
+
 
 ## Available Tools
 
