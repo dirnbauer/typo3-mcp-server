@@ -232,7 +232,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
     }
 
     #[Test]
-    public function rejectsWritesOutsideConfiguredHarness(): void
+    public function rejectsWritesOutsideConfiguredSandbox(): void
     {
         $tool = $this->get(WriteFileTool::class);
         $result = $tool->execute([
@@ -241,11 +241,11 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertStringContainsString('restricted to the configured MCP file sandbox', $result->content[0]->text);
     }
 
     #[Test]
-    public function supportsAbsoluteHarnessIdentifierForTextWrites(): void
+    public function supportsAbsoluteSandboxIdentifierForTextWrites(): void
     {
         $tool = $this->get(WriteFileTool::class);
         $result = $tool->execute([

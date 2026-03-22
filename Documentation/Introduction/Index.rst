@@ -19,7 +19,7 @@ It is built for editor-facing use cases such as:
 - translating content
 - searching large sites
 - inspecting TCA and FlexForm schemas before writing
-- browsing and managing files inside a dedicated MCP file harness
+- browsing and managing files inside a dedicated MCP file sandbox
 
 The extension is not a shortcut around TYPO3. It keeps TYPO3 in control.
 
@@ -80,7 +80,7 @@ File sandboxing
 ---------------
 
 File tools do not get unrestricted ``fileadmin`` access. They operate inside a
-configurable MCP file harness, which defaults to ``fileadmin/mcp/``.
+configurable MCP file sandbox, which defaults to ``fileadmin/mcp/``.
 
 Permission-aware access
 -----------------------
@@ -102,7 +102,7 @@ That means:
 - workspace safety applies to records and references, not to the physical file
   itself
 
-The extension mitigates this with a dedicated file harness and optional
+The extension mitigates this with a dedicated file sandbox and optional
 workspace-specific upload folders, but it does not pretend TYPO3 files are
 versioned when they are not.
 

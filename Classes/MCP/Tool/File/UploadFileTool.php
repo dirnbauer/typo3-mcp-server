@@ -6,7 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
-use Hn\McpServer\Service\McpFileHarnessService;
+use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
@@ -23,7 +23,7 @@ final class UploadFileTool extends AbstractTool
 
     public function __construct(
         private readonly StorageRepository $storageRepository,
-        private readonly McpFileHarnessService $fileHarnessService,
+        private readonly McpFileSandboxService $fileSandboxService,
     ) {}
 
     /**
@@ -32,8 +32,8 @@ final class UploadFileTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Upload a binary or text file into the MCP file harness. '
-                . 'All uploads are restricted to the configured harness root (default: fileadmin/mcp/). '
+            'description' => 'Upload a binary or text file into the MCP file sandbox. '
+                . 'All uploads are restricted to the configured sandbox root (default: fileadmin/mcp/). '
                 . 'When workspace upload subfolders are enabled, files are stored below a workspace-specific folder to reduce collisions with live content. '
                 . 'Existing files are never overwritten.',
             'inputSchema' => [
@@ -41,8 +41,8 @@ final class UploadFileTool extends AbstractTool
                 'properties' => [
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Target file path inside the MCP harness. '
-                            . 'Use a relative path like "images/product-photo.png" or an absolute combined identifier inside the harness. '
+                        'description' => 'Target file path inside the MCP file sandbox. '
+                            . 'Use a relative path like "images/product-photo.png" or an absolute combined identifier inside the sandbox. '
                             . 'The folder path is respected, but the stored filename is randomized for security.',
                     ],
                     'content_base64' => [
@@ -81,14 +81,14 @@ final class UploadFileTool extends AbstractTool
         $metadata = \is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
 
         if ($path === '') {
-            throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP harness.']);
+            throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP file sandbox.']);
         }
         if ($contentBase64 === '') {
             throw new ValidationException(['Parameter "content_base64" is required.']);
         }
 
         $decodedContent = $this->decodeBase64Content($contentBase64);
-        $target = $this->fileHarnessService->resolveUploadTarget($path);
+        $target = $this->fileSandboxService->resolveUploadTarget($path);
         $storage = $this->resolveStorage($target['storageUid']);
         $folder = $this->ensureFolder($storage, $target['folderPath']);
 
@@ -185,7 +185,7 @@ final class UploadFileTool extends AbstractTool
         }
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
-            $candidate = $this->fileHarnessService->buildStoredUploadFileName($requestedFileName);
+            $candidate = $this->fileSandboxService->buildStoredUploadFileName($requestedFileName);
             if (!$folder->hasFile($candidate)) {
                 return $candidate;
             }

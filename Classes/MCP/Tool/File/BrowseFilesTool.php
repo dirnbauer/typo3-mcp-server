@@ -6,7 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
-use Hn\McpServer\Service\McpFileHarnessService;
+use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\FolderDoesNotExistException;
@@ -20,7 +20,7 @@ final class BrowseFilesTool extends AbstractTool
 {
     public function __construct(
         private readonly ResourceFactory $resourceFactory,
-        private readonly McpFileHarnessService $fileHarnessService,
+        private readonly McpFileSandboxService $fileSandboxService,
     ) {}
 
     /**
@@ -29,17 +29,17 @@ final class BrowseFilesTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Browse the MCP file harness in TYPO3. '
-                . 'All file browsing is restricted to the configured harness root (default: fileadmin/mcp/). '
+            'description' => 'Browse the MCP file sandbox in TYPO3. '
+                . 'All file browsing is restricted to the configured sandbox root (default: fileadmin/mcp/). '
                 . 'Physical files are NOT versioned in workspaces -- uploads are sandboxed, but the underlying files still exist immediately.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Folder path inside the MCP harness. '
-                            . 'Use a relative path like "images/" or an absolute combined identifier inside the harness such as "1:/mcp/images/". '
-                            . 'Omit to inspect the configured harness root.',
+                        'description' => 'Folder path inside the MCP file sandbox. '
+                            . 'Use a relative path like "images/" or an absolute combined identifier inside the sandbox such as "1:/mcp/images/". '
+                            . 'Omit to inspect the configured sandbox root.',
                     ],
                     'recursive' => [
                         'type' => 'boolean',
@@ -66,34 +66,34 @@ final class BrowseFilesTool extends AbstractTool
         $recursive = (bool)($params['recursive'] ?? false);
 
         if ($path === null || $path === '') {
-            return $this->describeHarness($recursive);
+            return $this->describeSandbox($recursive);
         }
 
         return $this->browseFolder($path, $recursive, false);
     }
 
-    private function describeHarness(bool $recursive): CallToolResult
+    private function describeSandbox(bool $recursive): CallToolResult
     {
-        $harness = $this->fileHarnessService->describeHarness();
+        $sandbox = $this->fileSandboxService->describeSandbox();
         $lines = [
-            "MCP FILE HARNESS\n================",
+            "MCP FILE SANDBOX\n================",
             '',
-            'Base folder: "' . $harness['baseFolder'] . '"',
-            'Workspace upload folder: "' . $harness['uploadFolder'] . '"',
-            'Workspace-scoped uploads: ' . ($harness['workspaceUploads'] ? 'enabled' : 'disabled'),
-            'Current workspace: ' . ($harness['workspaceId'] > 0 ? (string)$harness['workspaceId'] : 'live'),
+            'Base folder: "' . $sandbox['baseFolder'] . '"',
+            'Workspace upload folder: "' . $sandbox['uploadFolder'] . '"',
+            'Workspace-scoped uploads: ' . ($sandbox['workspaceUploads'] ? 'enabled' : 'disabled'),
+            'Current workspace: ' . ($sandbox['workspaceId'] > 0 ? (string)$sandbox['workspaceId'] : 'live'),
             '',
             'All MCP file tools are restricted to the base folder above.',
             '',
         ];
 
-        $folderTarget = $this->fileHarnessService->resolveFolderTarget(null);
+        $folderTarget = $this->fileSandboxService->resolveFolderTarget(null);
         return $this->browseResolvedFolder($folderTarget, $recursive, $lines, true);
     }
 
     private function browseFolder(string $path, bool $recursive, bool $allowMissing): CallToolResult
     {
-        $folderTarget = $this->fileHarnessService->resolveFolderTarget($path);
+        $folderTarget = $this->fileSandboxService->resolveFolderTarget($path);
         return $this->browseResolvedFolder($folderTarget, $recursive, [], $allowMissing);
     }
 
@@ -109,14 +109,14 @@ final class BrowseFilesTool extends AbstractTool
             if ($allowMissing) {
                 $lines[] = 'FOLDER: ' . $folderTarget['combinedIdentifier'];
                 $lines[] = '';
-                $lines[] = '(The harness folder does not exist yet. It will be created automatically on first write or upload.)';
+                $lines[] = '(The sandbox folder does not exist yet. It will be created automatically on first write or upload.)';
                 return new CallToolResult([new TextContent(implode("\n", $lines))]);
             }
 
             throw new ValidationException(["Folder not found: {$folderTarget['combinedIdentifier']}"]);
         } catch (\InvalidArgumentException) {
             throw new ValidationException([
-                'Invalid folder path. Use a relative path inside the MCP harness or an absolute combined identifier inside that harness.',
+                'Invalid folder path. Use a relative path inside the MCP file sandbox or an absolute combined identifier inside that sandbox.',
             ]);
         }
 

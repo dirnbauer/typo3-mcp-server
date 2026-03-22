@@ -66,11 +66,11 @@
 			<trans-unit id="http_only_note">
 				<source>This is an HTTP-only MCP server. Most current implementations only support SSE at the moment - see the Client Configuration section below for a current workaround.</source>
 			</trans-unit>
-			<trans-unit id="extconf.fileHarnessRoot">
-				<source>MCP file harness root folder. Use a combined identifier such as "1:/mcp/". This defaults to fileadmin/mcp/ in the default storage.</source>
+			<trans-unit id="extconf.fileSandboxRoot">
+				<source>MCP file sandbox root folder. Use a combined identifier such as "1:/mcp/". This defaults to fileadmin/mcp/ in the default storage.</source>
 			</trans-unit>
 			<trans-unit id="extconf.workspaceUploadSubfolders">
-				<source>Store MCP uploads in workspace-specific subfolders below the harness root for safer draft handling.</source>
+				<source>Store MCP uploads in workspace-specific subfolders below the sandbox root for safer draft handling.</source>
 			</trans-unit>
 			<trans-unit id="extconf.allowMcpTokenInQueryString">
 				<source>Allow passing the MCP bearer token as a query parameter (insecure: URLs are logged by proxies). Use only for legacy clients; prefer the Authorization header.</source>

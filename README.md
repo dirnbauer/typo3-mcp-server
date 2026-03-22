@@ -12,6 +12,13 @@ TYPO3 core APIs **must and will** be adjusted across releases when that improves
 security, clarity, or real editor workflows. Pin versions in Composer for
 production sites and read release notes when upgrading.
 
+**Current rollout recommendation:** The extension is already useful for pilots,
+internal tooling, and supervised editorial workflows. At the same time, the
+MCP and TYPO3 integration surface is still moving quickly, so this repository
+should not yet be treated as a fully production-ready, long-term-stable package
+for broad unattended rollout. Validate changes in staging first and pin
+versions deliberately.
+
 This extension is built for real editor-facing work:
 
 - navigate the page tree and inspect page context
@@ -19,8 +26,30 @@ This extension is built for real editor-facing work:
 - inspect TCA and FlexForm schemas before writing
 - work with translations using ISO language codes where available
 - search content across tables
-- manage files inside a dedicated MCP file harness
+- manage files inside a dedicated MCP file sandbox
 - connect remote clients over HTTP/OAuth or local clients over stdio
+
+## Recent TYPO3 v14 updates
+
+The latest maintenance round tightened and clarified the extension in a few
+important ways:
+
+- **TYPO3 v14-only alignment**: CI, docs, and project messaging now consistently
+  target TYPO3 v14 and PHP 8.2+.
+- **MCP endpoint hardening**: request logging redacts sensitive headers and
+  query tokens, query-string bearer token auth is disabled by default, and the
+  lightweight auth-header diagnostic is now minimal and configurable.
+- **Clearer MCP ergonomics**: tool descriptions, JSON Schema hints, annotations,
+  pagination guidance, and unknown-tool handling were aligned more closely with
+  current MCP best-practice guidance.
+- **Stronger file safety**: URL-based uploads are documented and tested as
+  sandbox-bound operations with SSRF and size safeguards.
+- **Terminology and config cleanup**: the old "file harness" wording is now
+  consistently called "file sandbox", and the primary extension setting is now
+  `fileSandboxRoot`.
+- **Documentation cleanup**: historical audit-note dumps were removed; the
+  canonical security and architecture references are now the maintained docs in
+  `Documentation/Architecture/` plus `TECHNICAL_OVERVIEW.md`.
 
 ## Why it exists
 
@@ -56,8 +85,8 @@ The implementation is split into a few clear layers:
 - Shared services:
   `WorkspaceContextService` handles workspace selection/creation and context
   switching, `TableAccessService` is the central TCA/permission gate,
-  `LanguageService` maps TYPO3 languages to ISO codes, `McpFileHarnessService`
-  constrains file access, `SiteInformationService` resolves domains and URLs,
+  `LanguageService` maps TYPO3 languages to ISO codes, `McpFileSandboxService`
+  enforces the file sandbox, `SiteInformationService` resolves domains and URLs,
   and `OAuthService` manages auth codes and hashed access tokens.
 - TYPO3 core integration:
   writes go through `DataHandler`, table/schema introspection uses TCA and
@@ -114,9 +143,9 @@ Language parameters are not exposed unconditionally.
 If an instance has no meaningful language setup, translation-specific behavior
 is hidden instead of being exposed as half-working parameters.
 
-### File operations are sandboxed, not versioned
+### File operations use a file sandbox, not file versioning
 
-File tools are intentionally constrained to a dedicated MCP harness, which
+File tools are intentionally constrained to a dedicated MCP file sandbox, which
 defaults to:
 
 ```text
@@ -134,7 +163,7 @@ Important TYPO3 rule: physical files are not workspace-versioned.
 The extension is explicit about that:
 
 - `BrowseFiles`, `ReadFileMetadata`, `WriteFile`, `UploadFile`, and
-  `UploadFileFromUrl` are restricted to the harness root
+  `UploadFileFromUrl` are restricted to the sandbox root
 - uploads can be routed into workspace-specific subfolders
 - file references remain workspace-versioned records
 - the underlying file still exists immediately once written or uploaded
@@ -212,11 +241,17 @@ Before connecting an MCP client, make sure the target backend user has:
 
 The two most important extension settings are:
 
-- `fileHarnessRoot`
+- `fileSandboxRoot`
   Combined folder identifier for the MCP file sandbox. Default: `1:/mcp/`
 - `workspaceUploadSubfolders`
   When enabled, uploads are stored below workspace-specific folders such as
   `1:/mcp/workspaces/ws-3/`
+- `allowMcpTokenInQueryString`
+  Off by default. Only enable this if you explicitly need legacy query-string
+  bearer tokens and accept the related proxy/logging risk.
+- `enableMcpAuthHeaderDiagnostic`
+  Controls the lightweight backend-module auth-header diagnostic. Enabled by
+  default, but intentionally minimal and suitable for hardening if disabled.
 
 These settings do not change TYPO3 core file semantics. They only constrain and
 organize MCP-driven file work.
@@ -225,17 +260,17 @@ organize MCP-driven file work.
 
 The repository has three complementary test layers:
 
-- unit tests for focused services such as OAuth hashing and file harness path
+- unit tests for focused services such as OAuth hashing and file sandbox path
   handling
 - TYPO3 functional integration tests for tool behavior, permissions, language
-  overlays, workspace transparency, file harness restrictions, and write flows
+  overlays, workspace transparency, file sandbox restrictions, and write flows
 - LLM-oriented tests under `Tests/Llm/` that use real models to verify that the
   tool contracts are intuitive in realistic multi-step workflows
 
 Run the default test suite:
 
 ```bash
-composer test
+ddev exec composer test
 ```
 
 Additional useful commands:
@@ -252,7 +287,8 @@ The functional suite already covers important extension-level scenarios:
   placeholders
 - multilingual reads, writes, and overlay behavior
 - non-admin permission filtering
-- file harness browsing, writes, metadata, and uploads
+- file sandbox browsing, writes, metadata, and uploads
+- MCP endpoint security defaults and URL upload safety checks
 - extension compatibility with `georgringer/news`
 
 ## Repository map
@@ -260,7 +296,7 @@ The functional suite already covers important extension-level scenarios:
 - `Classes/MCP/`
   MCP server factory, tool registry, and tool implementations
 - `Classes/Service/`
-  workspace, TCA access, language, file harness, site, and OAuth services
+  workspace, TCA access, language, file sandbox, site, and OAuth services
 - `Classes/Http/`
   remote MCP endpoint and OAuth/discovery endpoints
 - `Configuration/`
@@ -325,13 +361,18 @@ Implementation details and design rationale:
 - [`Documentation/Architecture/LanguageOverlays.rst`](Documentation/Architecture/LanguageOverlays.rst)
 - [`Documentation/Architecture/InlineRelations.rst`](Documentation/Architecture/InlineRelations.rst)
 
+Canonical maintained security/reference docs:
+
+- [`Documentation/Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst)
+- [`Documentation/Architecture/ImplementationOverview.rst`](Documentation/Architecture/ImplementationOverview.rst)
+
 ## Acknowledgements
 
-**Thank you to [hauptsacheNet](https://github.com/hauptsacheNet)** and the
-maintainers of
-[hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server)
-for creating and sharing the original TYPO3 MCP Server. This project builds on
-that foundation.
+**Thank you to [hauptsacheNet](https://github.com/hauptsacheNet)**, and in
+particular to **Marco Pfeiffer**, for creating and sharing the original TYPO3
+MCP Server. The original architecture established a strong TYPO3-native,
+editor-first foundation: workspace-safe, practical, and unusually clear in its
+direction. This project builds on that work with professional respect.
 
 ## License
 

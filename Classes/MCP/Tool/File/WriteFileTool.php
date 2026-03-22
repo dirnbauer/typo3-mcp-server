@@ -6,7 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
-use Hn\McpServer\Service\McpFileHarnessService;
+use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
@@ -29,7 +29,7 @@ final class WriteFileTool extends AbstractTool
 
     public function __construct(
         private readonly StorageRepository $storageRepository,
-        private readonly McpFileHarnessService $fileHarnessService,
+        private readonly McpFileSandboxService $fileSandboxService,
     ) {}
 
     /**
@@ -38,8 +38,8 @@ final class WriteFileTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Create or overwrite a text-based file inside the MCP file harness, and/or update its metadata. '
-                . 'The configured harness defaults to fileadmin/mcp/ and all paths are restricted to that sandbox. '
+            'description' => 'Create or overwrite a text-based file inside the MCP file sandbox, and/or update its metadata. '
+                . 'The configured sandbox defaults to fileadmin/mcp/ and all paths are restricted to that area. '
                 . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .svg, .yaml, .md. '
                 . 'Binary file uploads (images, PDFs, etc.) are NOT supported. '
                 . 'Can also update metadata (title, description, alt text, copyright) on any existing file — including images — without changing the file content. '
@@ -49,8 +49,8 @@ final class WriteFileTool extends AbstractTool
                 'properties' => [
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Target file path inside the MCP harness. '
-                            . 'Use either a relative path like "notes/data.json" or an absolute combined identifier inside the harness such as "1:/mcp/notes/data.json". '
+                        'description' => 'Target file path inside the MCP file sandbox. '
+                            . 'Use either a relative path like "notes/data.json" or an absolute combined identifier inside the sandbox such as "1:/mcp/notes/data.json". '
                             . 'Parent folders are created automatically when writing content.',
                     ],
                     'content' => [
@@ -94,14 +94,14 @@ final class WriteFileTool extends AbstractTool
         $metadata = \is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
 
         if ($path === '') {
-            throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP harness.']);
+            throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP file sandbox.']);
         }
 
         if ($content === null && empty($metadata)) {
             throw new ValidationException(['Either "content" or "metadata" (or both) must be provided.']);
         }
 
-        $parsed = $this->fileHarnessService->resolveFileTarget($path);
+        $parsed = $this->fileSandboxService->resolveFileTarget($path);
         $storage = $this->resolveStorage($parsed['storageUid']);
 
         if ($content === null) {

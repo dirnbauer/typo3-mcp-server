@@ -5,17 +5,16 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Unit\Service;
 
 use Hn\McpServer\Exception\ValidationException;
-use Hn\McpServer\Service\McpFileHarnessService;
+use Hn\McpServer\Service\McpFileSandboxService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
-final class McpFileHarnessServiceTest extends TestCase
+final class McpFileSandboxServiceTest extends TestCase
 {
     private mixed $originalBackendUser;
     private array $originalExtensionSettings;
@@ -37,12 +36,12 @@ final class McpFileHarnessServiceTest extends TestCase
     }
 
     #[Test]
-    public function describeHarnessUsesDefaultBaseFolderAndWorkspaceUploadFolder(): void
+    public function describeSandboxUsesDefaultBaseFolderAndWorkspaceUploadFolder(): void
     {
         $this->setBackendUserWorkspace(7);
         $subject = $this->createSubject([]);
 
-        $description = $subject->describeHarness();
+        $description = $subject->describeSandbox();
 
         self::assertSame('1:/mcp/', $description['baseFolder']);
         self::assertSame('1:/mcp/workspaces/ws-7/', $description['uploadFolder']);
@@ -51,11 +50,11 @@ final class McpFileHarnessServiceTest extends TestCase
     }
 
     #[Test]
-    public function fileadminStyleHarnessPathIsNormalized(): void
+    public function fileadminStyleSandboxPathIsNormalized(): void
     {
         $this->setBackendUserWorkspace(3);
         $subject = $this->createSubject([
-            'fileHarnessRoot' => 'fileadmin/custom-mcp',
+            'fileSandboxRoot' => 'fileadmin/custom-mcp',
         ]);
 
         $target = $subject->resolveFileTarget('notes/readme.md');
@@ -67,10 +66,10 @@ final class McpFileHarnessServiceTest extends TestCase
     }
 
     #[Test]
-    public function absoluteIdentifierInsideHarnessIsAcceptedForReadTarget(): void
+    public function absoluteIdentifierInsideSandboxIsAcceptedForReadTarget(): void
     {
         $subject = $this->createSubject([
-            'fileHarnessRoot' => '1:/secure-area/',
+            'fileSandboxRoot' => '1:/secure-area/',
         ]);
 
         $target = $subject->resolveFileTarget('1:/secure-area/docs/guide.txt');
@@ -143,18 +142,18 @@ final class McpFileHarnessServiceTest extends TestCase
         self::assertMatchesRegularExpression('/^My-unsafe-file-[a-f0-9]{16}\.png$/', $fileName);
     }
 
-    private function createSubject(array $configuration): McpFileHarnessService
+    private function createSubject(array $configuration): McpFileSandboxService
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $configuration;
 
         $workspaceContextService = new WorkspaceContextService(
             $this->createMock(ConnectionPool::class),
             new Context(),
-            self::createStub(LoggerInterface::class),
+            self::createStub(\Psr\Log\LoggerInterface::class),
             $this->createMock(\TYPO3\CMS\Workspaces\Service\WorkspaceService::class),
         );
 
-        return new McpFileHarnessService(
+        return new McpFileSandboxService(
             new ExtensionConfiguration(),
             $workspaceContextService,
         );

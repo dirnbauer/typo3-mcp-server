@@ -6,7 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
-use Hn\McpServer\Service\McpFileHarnessService;
+use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Http\RequestFactory;
@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Fetches a file from a remote URL and stores it in the MCP file harness.
+ * Fetches a file from a remote URL and stores it in the MCP file sandbox.
  *
  * This bypasses the base64 size limit of UploadFile by downloading
  * the file server-side. Useful for images, documents, and other
@@ -35,7 +35,7 @@ final class UploadFileFromUrlTool extends AbstractTool
 
     public function __construct(
         private readonly StorageRepository $storageRepository,
-        private readonly McpFileHarnessService $fileHarnessService,
+        private readonly McpFileSandboxService $fileSandboxService,
         private readonly RequestFactory $requestFactory,
     ) {}
 
@@ -45,7 +45,7 @@ final class UploadFileFromUrlTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Download a file from a public URL and store it in the MCP file harness. '
+            'description' => 'Download a file from a public URL and store it in the MCP file sandbox. '
                 . 'Use this instead of UploadFile when the file is available via HTTP/HTTPS, '
                 . 'which avoids base64 encoding size limits. '
                 . 'Maximum file size: 20 MB. Only http:// and https:// URLs are allowed.',
@@ -58,7 +58,7 @@ final class UploadFileFromUrlTool extends AbstractTool
                     ],
                     'path' => [
                         'type' => 'string',
-                        'description' => 'Target file path inside the MCP harness. '
+                        'description' => 'Target file path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/photo.jpg" or "documents/report.pdf". '
                             . 'If omitted, the filename is derived from the URL. '
                             . 'The stored filename is randomized for security.',
@@ -108,7 +108,7 @@ final class UploadFileFromUrlTool extends AbstractTool
                 $path = $this->derivePathFromUrl($url, $downloadInfo['contentType']);
             }
 
-            $target = $this->fileHarnessService->resolveUploadTarget($path);
+            $target = $this->fileSandboxService->resolveUploadTarget($path);
             $storage = $this->resolveStorage($target['storageUid']);
             $folder = $this->ensureFolder($storage, $target['folderPath']);
             $storedFileName = $this->createUniqueStoredFileName($folder, $target['fileName']);
@@ -318,7 +318,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         }
 
         for ($attempt = 0; $attempt < 5; $attempt++) {
-            $candidate = $this->fileHarnessService->buildStoredUploadFileName($requestedFileName);
+            $candidate = $this->fileSandboxService->buildStoredUploadFileName($requestedFileName);
             if (!$folder->hasFile($candidate)) {
                 return $candidate;
             }

@@ -116,7 +116,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
     }
 
     #[Test]
-    public function rejectsIdentifierOutsideHarness(): void
+    public function rejectsIdentifierOutsideSandbox(): void
     {
         $tool = $this->get(ReadFileMetadataTool::class);
         $result = $tool->execute([
@@ -125,7 +125,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
 
         self::assertTrue($result->isError);
         self::assertStringContainsString(
-            'restricted to the configured MCP harness',
+            'restricted to the configured MCP file sandbox',
             (string)$result->content[0]->text,
         );
     }

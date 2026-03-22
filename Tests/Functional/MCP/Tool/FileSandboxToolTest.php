@@ -11,26 +11,26 @@ use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 
-final class FileHarnessToolTest extends AbstractFunctionalTest
+final class FileSandboxToolTest extends AbstractFunctionalTest
 {
     #[Test]
-    public function browseWithoutPathDescribesHarness(): void
+    public function browseWithoutPathDescribesSandbox(): void
     {
         $tool = $this->get(BrowseFilesTool::class);
         $result = $tool->execute([]);
 
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('MCP FILE HARNESS', $result->content[0]->text);
+        self::assertStringContainsString('MCP FILE SANDBOX', $result->content[0]->text);
         self::assertStringContainsString('1:/mcp/', $result->content[0]->text);
     }
 
     #[Test]
-    public function readMetadataSupportsRelativePathInsideHarness(): void
+    public function readMetadataSupportsRelativePathInsideSandbox(): void
     {
         $writeTool = $this->get(WriteFileTool::class);
         $writeResult = $writeTool->execute([
             'path' => 'images/inside.txt',
-            'content' => 'inside harness',
+            'content' => 'inside sandbox',
         ]);
         self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
 
@@ -46,18 +46,18 @@ final class FileHarnessToolTest extends AbstractFunctionalTest
     }
 
     #[Test]
-    public function readMetadataRejectsFilesOutsideHarnessEvenByUid(): void
+    public function readMetadataRejectsFilesOutsideSandboxEvenByUid(): void
     {
         $storage = $this->get(StorageRepository::class)->findByUid(1);
-        if (!$storage->hasFolder('/outside-harness/')) {
-            $storage->createFolder('/outside-harness/');
+        if (!$storage->hasFolder('/outside-sandbox/')) {
+            $storage->createFolder('/outside-sandbox/');
         }
 
-        $temporaryFile = tempnam(sys_get_temp_dir(), 'mcp-harness-');
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'mcp-sandbox-');
         file_put_contents($temporaryFile, 'outside');
 
         try {
-            $file = $storage->addFile($temporaryFile, $storage->getFolder('/outside-harness/'), 'outside.txt');
+            $file = $storage->addFile($temporaryFile, $storage->getFolder('/outside-sandbox/'), 'outside.txt');
         } finally {
             if (file_exists($temporaryFile)) {
                 unlink($temporaryFile);
@@ -70,6 +70,6 @@ final class FileHarnessToolTest extends AbstractFunctionalTest
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertStringContainsString('restricted to the configured MCP file sandbox', $result->content[0]->text);
     }
 }

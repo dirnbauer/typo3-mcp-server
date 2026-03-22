@@ -11,7 +11,7 @@ use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-final readonly class McpFileHarnessService
+final readonly class McpFileSandboxService
 {
     private const DEFAULT_BASE_FOLDER = '1:/mcp/';
 
@@ -28,7 +28,7 @@ final readonly class McpFileHarnessService
      *     workspaceUploads: bool
      * }
      */
-    public function describeHarness(): array
+    public function describeSandbox(): array
     {
         $baseFolder = $this->getBaseFolderIdentifier();
         $workspaceId = $this->workspaceContextService->getCurrentWorkspace();
@@ -124,7 +124,7 @@ final readonly class McpFileHarnessService
         $identifier = $file->getCombinedIdentifier();
 
         if (!$this->isCombinedIdentifier($identifier)) {
-            throw new ValidationException(['The configured MCP file harness could not validate the file identifier.']);
+            throw new ValidationException(['The configured MCP file sandbox could not validate the file identifier.']);
         }
 
         $parsed = $this->parseAbsoluteFileIdentifier($identifier);
@@ -160,7 +160,7 @@ final readonly class McpFileHarnessService
      */
     private function parseConfiguredBaseFolder(): array
     {
-        $configured = $this->getRawConfigValue('fileHarnessRoot');
+        $configured = $this->getRawConfigValue('fileSandboxRoot');
         if (!\is_string($configured) || trim($configured) === '') {
             $configured = self::DEFAULT_BASE_FOLDER;
         }
@@ -235,7 +235,7 @@ final readonly class McpFileHarnessService
         if ($storageUid !== $base['storageUid']) {
             throw new ValidationException([
                 sprintf(
-                    'File access is restricted to the configured MCP harness "%s".',
+                    'File access is restricted to the configured MCP file sandbox "%s".',
                     $base['storageUid'] . ':' . $base['folderPath'],
                 ),
             ]);
@@ -244,7 +244,7 @@ final readonly class McpFileHarnessService
         if (!str_starts_with($fullPath, $base['folderPath'])) {
             throw new ValidationException([
                 sprintf(
-                    'File access is restricted to the configured MCP harness "%s".',
+                    'File access is restricted to the configured MCP file sandbox "%s".',
                     $base['storageUid'] . ':' . $base['folderPath'],
                 ),
             ]);
@@ -375,7 +375,7 @@ final readonly class McpFileHarnessService
     {
         if (!preg_match('#^(\d+):(/.+)$#', $identifier, $matches)) {
             throw new ValidationException([
-                'Invalid path format. Use "<storageId>:/<folder/path/filename.ext>" or a relative path inside the MCP harness.',
+                'Invalid path format. Use "<storageId>:/<folder/path/filename.ext>" or a relative path inside the MCP file sandbox.',
             ]);
         }
 
@@ -414,7 +414,7 @@ final readonly class McpFileHarnessService
     {
         if (!preg_match('#^(\d+):(/.*)$#', $identifier, $matches)) {
             throw new ValidationException([
-                'Invalid folder path format. Use "<storageId>:/<folder/path/>" or a relative path inside the MCP harness.',
+                'Invalid folder path format. Use "<storageId>:/<folder/path/>" or a relative path inside the MCP file sandbox.',
             ]);
         }
 

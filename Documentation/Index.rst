@@ -45,7 +45,7 @@ Highlights
 - Keep record changes in TYPO3 workspaces
 - Support translations and language-aware content access
 - Inspect table schemas and FlexForms before writing
-- Browse, upload, and manage files inside a dedicated MCP file harness
+- Browse, upload, and manage files inside a dedicated MCP file sandbox
 - Connect remote MCP clients using OAuth 2.1 with PKCE
 
 The public tool surface adapts to the current TYPO3 instance. For example,
@@ -56,7 +56,7 @@ explicitly requests a ``workspace_id``.
 .. note::
 
    Physical files are not workspace-versioned in TYPO3. The extension reduces
-   file-related risk through a configurable MCP file harness and optional
+   file-related risk through a configurable MCP file sandbox and optional
    workspace-specific upload folders, but uploaded files still exist
    immediately once stored.
 
@@ -67,7 +67,7 @@ Start here depending on your role:
 
 - :doc:`Introduction/Index` for the product overview and safety model
 - :doc:`Installation/Index` for Composer installation and first setup
-- :doc:`Configuration/Index` for module, OAuth, workspace, and file harness
+- :doc:`Configuration/Index` for module, OAuth, workspace, and file sandbox
   configuration
 - :doc:`Tools/Index` for the complete MCP tool reference
 - :doc:`Architecture/Index` for design decisions, implementation layers, and

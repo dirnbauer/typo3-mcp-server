@@ -17,7 +17,7 @@ General notes
 - Most record-backed tools also accept an optional ``workspace_id`` override.
 - Language-related parameters are only exposed when the TYPO3 instance has
   multiple configured languages.
-- File tools are always restricted to the configured MCP file harness.
+- File tools are always restricted to the configured MCP file sandbox.
 - Several tools return human-readable text, while record and file write tools
   typically return JSON encoded into MCP text content.
 
@@ -63,19 +63,19 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Create/update/translate/delete in workspace (not live)
    * - ``BrowseFiles``
      - Read
-     - List MCP file harness folders
+     - List MCP file sandbox folders
    * - ``ReadFileMetadata``
      - Read
-     - Metadata for a file in the harness
+     - Metadata for a file in the sandbox
    * - ``UploadFile``
      - Write
-     - Upload via base64 into harness
+     - Upload via base64 into sandbox
    * - ``UploadFileFromUrl``
      - Write
-     - Fetch URL server-side into harness (SSRF-protected)
+     - Fetch URL server-side into sandbox (SSRF-protected)
    * - ``WriteFile``
      - Write
-     - Create/replace text file in harness
+     - Create/replace text file in sandbox
 
 Record-backed tools
 ===================
@@ -292,25 +292,25 @@ File tools
 BrowseFiles
 -----------
 
-Browse folders inside the MCP file harness.
+Browse folders inside the MCP file sandbox.
 
 :Parameters:
    - ``path`` (string): relative folder path or combined identifier inside the
-     harness
+     sandbox
    - ``recursive`` (boolean): include subfolder listing
 
-Omit ``path`` to inspect the configured harness root, current workspace upload
+Omit ``path`` to inspect the configured sandbox root, current workspace upload
 folder, and upload-folder behavior.
 
 ReadFileMetadata
 ----------------
 
-Read metadata for a file inside the MCP file harness.
+Read metadata for a file inside the MCP file sandbox.
 
 :Parameters:
    - ``uid`` (integer): file UID
    - ``identifier`` (string): relative file path or combined identifier inside
-     the harness
+     the sandbox
 
 The result includes core file data, metadata fields, categories, and a summary
 of where the file is referenced.
@@ -318,12 +318,12 @@ of where the file is referenced.
 WriteFile
 ---------
 
-Create or overwrite a text-based file inside the MCP file harness, or update
+Create or overwrite a text-based file inside the MCP file sandbox, or update
 metadata on an existing file.
 
 :Parameters:
    - ``path`` (string, required): relative path or combined identifier inside
-     the harness
+     the sandbox
    - ``content`` (string): text content to write
    - ``overwrite`` (boolean): overwrite an existing file
    - ``metadata`` (object): title, description, alternative text, copyright
@@ -340,10 +340,10 @@ others configured in TYPO3.
 UploadFile
 ----------
 
-Upload a binary or text file into the MCP file harness via base64.
+Upload a binary or text file into the MCP file sandbox via base64.
 
 :Parameters:
-   - ``path`` (string, required): requested target path inside the harness
+   - ``path`` (string, required): requested target path inside the sandbox
    - ``content_base64`` (string, required): base64 payload or data URL
    - ``metadata`` (object): optional file metadata
 
@@ -352,17 +352,17 @@ Upload behavior:
 - the requested folder path is respected
 - the stored filename is randomized
 - existing files are never overwritten
-- uploads can be routed into workspace-specific folders inside the harness
+- uploads can be routed into workspace-specific folders inside the sandbox
 
 UploadFileFromUrl
 -----------------
 
 Download a public HTTP or HTTPS URL server-side and store the result in the MCP
-file harness.
+file sandbox.
 
 :Parameters:
    - ``url`` (string, required): public file URL
-   - ``path`` (string): target path inside the harness, derived from the URL if
+   - ``path`` (string): target path inside the sandbox, derived from the URL if
      omitted
    - ``metadata`` (object): optional file metadata
 
@@ -381,7 +381,7 @@ File safety model
 
    TYPO3 physical files are not workspace-versioned.
 
-The MCP file harness improves safety, but it does not change TYPO3 core file
+The MCP file sandbox improves safety, but it does not change TYPO3 core file
 semantics:
 
 - uploaded files exist immediately

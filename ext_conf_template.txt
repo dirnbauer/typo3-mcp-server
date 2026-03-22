@@ -1,5 +1,5 @@
-# cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileHarnessRoot
-fileHarnessRoot = 1:/mcp/
+# cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileSandboxRoot
+fileSandboxRoot = 1:/mcp/
 
 # cat=paths//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.workspaceUploadSubfolders
 workspaceUploadSubfolders = 1

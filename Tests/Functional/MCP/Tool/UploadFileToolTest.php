@@ -14,7 +14,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
     private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     #[Test]
-    public function uploadsFileIntoWorkspaceScopedHarnessFolder(): void
+    public function uploadsFileIntoWorkspaceScopedSandboxFolder(): void
     {
         $tool = $this->get(UploadFileTool::class);
         $result = $tool->execute([
@@ -56,7 +56,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
     }
 
     #[Test]
-    public function rejectsUploadOutsideConfiguredHarness(): void
+    public function rejectsUploadOutsideConfiguredSandbox(): void
     {
         $tool = $this->get(UploadFileTool::class);
         $result = $tool->execute([
@@ -65,11 +65,11 @@ final class UploadFileToolTest extends AbstractFunctionalTest
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('restricted to the configured MCP harness', $result->content[0]->text);
+        self::assertStringContainsString('restricted to the configured MCP file sandbox', $result->content[0]->text);
     }
 
     #[Test]
-    public function acceptsDataUrlPayloadWithoutBackendUserAndFallsBackToBaseHarness(): void
+    public function acceptsDataUrlPayloadWithoutBackendUserAndFallsBackToBaseSandbox(): void
     {
         $originalBackendUser = $GLOBALS['BE_USER'] ?? null;
         unset($GLOBALS['BE_USER']);

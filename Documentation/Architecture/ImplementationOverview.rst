@@ -88,7 +88,7 @@ The public MCP surface lives in ``Classes/MCP/Tool/``:
 - page navigation and page context tools
 - cross-table search
 - workspace discovery
-- file harness tools
+- file sandbox tools
 
 ``Classes/MCP/Tool/Record/`` contains the TCA-driven record tools:
 
@@ -119,8 +119,8 @@ Shared services
    Maps TYPO3 site languages to ISO codes. Tool schemas use this service to
    decide whether to expose language parameters at all.
 
-``McpFileHarnessService``
-   Restricts file operations to a configured harness root such as ``1:/mcp/``
+``McpFileSandboxService``
+   Restricts file operations to a configured sandbox root such as ``1:/mcp/``
    and computes workspace-specific upload folders when that feature is enabled.
 
 ``SiteInformationService``
@@ -177,8 +177,8 @@ See :doc:`LanguageOverlays` for the overlay strategy.
 File safety model
 -----------------
 
-File tools are sandboxed to the MCP harness, but TYPO3 physical files are not
-workspace-versioned. The implementation does not hide that fact. Workspace
+File tools are sandboxed to the MCP file sandbox, but TYPO3 physical files are
+not workspace-versioned. The implementation does not hide that fact. Workspace
 subfolders only reduce collisions and keep draft-oriented uploads grouped more
 predictably.
 

@@ -56,13 +56,13 @@ Explicit behavior:
 
    Live records are not directly edited through the record tools.
 
-File harness configuration
+File sandbox configuration
 ==========================
 
-The extension uses a dedicated file harness so MCP file tools do not receive
+The extension uses a dedicated file sandbox so MCP file tools do not receive
 unrestricted ``fileadmin`` access.
 
-By default, the harness root is:
+By default, the sandbox root is:
 
 .. code-block:: text
 
@@ -77,13 +77,13 @@ This usually maps to:
 Extension configuration values
 ==============================
 
-.. confval:: fileHarnessRoot
-   :name: ext-mcp-server-fileHarnessRoot
+.. confval:: fileSandboxRoot
+   :name: ext-mcp-server-fileSandboxRoot
    :type: string
    :default: '1:/mcp/'
    :required: false
 
-   Combined folder identifier that defines the MCP file harness root.
+   Combined folder identifier that defines the MCP file sandbox root.
 
    All MCP file tools are restricted to this root. Use a combined identifier,
    for example ``1:/mcp/`` or ``1:/ai-content/``.
@@ -95,7 +95,7 @@ Extension configuration values
    :required: false
 
    When enabled, ``UploadFile`` stores uploads below workspace-specific
-   subfolders inside the harness root.
+   subfolders inside the sandbox root.
 
    Example:
 
@@ -103,10 +103,10 @@ Extension configuration values
 
       1:/mcp/workspaces/ws-3/images/
 
-Why the harness matters
+Why the sandbox matters
 =======================
 
-The harness improves safety and maintainability:
+The sandbox improves safety and maintainability:
 
 - AI-generated files stay inside a known directory
 - cleanup is easier
@@ -121,14 +121,14 @@ File safety notes
 
    TYPO3 does not workspace-version physical files.
 
-This remains true even with the harness:
+This remains true even with the sandbox:
 
 - uploaded files exist immediately once stored
 - text file overwrites change the physical file immediately
 - record references and metadata workflows can still be staged in TYPO3
   workspaces
 
-Use the harness and workspace upload folders to reduce risk, not to simulate
+Use the sandbox and workspace upload folders to reduce risk, not to simulate
 physical file versioning.
 
 Configuration checklist
@@ -139,6 +139,6 @@ Use this checklist when rolling out the extension:
 - confirm the TYPO3 base URL is correct for remote MCP clients
 - verify backend user permissions and page mounts
 - verify workspace access
-- review the configured file harness root
+- review the configured file sandbox root
 - decide whether workspace upload subfolders should stay enabled
 - test remote OAuth login with your target MCP client

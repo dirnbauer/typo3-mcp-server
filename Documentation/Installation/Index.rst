@@ -134,6 +134,6 @@ After installation
 
 Continue with:
 
-- :doc:`../Configuration/Index` to configure the file harness and understand
+- :doc:`../Configuration/Index` to configure the file sandbox and understand
   workspace behavior
 - :doc:`../Tools/Index` to review the available MCP tools

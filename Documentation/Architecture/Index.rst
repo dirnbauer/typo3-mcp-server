@@ -71,9 +71,9 @@ Physical files in TYPO3 (FAL) are **not** workspace-versioned:
   to attach existing files to content elements
 - Folder-based file collections are not workspace-safe; prefer static collections
 
-To reduce risk, MCP file tools are restricted to a configurable file harness.
+To reduce risk, MCP file tools are restricted to a configurable file sandbox.
 
-Default harness root:
+Default sandbox root:
 
 .. code-block:: text
 
@@ -101,6 +101,6 @@ Key security measures:
 - All database queries use parameterized QueryBuilder
 - Exception details are logged server-side, not returned to clients
 - ``DataHandler->admin = true`` is scoped to workspace creation only
-- File access is restricted to the MCP file harness instead of unrestricted
+- File access is restricted to the MCP file sandbox instead of unrestricted
   ``fileadmin`` paths
 - Uploads use randomized stored filenames to reduce predictable file exposure

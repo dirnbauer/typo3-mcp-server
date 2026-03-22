@@ -12,7 +12,7 @@ Date
 Scope
 =====
 
-``Classes/`` directory, OAuth implementation, MCP HTTP endpoint, file harness
+``Classes/`` directory, OAuth implementation, MCP HTTP endpoint, file sandbox
 URL download tool, and extension settings.
 
 Findings and remediation
