@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional;
 
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
@@ -22,6 +23,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 abstract class AbstractFunctionalTest extends FunctionalTestCase
 {
+    use McpAssertionsTrait;
+
     protected Context $context;
     protected ConnectionPool $connectionPool;
     protected LanguageService $languageService;

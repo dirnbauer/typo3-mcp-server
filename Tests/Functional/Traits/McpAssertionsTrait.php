@@ -16,23 +16,27 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 trait McpAssertionsTrait
 {
+    protected function getFirstTextContent(CallToolResult $result): string
+    {
+        $this->assertNotEmpty($result->content, 'Expected MCP tool result to contain at least one content item');
+        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+
+        return $result->content[0]->text;
+    }
+
     /**
      * Assert that a tool result is successful (not an error)
      *
      * @param CallToolResult $result The result to check
      * @param string $message Optional message for failure
      */
-    protected function assertSuccessfulToolResult($result, string $message = ''): void
+    protected function assertSuccessfulToolResult(CallToolResult $result, string $message = ''): void
     {
         $this->assertInstanceOf(CallToolResult::class, $result, $message);
         $this->assertFalse(
             $result->isError,
             ($message ?: 'Tool returned error') . ': ' . json_encode($result->jsonSerialize()),
         );
-
-        if (property_exists($result, 'result')) {
-            $this->assertIsArray($result->result, $message);
-        }
     }
 
     /**
@@ -41,25 +45,22 @@ trait McpAssertionsTrait
      * @param CallToolResult $result The result to check
      * @param string|null $expectedMessage Optional expected error message
      */
-    protected function assertToolError($result, ?string $expectedMessage = null): void
+    protected function assertToolError(CallToolResult $result, ?string $expectedMessage = null): string
     {
         $this->assertInstanceOf(CallToolResult::class, $result);
-        $this->assertTrue($result->isError, 'Expected error but tool succeeded');
+        $this->assertTrue($result->isError, 'Expected error but tool succeeded: ' . json_encode($result->jsonSerialize()));
+
+        $errorMessage = $this->getFirstTextContent($result);
 
         if ($expectedMessage !== null) {
-            $errorMessage = '';
-
-            // Extract error message from content
-            if (!empty($result->content) && isset($result->content[0])) {
-                $errorMessage = $result->content[0]->text;
-            }
-
             $this->assertStringContainsString(
                 $expectedMessage,
                 $errorMessage,
                 'Error message does not contain expected text',
             );
         }
+
+        return $errorMessage;
     }
 
     /**
@@ -67,11 +68,13 @@ trait McpAssertionsTrait
      *
      * @param CallToolResult $result
      */
-    protected function assertHasWorkspace($result): void
+    protected function assertHasWorkspace(CallToolResult $result): void
     {
-        $this->assertSuccessfulToolResult($result);
-        $this->assertArrayHasKey('workspace_id', $result->result);
-        $this->assertGreaterThan(0, $result->result['workspace_id'], 'Workspace ID should be greater than 0');
+        $data = $this->extractJsonFromResult($result);
+        $workspaceId = $data['workspaceId'] ?? $data['workspace_id'] ?? null;
+
+        $this->assertNotNull($workspaceId, 'Workspace ID is missing from MCP result JSON');
+        $this->assertGreaterThan(0, (int)$workspaceId, 'Workspace ID should be greater than 0');
     }
 
     /**
@@ -101,13 +104,13 @@ trait McpAssertionsTrait
      * @param CallToolResult $result
      * @param string $key The key containing the record (default: 'record')
      */
-    protected function assertHasValidRecord($result, string $key = 'record'): void
+    protected function assertHasValidRecord(CallToolResult $result, string $key = 'record'): void
     {
-        $this->assertSuccessfulToolResult($result);
-        $this->assertArrayHasKey($key, $result->result);
-        $this->assertIsArray($result->result[$key]);
-        $this->assertArrayHasKey('uid', $result->result[$key]);
-        $this->assertGreaterThan(0, $result->result[$key]['uid']);
+        $data = $this->extractJsonFromResult($result);
+        $this->assertArrayHasKey($key, $data);
+        $this->assertIsArray($data[$key]);
+        $this->assertArrayHasKey('uid', $data[$key]);
+        $this->assertGreaterThan(0, $data[$key]['uid']);
     }
 
     /**
@@ -117,14 +120,14 @@ trait McpAssertionsTrait
      * @param string $key The key containing records (default: 'records')
      * @param int|null $expectedCount Expected number of records (null = any)
      */
-    protected function assertHasRecordList($result, string $key = 'records', ?int $expectedCount = null): void
+    protected function assertHasRecordList(CallToolResult $result, string $key = 'records', ?int $expectedCount = null): void
     {
-        $this->assertSuccessfulToolResult($result);
-        $this->assertArrayHasKey($key, $result->result);
-        $this->assertIsArray($result->result[$key]);
+        $data = $this->extractJsonFromResult($result);
+        $this->assertArrayHasKey($key, $data);
+        $this->assertIsArray($data[$key]);
 
         if ($expectedCount !== null) {
-            $this->assertCount($expectedCount, $result->result[$key]);
+            $this->assertCount($expectedCount, $data[$key]);
         }
     }
 
@@ -135,24 +138,19 @@ trait McpAssertionsTrait
      * @param int $expectedLimit
      * @param int $expectedOffset
      */
-    protected function assertHasPagination($result, int $expectedLimit, int $expectedOffset): void
+    protected function assertHasPagination(CallToolResult $result, int $expectedLimit, int $expectedOffset): void
     {
-        $this->assertSuccessfulToolResult($result);
+        $data = $this->extractJsonFromResult($result);
 
-        // Extract JSON data if result has content
-        if (property_exists($result, 'content') && \count($result->content) > 0) {
-            $data = json_decode($result->content[0]->text, true);
+        $this->assertArrayHasKey('limit', $data);
+        $this->assertArrayHasKey('offset', $data);
+        $this->assertArrayHasKey('total', $data);
+        $this->assertArrayHasKey('hasMore', $data);
 
-            $this->assertArrayHasKey('limit', $data);
-            $this->assertArrayHasKey('offset', $data);
-            $this->assertArrayHasKey('total', $data);
-            $this->assertArrayHasKey('hasMore', $data);
-
-            $this->assertEquals($expectedLimit, $data['limit']);
-            $this->assertEquals($expectedOffset, $data['offset']);
-            $this->assertIsBool($data['hasMore']);
-            $this->assertIsInt($data['total']);
-        }
+        $this->assertEquals($expectedLimit, $data['limit']);
+        $this->assertEquals($expectedOffset, $data['offset']);
+        $this->assertIsBool($data['hasMore']);
+        $this->assertIsInt($data['total']);
     }
 
     /**
@@ -198,12 +196,10 @@ trait McpAssertionsTrait
      */
     protected function extractJsonFromResult(CallToolResult $result): array
     {
-        $this->assertFalse($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        $this->assertSuccessfulToolResult($result);
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertIsArray($data);
+        $data = json_decode($this->getFirstTextContent($result), true);
+        $this->assertIsArray($data, 'Expected JSON payload in MCP tool result text content');
 
         return $data;
     }

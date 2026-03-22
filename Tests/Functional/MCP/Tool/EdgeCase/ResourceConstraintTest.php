@@ -9,10 +9,9 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Group;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 #[Group('resource-intensive')]
-class ResourceConstraintTest extends AbstractFunctionalTest
+final class ResourceConstraintTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;
     protected ReadTableTool $readTool;
@@ -22,10 +21,9 @@ class ResourceConstraintTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        // Initialize tools
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $this->searchTool = GeneralUtility::makeInstance(SearchTool::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
+        $this->searchTool = $this->getService(SearchTool::class);
     }
 
     /**

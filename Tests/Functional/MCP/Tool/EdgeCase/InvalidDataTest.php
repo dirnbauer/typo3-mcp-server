@@ -9,12 +9,11 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test invalid data edge cases
  */
-class InvalidDataTest extends AbstractFunctionalTest
+final class InvalidDataTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;
     protected ReadTableTool $readTool;
@@ -23,9 +22,8 @@ class InvalidDataTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        // Initialize tools
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
     }
 
     /**

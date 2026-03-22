@@ -10,7 +10,6 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Fixtures\TestDataBuilder;
-use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
 use Mcp\Types\TextContent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -19,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class WriteTableToolTest extends AbstractFunctionalTest
 {
-    use McpAssertionsTrait;
-
     private WriteTableTool $tool;
     private TestDataBuilder $data;
 
@@ -47,7 +44,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'fields' => ['uid', 'pid', 'sorting', 'header'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
         self::assertIsArray($data['records']);
 

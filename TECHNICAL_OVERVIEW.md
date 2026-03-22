@@ -2,6 +2,15 @@
 
 This document provides a comprehensive technical overview of the TYPO3 MCP (Model Context Protocol) Server extension. It explains how AI assistants can safely interact with TYPO3 content through a carefully designed interface that maintains security while hiding complexity.
 
+## Project Lineage
+
+This repository builds on the original TYPO3 MCP Server work by Marco Pfeiffer
+and hauptsacheNet. That original foundation was strong in exactly the right
+places: TYPO3-native, editor-first, workspace-safe, and practical in its tool
+design. The current v14-focused line keeps that direction while tightening
+security, clarifying MCP ergonomics, and simplifying the maintained
+documentation set.
+
 ## Introduction & Core Concepts
 
 ### What is the TYPO3 MCP Server?
@@ -156,9 +165,20 @@ This extension is reviewed against the public
 
 **Security and “open world”**
 
-- File and URL tools are harness-bound and SSRF-limited (`UploadFileFromUrl`).
+- File and URL tools are sandbox-bound and SSRF-limited (`UploadFileFromUrl`).
 - Record writes are workspace-first; live rows are not edited directly through
   these tools.
+
+### 10. Versioning and Evolution in TYPO3 v14
+
+The extension is now aligned strictly to TYPO3 v14. That does **not** mean the
+MCP surface is frozen.
+
+- Tool names, descriptions, and parameters may change within the v14 line when
+  that improves LLM usability, TYPO3 correctness, or security.
+- MCP contracts are treated as editor/product ergonomics, not as a legacy API
+  that must preserve every historical naming choice.
+- Production users should pin versions and review release notes before upgrades.
 
 
 ## Available Tools
@@ -204,11 +224,11 @@ while still staying aligned with TYPO3's official `DataHandler` model and
 workspace behavior.
 
 ### File Management
-- **BrowseFiles** - Browse folders inside the dedicated MCP file harness and inspect the current harness root and upload folder behavior
-- **ReadFileMetadata** - Read metadata for a file by UID or path inside the harness (title, description, alt text, categories, dimensions, usage references)
-- **WriteFile** - Create or overwrite text-based files in the MCP file harness and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Can update metadata on existing files — including images — without changing content.
-- **UploadFile** - Upload binary or text files into the MCP file harness using base64 payloads. Uploads are restricted to a configurable sandbox folder (default: `fileadmin/mcp/`) and can use workspace-specific subfolders for safer draft handling.
-- **UploadFileFromUrl** - Download a public `http` or `https` URL server-side and store the result in the MCP file harness. This avoids base64 size limits and adds SSRF and file-size safeguards.
+- **BrowseFiles** - Browse folders inside the dedicated MCP file sandbox and inspect the current sandbox root and upload folder behavior
+- **ReadFileMetadata** - Read metadata for a file by UID or path inside the sandbox (title, description, alt text, categories, dimensions, usage references)
+- **WriteFile** - Create or overwrite text-based files in the MCP file sandbox and/or update file metadata (title, description, alt text, copyright). Supports `.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`, and other text formats. Can update metadata on existing files — including images — without changing content.
+- **UploadFile** - Upload binary or text files into the MCP file sandbox using base64 payloads. Uploads are restricted to a configurable sandbox folder (default: `fileadmin/mcp/`) and can use workspace-specific subfolders for safer draft handling.
+- **UploadFileFromUrl** - Download a public `http` or `https` URL server-side and store the result in the MCP file sandbox. This avoids base64 size limits and adds SSRF and file-size safeguards.
 
 > **Note:** Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately across all workspaces.
 
@@ -272,7 +292,7 @@ Here are practical examples of how the MCP Server enables AI-powered content man
 **Tool calls**:
 ```json
 // 1. Find news storage folder
-{"tool": "GetPageTree", "params": {"depth": 3}}
+{"tool": "GetPageTree", "params": {"startPage": 0, "depth": 3}}
 // or
 {"tool": "ReadTable", "params": {
   "table": "pages",
@@ -338,14 +358,14 @@ Here are practical examples of how the MCP Server enables AI-powered content man
 **Tool calls**:
 ```json
 // 1. Browse the product images folder
-{"tool": "BrowseFiles", "params": {"path": "1:/products/"}}
+{"tool": "BrowseFiles", "params": {"path": "products/"}}
 
 // 2. Read metadata for an image
-{"tool": "ReadFileMetadata", "params": {"file": "1:/products/widget-pro.jpg"}}
+{"tool": "ReadFileMetadata", "params": {"identifier": "products/widget-pro.jpg"}}
 
 // 3. Update metadata (no content change, just metadata)
 {"tool": "WriteFile", "params": {
-  "path": "1:/products/widget-pro.jpg",
+  "path": "products/widget-pro.jpg",
   "metadata": {
     "alternative": "Widget Pro - ergonomic design in brushed aluminium",
     "title": "Widget Pro Product Photo",
@@ -360,13 +380,13 @@ Here are practical examples of how the MCP Server enables AI-powered content man
 
 **What happens**:
 1. AI generates SVG markup for the requested icon
-2. Uses `WriteFile` to save it to fileadmin with descriptive metadata
+2. Uses `WriteFile` to save it inside the MCP file sandbox with descriptive metadata
 3. Parent folders are created automatically if they don't exist
 
 **Tool calls**:
 ```json
 {"tool": "WriteFile", "params": {
-  "path": "1:/icons/contact-phone.svg",
+  "path": "icons/contact-phone.svg",
   "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z\"/></svg>",
   "metadata": {
     "title": "Contact Phone Icon",
@@ -419,15 +439,33 @@ Relations are transparently resolved and can be set using simple syntax:
 
 ### File Management
 
-The MCP Server provides access to TYPO3's File Abstraction Layer (FAL):
+The MCP Server exposes a **restricted** subset of TYPO3 FAL, intentionally
+limited to the configured MCP file sandbox (default `1:/mcp/`):
 
-1. **Browse Storages**: Navigate file storages and folder hierarchies in fileadmin
-2. **Read Metadata**: Inspect file metadata including title, description, alt text, dimensions, and categories
-3. **Write Text Files**: Create or overwrite text-based files (`.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`)
-4. **Upload Files**: Upload binary or text files into the MCP file harness (`UploadFile`)
-5. **Update Metadata**: Set title, description, alternative text, and copyright on any file — including images — without changing file content
+1. **Browse Sandbox Folders**: Navigate only the configured MCP file sandbox, not arbitrary `fileadmin` paths
+2. **Read Metadata**: Inspect title, description, alt text, dimensions, categories, and usage-related metadata for files inside the sandbox
+3. **Write Text Files**: Create or overwrite text-based files (`.txt`, `.html`, `.css`, `.js`, `.json`, `.xml`, `.csv`, `.svg`, `.yaml`, `.md`) inside the sandbox
+4. **Upload Files**: Upload binary or text files into the sandbox via base64 (`UploadFile`) or public URL (`UploadFileFromUrl`)
+5. **Update Metadata**: Set title, description, alternative text, and copyright on any existing sandbox file — including images — without changing file content
 
-**Important**: Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately. The MCP file harness reduces risk by restricting operations to a dedicated folder and can place uploads in workspace-specific subfolders, but the physical file still exists immediately once uploaded. Record-based data (content elements, pages, etc.) remains safely workspace-versioned.
+**Important**: Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately. The MCP file sandbox reduces risk by restricting operations to a dedicated folder and can place uploads in workspace-specific subfolders, but the physical file still exists immediately once uploaded. Record-based data (content elements, pages, etc.) remains safely workspace-versioned behind the TYPO3 workspace safety boundary.
+
+### HTTP Transport Hardening
+
+Recent v14 maintenance tightened the remote MCP transport itself, not only the
+record model behind it:
+
+1. **Safe logging**: sensitive headers and query-token values are redacted
+   before request details are written to logs (`McpHttpLogRedactor`).
+2. **Query-token auth disabled by default**: bearer tokens in `?token=` are
+   only accepted when explicitly enabled via extension configuration
+   (`allowMcpTokenInQueryString`).
+3. **Minimal auth diagnostic**: the lightweight `?test=auth` probe used by the
+   backend module no longer exposes server fingerprint details and can be
+   disabled via `enableMcpAuthHeaderDiagnostic`.
+
+This keeps the remote MCP endpoint safer in real hosting environments where
+reverse proxies, access logs, and misconfigured header forwarding are common.
 
 ### Language Support
 
@@ -502,7 +540,7 @@ shared services.
 3. `McpServerFactory` builds the MCP server and registers the tool handlers.
 4. `ToolRegistry` provides the tool instances.
 5. Tools call shared services for workspace selection, TCA access, language
-   mapping, URL resolution, file harness restrictions, and OAuth validation.
+   mapping, URL resolution, file sandbox restrictions, and OAuth validation.
 6. TYPO3 core APIs such as `DataHandler`, `PageRepository`, `TcaSchemaFactory`,
    and FAL do the actual CMS work.
 
@@ -515,8 +553,8 @@ shared services.
   workspace capability, and TSconfig-based field visibility
 - **LanguageService**: maps site languages to ISO codes and lets tool schemas
   hide translation-specific parameters when the site is effectively monolingual
-- **McpFileHarnessService**: constrains all file tools to the configured MCP
-  harness root and computes workspace-specific upload folders
+- **McpFileSandboxService**: constrains all file tools to the configured MCP
+  sandbox root and computes workspace-specific upload folders
 - **OAuthService**: stores authorization codes and hashes access tokens before
   they are written to the database
 
@@ -524,7 +562,7 @@ shared services.
 
 The repository verifies behavior at several levels:
 
-- **Unit tests** for focused services such as OAuth hashing and file harness
+- **Unit tests** for focused services such as OAuth hashing and file sandbox
   path handling
 - **Functional TYPO3 tests** for record reads/writes, workspace transparency,
   language handling, file tools, non-admin permissions, and extension
@@ -538,7 +576,7 @@ While the MCP Server is powerful, some features are still in development:
 
 ### Full Physical File Versioning
 - Binary uploads are supported through `UploadFile`, but TYPO3 still does not workspace-version physical files
-- The MCP file harness can isolate uploads to a dedicated sandbox folder and optional workspace subfolders
+- The MCP file sandbox can isolate uploads to a dedicated sandbox folder and optional workspace subfolders
 - Publishing still affects only record references and content; uploaded files themselves exist immediately after upload
 
 ### Workspace Publishing

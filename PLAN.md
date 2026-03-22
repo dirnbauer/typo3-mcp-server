@@ -1,231 +1,163 @@
 # TYPO3 MCP Server Record Management Plan
 
-This document outlines the plan for implementing record management tools in the TYPO3 MCP server. These tools will enable LLMs to list, read, and write TYPO3 records through a standardized interface.
+This file began as Marco Pfeiffer's early record-management plan on 2025-04-30.
+That original direction was strong and unusually clear: TYPO3-native, editor-
+first, workspace-safe, and centered on TCA instead of raw SQL thinking. This
+updated version keeps that intent, records what is already implemented, and
+documents the additional TYPO3 v14-only hardening and MCP-quality work that was
+added in the latest maintenance round.
 
-## Core Principles
+## Current Status
 
-- **TCA-First Approach**: All operations will be based on TYPO3's Table Configuration Array (TCA) rather than database schema
-- **Page-Centric Context**: All operations work within the context of a page, following TYPO3's core patterns
-- **Simplified Interface**: Provide enough context for LLMs to understand data without overwhelming with technical details
-- **Clear Error Handling**: Provide detailed, validation-focused error messages
+This is no longer a speculative plan only. The core design has been shipped and
+refined.
 
-## Tools Overview
+- TYPO3 support is now **v14-only**.
+- The record-management concept is implemented through `ListTables`,
+  `GetTableSchema`, `GetFlexFormSchema`, `ReadTable`, `WriteTable`, `Search`,
+  `GetPage`, `GetPageTree`, and `ListWorkspaces`.
+- File handling is implemented separately through the MCP file sandbox
+  (`BrowseFiles`, `ReadFileMetadata`, `WriteFile`, `UploadFile`,
+  `UploadFileFromUrl`).
+- The latest round tightened security, clarified schemas and annotations,
+  cleaned the docs, and aligned tool ergonomics with the public
+  [mcp-builder skill](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).
 
-### 1. ListTableTypes Tool
+## Design Invariants
 
-This tool will provide an overview of available tables in the TYPO3 installation.
+These points are not historical notes anymore; they are active project rules.
 
-**Features:**
-- Group tables by extension name
-- Provide human-readable descriptions
-- Filter out tables with `hideTable` set (usually inline relations)
-- Indicate if tables are editable or read-only
-- Include typical purpose (content, system, extension-specific)
-- Filter by page ID to show only relevant tables
+- **TCA-first**: record access and validation come from TYPO3 TCA and TYPO3 core
+  APIs, not handwritten table adapters wherever avoidable.
+- **Workspace-first**: record writes must never edit live rows directly. TYPO3
+  workspaces remain the mandatory safety boundary.
+- **Transparent workspaces**: MCP clients should not have to understand TYPO3
+  version rows. Results must look stable and use live-facing identifiers.
+- **Page-centric context**: pages remain the main navigation model even when
+  generic table tools are used.
+- **Permission-aware output**: table access, field visibility, and language
+  options must reflect the authenticated backend user and site configuration.
+- **LLM-usable contracts**: descriptions, JSON Schema, pagination hints, and
+  errors should help an agent recover and continue instead of guessing.
 
-**Example Output:**
-```
-CORE TABLES:
-- pages (Pages): The main page records [content]
-- tt_content (Content Elements): Page content elements [content]
+## Original Plan vs. Current Tool Map
 
-EXTENSION: news (News System)
-- tx_news_domain_model_news (News): News articles [content]
-- tx_news_domain_model_category (Categories): News categories [content]
-```
+The original plan used slightly different names. The implemented tool set is:
 
-### 2. GetTableType Tool
+| Original plan concept | Current tool | Notes |
+| --- | --- | --- |
+| `ListTableTypes` | `ListTables` | Lists accessible TYPO3 tables with purpose/access information |
+| `GetTableType` | `GetTableSchema` | Returns TCA-driven schema details and field semantics |
+| FlexForm follow-up | `GetFlexFormSchema` | Added separately for plugin/data-structure inspection |
+| `ReadTable` | `ReadTable` | Implemented with filters, language handling, relations, pagination metadata |
+| `WriteTable` | `WriteTable` | Implemented with create/update/translate/delete in workspaces |
+| Additional discovery | `GetPage`, `GetPageTree`, `Search` | Added to make record work practical for LLMs |
+| Workspace visibility | `ListWorkspaces` | Added so clients can inspect/select a workspace explicitly |
 
-This tool will provide detailed schema information for a specific table.
+## What Is Implemented Today
 
-**Features:**
-- Display both technical and human-readable field names
-- Include simplified type information (text, number, relation, etc.)
-- Show validation rules (required, min/max values)
-- Group fields by tabs and palettes to provide context
-- Include default values for fields
-- Handle record types within tables (show type-specific fields)
-- Include inline relation schemas
-- For select fields, show available options and labels
-- Provide JSON example of a typical record
-- Highlight special fields (language, type, etc.)
+### Read-side behavior
 
-**Example Output:**
-```
-TABLE SCHEMA: tt_content (Content Elements)
+- `ListTables` exposes only tables that are actually available to the current
+  backend user and safe to expose through MCP.
+- `GetTableSchema` and `GetFlexFormSchema` provide field-level descriptions,
+  types, enums, and structure based on TYPO3 configuration rather than guesswork.
+- `ReadTable` supports:
+  - `pid` / `uid` filtering
+  - restricted `where` expressions
+  - `limit` / `offset`
+  - JSON responses with `total`, `limit`, `offset`, and `hasMore`
+  - optional language filtering when the instance supports multiple languages
+  - workspace overlays instead of live-only reads
 
-RECORD TYPES:
-- text (Regular Text Element) [default]
-- textpic (Text with Images)
-- ...
+### Write-side behavior
 
-FIELDS FOR ALL TYPES:
-- header (Header) [text, required]: The element's headline
-  Default: ""
-- hidden (Hidden) [boolean]: If set, the element is not visible
-  Default: false
-- sys_language_uid (Language) [language]: The language of this record
-  Default: 0 (Default language)
+- `WriteTable` uses TYPO3 `DataHandler`.
+- Writes are created in a writable workspace, not live.
+- The tool supports create, update, translate, and delete flows.
+- Positioning semantics (`top`, `bottom`, `before:UID`, `after:UID`) are
+  translated into TYPO3-compatible behavior.
+- Validation errors are shaped to be understandable for an agent and actionable
+  for editors.
 
-FIELDS FOR TYPE: text
-- bodytext (Text) [richtext]: The main content text
-  Default: ""
+### File-side behavior
 
-FIELDS FOR TYPE: textpic
-- bodytext (Text) [richtext]: The main content text
-  Default: ""
-- image (Images) [inline relation to sys_file_reference]: Images for this element
-  Default: []
+- Physical files are intentionally separated from record writes because TYPO3
+  does not workspace-version files.
+- All file tools are restricted to the MCP file sandbox (default `1:/mcp/`).
+- `UploadFileFromUrl` exists to avoid base64 limits and adds SSRF protections,
+  redirect limits, and size limits.
 
-EXAMPLE RECORD (text):
-{
-  "uid": 123,
-  "pid": 45,
-  "header": "Example Content",
-  "bodytext": "<p>This is some rich text content.</p>",
-  "CType": "text",
-  "sys_language_uid": 0
-}
-```
+## Latest TYPO3 v14 Maintenance Round
 
-### 3. ReadTable Tool
+The most recent overhaul added or clarified the following:
 
-This tool will retrieve actual record data from the database.
+### TYPO3 v14-only alignment
 
-**Features:**
-- Return records in JSON format
-- Only include fields that differ from default values to reduce complexity
-- Include relations directly in their respective fields
-- Properly handle inline relations (include as nested objects in their original fields)
-- Support filtering by page ID, record type, etc.
-- Allow SQL-like conditions for advanced filtering
-- Include pagination for large result sets
-- Special handling for RTE fields (indicate HTML content)
+- CI and docs were cleaned up to reflect TYPO3 v14-only support.
+- Stale v13 wording was removed from the architecture docs and comments.
+- The project now explicitly communicates that MCP contracts may evolve in the
+  TYPO3 v14 line when that improves clarity or safety.
 
-**Example Output:**
-```json
-{
-  "record": {
-    "uid": 123,
-    "pid": 45,
-    "header": "Example Content",
-    "bodytext": "<p>This is some rich text content.</p>",
-    "CType": "text",
-    "sys_language_uid": 0,
-    "categories": [
-      {"uid": 5, "title": "Example Category"}
-    ],
-    "image": [
-      {
-        "uid": 42,
-        "title": "Example Image",
-        "alternative": "Alt text",
-        "description": "Image description",
-        "file": {
-          "uid": 78,
-          "name": "example.jpg",
-          "type": "image/jpeg"
-        }
-      }
-    ]
-  },
-  "meta": {
-    "table": "tt_content",
-    "recordType": "text"
-  }
-}
-```
+### Security hardening
 
-### 4. WriteTable Tool
+- MCP HTTP request logging now redacts sensitive headers and query tokens.
+- Query-string bearer tokens are disabled by default and only available behind
+  an explicit extension setting.
+- The lightweight `?test=auth` diagnostic was reduced to minimal JSON and made
+  configurable.
+- Security documentation was consolidated into `Documentation/Architecture/SecurityAudit.rst`.
 
-This tool will create or update records in the database.
+### MCP ergonomics
 
-**Features:**
-- Accept data in a format similar to the read format
-- Handle inline relations directly in their fields
-- Validate input against TCA rules before saving
-- Provide detailed validation errors
-- Use TYPO3's DataHandler for actual database operations to ensure hooks are executed
-- Support creating translations of records
-- Allow updating specific fields (partial updates)
-- Require page context (pid) for all operations
+- All tools now expose the full MCP annotation set:
+  `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`.
+- Tool descriptions and schema hints were tightened, especially around
+  pagination, workspace use, and file sandbox behavior.
+- Unknown tool names in `tools/call` now return a `CallToolResult` error instead
+  of falling through to a generic JSON-RPC internal error path.
 
-**Example Input:**
-```json
-{
-  "table": "tt_content",
-  "pid": 45,
-  "data": {
-    "header": "New Content Element",
-    "bodytext": "<p>This is the content.</p>",
-    "CType": "text",
-    "categories": [5, 8]
-  }
-}
-```
+### Tests
 
-**Example Output (Success):**
-```json
-{
-  "status": "success",
-  "message": "Record created successfully",
-  "uid": 124
-}
-```
+- Added targeted tests for:
+  - MCP HTTP security behavior
+  - log redaction
+  - URL upload rejection of unsafe hosts/schemes
+- Existing functional coverage remains focused on TYPO3 integration, workspace
+  transparency, permissions, and extension compatibility.
 
-**Example Output (Error):**
-```json
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [
-    {
-      "field": "header",
-      "message": "Header is required"
-    }
-  ]
-}
-```
+## Remaining Evolution Areas
 
-## Implementation Phases
+These are still valid future areas, but they should now be read as product
+evolution topics, not missing basics.
 
-### Phase 1: Basic Framework
-- Setup the tool interfaces and base classes
-- Implement ListTableTypes tool with page context
-
-### Phase 2: Read Operations
-- Implement GetTableType tool
-- Implement basic ReadTable functionality
-- Add support for relations and translations
-
-### Phase 3: Write Operations
-- Implement WriteTable for basic operations
-- Add validation logic
-
-### Phase 4: Advanced Features
-- Add support for complex field types and inline relations
-- Implement filtering and search functionality
-- Add performance optimizations
-
-## Future Considerations (Not in Initial Implementation)
-
-- **Image Handling**: Direct access and manipulation of images and files
-- **Workspace Support**: Integration with TYPO3 workspaces for draft/publishing workflow
-- **Permission System**: Respecting TYPO3's backend user permissions
-- **FlexForm Support**: Handling complex FlexForm configurations
-- **Record History**: Providing access to change history
+- **Workspace publishing**: listing/selecting workspaces is supported, but
+  publishing remains a TYPO3 backend action.
+- **Structured outputs**: the current PHP MCP SDK exposes `structuredContent`
+  on results, but this project does not yet publish a full output-schema
+  contract like some TypeScript/Python stacks do.
+- **Tool naming strategy**: PascalCase names are kept today for TYPO3 clarity;
+  prefixed tool names remain an option if LLM discoverability proves better.
+- **Large workflow ergonomics**: more chunking/batching guidance may be useful
+  for very large site updates.
+- **History / audit UX**: TYPO3's own history and review flows still remain the
+  primary source of truth.
 
 ## Technical Notes
 
-- The implementation will use TYPO3's DataHandler for all write operations to ensure hooks are executed
-- Doctrine queries will be used for read operations, avoiding direct SQL where possible
-- Special attention will be paid to localization handling as this is a common use case
-- All operations will require a page context (pid) to align with TYPO3's architecture
+- Use TYPO3 core APIs whenever possible (`DataHandler`, `PageRepository`, TCA,
+  FAL, language/site APIs).
+- Record-backed tools may change names or parameters if that improves LLM
+  ergonomics; backward compatibility is intentionally not guaranteed for MCP
+  tool contracts.
+- When TYPO3 does not meaningfully support multiple languages, translation-
+  related parameters should be hidden instead of exposed as misleading options.
+- In tests, MCP tool calls should be asserted with:
+  `$this->assertFalse($result->isError, json_encode($result->jsonSerialize()));`
 
-## Validation Approach
+## Professional Acknowledgement
 
-Validation will happen at multiple levels:
-1. **Schema Validation**: Ensuring data matches expected types
-2. **TCA Validation**: Applying TCA rules (required, min/max, etc.)
-3. **Business Logic**: Any additional TYPO3-specific validation
-4. **Clear Feedback**: Providing detailed error messages that help LLMs correct their inputs
+Marco Pfeiffer's original plan established the right foundation for this
+extension: TYPO3-native, practical for editors, and ambitious without ignoring
+core safety boundaries. This updated document keeps that work visible because it
+continues to shape the implemented architecture.

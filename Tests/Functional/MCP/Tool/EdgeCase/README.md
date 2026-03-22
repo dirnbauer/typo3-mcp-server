@@ -1,100 +1,118 @@
 # Edge Case Tests for TYPO3 MCP Server
 
-This directory contains comprehensive edge case tests for the TYPO3 MCP Server tools. These tests ensure robust error handling and graceful degradation in unexpected scenarios.
+This directory contains focused functional tests for failure paths and unusual
+runtime conditions in the TYPO3 MCP tool layer. The goal is not only "does it
+work", but "does it fail safely, clearly, and without breaking TYPO3 state".
 
-## Test Categories
+## Current files in this directory
 
-### 1. Database Error Tests (`DatabaseErrorTest.php`)
-Tests handling of database-related errors:
-- Connection failures
-- Query timeouts  
-- Unique constraint violations
-- Transaction rollbacks
-- Deadlock scenarios
-- Corrupted data handling
-- Database lock timeouts
-- Connection pool exhaustion
+- `DatabaseErrorTest.php`
+- `InvalidDataTest.php`
+- `PermissionEdgeCaseTest.php`
+- `ResourceConstraintTest.php`
+- `SystemErrorTest.php`
 
-### 2. Invalid Data Tests (`InvalidDataTest.php`)
-Tests validation and handling of invalid input:
-- Negative/zero UIDs
-- Non-existent tables
-- SQL injection attempts
-- Invalid field names
-- Field length violations
-- Data type mismatches
-- Invalid enum values
-- Circular references
-- Mass assignment protection
-- Invalid JSON/array data
-- Character encoding issues
+Together, they exercise edge conditions around validation, permissions,
+resource pressure, and internal service failures.
 
-### 3. Resource Constraint Tests (`ResourceConstraintTest.php`)
-Tests system resource limits:
-- Memory limit handling
-- Large result sets
-- Large IN clauses
-- Deep recursive structures
-- Complex search queries
-- Execution time limits
-- Concurrent operations
-- File system constraints
-- Query complexity limits
+## What these tests are for
 
-### 4. Permission Edge Cases (`PermissionEdgeCaseTest.php`)
-Tests access control edge cases:
-- Partial table permissions (read but not write)
-- Field-level restrictions
-- Workspace access limits
-- Language permission constraints
-- Mount point restrictions
-- Operation type restrictions
-- System table access
-- Recursive permission checks
-- Element type permissions
+These tests help ensure that:
 
-### 5. System Error Tests (`SystemErrorTest.php`)
-Tests handling of system-level errors:
-- Missing TCA configuration
-- Corrupted TCA configuration
-- Cache failures
-- Configuration manager failures
-- Workspace service failures
-- Table access service failures
-- PHP error handling
-- File system errors
-- Extension dependency issues
-- Global state corruption
-- Circular dependencies
-- Race conditions
+1. tools return actionable errors instead of crashing
+2. invalid input is rejected early and predictably
+3. permission boundaries remain intact
+4. workspace-first guarantees survive failure conditions
+5. expensive or unusual requests degrade gracefully
 
-## Running the Tests
+## Test categories
 
-Run all edge case tests:
+### `DatabaseErrorTest.php`
+
+Database and persistence failure scenarios, such as:
+
+- invalid or unexpected query conditions
+- transaction or write failures
+- integrity-related failures that must not corrupt TYPO3 state
+
+### `InvalidDataTest.php`
+
+Input validation and hostile/incorrect request handling, such as:
+
+- invalid table names or identifiers
+- invalid field names
+- malformed values and type mismatches
+- attempts that look like injection or broken query expressions
+
+### `PermissionEdgeCaseTest.php`
+
+Authorization and visibility boundaries, such as:
+
+- read-vs-write differences
+- restricted tables and fields
+- workspace access constraints
+- mount/permission combinations that should reduce visible capability
+
+### `ResourceConstraintTest.php`
+
+Inputs that may become expensive or operationally risky, such as:
+
+- very large result sets
+- complex filters
+- recursive or high-volume operations
+- file-related limits and expensive workloads
+
+### `SystemErrorTest.php`
+
+Broken or degraded TYPO3/system state, such as:
+
+- missing or inconsistent TCA
+- failing services or configuration
+- filesystem and dependency-related failures
+
+## Related tests outside this directory
+
+Recent v14 cleanup and security work added neighboring tests that are not in
+this folder but belong to the same "fail safely" philosophy:
+
+- `Tests/Functional/Http/McpEndpointSecurityTest.php`
+- `Tests/Functional/MCP/Tool/UploadFileFromUrlToolTest.php`
+- `Tests/Unit/Http/McpHttpLogRedactorTest.php`
+
+Those cover MCP endpoint hardening, URL upload restrictions, and request-log
+redaction.
+
+## Running the tests
+
+Use DDEV / PHP 8.2+ when possible:
+
 ```bash
-composer test -- --filter="EdgeCase"
+ddev exec composer test:functional -- --filter="EdgeCase"
 ```
 
-Run specific edge case category:
+Run a specific file or category:
+
 ```bash
-composer test -- --filter="DatabaseErrorTest"
-composer test -- --filter="InvalidDataTest"
-composer test -- --filter="ResourceConstraintTest"
-composer test -- --filter="PermissionEdgeCaseTest"
-composer test -- --filter="SystemErrorTest"
+ddev exec composer test:functional -- --filter="DatabaseErrorTest"
+ddev exec composer test:functional -- --filter="InvalidDataTest"
+ddev exec composer test:functional -- --filter="PermissionEdgeCaseTest"
+ddev exec composer test:functional -- --filter="ResourceConstraintTest"
+ddev exec composer test:functional -- --filter="SystemErrorTest"
 ```
 
-## Key Testing Principles
+## Project-specific expectations
 
-1. **Graceful Degradation**: All tools should handle errors gracefully without crashing
-2. **Clear Error Messages**: Error responses should be informative and actionable
-3. **Data Integrity**: Failed operations should not corrupt data
-4. **Resource Protection**: Tools should protect against resource exhaustion
-5. **Security**: Input validation should prevent injection attacks
+- Error messages should help the client recover.
+- Record-backed tools must keep TYPO3 workspaces as the safety boundary.
+- File tools must stay inside the MCP file sandbox.
+- Validation should happen as early as possible.
+- Internal failures should be logged server-side without exposing stack traces
+  or filesystem details to MCP clients.
 
-## Notes
+## Notes for maintainers
 
-- Some tests are marked with `@group resource-intensive` for tests that use significant resources
-- Database tests use transactions where possible to ensure test isolation
-- Permission tests create temporary users that are cleaned up after tests
-- Resource tests temporarily modify PHP settings but restore them afterwards
+- If you add a new security or resilience behavior, prefer a dedicated test over
+  broad prose-only documentation.
+- Keep the assertions strict on `isError` / non-`isError` boundaries.
+- When the tool surface changes in TYPO3 v14, update these tests so they verify
+  the new contract instead of preserving outdated wording or parameter shapes.

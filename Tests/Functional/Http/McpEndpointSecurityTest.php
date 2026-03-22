@@ -5,7 +5,16 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\McpEndpoint;
+use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\WorkspaceContextService;
+use PHPUnit\Framework\Attributes\Test;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -30,6 +39,11 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
+        $backendUser = $this->setUpBackendUser(1);
+        \assert($backendUser instanceof BackendUserAuthentication);
+        $GLOBALS['BE_USER'] = $backendUser;
+
         $this->originalMcpExtensionSettings = \is_array($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] ?? null)
             ? $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']
             : [];
@@ -41,6 +55,29 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         parent::tearDown();
     }
 
+    private function createEndpoint(): McpEndpoint
+    {
+        $container = $this->getContainer();
+        $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
+        \assert($logger instanceof LoggerInterface);
+
+        $oauthService = $container->get(OAuthService::class);
+        $connectionPool = $container->get(ConnectionPool::class);
+        $workspaceContextService = $container->get(WorkspaceContextService::class);
+        $languageServiceFactory = $container->get(LanguageServiceFactory::class);
+        $extensionConfiguration = new ExtensionConfiguration();
+
+        return new McpEndpoint(
+            $logger,
+            $oauthService,
+            $connectionPool,
+            $workspaceContextService,
+            $languageServiceFactory,
+            $extensionConfiguration,
+        );
+    }
+
+    #[Test]
     public function testAuthHeaderDiagnosticDisabledReturns403(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = array_merge(
@@ -48,8 +85,7 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
             ['enableMcpAuthHeaderDiagnostic' => '0'],
         );
 
-        $endpoint = $this->getContainer()->get(McpEndpoint::class);
-        self::assertInstanceOf(McpEndpoint::class, $endpoint);
+        $endpoint = $this->createEndpoint();
 
         $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
         $request = $factory->createServerRequest('GET', 'https://example.org/mcp')
@@ -64,6 +100,7 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         self::assertSame('forbidden', $json['error']);
     }
 
+    #[Test]
     public function testAuthHeaderDiagnosticOmitsServerSoftwareFingerprint(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = array_merge(
@@ -71,7 +108,7 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
             ['enableMcpAuthHeaderDiagnostic' => '1'],
         );
 
-        $endpoint = $this->getContainer()->get(McpEndpoint::class);
+        $endpoint = $this->createEndpoint();
         $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
         $request = $factory->createServerRequest('GET', 'https://example.org/mcp')
             ->withQueryParams(['test' => 'auth']);
@@ -86,6 +123,30 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         self::assertArrayHasKey('headers_received', $json);
     }
 
+    #[Test]
+    public function testAuthHeaderDiagnosticReportsAuthorizationWhenPresent(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = array_merge(
+            $this->originalMcpExtensionSettings,
+            ['enableMcpAuthHeaderDiagnostic' => '1'],
+        );
+
+        $endpoint = $this->createEndpoint();
+        $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
+        $request = $factory->createServerRequest('GET', 'https://example.org/mcp')
+            ->withQueryParams(['test' => 'auth'])
+            ->withHeader('Authorization', 'Bearer test-token');
+
+        $response = $endpoint($request);
+        self::assertSame(200, $response->getStatusCode());
+
+        $json = json_decode((string)$response->getBody(), true);
+        self::assertIsArray($json);
+        self::assertTrue((bool)($json['auth_header_detected'] ?? false));
+        self::assertTrue((bool)($json['headers_received']['authorization'] ?? false));
+    }
+
+    #[Test]
     public function testQueryTokenIsIgnoredWhenExtensionSettingDisabled(): void
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = array_merge(
@@ -93,12 +154,33 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
             ['allowMcpTokenInQueryString' => '0'],
         );
 
-        $endpoint = $this->getContainer()->get(McpEndpoint::class);
+        $endpoint = $this->createEndpoint();
         $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
         $request = $factory->createServerRequest('POST', 'https://example.org/mcp')
             ->withQueryParams(['token' => 'not-a-real-token']);
 
         $response = $endpoint($request);
         self::assertSame(401, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function testQueryTokenIsProcessedWhenExtensionSettingEnabled(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = array_merge(
+            $this->originalMcpExtensionSettings,
+            ['allowMcpTokenInQueryString' => '1'],
+        );
+
+        $endpoint = $this->createEndpoint();
+        $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
+        $request = $factory->createServerRequest('POST', 'https://example.org/mcp')
+            ->withQueryParams(['token' => 'not-a-real-token']);
+
+        $response = $endpoint($request);
+        self::assertSame(401, $response->getStatusCode());
+
+        $json = json_decode((string)$response->getBody(), true);
+        self::assertIsArray($json);
+        self::assertSame('Invalid or expired token', $json['message'] ?? null);
     }
 }

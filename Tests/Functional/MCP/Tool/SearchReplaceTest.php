@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -14,6 +15,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 final class SearchReplaceTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
+
     protected array $coreExtensionsToLoad = [
         'workspaces',
     ];
@@ -33,10 +36,10 @@ final class SearchReplaceTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../../Functional/Fixtures/tt_content.csv');
         $this->setUpBackendUser(1);
 
-        $workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
+        $workspaceContextService = $this->getService(WorkspaceContextService::class);
         $workspaceContextService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
-        $this->tool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $this->tool = $this->getService(WriteTableTool::class);
     }
 
     public function testSearchReplaceOnlyWorksForUpdateAction(): void

@@ -7,12 +7,11 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test system-level error edge cases
  */
-class SystemErrorTest extends AbstractFunctionalTest
+final class SystemErrorTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;
     protected ReadTableTool $readTool;
@@ -21,9 +20,8 @@ class SystemErrorTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        // Initialize tools
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
     }
 
     /**

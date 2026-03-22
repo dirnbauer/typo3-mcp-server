@@ -7,12 +7,9 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Fixtures\TestDataBuilder;
-use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
 
 class ReadTableToolTest extends AbstractFunctionalTest
 {
-    use McpAssertionsTrait;
-
     private ReadTableTool $tool;
     private TestDataBuilder $data;
 

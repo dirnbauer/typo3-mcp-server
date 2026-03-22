@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Test permission edge cases
  */
-class PermissionEdgeCaseTest extends AbstractFunctionalTest
+final class PermissionEdgeCaseTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;
     protected ReadTableTool $readTool;
@@ -27,9 +27,8 @@ class PermissionEdgeCaseTest extends AbstractFunctionalTest
         // Create additional test users with different permissions
         $this->createTestUsers();
 
-        // Initialize tools
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
     }
 
     /**

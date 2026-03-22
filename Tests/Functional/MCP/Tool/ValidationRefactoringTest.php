@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -15,6 +16,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class ValidationRefactoringTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
+
     protected array $coreExtensionsToLoad = [
         'workspaces',
     ];
@@ -38,8 +41,8 @@ class ValidationRefactoringTest extends FunctionalTestCase
         $this->setUpBackendUser(1);        // Set up language service
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('en');
 
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->tableAccessService = $this->getService(TableAccessService::class);
     }
 
     protected function getRecordByUid(string $table, int $uid): array

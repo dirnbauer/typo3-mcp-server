@@ -19,8 +19,7 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
         $tool = $this->getService(UploadFileFromUrlTool::class);
         $result = $tool->execute(['url' => '   ']);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('url', $result->content[0]->text);
+        $this->assertToolError($result, 'url');
     }
 
     #[Test]
@@ -32,8 +31,7 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
             'path' => 'evil.txt',
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Only http and https', $result->content[0]->text);
+        $this->assertToolError($result, 'Invalid URL format');
     }
 
     #[Test]
@@ -44,8 +42,7 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
             'url' => 'http://192.168.0.1/readme.txt',
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('private or reserved', $result->content[0]->text);
+        $this->assertToolError($result, 'private or reserved');
     }
 
     #[Test]
@@ -56,7 +53,6 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
             'url' => 'http://127.0.0.1/',
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('private or reserved', $result->content[0]->text);
+        $this->assertToolError($result, 'private or reserved');
     }
 }

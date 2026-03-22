@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
-use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Test the new error handling implementation
  */
-class ErrorHandlingTest extends AbstractFunctionalTest
+final class ErrorHandlingTest extends AbstractFunctionalTest
 {
     protected array $testExtensionsToLoad = [
         'mcp_server',
@@ -22,91 +22,84 @@ class ErrorHandlingTest extends AbstractFunctionalTest
     /**
      * Test ValidationException handling in SearchTool
      */
+    #[Test]
     public function testSearchToolValidationException(): void
     {
         $tool = $this->getService(SearchTool::class);
 
         // Test missing terms
         $result = $tool->execute([]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Parameter "terms" must be an array of strings', $result->content[0]->text);
+        $this->assertToolError($result, 'Parameter "terms" must be an array of strings');
 
         // Test empty terms array
         $result = $tool->execute(['terms' => []]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('At least one search term is required', $result->content[0]->text);
+        $this->assertToolError($result, 'At least one search term is required');
 
         // Test invalid term logic
         $result = $tool->execute([
             'terms' => ['test'],
             'termLogic' => 'INVALID',
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('termLogic must be either "AND" or "OR"', $result->content[0]->text);
+        $this->assertToolError($result, 'termLogic must be either "AND" or "OR"');
 
         // Test terms with invalid types
         $result = $tool->execute([
             'terms' => ['valid', 123, 'another'],
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('All terms must be strings', $result->content[0]->text);
+        $this->assertToolError($result, 'All terms must be strings');
 
         // Test terms that are too short
         $result = $tool->execute([
             'terms' => ['a'],
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('at least 2 characters long', $result->content[0]->text);
+        $this->assertToolError($result, 'at least 2 characters long');
 
         // Test unknown language code
         $result = $tool->execute([
             'terms' => ['test'],
             'language' => 'unknown_lang',
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Unknown language code', $result->content[0]->text);
+        $this->assertToolError($result, 'Unknown language code');
     }
 
     /**
      * Test ValidationException handling in ReadTableTool
      */
+    #[Test]
     public function testReadTableToolValidationException(): void
     {
         $tool = $this->getService(ReadTableTool::class);
 
         // Test missing table
         $result = $tool->execute([]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Table name is required', $result->content[0]->text);
+        $this->assertToolError($result, 'Table name is required');
 
         // Test invalid limit
         $result = $tool->execute([
             'table' => 'pages',
             'limit' => 1001,
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Limit must be between 1 and 1000', $result->content[0]->text);
+        $this->assertToolError($result, 'Limit must be between 1 and 1000');
 
         // Test negative offset
         $result = $tool->execute([
             'table' => 'pages',
             'offset' => -1,
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Offset must be non-negative', $result->content[0]->text);
+        $this->assertToolError($result, 'Offset must be non-negative');
 
         // Test unknown language code
         $result = $tool->execute([
             'table' => 'pages',
             'language' => 'xyz',
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Unknown language code', $result->content[0]->text);
+        $this->assertToolError($result, 'Unknown language code');
     }
 
     /**
      * Test table access validation using validateTableAccessWithError
      */
+    #[Test]
     public function testTableAccessValidation(): void
     {
         $tool = $this->getService(ReadTableTool::class);
@@ -115,20 +108,19 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         $result = $tool->execute([
             'table' => 'non_existent_table',
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Cannot access table', $result->content[0]->text);
+        $this->assertToolError($result, 'Cannot access table');
 
         // Test restricted table (non-workspace capable)
         $result = $tool->execute([
             'table' => 'be_users',
         ]);
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Cannot access table', $result->content[0]->text);
+        $this->assertToolError($result, 'Cannot access table');
     }
 
     /**
      * Test error logging functionality
      */
+    #[Test]
     public function testErrorLogging(): void
     {
         // This test would verify that errors are properly logged
@@ -142,14 +134,13 @@ class ErrorHandlingTest extends AbstractFunctionalTest
             'table' => 'invalid_table_name',
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        // The error should be handled gracefully
-        self::assertStringContainsString('Cannot search table', $result->content[0]->text);
+        $this->assertToolError($result, 'Cannot search table');
     }
 
     /**
      * Test consistent error messages across tools
      */
+    #[Test]
     public function testConsistentErrorMessages(): void
     {
         $readTool = $this->getService(ReadTableTool::class);
@@ -164,17 +155,14 @@ class ErrorHandlingTest extends AbstractFunctionalTest
             'data' => ['title' => 'test'],
         ]);
 
-        self::assertTrue($readResult->isError, json_encode($readResult->jsonSerialize()));
-        self::assertTrue($writeResult->isError, json_encode($writeResult->jsonSerialize()));
-
-        // Both should have similar error messages
-        self::assertStringContainsString('Cannot access table', $readResult->content[0]->text);
-        self::assertStringContainsString('Cannot access table', $writeResult->content[0]->text);
+        $this->assertToolError($readResult, 'Cannot access table');
+        $this->assertToolError($writeResult, 'Cannot access table');
     }
 
     /**
      * Test that database exceptions are properly caught and converted
      */
+    #[Test]
     public function testDatabaseExceptionHandling(): void
     {
         $tool = $this->getService(ReadTableTool::class);
@@ -187,14 +175,15 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         ]);
 
         // Should handle the database error gracefully
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        $errorText = $this->assertToolError($result);
         // The error message should be user-friendly, not exposing SQL details
-        self::assertStringNotContainsString('@@@ error', $result->content[0]->text);
+        self::assertStringNotContainsString('@@@ error', $errorText);
     }
 
     /**
      * Test that unexpected errors are handled with generic messages
      */
+    #[Test]
     public function testUnexpectedErrorHandling(): void
     {
         // This is harder to test directly, but we can verify the error handling
@@ -212,7 +201,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         // Should either succeed or fail gracefully
         if ($result->isError) {
             // Error message should not contain stack traces or internal paths
-            $errorText = $result->content[0]->text;
+            $errorText = $this->assertToolError($result);
             self::assertStringNotContainsString('Stack trace:', $errorText);
             self::assertStringNotContainsString('/var/www/', $errorText);
             self::assertStringNotContainsString('\\Hn\\McpServer\\', $errorText);
@@ -222,6 +211,7 @@ class ErrorHandlingTest extends AbstractFunctionalTest
     /**
      * Test executeWithErrorHandling method functionality
      */
+    #[Test]
     public function testExecuteWithErrorHandlingMethod(): void
     {
         $tool = $this->getService(SearchTool::class);
@@ -233,20 +223,20 @@ class ErrorHandlingTest extends AbstractFunctionalTest
         ]);
 
         // Even if no results, it shouldn't be an error
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $this->assertSuccessfulToolResult($result);
 
         // Test with parameters that trigger validation error
         $result = $tool->execute([
             'terms' => ['x'], // Too short
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('at least 2 characters', $result->content[0]->text);
+        $this->assertToolError($result, 'at least 2 characters');
     }
 
     /**
      * Test that workspace operations handle errors correctly
      */
+    #[Test]
     public function testWorkspaceErrorHandling(): void
     {
         $tool = $this->getService(WriteTableTool::class);
@@ -259,7 +249,6 @@ class ErrorHandlingTest extends AbstractFunctionalTest
             'data' => ['details' => 'test'],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Cannot access table', $result->content[0]->text);
+        $this->assertToolError($result, 'Cannot access table');
     }
 }

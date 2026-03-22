@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Test database error edge cases
  */
-class DatabaseErrorTest extends AbstractFunctionalTest
+final class DatabaseErrorTest extends AbstractFunctionalTest
 {
     protected WriteTableTool $writeTool;
     protected ReadTableTool $readTool;
@@ -24,9 +24,8 @@ class DatabaseErrorTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        // Initialize tools
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
+        $this->writeTool = $this->getService(WriteTableTool::class);
+        $this->readTool = $this->getService(ReadTableTool::class);
     }
 
     /**
