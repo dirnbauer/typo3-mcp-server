@@ -109,7 +109,7 @@ Browse the TYPO3 page tree.
    - ``workspace_id`` (integer): optional workspace override
 
 The result is a readable tree with page URLs, record counts, and plugin storage
-hints.
+hints. Workspace-only pages and draft page edits are included transparently.
 
 GetPage
 -------
@@ -154,6 +154,8 @@ Search across TYPO3 tables using TCA-derived searchable fields.
 
 Search applies the same workspace transparency rules as the read tools, so
 workspace rows and delete placeholders do not leak into client-facing results.
+The per-table ``limit`` is enforced, and the response text reports when a table
+was truncated so agents can narrow and re-run intentionally.
 
 Schema inspection
 =================
@@ -214,6 +216,8 @@ Read records from any accessible TYPO3 table.
 
 Without a language filter, records from all languages are returned together,
 matching TYPO3 list-module behavior more closely than a frontend-style overlay.
+Pagination metadata includes ``total``, ``count``, ``limit``, ``offset``,
+``nextOffset``, and ``hasMore``.
 
 WriteTable
 ----------

@@ -1305,7 +1305,7 @@ final class TableAccessService
                 continue;
             }
 
-            if ($itemValue !== '') {
+            if (\is_scalar($itemValue) && (string)$itemValue !== '') {
                 $normalizedValue = (string)$itemValue;
                 $result['values'][] = $normalizedValue;
                 $result['labels'][$normalizedValue] = \is_scalar($itemLabel) ? (string)$itemLabel : '';

@@ -124,6 +124,8 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         self::assertLessThanOrEqual(2, \count($data['records']));
+        self::assertSame(\count($data['records']), $data['count']);
+        self::assertSame(2, $data['nextOffset']);
         $this->assertHasPagination($result, 2, 0);
     }
 
@@ -140,6 +142,9 @@ class ReadTableToolTest extends AbstractFunctionalTest
         ]);
 
         $this->assertSuccessfulToolResult($result);
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame(\count($data['records']), $data['count']);
+        self::assertSame(2, $data['nextOffset']);
         $this->assertHasPagination($result, 1, 1);
     }
 

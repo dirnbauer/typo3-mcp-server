@@ -18,6 +18,7 @@ use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -27,11 +28,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Tool for searching records across TYPO3 tables using TCA-based searchable fields
  *
  * @phpstan-type SearchRecord array<string, mixed>
- * @phpstan-type SearchResult array{records: list<SearchRecord>, total: int, search_terms: list<string>, term_logic: string}
+ * @phpstan-type SearchResult array{records: list<SearchRecord>, total: int, returned: int, limit: int, has_more: bool, search_terms: list<string>, term_logic: string}
  * @phpstan-type InlineTableMetadata array{table: string, parent_table: string, parent_field: string, foreign_field: string, relation_type?: string}
  */
 final class SearchTool extends AbstractRecordTool
 {
+    private const DEFAULT_LIMIT = 50;
+    private const MAX_LIMIT = 200;
+
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
@@ -136,6 +140,9 @@ final class SearchTool extends AbstractRecordTool
                         'type' => 'integer',
                         'description' => 'Maximum number of records to return per table (default: 50). '
                             . 'Totals can exceed this cap; narrow terms, table, or pageId and run again if needed.',
+                        'default' => self::DEFAULT_LIMIT,
+                        'minimum' => 1,
+                        'maximum' => self::MAX_LIMIT,
                     ],
                 ],
                 'required' => ['terms'],
@@ -227,7 +234,7 @@ final class SearchTool extends AbstractRecordTool
         $termLogic = strtoupper(\is_string($params['termLogic'] ?? null) ? $params['termLogic'] : 'OR');
         $table = trim(\is_string($params['table'] ?? null) ? $params['table'] : '');
         $pageId = isset($params['pageId']) && is_numeric($params['pageId']) ? (int)$params['pageId'] : null;
-        $limit = 50;
+        $limit = isset($params['limit']) && is_numeric($params['limit']) ? (int)$params['limit'] : self::DEFAULT_LIMIT;
 
         // Handle language parameter
         $languageId = null;
@@ -273,6 +280,18 @@ final class SearchTool extends AbstractRecordTool
             if (!\in_array($termLogic, ['AND', 'OR'])) {
                 $errors[] = 'termLogic must be either "AND" or "OR"';
             }
+        }
+
+        if (isset($params['limit'])) {
+            if (!is_numeric($params['limit'])) {
+                $errors[] = 'limit must be an integer';
+            } elseif ((int)$params['limit'] < 1 || (int)$params['limit'] > self::MAX_LIMIT) {
+                $errors[] = 'limit must be between 1 and ' . self::MAX_LIMIT;
+            }
+        }
+
+        if (isset($params['pageId']) && (!is_numeric($params['pageId']) || (int)$params['pageId'] < 0)) {
+            $errors[] = 'pageId must be a non-negative integer';
         }
 
         if (!empty($errors)) {
@@ -461,12 +480,27 @@ final class SearchTool extends AbstractRecordTool
         foreach ($parentRecordCache as $parentKey => $parentRecord) {
             $parentTable = explode('_', $parentKey)[0];
 
+            if (
+                isset($attributedResults[$parentTable]['records'])
+                && \is_array($attributedResults[$parentTable]['records'])
+            ) {
+                $existingRecords = $attributedResults[$parentTable]['records'];
+                $existingRecords[] = $parentRecord;
+                $attributedResults[$parentTable]['records'] = $existingRecords;
+                $attributedResults[$parentTable]['returned'] = \count($existingRecords);
+                $existingTotal = $attributedResults[$parentTable]['total'] ?? $attributedResults[$parentTable]['returned'];
+                $attributedResults[$parentTable]['total'] = max(
+                    is_numeric($existingTotal) ? (int)$existingTotal : 0,
+                    $attributedResults[$parentTable]['returned'],
+                );
+                $attributedResults[$parentTable]['has_more'] = false;
+                continue;
+            }
+
             if (!isset($attributedResults[$parentTable])) {
                 $attributedResults[$parentTable] = [];
             }
 
-            // Remove the cached key prefix and add to results
-            unset($parentRecord['_parent_key']);
             $attributedResults[$parentTable][] = $parentRecord;
         }
 
@@ -691,16 +725,12 @@ final class SearchTool extends AbstractRecordTool
     {
         $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
+        $countQueryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
-        // Apply restrictions
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
-
-        // Select all fields
+        $this->applySearchRestrictions($queryBuilder);
+        $this->applySearchRestrictions($countQueryBuilder);
         $queryBuilder->select('*')->from($table);
+        $countQueryBuilder->count('uid')->from($table);
 
         // Validate searchable fields exist in database
         $validSearchFields = $this->validateSearchableFields($table, $searchableFields);
@@ -709,64 +739,8 @@ final class SearchTool extends AbstractRecordTool
             return [];
         }
 
-        // Build search conditions for multiple terms
-        $termConditions = [];
-
-        foreach ($searchTerms as $term) {
-            // For each term, create conditions across all searchable fields
-            $fieldConditions = [];
-            foreach ($validSearchFields as $field) {
-                $fieldConditions[] = $queryBuilder->expr()->like(
-                    $field,
-                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($term) . '%'),
-                );
-            }
-
-            // Combine field conditions with OR (any field can match this term)
-            $termConditions[] = $queryBuilder->expr()->or(...$fieldConditions);
-        }
-
-        if (empty($termConditions)) {
-            return [];
-        }
-
-        // Combine term conditions based on logic (AND/OR)
-        if ($termLogic === 'AND') {
-            // All terms must match (in any field)
-            $queryBuilder->where($queryBuilder->expr()->and(...$termConditions));
-        } else {
-            // Any term can match (OR logic - default)
-            $queryBuilder->where($queryBuilder->expr()->or(...$termConditions));
-        }
-
-        // Filter by page ID if specified
-        if ($pageId !== null && $this->tableHasPidField($table)) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
-            );
-        }
-
-        // Filter by language if specified and table has language support
-        if ($languageId !== null && $this->tableHasLanguageSupport($table)) {
-            if ($languageId === 0) {
-                // Default language: only show records with sys_language_uid = 0 or -1 (all languages)
-                $queryBuilder->andWhere(
-                    $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
-                    ),
-                );
-            } else {
-                // Specific language: show records in that language, default language, or all languages
-                $queryBuilder->andWhere(
-                    $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
-                    ),
-                );
-            }
-        }
+        $this->applySearchFilters($queryBuilder, $table, $validSearchFields, $searchTerms, $termLogic, $pageId, $languageId);
+        $this->applySearchFilters($countQueryBuilder, $table, $validSearchFields, $searchTerms, $termLogic, $pageId, $languageId);
 
         // Apply default sorting
         RecordFormattingUtility::applyDefaultSorting($queryBuilder, $table);
@@ -781,13 +755,101 @@ final class SearchTool extends AbstractRecordTool
             throw new DatabaseException('search', $table, $e);
         }
 
+        try {
+            $totalMatches = $countQueryBuilder->executeQuery()->fetchOne();
+        } catch (Exception $e) {
+            throw new DatabaseException('search count', $table, $e);
+        }
+
+        $enhancedRecords = $this->enhanceRecordsWithPageInfo($records, $table, $languageId);
+        $returnedCount = \count($enhancedRecords);
+        $totalCount = is_numeric($totalMatches) ? (int)$totalMatches : $returnedCount;
+
         // Return records in expected structure format
         return [
-            'records' => $this->enhanceRecordsWithPageInfo($records, $table, $languageId),
-            'total' => \count($records),
+            'records' => $enhancedRecords,
+            'total' => $totalCount,
+            'returned' => $returnedCount,
+            'limit' => $limit,
+            'has_more' => $totalCount > $returnedCount,
             'search_terms' => $searchTerms,
             'term_logic' => $termLogic,
         ];
+    }
+
+    private function applySearchRestrictions(QueryBuilder $queryBuilder): void
+    {
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $this->getCurrentWorkspaceId()))
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $this->getCurrentWorkspaceId()));
+    }
+
+    /**
+     * @param list<string> $validSearchFields
+     * @param list<string> $searchTerms
+     */
+    private function applySearchFilters(
+        QueryBuilder $queryBuilder,
+        string $table,
+        array $validSearchFields,
+        array $searchTerms,
+        string $termLogic,
+        ?int $pageId,
+        ?int $languageId,
+    ): void {
+        $termConditions = [];
+
+        foreach ($searchTerms as $term) {
+            $fieldConditions = [];
+            foreach ($validSearchFields as $field) {
+                $fieldConditions[] = $queryBuilder->expr()->like(
+                    $field,
+                    $queryBuilder->createNamedParameter('%' . $queryBuilder->escapeLikeWildcards($term) . '%'),
+                );
+            }
+
+            if ($fieldConditions !== []) {
+                $termConditions[] = $queryBuilder->expr()->or(...$fieldConditions);
+            }
+        }
+
+        if ($termConditions === []) {
+            return;
+        }
+
+        if ($termLogic === 'AND') {
+            $queryBuilder->where($queryBuilder->expr()->and(...$termConditions));
+        } else {
+            $queryBuilder->where($queryBuilder->expr()->or(...$termConditions));
+        }
+
+        if ($pageId !== null && $this->tableHasPidField($table)) {
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
+            );
+        }
+
+        if ($languageId !== null && $this->tableHasLanguageSupport($table)) {
+            if ($languageId === 0) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->or(
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
+                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
+                    ),
+                );
+                return;
+            }
+
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER)),
+                ),
+            );
+        }
     }
 
     /**
@@ -937,15 +999,26 @@ final class SearchTool extends AbstractRecordTool
         $result .= "\n";
 
         $totalResults = 0;
+        $returnedResults = 0;
         foreach ($searchResults as $tableResults) {
             if (\is_array($tableResults) && isset($tableResults['records']) && \is_array($tableResults['records'])) {
-                $totalResults += \count($tableResults['records']);
+                $totalResults += is_numeric($tableResults['total'] ?? null)
+                    ? (int)$tableResults['total']
+                    : \count($tableResults['records']);
+                $returnedResults += is_numeric($tableResults['returned'] ?? null)
+                    ? (int)$tableResults['returned']
+                    : \count($tableResults['records']);
             } else {
-                $totalResults += \is_array($tableResults) ? \count($tableResults) : 0;
+                $resultCount = \is_array($tableResults) ? \count($tableResults) : 0;
+                $totalResults += $resultCount;
+                $returnedResults += $resultCount;
             }
         }
 
         $result .= "Total Results: $totalResults\n";
+        if ($returnedResults !== $totalResults) {
+            $result .= "Returned: $returnedResults (per-table limits applied)\n";
+        }
         $result .= 'Tables Searched: ' . \count($searchResults) . "\n\n";
 
         // If no results, show no results message
@@ -985,7 +1058,20 @@ final class SearchTool extends AbstractRecordTool
             $records = $tableData;
         }
 
-        $result .= 'Found ' . \count($records) . " record(s)\n\n";
+        $returnedCount = is_numeric($tableData['returned'] ?? null) ? (int)$tableData['returned'] : \count($records);
+        $totalCount = is_numeric($tableData['total'] ?? null) ? (int)$tableData['total'] : $returnedCount;
+        $limit = is_numeric($tableData['limit'] ?? null) ? (int)$tableData['limit'] : null;
+        $hasMore = (bool)($tableData['has_more'] ?? false);
+
+        if ($hasMore || $totalCount > $returnedCount) {
+            $result .= 'Found ' . $returnedCount . ' of ' . $totalCount . ' record(s)';
+            if ($limit !== null) {
+                $result .= ' (limit ' . $limit . ')';
+            }
+            $result .= "\n\n";
+        } else {
+            $result .= 'Found ' . $returnedCount . " record(s)\n\n";
+        }
 
         foreach ($records as $record) {
             if (!\is_array($record)) {

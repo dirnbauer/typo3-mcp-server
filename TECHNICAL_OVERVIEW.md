@@ -143,9 +143,11 @@ This extension is reviewed against the public
   JSON-RPC ``-32603`` from the PHP SDK’s generic exception path — see
   [mcp-builder](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md)
   on recoverable agent mistakes).
-- **Context / pagination**: `ReadTable` returns `total`, `limit`, `offset`, and
-  `hasMore` in JSON (see tool description). `Search` documents per-table
-  `limit` and when to narrow and re-run. Tree tools warn about depth vs. site size.
+- **Context / pagination**: `ReadTable` returns `total`, `count`, `limit`,
+  `offset`, `nextOffset`, and `hasMore` in JSON (see tool description).
+  `Search` enforces its per-table `limit` and reports both total matches and
+  returned matches when a table was truncated. Tree tools warn about depth vs.
+  site size and now include workspace-only draft pages in the visible tree.
 - **Transport**: Remote HTTP (OAuth) for hosted use; local `stdio` via
   `McpServerCommand` for trusted environments — consistent with the guide’s
   HTTP vs. stdio split.

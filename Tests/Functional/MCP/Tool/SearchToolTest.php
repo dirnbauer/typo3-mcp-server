@@ -346,30 +346,36 @@ class SearchToolTest extends FunctionalTestCase
     {
         $tool = $this->getService(SearchTool::class);
 
-        // Search with very small limit - use a term that will match multiple records
+        // Search with a tight per-table limit so truncation is visible in output
         $result = $tool->execute([
-            'terms' => ['content'], // Will match multiple content elements
-            'limit' => 2,
+            'terms' => ['team'],
+            'limit' => 1,
         ]);
 
         self::assertFalse($result->isError);
         $content = $result->content[0]->text;
 
-        // Should find some results
         self::assertStringContainsString('Total Results:', $content);
+        self::assertStringContainsString('Returned: 2 (per-table limits applied)', $content);
+        self::assertStringContainsString('Found 1 of 2 record(s) (limit 1)', $content);
 
-        // The limit applies per table, not globally
-        // So if multiple tables have matches, total can exceed limit
-        // Just verify that the search completes successfully with a limit
-        self::assertStringContainsString('Found', $content);
+        // We should still get one page hit and only the first matching content record.
+        self::assertStringContainsString('[UID: 4]', $content);
+        self::assertStringContainsString('[UID: 102] Team Introduction', $content);
+        self::assertStringNotContainsString('[UID: 103] Team Members', $content);
+    }
 
-        // Verify we have results but not too many (basic sanity check)
-        preg_match_all('/• \[UID: \d+\]/', $content, $matches);
-        $totalRecords = \count($matches[0]);
+    public function testSearchLimitValidation(): void
+    {
+        $tool = $this->getService(SearchTool::class);
 
-        // With limit of 2 per table and multiple tables, should be reasonable
-        self::assertGreaterThan(0, $totalRecords);
-        self::assertLessThan(20, $totalRecords); // Sanity check - not unlimited
+        $result = $tool->execute([
+            'terms' => ['team'],
+            'limit' => 0,
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('limit must be between 1 and 200', $result->content[0]->text);
     }
 
     /**

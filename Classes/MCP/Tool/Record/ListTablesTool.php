@@ -151,7 +151,13 @@ final class ListTablesTool extends AbstractRecordTool
 
                 // Show any restrictions
                 if (!empty($tableInfo['restrictions'])) {
-                    $result .= ' [' . implode(', ', $tableInfo['restrictions']) . ']';
+                    $restrictions = array_values(array_filter(
+                        \is_array($tableInfo['restrictions']) ? $tableInfo['restrictions'] : [],
+                        is_string(...),
+                    ));
+                    if ($restrictions !== []) {
+                        $result .= ' [' . implode(', ', $restrictions) . ']';
+                    }
                 }
 
                 $result .= "\n";

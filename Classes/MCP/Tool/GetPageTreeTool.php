@@ -6,17 +6,22 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Utility\RecordFormattingUtility;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -25,6 +30,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class GetPageTreeTool extends AbstractRecordTool
 {
+    private const DEFAULT_DEPTH = 3;
+    private const MAX_DEPTH = 10;
+
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
@@ -52,10 +60,14 @@ final class GetPageTreeTool extends AbstractRecordTool
                     'startPage' => [
                         'type' => 'integer',
                         'description' => 'The page ID to start from (0 for root)',
+                        'minimum' => 0,
                     ],
                     'depth' => [
                         'type' => 'integer',
                         'description' => 'The depth of pages to retrieve (default: 3)',
+                        'default' => self::DEFAULT_DEPTH,
+                        'minimum' => 1,
+                        'maximum' => self::MAX_DEPTH,
                     ],
                 ],
                 'required' => ['startPage'],
@@ -92,8 +104,17 @@ final class GetPageTreeTool extends AbstractRecordTool
     {
 
         $startPage = is_numeric($params['startPage'] ?? null) ? (int)$params['startPage'] : 0;
-        $depth = is_numeric($params['depth'] ?? null) ? (int)$params['depth'] : 3;
+        $depth = is_numeric($params['depth'] ?? null) ? (int)$params['depth'] : self::DEFAULT_DEPTH;
         $languageUid = null;
+
+        if ($startPage < 0) {
+            throw new \InvalidArgumentException('startPage must be 0 or a positive page UID.');
+        }
+        if ($depth < 1 || $depth > self::MAX_DEPTH) {
+            throw new \InvalidArgumentException(
+                'depth must be between 1 and ' . self::MAX_DEPTH . '. Use a smaller depth on large sites to keep responses focused.',
+            );
+        }
 
         // Handle language parameter if provided
         if (isset($params['language']) && \is_string($params['language'])) {
@@ -127,6 +148,12 @@ final class GetPageTreeTool extends AbstractRecordTool
         return new CallToolResult([new TextContent($textTree)]);
     }
 
+    protected function getCurrentWorkspaceId(): int
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        return $backendUser instanceof BackendUserAuthentication ? ($backendUser->workspace ?? 0) : 0;
+    }
+
     /**
      * Get the page tree
      *
@@ -138,10 +165,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
-        // Only apply the DeletedRestriction to filter out deleted pages
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $this->applyWorkspaceRestrictions($queryBuilder);
 
         // Build the query
         $query = $queryBuilder->select('*')
@@ -188,15 +212,16 @@ final class GetPageTreeTool extends AbstractRecordTool
         // Process the result
         $pageTree = [];
         foreach ($pages as $page) {
+            $visiblePageUid = $this->getVisiblePageUid($page);
             $pageData = [
-                'uid' => is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0,
+                'uid' => $visiblePageUid,
                 'pid' => is_numeric($page['pid'] ?? null) ? (int)$page['pid'] : 0,
                 'title' => \is_scalar($page['title'] ?? null) ? (string)$page['title'] : '',
                 'nav_title' => \is_scalar($page['nav_title'] ?? null) ? (string)$page['nav_title'] : '',
                 'hidden' => (bool)($page['hidden'] ?? false),
                 'doktype' => is_numeric($page['doktype'] ?? null) ? (int)$page['doktype'] : 0,
                 'subpageCount' => 0,
-                'url' => $this->siteInformationService->generatePageUrl(is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0),
+                'url' => $this->siteInformationService->generatePageUrl($visiblePageUid),
             ];
 
             // Get language overlay if language specified
@@ -216,12 +241,12 @@ final class GetPageTreeTool extends AbstractRecordTool
 
             // Check if there are subpages if depth > 1
             if ($depth > 1) {
-                $subpages = $this->getPageTree($pageData['uid'], $depth - 1, $languageUid);
+                $subpages = $this->getPageTree($visiblePageUid, $depth - 1, $languageUid);
                 $pageData['subpages'] = $subpages;
                 $pageData['subpageCount'] = \count($subpages);
             } else {
                 // We're at max depth, count the number of subpages
-                $pageData['subpageCount'] = $this->countSubpages($pageData['uid']);
+                $pageData['subpageCount'] = $this->countSubpages($visiblePageUid);
             }
 
             $pageTree[] = $pageData;
@@ -238,9 +263,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $this->applyWorkspaceRestrictions($queryBuilder);
 
         $query = $queryBuilder->count('uid')
             ->from('pages')
@@ -298,17 +321,14 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         foreach ($accessibleTables as $table => $accessInfo) {
             // Skip pages table itself
-            if ($table === 'pages') {
+            if ($table === 'pages' || !$this->tableHasPidField($table)) {
                 continue;
             }
 
             $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
-            // Only apply DeletedRestriction
-            $queryBuilder->getRestrictions()
-                ->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            $this->applyWorkspaceRestrictions($queryBuilder);
 
             // Count records grouped by pid
             $counts = $queryBuilder
@@ -355,9 +375,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tt_content');
 
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $this->applyWorkspaceRestrictions($queryBuilder);
 
         $plugins = $queryBuilder
             ->select('*')
@@ -496,6 +514,34 @@ final class GetPageTreeTool extends AbstractRecordTool
         }
 
         return $result;
+    }
+
+    private function applyWorkspaceRestrictions(QueryBuilder $queryBuilder): void
+    {
+        $workspaceId = $this->getCurrentWorkspaceId();
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $workspaceId))
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $workspaceId));
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     */
+    private function getVisiblePageUid(array $page): int
+    {
+        $workspaceOriginalUid = $page['t3ver_oid'] ?? null;
+        if (is_numeric($workspaceOriginalUid) && (int)$workspaceOriginalUid > 0) {
+            return (int)$workspaceOriginalUid;
+        }
+
+        return is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+    }
+
+    private function tableHasPidField(string $table): bool
+    {
+        return RecordFormattingUtility::tableHasPidField($table);
     }
 
 }

@@ -145,12 +145,23 @@ trait McpAssertionsTrait
         $this->assertArrayHasKey('limit', $data);
         $this->assertArrayHasKey('offset', $data);
         $this->assertArrayHasKey('total', $data);
+        $this->assertArrayHasKey('count', $data);
+        $this->assertArrayHasKey('nextOffset', $data);
         $this->assertArrayHasKey('hasMore', $data);
 
         $this->assertEquals($expectedLimit, $data['limit']);
         $this->assertEquals($expectedOffset, $data['offset']);
         $this->assertIsBool($data['hasMore']);
         $this->assertIsInt($data['total']);
+        $this->assertIsInt($data['count']);
+        $this->assertSame(\count($data['records'] ?? []), $data['count']);
+
+        if ($data['hasMore']) {
+            $this->assertIsInt($data['nextOffset']);
+            $this->assertGreaterThan($data['offset'], $data['nextOffset']);
+        } else {
+            $this->assertNull($data['nextOffset']);
+        }
     }
 
     /**

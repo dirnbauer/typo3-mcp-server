@@ -323,7 +323,7 @@ class GetPageToolTest extends FunctionalTestCase
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $errorMessage = $result->content[0]->text;
-        self::assertStringContainsString('Operation failed: GetPage', $errorMessage);
+        self::assertStringContainsString('Operation failed (GetPage)', $errorMessage);
     }
 
     /**

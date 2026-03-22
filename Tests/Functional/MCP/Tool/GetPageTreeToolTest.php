@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
+use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
@@ -67,6 +68,35 @@ class GetPageTreeToolTest extends FunctionalTestCase
 
         // Hidden page should now be included (always show hidden records)
         self::assertStringContainsString('[3] Hidden Page', $content);
+    }
+
+    public function testGetPageTreeIncludesWorkspaceOnlyPages(): void
+    {
+        $writeTool = $this->getService(WriteTableTool::class);
+        $treeTool = $this->getService(GetPageTreeTool::class);
+
+        $createResult = $writeTool->execute([
+            'action' => 'create',
+            'table' => 'pages',
+            'pid' => 1,
+            'data' => [
+                'title' => 'Draft Tree Page',
+                'slug' => '/draft-tree-page',
+                'doktype' => 1,
+            ],
+        ]);
+
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+
+        $treeResult = $treeTool->execute([
+            'startPage' => 1,
+            'depth' => 1,
+        ]);
+
+        self::assertFalse($treeResult->isError, json_encode($treeResult->jsonSerialize()));
+        $content = $treeResult->content[0]->text;
+
+        self::assertStringContainsString('Draft Tree Page', $content);
     }
 
     /**

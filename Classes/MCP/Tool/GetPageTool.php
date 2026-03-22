@@ -131,14 +131,18 @@ final class GetPageTool extends AbstractRecordTool
                 'properties' => [
                     'uid' => [
                         'type' => 'integer',
-                        'description' => 'The page ID to retrieve information for',
+                        'description' => 'The page ID to retrieve information for. Provide uid or url.',
                     ],
                     'url' => [
                         'type' => 'string',
-                        'description' => 'The URL of the page to retrieve (alternative to uid). Can be full URL, path, or slug. ' . $domainsText,
+                        'description' => 'The URL of the page to retrieve (alternative to uid). Can be full URL, path, or slug. Provide uid or url. ' . $domainsText,
                     ],
                 ],
                 'required' => [],
+                'oneOf' => [
+                    ['required' => ['uid']],
+                    ['required' => ['url']],
+                ],
             ],
         ];
 

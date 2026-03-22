@@ -29,6 +29,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ReadTableTool extends AbstractRecordTool
 {
+    private const DEFAULT_LIMIT = 20;
+    private const MAX_LIMIT = 1000;
     private const MAX_WHERE_TOKENS = 5000;
     private const MAX_WHERE_CONDITIONS = 80;
     private const DISALLOWED_WHERE_PATTERN = '/(;|--|#|\/\*|\*\/|\b(?:SELECT|UNION|DROP|DELETE|UPDATE|INSERT|TRUNCATE|ALTER|CREATE|SLEEP|BENCHMARK)\b)/i';
@@ -146,10 +148,15 @@ final class ReadTableTool extends AbstractRecordTool
             'limit' => [
                 'type' => 'integer',
                 'description' => 'Maximum number of records to return (default: 20)',
+                'default' => self::DEFAULT_LIMIT,
+                'minimum' => 1,
+                'maximum' => self::MAX_LIMIT,
             ],
             'offset' => [
                 'type' => 'integer',
                 'description' => 'Offset for pagination',
+                'default' => 0,
+                'minimum' => 0,
             ],
             'fields' => [
                 'type' => 'array',
@@ -178,7 +185,7 @@ final class ReadTableTool extends AbstractRecordTool
                 . 'Use the language parameter to filter to a specific language. '
                 . 'For page content, prefer a pid filter over single-uid lookups. '
                 . 'Use limit (default 20) and offset together for pagination when result sets are large. '
-                . 'The JSON response includes total, limit, offset, and hasMore so you can fetch the next page.',
+                . 'The JSON response includes total, count, limit, offset, nextOffset, and hasMore so you can fetch the next page.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => $properties,
@@ -214,7 +221,7 @@ final class ReadTableTool extends AbstractRecordTool
         $pid = isset($params['pid']) && is_numeric($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int)$params['uid'] : null;
         $condition = \is_string($params['where'] ?? null) ? $params['where'] : '';
-        $limit = isset($params['limit']) && is_numeric($params['limit']) ? (int)$params['limit'] : 20;
+        $limit = isset($params['limit']) && is_numeric($params['limit']) ? (int)$params['limit'] : self::DEFAULT_LIMIT;
         $offset = isset($params['offset']) && is_numeric($params['offset']) ? (int)$params['offset'] : 0;
         $language = \is_string($params['language'] ?? null) ? $params['language'] : null;
         $includeTranslationSource = (bool)($params['includeTranslationSource'] ?? false);
@@ -233,8 +240,8 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Validate parameters
-        if ($limit < 1 || $limit > 1000) {
-            throw new ValidationException(['Limit must be between 1 and 1000']);
+        if ($limit < 1 || $limit > self::MAX_LIMIT) {
+            throw new ValidationException(['Limit must be between 1 and ' . self::MAX_LIMIT]);
         }
         if ($offset < 0) {
             throw new ValidationException(['Offset must be non-negative']);
@@ -283,7 +290,7 @@ final class ReadTableTool extends AbstractRecordTool
      */
     /**
      * @param list<string> $requestedFields
-     * @return array{table: string, tableLabel: string, records: RecordRows, total: int, limit: int, offset: int, hasMore: bool}
+     * @return array{table: string, tableLabel: string, records: RecordRows, total: int, count: int, limit: int, offset: int, nextOffset: int|null, hasMore: bool}
      */
     protected function getRecords(
         string $table,
@@ -436,15 +443,21 @@ final class ReadTableTool extends AbstractRecordTool
             $processedRecords[] = $processedRecord;
         }
 
+        $recordCount = \count($processedRecords);
+        $numericTotalCount = is_numeric($totalCount) ? (int)$totalCount : 0;
+        $hasMore = ($offset + $recordCount) < $numericTotalCount;
+
         // Return the result with metadata
         return [
             'table' => $table,
             'tableLabel' => $this->getTableLabel($table),
             'records' => $processedRecords,
-            'total' => is_numeric($totalCount) ? (int)$totalCount : 0,
+            'total' => $numericTotalCount,
+            'count' => $recordCount,
             'limit' => $limit,
             'offset' => $offset,
-            'hasMore' => ($offset + \count($records)) < (is_numeric($totalCount) ? (int)$totalCount : 0),
+            'nextOffset' => $hasMore ? $offset + $recordCount : null,
+            'hasMore' => $hasMore,
         ];
     }
 

@@ -39,7 +39,7 @@ final class ReadFileMetadataTool extends AbstractTool
                 'properties' => [
                     'uid' => [
                         'type' => 'integer',
-                        'description' => 'File UID (sys_file.uid)',
+                        'description' => 'File UID (sys_file.uid). Provide uid or identifier.',
                     ],
                     'identifier' => [
                         'type' => 'string',
@@ -49,6 +49,10 @@ final class ReadFileMetadataTool extends AbstractTool
                     ],
                 ],
                 'required' => [],
+                'oneOf' => [
+                    ['required' => ['uid']],
+                    ['required' => ['identifier']],
+                ],
             ],
             'annotations' => [
                 'readOnlyHint' => true,
