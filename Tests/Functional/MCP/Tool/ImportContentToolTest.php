@@ -44,9 +44,10 @@ MD;
         self::assertEquals('markdown', $data['format']);
         self::assertGreaterThanOrEqual(3, $data['totalElements']);
 
-        // First element should be a heading
+        // First element should be a heading with a known CType
         $first = $data['elements'][0];
-        self::assertContains($first['CType'], ['header', 'text']);
+        $availableCTypes = array_keys($data['availableContentTypes']);
+        self::assertContains($first['CType'], $availableCTypes);
         self::assertEquals('Welcome to Our Site', $first['header']);
     }
 
@@ -71,16 +72,17 @@ HTML;
         self::assertEquals('html', $data['format']);
         self::assertGreaterThanOrEqual(3, $data['totalElements']);
 
-        // Check that table is mapped to html CType
+        // Check that table section exists in the proposal
         $tableElement = null;
         foreach ($data['elements'] as $el) {
-            if ($el['summary'] === 'HTML table') {
+            if (str_contains($el['summary'] ?? '', 'HTML table')) {
                 $tableElement = $el;
                 break;
             }
         }
         self::assertNotNull($tableElement, 'Should have a table element');
-        self::assertEquals('html', $tableElement['CType']);
+        // CType is dynamically chosen — just verify it has bodytext with the table
+        self::assertStringContainsString('<table', $tableElement['bodytext']);
     }
 
     public function testPlainTextGroupsParagraphs(): void
@@ -162,7 +164,7 @@ HTML;
         self::assertIsArray($data);
         self::assertArrayHasKey('hint', $data);
         self::assertArrayHasKey('elements', $data);
-        self::assertArrayHasKey('availableCTypes', $data);
+        self::assertArrayHasKey('availableContentTypes', $data);
         self::assertArrayHasKey('totalElements', $data);
         self::assertArrayHasKey('targetPid', $data);
         self::assertEquals(1, $data['targetPid']);
@@ -203,13 +205,14 @@ HTML;
         // Find the code block element
         $codeElement = null;
         foreach ($data['elements'] as $el) {
-            if ($el['summary'] === 'Code block') {
+            if (str_contains($el['summary'] ?? '', 'Code block')) {
                 $codeElement = $el;
                 break;
             }
         }
         self::assertNotNull($codeElement, 'Should have a code block element');
-        self::assertEquals('html', $codeElement['CType']);
+        // Verify it contains the code content
+        self::assertStringContainsString('const x = 42', $codeElement['bodytext']);
     }
 
     public function testColPosPassedThrough(): void
@@ -224,6 +227,32 @@ HTML;
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
         self::assertEquals(2, $data['colPos']);
+    }
+
+    public function testAvailableContentTypesIncludesFieldInfo(): void
+    {
+        $result = $this->tool->execute([
+            'content' => '# Test',
+            'targetPid' => 1,
+        ]);
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+        self::assertArrayHasKey('availableContentTypes', $data);
+        self::assertNotEmpty($data['availableContentTypes']);
+
+        // Each CType should have label and fields
+        foreach ($data['availableContentTypes'] as $ctype => $info) {
+            self::assertIsString($ctype);
+            self::assertArrayHasKey('label', $info, 'CType ' . $ctype . ' missing label');
+            self::assertArrayHasKey('fields', $info, 'CType ' . $ctype . ' missing fields');
+            self::assertIsArray($info['fields']);
+        }
+
+        // Common CTypes should be present
+        self::assertArrayHasKey('text', $data['availableContentTypes']);
+        self::assertArrayHasKey('header', $data['availableContentTypes']);
     }
 
     public function testElementStructureIsComplete(): void

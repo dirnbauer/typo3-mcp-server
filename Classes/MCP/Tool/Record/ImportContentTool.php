@@ -12,13 +12,13 @@ use Mcp\Types\CallToolResult;
 /**
  * Analyze raw content and propose TYPO3 content elements.
  *
- * Accepts plain text, Markdown, or HTML. Splits the content into logical
- * sections, maps each to the best-fitting CType from what's actually
- * available, and returns a proposal as JSON. The chatbot reviews/adjusts,
- * then calls BulkWrite to create all elements.
+ * Dynamically discovers ALL available CTypes and their field capabilities
+ * from TCA to find the best match for each content section. No hardcoded
+ * CType knowledge — works with core, extensions, and custom content types.
  *
- * @phpstan-type ContentElement array{index: int, CType: string, header: string, bodytext: string, header_layout: int, summary: string}
+ * @phpstan-type ContentElement array<string, mixed>
  * @phpstan-type ParsedSection array{type: string, content: string, level: int, raw: string}
+ * @phpstan-type CTypeProfile array{label: string, hasBodytext: bool, hasHeader: bool, hasImage: bool, hasAssets: bool, fields: list<string>}
  */
 final class ImportContentTool extends AbstractRecordTool
 {
@@ -27,25 +27,19 @@ final class ImportContentTool extends AbstractRecordTool
     private const FORMAT_HTML = 'html';
     private const FORMAT_TEXT = 'text';
 
-    /** @var array<string, string> CType preference order: section type → preferred CType */
-    private const CTYPE_MAP = [
-        'heading' => 'header',
-        'text' => 'text',
-        'richtext' => 'textmedia',
-        'html' => 'html',
-        'image' => 'image',
-        'code' => 'html',
-        'table' => 'html',
-        'list' => 'text',
-    ];
-
-    /** @var array<string, list<string>> Fallback chain when preferred CType is unavailable */
-    private const CTYPE_FALLBACKS = [
-        'header' => ['text', 'textmedia'],
-        'text' => ['textmedia', 'textpic'],
-        'textmedia' => ['textpic', 'text'],
-        'html' => ['text'],
-        'image' => ['textmedia', 'textpic'],
+    /**
+     * Section types produced by the parsers.
+     * Each maps to a set of field requirements used for CType scoring.
+     */
+    private const SECTION_NEEDS = [
+        // type => [needs_bodytext, needs_header_only, needs_image, prefers_raw_html]
+        'heading' => [false, true, false, false],
+        'text' => [true, false, false, false],
+        'list' => [true, false, false, false],
+        'html' => [true, false, false, true],
+        'table' => [true, false, false, true],
+        'code' => [true, false, false, true],
+        'image' => [false, false, true, false],
     ];
 
     public function __construct(
@@ -62,9 +56,10 @@ final class ImportContentTool extends AbstractRecordTool
     {
         return [
             'description' => 'Analyze raw content (text, Markdown, or HTML) and propose TYPO3 content elements. '
-                . 'Splits content into logical sections (headings, paragraphs, tables, code blocks) and maps each '
-                . 'to the best-fitting CType from what is actually available. Returns a proposal as JSON — '
-                . 'review and adjust the elements, then call BulkWrite to create them all at once. '
+                . 'Dynamically discovers ALL available content element types (CTypes) from TCA — including '
+                . 'core types, extension types, and custom content blocks — and selects the best fit for each '
+                . 'content section based on field capabilities. Returns a proposal as JSON. '
+                . 'Review and adjust the elements, then call BulkWrite to create them all at once. '
                 . 'This tool does NOT create records; it only proposes a structure.',
             'inputSchema' => [
                 'type' => 'object',
@@ -117,17 +112,15 @@ final class ImportContentTool extends AbstractRecordTool
             throw new ValidationException(['targetPid must be a non-negative integer']);
         }
 
-        // Validate table access
         $this->ensureTableAccess('tt_content', 'write');
 
-        // Detect format
         if ($format === self::FORMAT_AUTO) {
             $format = $this->detectFormat($content);
         }
 
-        // Get available CTypes
+        // Build CType profiles from TCA — discover ALL available types and their fields
         $availableTypes = $this->tableAccessService->getAvailableTypes('tt_content');
-        $availableCTypes = array_keys($availableTypes);
+        $ctypeProfiles = $this->buildCTypeProfiles($availableTypes);
 
         // Parse content into sections
         $sections = match ($format) {
@@ -136,41 +129,233 @@ final class ImportContentTool extends AbstractRecordTool
             default => $this->parsePlainText($content),
         };
 
-        // Merge consecutive same-type sections
         $sections = $this->mergeConsecutiveSections($sections);
 
-        // Map sections to content elements
+        // Map sections to content elements using dynamic scoring
         $elements = [];
         foreach ($sections as $index => $section) {
-            $elements[] = $this->mapSectionToElement($section, $index, $availableCTypes);
+            $elements[] = $this->mapSectionToElement($section, $index, $ctypeProfiles);
+        }
+
+        // Build the available types summary for the LLM
+        $typeSummary = [];
+        foreach ($ctypeProfiles as $ctype => $profile) {
+            $typeSummary[$ctype] = [
+                'label' => $profile['label'],
+                'fields' => $profile['fields'],
+            ];
         }
 
         $result = [
             'targetPid' => $targetPid,
             'format' => $format,
             'colPos' => $colPos,
-            'availableCTypes' => $availableCTypes,
+            'availableContentTypes' => $typeSummary,
             'elements' => $elements,
             'totalElements' => \count($elements),
-            'hint' => 'Review the proposed elements. Adjust CTypes, headers, or content as needed, '
-                . 'then call BulkWrite with action=create for each element on table tt_content with pid=' . $targetPid
-                . ' and colPos=' . $colPos . '.',
+            'hint' => 'Review the proposed elements. You can change CType to any type listed in '
+                . 'availableContentTypes. Then call BulkWrite with action=create for each element '
+                . 'on table tt_content with pid=' . $targetPid . ' and colPos=' . $colPos . '.',
         ];
 
         return $this->createJsonResult($result);
     }
 
     /**
-     * Detect content format from content string.
+     * Build field profiles for all available CTypes by querying TCA.
+     *
+     * @param array<string, string> $availableTypes CType value → label
+     * @return array<string, CTypeProfile>
      */
+    private function buildCTypeProfiles(array $availableTypes): array
+    {
+        $profiles = [];
+
+        foreach ($availableTypes as $ctype => $label) {
+            if ($ctype === '--div--' || $ctype === '') {
+                continue;
+            }
+
+            $fields = $this->tableAccessService->getAvailableFields('tt_content', $ctype);
+            $fieldNames = array_keys($fields);
+
+            $profiles[$ctype] = [
+                'label' => TableAccessService::translateLabel($label),
+                'hasBodytext' => \in_array('bodytext', $fieldNames, true),
+                'hasHeader' => \in_array('header', $fieldNames, true),
+                'hasImage' => \in_array('image', $fieldNames, true),
+                'hasAssets' => \in_array('assets', $fieldNames, true),
+                'fields' => $fieldNames,
+            ];
+        }
+
+        return $profiles;
+    }
+
+    /**
+     * Score and select the best CType for a section using TCA field profiles.
+     *
+     * @param ParsedSection $section
+     * @param array<string, CTypeProfile> $profiles
+     * @return ContentElement
+     */
+    private function mapSectionToElement(array $section, int $index, array $profiles): array
+    {
+        $sectionType = $section['type'];
+        $needs = self::SECTION_NEEDS[$sectionType] ?? [true, false, false, false];
+        [$needsBodytext, $needsHeaderOnly, $needsImage, $prefersRawHtml] = $needs;
+
+        // Score each CType
+        $bestCType = '';
+        $bestScore = -1;
+
+        foreach ($profiles as $ctype => $profile) {
+            $score = $this->scoreCType($ctype, $profile, $needsBodytext, $needsHeaderOnly, $needsImage, $prefersRawHtml);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestCType = $ctype;
+            }
+        }
+
+        // Fallback to first available
+        if ($bestCType === '') {
+            $bestCType = array_key_first($profiles) ?? 'text';
+        }
+
+        $element = [
+            'index' => $index,
+            'CType' => $bestCType,
+            'header' => '',
+            'bodytext' => '',
+            'header_layout' => 0,
+            'summary' => '',
+        ];
+
+        $label = $profiles[$bestCType]['label'] ?? $bestCType;
+
+        switch ($sectionType) {
+            case 'heading':
+                $element['header'] = $section['content'];
+                $element['header_layout'] = $section['level'];
+                $element['summary'] = 'H' . $section['level'] . ' heading → ' . $label;
+                break;
+
+            case 'text':
+                $paragraphCount = substr_count($section['content'], "\n\n") + 1;
+                $element['bodytext'] = $section['content'];
+                $element['summary'] = ($paragraphCount > 1 ? $paragraphCount . ' paragraphs' : 'Text') . ' → ' . $label;
+                break;
+
+            case 'list':
+                $element['bodytext'] = $section['content'];
+                $itemCount = preg_match_all('/^\s*[-*+]\s|^\s*\d+\.\s/m', $section['content']);
+                $element['summary'] = $itemCount . ' list items → ' . $label;
+                break;
+
+            case 'html':
+            case 'table':
+            case 'code':
+                $element['bodytext'] = $section['raw'];
+                $typeLabel = match ($sectionType) {
+                    'table' => 'HTML table',
+                    'code' => 'Code block',
+                    default => 'HTML content',
+                };
+                $element['summary'] = $typeLabel . ' → ' . $label;
+                break;
+
+            case 'image':
+                $element['header'] = $section['content'];
+                $element['summary'] = 'Image reference → ' . $label . ' (attach file via WriteTable)';
+                break;
+
+            default:
+                $element['bodytext'] = $section['content'];
+                $element['summary'] = 'Content → ' . $label;
+                break;
+        }
+
+        return $element;
+    }
+
+    /**
+     * Score how well a CType fits the section's needs.
+     *
+     * @param CTypeProfile $profile
+     */
+    private function scoreCType(
+        string $ctype,
+        array $profile,
+        bool $needsBodytext,
+        bool $needsHeaderOnly,
+        bool $needsImage,
+        bool $prefersRawHtml,
+    ): int {
+        $score = 0;
+
+        if ($needsHeaderOnly) {
+            // Heading sections: prefer CTypes that are header-focused
+            // A CType with header but NO bodytext is ideal (pure heading element)
+            if ($profile['hasHeader'] && !$profile['hasBodytext']) {
+                $score += 100;
+            } elseif ($profile['hasHeader']) {
+                $score += 50;
+            }
+            // Penalize CTypes with many unrelated fields (overly complex for a heading)
+            $score -= max(0, \count($profile['fields']) - 5);
+        } elseif ($needsImage) {
+            // Image sections: prefer CTypes with image/assets fields
+            if ($profile['hasImage'] || $profile['hasAssets']) {
+                $score += 100;
+            }
+            // Prefer types without bodytext (pure image)
+            if (!$profile['hasBodytext']) {
+                $score += 20;
+            }
+        } elseif ($needsBodytext) {
+            // Text/list/html sections: must have bodytext
+            if (!$profile['hasBodytext']) {
+                return -100; // Disqualify
+            }
+            $score += 50;
+
+            if ($prefersRawHtml) {
+                // HTML/table/code: prefer simple CTypes (fewer unrelated fields)
+                // The "html" CType name is a strong signal
+                if ($ctype === 'html') {
+                    $score += 80;
+                }
+                // Prefer fewer fields (simpler = better for raw HTML)
+                $score -= max(0, \count($profile['fields']) - 3);
+            } else {
+                // Regular text: prefer CTypes designed for text content
+                if ($profile['hasHeader']) {
+                    $score += 20; // Bonus: can set a header on the text block
+                }
+                // Slight preference for simpler text types
+                if ($ctype === 'text') {
+                    $score += 30;
+                }
+                // textmedia/textpic are good for text too (just heavier)
+                if ($profile['hasImage'] || $profile['hasAssets']) {
+                    $score += 5;
+                }
+            }
+        }
+
+        return $score;
+    }
+
+    // -----------------------------------------------------------------------
+    // Format detection
+    // -----------------------------------------------------------------------
+
     private function detectFormat(string $content): string
     {
-        // HTML: contains block-level HTML tags
         if (preg_match('/<(?:h[1-6]|p|div|table|ul|ol|pre|blockquote|img|hr)\b/i', $content)) {
             return self::FORMAT_HTML;
         }
 
-        // Markdown: contains heading markers, code fences, or image syntax
         if (preg_match('/^#{1,6}\s/m', $content)
             || preg_match('/^```/m', $content)
             || preg_match('/!\[.*?\]\(.*?\)/', $content)
@@ -182,20 +367,18 @@ final class ImportContentTool extends AbstractRecordTool
         return self::FORMAT_TEXT;
     }
 
+    // -----------------------------------------------------------------------
+    // Parsers — split content into typed sections
+    // -----------------------------------------------------------------------
+
     /**
-     * Parse HTML content into sections.
-     *
      * @return list<ParsedSection>
      */
     private function parseHtml(string $content): array
     {
         $sections = [];
-
-        // Normalize whitespace around block elements
         $content = trim($content);
 
-        // Split on block-level boundaries
-        // Match: headings, hr, table, pre, ul, ol, img (self-closing), div, blockquote
         $pattern = '/(<(?:h[1-6]|table|pre|ul|ol|blockquote|hr)[^>]*>.*?<\/(?:h[1-6]|table|pre|ul|ol|blockquote)>|<hr\s*\/?>|<img\s[^>]*\/?>)/is';
 
         $parts = preg_split($pattern, $content, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
@@ -209,80 +392,38 @@ final class ImportContentTool extends AbstractRecordTool
                 continue;
             }
 
-            // Heading
             if (preg_match('/^<h([1-6])[^>]*>(.*?)<\/h\1>$/is', $part, $m)) {
-                $sections[] = [
-                    'type' => 'heading',
-                    'content' => strip_tags($m[2]),
-                    'level' => (int)$m[1],
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'heading', 'content' => strip_tags($m[2]), 'level' => (int)$m[1], 'raw' => $part];
                 continue;
             }
-
-            // Table
             if (preg_match('/^<table\b/i', $part)) {
-                $sections[] = [
-                    'type' => 'table',
-                    'content' => $part,
-                    'level' => 0,
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'table', 'content' => $part, 'level' => 0, 'raw' => $part];
                 continue;
             }
-
-            // Pre/code block
             if (preg_match('/^<pre\b/i', $part)) {
-                $sections[] = [
-                    'type' => 'code',
-                    'content' => $part,
-                    'level' => 0,
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'code', 'content' => $part, 'level' => 0, 'raw' => $part];
                 continue;
             }
-
-            // List (ul/ol)
             if (preg_match('/^<[uo]l\b/i', $part)) {
-                $sections[] = [
-                    'type' => 'list',
-                    'content' => $part,
-                    'level' => 0,
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'list', 'content' => $part, 'level' => 0, 'raw' => $part];
                 continue;
             }
-
-            // HR → section separator, skip
             if (preg_match('/^<hr\b/i', $part)) {
                 continue;
             }
-
-            // Image
             if (preg_match('/^<img\b/i', $part)) {
                 $alt = '';
                 if (preg_match('/alt=["\']([^"\']*)["\']/', $part, $am)) {
                     $alt = $am[1];
                 }
-                $sections[] = [
-                    'type' => 'image',
-                    'content' => $alt,
-                    'level' => 0,
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'image', 'content' => $alt, 'level' => 0, 'raw' => $part];
                 continue;
             }
 
-            // Everything else is text (strip <p> wrappers for bodytext)
             $textContent = preg_replace('/<\/?p[^>]*>/i', '', $part);
             $textContent = \is_string($textContent) ? trim($textContent) : trim($part);
             if ($textContent !== '') {
-                $sections[] = [
-                    'type' => 'text',
-                    'content' => $textContent,
-                    'level' => 0,
-                    'raw' => $part,
-                ];
+                $sections[] = ['type' => 'text', 'content' => $textContent, 'level' => 0, 'raw' => $part];
             }
         }
 
@@ -290,8 +431,6 @@ final class ImportContentTool extends AbstractRecordTool
     }
 
     /**
-     * Parse Markdown content into sections.
-     *
      * @return list<ParsedSection>
      */
     private function parseMarkdown(string $content): array
@@ -306,33 +445,20 @@ final class ImportContentTool extends AbstractRecordTool
         $flushBlock = function () use (&$sections, &$currentBlock, &$currentType): void {
             $trimmed = trim($currentBlock);
             if ($trimmed !== '') {
-                $sections[] = [
-                    'type' => $currentType,
-                    'content' => $trimmed,
-                    'level' => 0,
-                    'raw' => $trimmed,
-                ];
+                $sections[] = ['type' => $currentType, 'content' => $trimmed, 'level' => 0, 'raw' => $trimmed];
             }
             $currentBlock = '';
             $currentType = 'text';
         };
 
         foreach ($lines as $line) {
-            // Code fence toggle
             if (preg_match('/^```/', $line)) {
                 if ($inCodeFence) {
-                    // End code fence
                     $inCodeFence = false;
-                    $sections[] = [
-                        'type' => 'code',
-                        'content' => trim($codeContent),
-                        'level' => 0,
-                        'raw' => $codeContent,
-                    ];
+                    $sections[] = ['type' => 'code', 'content' => trim($codeContent), 'level' => 0, 'raw' => $codeContent];
                     $codeContent = '';
                     continue;
                 }
-                // Start code fence
                 $flushBlock();
                 $inCodeFence = true;
                 $codeContent = '';
@@ -344,37 +470,23 @@ final class ImportContentTool extends AbstractRecordTool
                 continue;
             }
 
-            // Heading
             if (preg_match('/^(#{1,6})\s+(.+)$/', $line, $m)) {
                 $flushBlock();
-                $sections[] = [
-                    'type' => 'heading',
-                    'content' => trim($m[2]),
-                    'level' => \strlen($m[1]),
-                    'raw' => $line,
-                ];
+                $sections[] = ['type' => 'heading', 'content' => trim($m[2]), 'level' => \strlen($m[1]), 'raw' => $line];
                 continue;
             }
 
-            // Horizontal rule
             if (preg_match('/^[-*_]{3,}\s*$/', $line)) {
                 $flushBlock();
                 continue;
             }
 
-            // Image reference (standalone line)
             if (preg_match('/^!\[([^\]]*)\]\(([^)]+)\)\s*$/', $line, $m)) {
                 $flushBlock();
-                $sections[] = [
-                    'type' => 'image',
-                    'content' => $m[1] !== '' ? $m[1] : $m[2],
-                    'level' => 0,
-                    'raw' => $line,
-                ];
+                $sections[] = ['type' => 'image', 'content' => $m[1] !== '' ? $m[1] : $m[2], 'level' => 0, 'raw' => $line];
                 continue;
             }
 
-            // Empty line = paragraph break
             if (trim($line) === '') {
                 if (trim($currentBlock) !== '') {
                     $flushBlock();
@@ -382,7 +494,6 @@ final class ImportContentTool extends AbstractRecordTool
                 continue;
             }
 
-            // List item
             if (preg_match('/^\s*[-*+]\s/', $line) || preg_match('/^\s*\d+\.\s/', $line)) {
                 if ($currentType !== 'list') {
                     $flushBlock();
@@ -392,7 +503,6 @@ final class ImportContentTool extends AbstractRecordTool
                 continue;
             }
 
-            // Regular text
             if ($currentType === 'list') {
                 $flushBlock();
             }
@@ -400,14 +510,8 @@ final class ImportContentTool extends AbstractRecordTool
             $currentBlock .= $line . "\n";
         }
 
-        // Flush remaining
         if ($inCodeFence && trim($codeContent) !== '') {
-            $sections[] = [
-                'type' => 'code',
-                'content' => trim($codeContent),
-                'level' => 0,
-                'raw' => $codeContent,
-            ];
+            $sections[] = ['type' => 'code', 'content' => trim($codeContent), 'level' => 0, 'raw' => $codeContent];
         } else {
             $flushBlock();
         }
@@ -416,8 +520,6 @@ final class ImportContentTool extends AbstractRecordTool
     }
 
     /**
-     * Parse plain text into sections.
-     *
      * @return list<ParsedSection>
      */
     private function parsePlainText(string $content): array
@@ -434,35 +536,26 @@ final class ImportContentTool extends AbstractRecordTool
                 continue;
             }
 
-            // Heuristic: short line without period at start could be a heading
             $isHeading = $i === 0
                 && mb_strlen($paragraph) < 80
                 && !str_contains($paragraph, "\n")
                 && !str_ends_with($paragraph, '.');
 
             if ($isHeading) {
-                $sections[] = [
-                    'type' => 'heading',
-                    'content' => $paragraph,
-                    'level' => 1,
-                    'raw' => $paragraph,
-                ];
+                $sections[] = ['type' => 'heading', 'content' => $paragraph, 'level' => 1, 'raw' => $paragraph];
             } else {
-                $sections[] = [
-                    'type' => 'text',
-                    'content' => $paragraph,
-                    'level' => 0,
-                    'raw' => $paragraph,
-                ];
+                $sections[] = ['type' => 'text', 'content' => $paragraph, 'level' => 0, 'raw' => $paragraph];
             }
         }
 
         return $sections;
     }
 
+    // -----------------------------------------------------------------------
+    // Section merging
+    // -----------------------------------------------------------------------
+
     /**
-     * Merge consecutive sections of the same type (e.g. multiple text paragraphs → one element).
-     *
      * @param list<ParsedSection> $sections
      * @return list<ParsedSection>
      */
@@ -478,7 +571,6 @@ final class ImportContentTool extends AbstractRecordTool
         for ($i = 1, $len = \count($sections); $i < $len; $i++) {
             $next = $sections[$i];
 
-            // Merge consecutive text or list sections
             if ($current['type'] === $next['type'] && \in_array($current['type'], ['text', 'list'], true)) {
                 $current['content'] .= "\n\n" . $next['content'];
                 $current['raw'] .= "\n\n" . $next['raw'];
@@ -490,102 +582,5 @@ final class ImportContentTool extends AbstractRecordTool
         $merged[] = $current;
 
         return $merged;
-    }
-
-    /**
-     * Map a parsed section to a TYPO3 content element proposal.
-     *
-     * @param ParsedSection $section
-     * @param list<string> $availableCTypes
-     * @return ContentElement
-     */
-    private function mapSectionToElement(array $section, int $index, array $availableCTypes): array
-    {
-        $sectionType = $section['type'];
-        $preferredCType = self::CTYPE_MAP[$sectionType] ?? 'text';
-
-        // Resolve to an available CType
-        $ctype = $this->resolveAvailableCType($preferredCType, $availableCTypes);
-
-        $element = [
-            'index' => $index,
-            'CType' => $ctype,
-            'header' => '',
-            'bodytext' => '',
-            'header_layout' => 0,
-            'summary' => '',
-        ];
-
-        switch ($sectionType) {
-            case 'heading':
-                $element['header'] = $section['content'];
-                $element['header_layout'] = $section['level'];
-                if ($ctype === 'header') {
-                    $element['summary'] = 'H' . $section['level'] . ' heading';
-                } else {
-                    // Fallback: heading as text element with header field
-                    $element['summary'] = 'H' . $section['level'] . ' heading (as ' . $ctype . ')';
-                }
-                break;
-
-            case 'text':
-                $paragraphCount = substr_count($section['content'], "\n\n") + 1;
-                $element['bodytext'] = $section['content'];
-                $element['summary'] = $paragraphCount > 1
-                    ? $paragraphCount . ' paragraphs of text'
-                    : 'Text paragraph';
-                break;
-
-            case 'list':
-                $element['bodytext'] = $section['content'];
-                $itemCount = preg_match_all('/^\s*[-*+]\s|^\s*\d+\.\s/m', $section['content']);
-                $element['summary'] = $itemCount . ' list items';
-                break;
-
-            case 'html':
-            case 'table':
-            case 'code':
-                $element['bodytext'] = $section['raw'];
-                $element['summary'] = match ($sectionType) {
-                    'table' => 'HTML table',
-                    'code' => 'Code block',
-                    default => 'HTML content',
-                };
-                break;
-
-            case 'image':
-                $element['header'] = $section['content'];
-                $element['summary'] = 'Image reference (file must be attached separately via WriteTable)';
-                break;
-
-            default:
-                $element['bodytext'] = $section['content'];
-                $element['summary'] = 'Content block';
-                break;
-        }
-
-        return $element;
-    }
-
-    /**
-     * Resolve a preferred CType to one that's actually available.
-     *
-     * @param list<string> $availableCTypes
-     */
-    private function resolveAvailableCType(string $preferred, array $availableCTypes): string
-    {
-        if (\in_array($preferred, $availableCTypes, true)) {
-            return $preferred;
-        }
-
-        $fallbacks = self::CTYPE_FALLBACKS[$preferred] ?? ['text'];
-        foreach ($fallbacks as $fallback) {
-            if (\in_array($fallback, $availableCTypes, true)) {
-                return $fallback;
-            }
-        }
-
-        // Last resort: first available CType
-        return $availableCTypes[0] ?? 'text';
     }
 }
