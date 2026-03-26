@@ -216,6 +216,13 @@ The extension is explicit about that:
 - `ListWorkspaces`
 - `WorkspaceReview` — review all pending changes in a workspace with
   field-level diffs before publishing
+- `PublishWorkspace` — publish pending workspace changes to live (dry-run by
+  default for safety)
+
+### Batch operations
+
+- `BulkWrite` — execute multiple create/update/delete operations in a single
+  DataHandler transaction (max 50 per call)
 
 ### System maintenance
 
@@ -319,6 +326,8 @@ The functional suite already covers important extension-level scenarios:
 - workspace change review with field-level diffs
 - record duplication via CopyContent with overrides
 - CLI command validation, argument allowlisting, and shell injection rejection
+- workspace publishing with dry-run preview and live execution
+- bulk write operations with per-operation result tracking
 
 ## Repository map
 

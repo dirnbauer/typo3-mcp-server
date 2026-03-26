@@ -244,9 +244,13 @@ workspace behavior.
 ### Workspace Management
 - **ListWorkspaces** - List workspaces available to the current user and show which one is active. Use to get a `workspace_id` for other tools.
 - **WorkspaceReview** - Review all pending changes in a workspace. Shows new, modified, deleted, and moved records with field-level diffs (live vs. draft values). Essential for the draft → review → publish workflow — lets the AI or editor inspect what will be published before making changes live.
+- **PublishWorkspace** - Publish pending workspace changes to live. Defaults to dry-run mode (preview only) for safety — set `dryRun=false` to execute. Supports per-table filtering. Completes the full draft → review → publish workflow through MCP.
 
 ### Record Duplication
 - **CopyContent** - Copy/duplicate a record to the same or different page using TYPO3's native `DataHandler` copy command. Preserves all field values, file references, and relations automatically. Supports field overrides on the copy. More efficient than reading a record and recreating it with `WriteTable`.
+
+### Batch Operations
+- **BulkWrite** - Execute multiple write operations (create, update, delete) in a single DataHandler transaction. Maximum 50 operations per call. Returns per-operation results with new UIDs for creates. More efficient than calling WriteTable repeatedly for bulk content updates.
 
 ### System Maintenance
 - **SafeCli** - Execute a whitelisted subset of TYPO3 CLI commands for maintenance and diagnostics. Allowed: `cache:flush`, `cache:warmup`, `referenceindex:update`, `extension:list`, `site:list`, `site:show`. Arguments are validated against per-command allowlists, and shell injection is rejected.
@@ -595,17 +599,18 @@ subfolders, but uploaded files exist immediately once written. Record-based
 references (content elements, pages, file references) remain workspace-versioned.
 
 ### Workspace Publishing
-Publishing workspace changes is not exposed through MCP. Use the TYPO3 backend
-Workspaces module to review and publish. The MCP server supports the full
-draft → review cycle: `WorkspaceReview` shows pending changes with field-level
-diffs, and `ListWorkspaces` provides workspace selection.
+Workspace publishing is now fully supported through `PublishWorkspace`. The tool
+defaults to dry-run mode for safety and requires explicit `dryRun=false` to
+execute. Publishing is irreversible and makes changes live immediately. The
+recommended workflow is: `WorkspaceReview` → `PublishWorkspace` (dry-run) →
+`PublishWorkspace` (execute).
 
 ### Bulk Operations
-Large batch operations should be broken into smaller steps to stay within
-context window and timeout limits. `CopyContent` is more efficient than
-manually recreating records with `WriteTable` when duplicating content.
-`ContentAudit` can scan page trees to identify issues in bulk before applying
-targeted fixes.
+`BulkWrite` handles up to 50 operations per call in a single DataHandler
+transaction. For larger batches, split into multiple `BulkWrite` calls.
+`CopyContent` is more efficient than manually recreating records when
+duplicating content. `ContentAudit` can scan page trees to identify issues
+in bulk before applying targeted fixes.
 
 ## Best Practices for Users
 

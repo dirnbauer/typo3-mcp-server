@@ -94,6 +94,12 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``SafeCli``
      - Execute
      - Run whitelisted TYPO3 CLI commands
+   * - ``PublishWorkspace``
+     - Write
+     - Publish pending workspace changes to live (dry-run by default)
+   * - ``BulkWrite``
+     - Write
+     - Execute multiple write operations in a single transaction
 
 Record-backed tools
 ===================
@@ -113,6 +119,8 @@ workspace-aware execution:
 - ``GetSystemLog``
 - ``WorkspaceReview``
 - ``CopyContent``
+- ``PublishWorkspace``
+- ``BulkWrite``
 
 Navigation and discovery
 ========================
@@ -539,6 +547,56 @@ Allowed commands:
 Arguments are validated against a per-command allowlist, and shell injection
 characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.
+
+Workspace publishing
+====================
+
+PublishWorkspace
+----------------
+
+Publish pending workspace changes to live.
+
+:Parameters:
+   - ``table`` (string): optional table filter — only publish changes for this
+     table
+   - ``dryRun`` (boolean): if true (default), preview what would be published
+     without executing. Set to false to actually publish.
+   - ``workspace_id`` (integer): optional workspace override
+
+By default this tool runs in **dry-run mode** and returns a preview of what
+would be published (tables, record counts, UIDs). The AI must explicitly set
+``dryRun=false`` to publish. Publishing is irreversible — changes become live
+immediately.
+
+Use ``WorkspaceReview`` first to inspect field-level diffs, then
+``PublishWorkspace`` with ``dryRun=true`` to confirm the scope, then
+``dryRun=false`` to execute.
+
+Batch operations
+================
+
+BulkWrite
+---------
+
+Execute multiple write operations in a single DataHandler transaction.
+
+:Parameters:
+   - ``operations`` (array, required): list of operation objects, each with:
+
+     - ``action`` (string, required): ``create``, ``update``, or ``delete``
+     - ``table`` (string, required): table name
+     - ``uid`` (integer): record UID (required for update and delete)
+     - ``pid`` (integer): page ID (required for create)
+     - ``data`` (object): field values for create or update
+
+   - ``workspace_id`` (integer): optional workspace override
+
+Maximum 50 operations per call. All operations execute atomically in a single
+DataHandler invocation. The result includes per-operation success/failure
+status and new UIDs for creates.
+
+For complex single-record operations (positioning, translation,
+search-and-replace), use ``WriteTable`` instead.
 
 File safety model
 =================
