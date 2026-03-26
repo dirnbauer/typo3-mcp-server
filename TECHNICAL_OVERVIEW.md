@@ -249,6 +249,9 @@ workspace behavior.
 ### Record Duplication
 - **CopyContent** - Copy/duplicate a record to the same or different page using TYPO3's native `DataHandler` copy command. Preserves all field values, file references, and relations automatically. Supports field overrides on the copy. More efficient than reading a record and recreating it with `WriteTable`.
 
+### Content Import
+- **ImportContent** - Analyze raw content (text, Markdown, or HTML) and propose TYPO3 content elements. Detects the format, splits into logical sections (headings, paragraphs, tables, code blocks), and maps each to the best-fitting CType from what's available. Returns a JSON proposal — the chatbot reviews, adjusts, then calls `BulkWrite` to create all elements. No records are created by this tool.
+
 ### Batch Operations
 - **BulkWrite** - Execute multiple write operations (create, update, delete) in a single DataHandler transaction. Maximum 50 operations per call. Returns per-operation results with new UIDs for creates. More efficient than calling WriteTable repeatedly for bulk content updates.
 

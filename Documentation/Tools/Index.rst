@@ -100,6 +100,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``BulkWrite``
      - Write
      - Execute multiple write operations in a single transaction
+   * - ``ImportContent``
+     - Read
+     - Analyze raw content and propose TYPO3 content elements
 
 Record-backed tools
 ===================
@@ -121,6 +124,7 @@ workspace-aware execution:
 - ``CopyContent``
 - ``PublishWorkspace``
 - ``BulkWrite``
+- ``ImportContent``
 
 Navigation and discovery
 ========================
@@ -597,6 +601,45 @@ status and new UIDs for creates.
 
 For complex single-record operations (positioning, translation,
 search-and-replace), use ``WriteTable`` instead.
+
+Content import
+==============
+
+ImportContent
+-------------
+
+Analyze raw content (text, Markdown, or HTML) and propose TYPO3 content
+elements without creating them.
+
+:Parameters:
+   - ``content`` (string, required): raw content to import
+   - ``targetPid`` (integer, required): target page ID
+   - ``format`` (string): format hint — ``auto`` (default), ``markdown``,
+     ``html``, or ``text``
+   - ``colPos`` (integer): column position, default ``0``
+   - ``workspace_id`` (integer): optional workspace override
+
+The tool detects the content format, splits it into logical sections (headings,
+paragraphs, tables, code blocks, images), and maps each section to the
+best-fitting CType from what is actually available to the current user.
+
+The result is a JSON proposal — an array of element objects with ``CType``,
+``header``, ``bodytext``, ``header_layout``, and a human-readable ``summary``.
+No records are created. The chatbot reviews and adjusts the proposal, then
+calls ``BulkWrite`` to create all elements at once.
+
+Supported format features:
+
+- **Markdown**: headings, paragraphs, code fences, lists, images, horizontal
+  rules
+- **HTML**: block-level elements (headings, paragraphs, tables, pre/code,
+  lists, images)
+- **Plain text**: paragraph splitting on double newlines, heading detection by
+  heuristic
+
+CType mapping: heading → ``header``, text → ``text``, text+image →
+``textmedia``, table/code/raw HTML → ``html``, image → ``image``. Falls back
+to the closest available CType when the preferred one is not available.
 
 File safety model
 =================

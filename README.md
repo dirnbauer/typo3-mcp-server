@@ -196,6 +196,12 @@ The extension is explicit about that:
 - `CopyContent` — duplicate records via DataHandler, preserving file references
   and relations
 
+### Content import
+
+- `ImportContent` — analyze raw content (text, Markdown, HTML) and propose
+  TYPO3 content elements with CType mapping. Returns a proposal for review;
+  use BulkWrite to create the elements.
+
 ### Content quality and diagnostics
 
 - `ContentAudit` — scan page trees for missing meta descriptions, alt text,
@@ -328,6 +334,7 @@ The functional suite already covers important extension-level scenarios:
 - CLI command validation, argument allowlisting, and shell injection rejection
 - workspace publishing with dry-run preview and live execution
 - bulk write operations with per-operation result tracking
+- content import with format detection, CType mapping, and section merging
 
 ## Repository map
 
