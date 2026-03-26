@@ -234,8 +234,22 @@ workspace behavior.
 
 > **Note:** Physical files are **not** workspace-versioned. File writes and metadata changes take effect immediately across all workspaces.
 
+### Media Search
+- **SearchMedia** - Search for files across all TYPO3 file storage by metadata (title, description, alt text), MIME type, extension, folder, dimensions, or creation date. Unlike the sandbox-restricted file tools, SearchMedia reads across all FAL storage (read-only). Returns file UIDs that can be used with `WriteTable` to attach files to records.
+
+### Content Quality & Diagnostics
+- **ContentAudit** - Audit a page tree for SEO and content quality issues: missing meta descriptions, missing image alt text, empty text content elements, pages without content, and missing page titles. Workspace-aware — scans workspace overlays. Returns a structured report grouped by check type.
+- **GetSystemLog** - Read TYPO3 system log entries (`sys_log`) for debugging. Helps diagnose why operations failed, what errors occurred recently, or what actions were performed. Supports filtering by severity, component, table, date range, and user. Admin users see all entries; non-admins see only their own.
+
 ### Workspace Management
 - **ListWorkspaces** - List workspaces available to the current user and show which one is active. Use to get a `workspace_id` for other tools.
+- **WorkspaceReview** - Review all pending changes in a workspace. Shows new, modified, deleted, and moved records with field-level diffs (live vs. draft values). Essential for the draft → review → publish workflow — lets the AI or editor inspect what will be published before making changes live.
+
+### Record Duplication
+- **CopyContent** - Copy/duplicate a record to the same or different page using TYPO3's native `DataHandler` copy command. Preserves all field values, file references, and relations automatically. Supports field overrides on the copy. More efficient than reading a record and recreating it with `WriteTable`.
+
+### System Maintenance
+- **SafeCli** - Execute a whitelisted subset of TYPO3 CLI commands for maintenance and diagnostics. Allowed: `cache:flush`, `cache:warmup`, `referenceindex:update`, `extension:list`, `site:list`, `site:show`. Arguments are validated against per-command allowlists, and shell injection is rejected.
 
 > Each tool provides detailed schema information when called. See the Real-World Scenarios below for practical examples.
 
@@ -572,24 +586,26 @@ The repository verifies behavior at several levels:
 - **LLM tests** that use real models to check whether tool descriptions and
   schemas are intuitive in realistic multi-step conversations
 
-## What's Not Yet Implemented
+## Known Limitations
 
-While the MCP Server is powerful, some features are still in development:
-
-### Full Physical File Versioning
-- Binary uploads are supported through `UploadFile`, but TYPO3 still does not workspace-version physical files
-- The MCP file sandbox can isolate uploads to a dedicated sandbox folder and optional workspace subfolders
-- Publishing still affects only record references and content; uploaded files themselves exist immediately after upload
+### Physical File Versioning
+TYPO3 does not workspace-version physical files. The MCP file sandbox mitigates
+this by isolating uploads to a dedicated folder with optional workspace
+subfolders, but uploaded files exist immediately once written. Record-based
+references (content elements, pages, file references) remain workspace-versioned.
 
 ### Workspace Publishing
-- Cannot publish workspace changes through MCP
-- Must use TYPO3 backend for reviewing and publishing
-- Workspace selection and listing is fully supported
+Publishing workspace changes is not exposed through MCP. Use the TYPO3 backend
+Workspaces module to review and publish. The MCP server supports the full
+draft → review cycle: `WorkspaceReview` shows pending changes with field-level
+diffs, and `ListWorkspaces` provides workspace selection.
 
-### Bulk Operations Optimization
-- Large batch operations may be slow
-- No built-in chunking for massive updates
-- Consider breaking into smaller operations
+### Bulk Operations
+Large batch operations should be broken into smaller steps to stay within
+context window and timeout limits. `CopyContent` is more efficient than
+manually recreating records with `WriteTable` when duplicating content.
+`ContentAudit` can scan page trees to identify issues in bulk before applying
+targeted fixes.
 
 ## Best Practices for Users
 

@@ -76,6 +76,24 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``WriteFile``
      - Write
      - Create/replace text file in sandbox
+   * - ``SearchMedia``
+     - Read
+     - Search files across all FAL storage by metadata, type, or dimensions
+   * - ``ContentAudit``
+     - Read
+     - Audit page tree for SEO and content quality issues
+   * - ``GetSystemLog``
+     - Read
+     - Read TYPO3 system log entries for debugging
+   * - ``WorkspaceReview``
+     - Read
+     - Review pending workspace changes with field-level diffs
+   * - ``CopyContent``
+     - Write
+     - Duplicate records preserving relations and file references
+   * - ``SafeCli``
+     - Execute
+     - Run whitelisted TYPO3 CLI commands
 
 Record-backed tools
 ===================
@@ -91,6 +109,10 @@ workspace-aware execution:
 - ``GetTableSchema``
 - ``GetFlexFormSchema``
 - ``WriteTable``
+- ``ContentAudit``
+- ``GetSystemLog``
+- ``WorkspaceReview``
+- ``CopyContent``
 
 Navigation and discovery
 ========================
@@ -377,6 +399,146 @@ Security measures include:
 - streaming downloads with a 20 MB size limit
 - limiting redirects and request timeout
 - relying on TYPO3 file validation when the file is stored
+
+Media search
+============
+
+SearchMedia
+-----------
+
+Search for files across all TYPO3 file storage by metadata, type, or
+dimensions.
+
+:Parameters:
+   - ``keyword`` (string): search in file name, metadata title, description,
+     and alternative text
+   - ``mimeType`` (string): MIME type prefix filter, e.g. ``image/``,
+     ``application/pdf``
+   - ``extension`` (string): file extension filter, e.g. ``jpg``, ``pdf``
+   - ``folder`` (string): folder path prefix filter
+   - ``minWidth`` (integer): minimum image width in pixels
+   - ``minHeight`` (integer): minimum image height in pixels
+   - ``createdAfter`` (string): ISO date, only files created after this date
+   - ``createdBefore`` (string): ISO date, only files created before this date
+   - ``limit`` (integer): maximum results, default ``50``, max ``200``
+   - ``offset`` (integer): pagination offset
+
+At least one filter parameter is required. Unlike the sandbox-restricted file
+tools, ``SearchMedia`` searches across all FAL storage (read-only).
+
+The result includes file UID, name, identifier, MIME type, dimensions, and
+metadata summary. Use ``ReadFileMetadata`` for full details on a specific file.
+
+Content quality and diagnostics
+===============================
+
+ContentAudit
+------------
+
+Audit a page tree for content quality and SEO issues.
+
+:Parameters:
+   - ``rootPageId`` (integer): root page to audit, default ``1``
+   - ``checks`` (array): check types to run, default: all available checks
+   - ``depth`` (integer): maximum page tree depth, default ``5``, max ``10``
+   - ``limit`` (integer): maximum issues per check type, default ``50``
+   - ``workspace_id`` (integer): optional workspace override
+
+Available checks:
+
+- ``missing_meta_description``: pages with empty meta description
+- ``missing_alt_text``: image file references without alternative text
+- ``empty_content``: text content elements with empty body
+- ``pages_without_content``: pages that have no content elements
+- ``missing_page_title``: pages with no title
+
+The result is grouped by check type with per-issue details (page UID, title,
+content UID where applicable) and a summary count per check.
+
+GetSystemLog
+------------
+
+Read TYPO3 system log entries for debugging.
+
+:Parameters:
+   - ``severity`` (integer): minimum severity level (0–4), default ``0``
+   - ``action`` (integer): filter by action type
+   - ``component`` (string): filter by log component
+   - ``tablename`` (string): filter by affected table name
+   - ``userId`` (integer): filter by backend user (admin only)
+   - ``since`` (string): ISO datetime, only entries after this time
+   - ``until`` (string): ISO datetime, only entries before this time
+   - ``limit`` (integer): maximum entries, default ``50``, max ``500``
+   - ``offset`` (integer): pagination offset
+   - ``workspace_id`` (integer): optional workspace override
+
+Admin users see all entries; non-admin users see only their own log entries.
+Severity levels map to PSR-3: 0=info, 1=notice, 2=warning, 3=error, 4=fatal.
+
+Workspace operations
+====================
+
+WorkspaceReview
+---------------
+
+Review all pending changes in a workspace before publishing.
+
+:Parameters:
+   - ``table`` (string): optional table filter
+   - ``limit`` (integer): maximum changes, default ``100``, max ``500``
+   - ``offset`` (integer): pagination offset
+   - ``workspace_id`` (integer): optional workspace override
+
+For each changed record, the result includes the version state (``new``,
+``modified``, ``deleted``, ``moved``), the record label, and for modified
+records a field-level diff showing live vs. draft values.
+
+This tool closes the draft → review → publish workflow by letting the AI
+inspect what will be published.
+
+Record duplication
+==================
+
+CopyContent
+-----------
+
+Copy/duplicate a record to the same or different page.
+
+:Parameters:
+   - ``table`` (string, required): table name
+   - ``uid`` (integer, required): source record UID
+   - ``targetPid`` (integer, required): destination page ID
+   - ``overrides`` (object): optional field values to override in the copy
+   - ``workspace_id`` (integer): optional workspace override
+
+The copy is created through TYPO3's ``DataHandler`` copy command, which
+preserves all field values, file references, and relations automatically.
+The copy is workspace-safe. Overrides are applied after the copy is created.
+
+System maintenance
+==================
+
+SafeCli
+-------
+
+Execute a whitelisted TYPO3 CLI command.
+
+:Parameters:
+   - ``command`` (string, required): command name from the allowed list
+   - ``arguments`` (array): optional command arguments, validated per command
+
+Allowed commands:
+
+- ``cache:flush`` (option: ``--group``)
+- ``cache:warmup``
+- ``referenceindex:update``
+- ``extension:list``
+- ``site:list``
+- ``site:show``
+
+Arguments are validated against a per-command allowlist, and shell injection
+characters are rejected. Each command has an individual timeout. The result
+includes stdout, stderr, exit code, and execution time.
 
 File safety model
 =================

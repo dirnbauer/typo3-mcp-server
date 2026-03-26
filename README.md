@@ -25,8 +25,13 @@ This extension is built for real editor-facing work:
 - read and write workspace-capable TYPO3 records
 - inspect TCA and FlexForm schemas before writing
 - work with translations using ISO language codes where available
-- search content across tables
+- search content across tables and media files across all FAL storage
 - manage files inside a dedicated MCP file sandbox
+- review pending workspace changes before publishing
+- copy/duplicate records preserving relations and file references
+- audit content for SEO and quality issues
+- read system logs for diagnostics
+- execute safe TYPO3 CLI maintenance commands
 - connect remote clients over HTTP/OAuth or local clients over stdio
 
 ## Recent TYPO3 v14 updates
@@ -176,6 +181,8 @@ The extension is explicit about that:
 - `GetPage`
 - `ListTables`
 - `Search`
+- `SearchMedia` — search files across all FAL storage by metadata, type, or
+  dimensions
 
 ### Schema and reading
 
@@ -186,6 +193,15 @@ The extension is explicit about that:
 ### Writing
 
 - `WriteTable`
+- `CopyContent` — duplicate records via DataHandler, preserving file references
+  and relations
+
+### Content quality and diagnostics
+
+- `ContentAudit` — scan page trees for missing meta descriptions, alt text,
+  empty content, and pages without content
+- `GetSystemLog` — read TYPO3 system log entries for debugging failed
+  operations and recent errors
 
 ### Files
 
@@ -198,6 +214,13 @@ The extension is explicit about that:
 ### Workspaces
 
 - `ListWorkspaces`
+- `WorkspaceReview` — review all pending changes in a workspace with
+  field-level diffs before publishing
+
+### System maintenance
+
+- `SafeCli` — execute whitelisted TYPO3 CLI commands (cache:flush,
+  extension:list, site:list, referenceindex:update)
 
 ## Authentication and client setup
 
@@ -290,6 +313,12 @@ The functional suite already covers important extension-level scenarios:
 - file sandbox browsing, writes, metadata, and uploads
 - MCP endpoint security defaults and URL upload safety checks
 - extension compatibility with `georgringer/news`
+- media search across FAL storage with metadata and dimension filters
+- content audit checks for SEO and quality issues
+- system log reading with severity/component/date filtering
+- workspace change review with field-level diffs
+- record duplication via CopyContent with overrides
+- CLI command validation, argument allowlisting, and shell injection rejection
 
 ## Repository map
 
