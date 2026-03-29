@@ -8,6 +8,9 @@ use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Analyze raw content and propose TYPO3 content elements.
@@ -26,6 +29,9 @@ final class ImportContentTool extends AbstractRecordTool
     private const FORMAT_MARKDOWN = 'markdown';
     private const FORMAT_HTML = 'html';
     private const FORMAT_TEXT = 'text';
+
+    private const MODE_ANALYZE = 'analyze';
+    private const MODE_EXECUTE = 'execute';
 
     /**
      * Section types produced by the parsers.
@@ -55,12 +61,11 @@ final class ImportContentTool extends AbstractRecordTool
     protected function getToolSchema(): array
     {
         return [
-            'description' => 'Analyze raw content (text, Markdown, or HTML) and propose TYPO3 content elements. '
-                . 'Dynamically discovers ALL available content element types (CTypes) from TCA — including '
-                . 'core types, extension types, and custom content blocks — and selects the best fit for each '
-                . 'content section based on field capabilities. Returns a proposal as JSON. '
-                . 'Review and adjust the elements, then call BulkWrite to create them all at once. '
-                . 'This tool does NOT create records; it only proposes a structure.',
+            'description' => 'Analyze raw content (text, Markdown, or HTML) and map it to TYPO3 content elements. '
+                . 'Dynamically discovers ALL available CTypes from TCA — core, extensions, and custom content blocks. '
+                . 'In "analyze" mode (default): returns a proposal as JSON for review. '
+                . 'In "execute" mode: creates the page content elements directly via DataHandler. '
+                . 'The chatbot can paste content and this tool chooses the best content elements automatically.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -71,6 +76,13 @@ final class ImportContentTool extends AbstractRecordTool
                     'targetPid' => [
                         'type' => 'integer',
                         'description' => 'Page ID where elements will be created',
+                    ],
+                    'mode' => [
+                        'type' => 'string',
+                        'description' => 'analyze = propose elements (read-only, default). '
+                            . 'execute = create elements directly on the page via DataHandler.',
+                        'enum' => [self::MODE_ANALYZE, self::MODE_EXECUTE],
+                        'default' => self::MODE_ANALYZE,
                     ],
                     'format' => [
                         'type' => 'string',
@@ -87,9 +99,9 @@ final class ImportContentTool extends AbstractRecordTool
                 'required' => ['content', 'targetPid'],
             ],
             'annotations' => [
-                'readOnlyHint' => true,
+                'readOnlyHint' => false,
                 'destructiveHint' => false,
-                'idempotentHint' => true,
+                'idempotentHint' => false,
                 'openWorldHint' => false,
             ],
         ];
@@ -104,12 +116,16 @@ final class ImportContentTool extends AbstractRecordTool
         $targetPid = is_numeric($params['targetPid'] ?? null) ? (int)$params['targetPid'] : 0;
         $format = \is_string($params['format'] ?? null) ? $params['format'] : self::FORMAT_AUTO;
         $colPos = is_numeric($params['colPos'] ?? null) ? (int)$params['colPos'] : 0;
+        $mode = \is_string($params['mode'] ?? null) ? $params['mode'] : self::MODE_ANALYZE;
 
         if (trim($content) === '') {
             throw new ValidationException(['content must not be empty']);
         }
         if ($targetPid < 0) {
             throw new ValidationException(['targetPid must be a non-negative integer']);
+        }
+        if (!\in_array($mode, [self::MODE_ANALYZE, self::MODE_EXECUTE], true)) {
+            throw new ValidationException(['mode must be "analyze" or "execute"']);
         }
 
         $this->ensureTableAccess('tt_content', 'write');
@@ -137,7 +153,12 @@ final class ImportContentTool extends AbstractRecordTool
             $elements[] = $this->mapSectionToElement($section, $index, $ctypeProfiles);
         }
 
-        // Build the available types summary for the LLM
+        // Execute mode: create elements via DataHandler
+        if ($mode === self::MODE_EXECUTE) {
+            return $this->executeCreation($elements, $targetPid, $colPos, $format);
+        }
+
+        // Analyze mode: return proposal
         $typeSummary = [];
         foreach ($ctypeProfiles as $ctype => $profile) {
             $typeSummary[$ctype] = [
@@ -150,13 +171,112 @@ final class ImportContentTool extends AbstractRecordTool
             'targetPid' => $targetPid,
             'format' => $format,
             'colPos' => $colPos,
+            'mode' => self::MODE_ANALYZE,
             'availableContentTypes' => $typeSummary,
             'elements' => $elements,
             'totalElements' => \count($elements),
             'hint' => 'Review the proposed elements. You can change CType to any type listed in '
-                . 'availableContentTypes. Then call BulkWrite with action=create for each element '
+                . 'availableContentTypes. Then either call ImportContent again with mode=execute, '
+                . 'or call BulkWrite with action=create for each element '
                 . 'on table tt_content with pid=' . $targetPid . ' and colPos=' . $colPos . '.',
         ];
+
+        return $this->createJsonResult($result);
+    }
+
+    /**
+     * Create all proposed elements via DataHandler in a single transaction.
+     *
+     * @param list<ContentElement> $elements
+     */
+    private function executeCreation(array $elements, int $targetPid, int $colPos, string $format): CallToolResult
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            return $this->createErrorResult('No backend user session available.');
+        }
+
+        if ($elements === []) {
+            return $this->createJsonResult([
+                'mode' => self::MODE_EXECUTE,
+                'targetPid' => $targetPid,
+                'message' => 'No content elements to create — input was empty after parsing.',
+                'created' => [],
+            ]);
+        }
+
+        // Build DataHandler dataMap
+        /** @var array<string, array<string, array<string, mixed>>> $dataMap */
+        $dataMap = [];
+
+        foreach ($elements as $index => $element) {
+            $newId = 'NEW_import_' . $index;
+            $record = [
+                'pid' => $targetPid,
+                'CType' => $element['CType'],
+                'colPos' => $colPos,
+            ];
+
+            if (!empty($element['header'])) {
+                $record['header'] = $element['header'];
+            }
+            if (!empty($element['bodytext'])) {
+                $record['bodytext'] = $element['bodytext'];
+            }
+            if (isset($element['header_layout']) && $element['header_layout'] > 0) {
+                $record['header_layout'] = $element['header_layout'];
+            }
+
+            $dataMap['tt_content'][$newId] = $record;
+        }
+
+        // Execute
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $dataHandler->BE_USER = $backendUser;
+        $dataHandler->start($dataMap, []);
+        $dataHandler->process_datamap();
+
+        // Collect results
+        $created = [];
+        $errorCount = 0;
+        foreach ($elements as $index => $element) {
+            $newId = 'NEW_import_' . $index;
+            $substUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
+            if (is_numeric($substUid) && (int)$substUid > 0) {
+                $created[] = [
+                    'index' => $index,
+                    'uid' => (int)$substUid,
+                    'CType' => $element['CType'],
+                    'summary' => $element['summary'],
+                ];
+            } else {
+                $created[] = [
+                    'index' => $index,
+                    'error' => 'Creation failed for element #' . $index . ' (' . (\is_string($element['CType'] ?? null) ? $element['CType'] : 'unknown') . ')',
+                ];
+                $errorCount++;
+            }
+        }
+
+        // Collect global errors
+        $errors = [];
+        foreach ($dataHandler->errorLog as $error) {
+            $errors[] = \is_scalar($error) ? (string)$error : 'Unknown error';
+        }
+
+        $result = [
+            'mode' => self::MODE_EXECUTE,
+            'targetPid' => $targetPid,
+            'format' => $format,
+            'colPos' => $colPos,
+            'totalCreated' => \count($elements) - $errorCount,
+            'totalErrors' => $errorCount,
+            'created' => $created,
+        ];
+
+        if ($errors !== []) {
+            $result['errors'] = $errors;
+        }
 
         return $this->createJsonResult($result);
     }

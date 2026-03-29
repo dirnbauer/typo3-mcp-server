@@ -245,6 +245,7 @@ workspace behavior.
 - **ListWorkspaces** - List workspaces available to the current user and show which one is active. Use to get a `workspace_id` for other tools.
 - **WorkspaceReview** - Review all pending changes in a workspace. Shows new, modified, deleted, and moved records with field-level diffs (live vs. draft values). Essential for the draft → review → publish workflow — lets the AI or editor inspect what will be published before making changes live.
 - **PublishWorkspace** - Publish pending workspace changes to live. Defaults to dry-run mode (preview only) for safety — set `dryRun=false` to execute. Supports per-table filtering. Completes the full draft → review → publish workflow through MCP.
+- **RollbackWorkspace** - Discard pending workspace changes. Defaults to dry-run mode for safety. Supports filtering by table or single record UID. Use when an import or bulk operation went wrong — discard the workspace changes instead of publishing them.
 
 ### Record Duplication
 - **CopyContent** - Copy/duplicate a record to the same or different page using TYPO3's native `DataHandler` copy command. Preserves all field values, file references, and relations automatically. Supports field overrides on the copy. More efficient than reading a record and recreating it with `WriteTable`.
@@ -254,6 +255,18 @@ workspace behavior.
 
 ### Batch Operations
 - **BulkWrite** - Execute multiple write operations (create, update, delete) in a single DataHandler transaction. Maximum 50 operations per call. Returns per-operation results with new UIDs for creates. More efficient than calling WriteTable repeatedly for bulk content updates.
+
+### Site Management
+- **CreateSite** - Create or modify TYPO3 site configurations. Supports creating a new site with root page, base URL, and languages, or adding a language to an existing site. Admin-only. Uses TYPO3's SiteWriter API — changes take effect immediately (not workspace-versioned).
+
+### URL Redirects
+- **ManageRedirects** - Manage `sys_redirect` records: list existing redirects with filters, create 301/302/307 redirects, or delete redirects. Workspace-safe for create/delete. Essential when restructuring pages or importing content from external URLs.
+
+### Content Import from URL
+- **ImportFromUrl** - Fetch a web page by URL, extract the main content (stripping navigation, footer, scripts), and propose or create TYPO3 content elements. In "analyze" mode: returns a proposal with extracted title, slug, and content sections. In "execute" mode: creates the page and content elements directly. Includes SSRF protection.
+
+### Extension Management
+- **InstallExtension** - Install, activate, or search for TYPO3 extensions. Actions: `require` (composer require), `activate` (extension:activate), `search` (find TYPO3 extensions on Packagist). Admin-only. Package names and extension keys are validated, shell injection is rejected.
 
 ### System Maintenance
 - **SafeCli** - Execute a whitelisted subset of TYPO3 CLI commands for maintenance and diagnostics. Allowed: `cache:flush`, `cache:warmup`, `referenceindex:update`, `extension:list`, `site:list`, `site:show`. Arguments are validated against per-command allowlists, and shell injection is rejected.
@@ -614,6 +627,68 @@ transaction. For larger batches, split into multiple `BulkWrite` calls.
 `CopyContent` is more efficient than manually recreating records when
 duplicating content. `ContentAudit` can scan page trees to identify issues
 in bulk before applying targeted fixes.
+
+## Important: Use on Local DDEV Installations Only
+
+This version of the MCP server includes powerful tools that create sites, install
+extensions, execute CLI commands, and publish workspace changes. These capabilities
+are designed for **local DDEV development environments** — not for production
+servers or shared hosting.
+
+Run this extension on your local DDEV instance where you have full control and can
+safely experiment. Do not deploy this version to production without reviewing and
+restricting the available tools to match your security requirements.
+
+## Skills vs MCP Tools
+
+Not everything needs to be an MCP tool. The MCP server provides **runtime tools**
+that operate on TYPO3 data through APIs. Some tasks are better handled by
+**AI skills** — reusable prompt templates that guide the LLM through complex
+workflows using existing MCP tools.
+
+### What MCP tools do (runtime, data-level)
+- Read and write TYPO3 records, files, and configurations
+- Navigate the page tree, inspect schemas, search content
+- Manage workspaces, publish changes, handle redirects
+- Install extensions, execute safe CLI commands
+
+### What skills do (knowledge, workflow-level)
+- **Shadcn UI templates** — generate Fluid templates, CSS, and TypoScript for
+  frontend rendering. Use the `shadcn-ui` and `frontend-design` skills.
+- **Content Blocks** — create TYPO3 Content Block YAML and Fluid definitions for
+  custom content elements. Use the `typo3-content-blocks` skill.
+- **Form creation** — create EXT:powermail forms with fields, validation, and
+  receivers. Use the `typo3-powermail` skill + `WriteTable` to create form records.
+- **Legal pages** — generate Austrian/German Impressum, Datenschutz, and AGB
+  content. Use the `legal-impressum` skill + `WriteTable` to create page content.
+- **Cookie consent** — choose and configure a cookie consent extension. Use the
+  `InstallExtension` tool to install it, then skills for configuration.
+- **SEO optimization** — audit and improve meta tags, alt text, structured data.
+  Use the `typo3-seo` skill + `ContentAudit` and `WriteTable`.
+- **Accessibility** — audit and fix WCAG compliance issues. Use the
+  `typo3-accessibility` skill + existing read/write tools.
+
+### How skills and MCP tools work together
+
+Skills are prompt templates that the LLM loads when it recognizes a matching task.
+They provide domain knowledge and step-by-step guidance. The LLM then uses MCP
+tools to execute the actual operations.
+
+Example workflow — "Add a contact form to the about page":
+1. LLM loads the `typo3-powermail` skill (knows form structure)
+2. LLM calls `GetPage` to find the about page
+3. LLM calls `GetTableSchema` for `tx_powermail_domain_model_form` to understand fields
+4. LLM calls `WriteTable` to create the form, pages, and fields
+5. LLM calls `WriteTable` to add a `list` content element with the form plugin
+
+Example workflow — "Create a legal page with Austrian Impressum":
+1. LLM loads the `legal-impressum` skill (knows Austrian ECG/UGB requirements)
+2. LLM generates the legal text based on company details
+3. LLM calls `WriteTable` to create a page
+4. LLM calls `ImportContent` with mode=execute to create the content elements
+
+This separation keeps MCP tools generic and reusable while skills encode
+domain-specific knowledge that evolves independently.
 
 ## Best Practices for Users
 

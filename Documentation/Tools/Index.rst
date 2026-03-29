@@ -101,8 +101,23 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Write
      - Execute multiple write operations in a single transaction
    * - ``ImportContent``
-     - Read
-     - Analyze raw content and propose TYPO3 content elements
+     - Read/Write
+     - Analyze raw content and propose or create TYPO3 content elements
+   * - ``RollbackWorkspace``
+     - Write
+     - Discard pending workspace changes (dry-run by default)
+   * - ``ManageRedirects``
+     - Read/Write
+     - List, create, or delete URL redirects (sys_redirect)
+   * - ``ImportFromUrl``
+     - Read/Write
+     - Fetch URL content and propose or create page with elements
+   * - ``CreateSite``
+     - Write
+     - Create or update TYPO3 site configurations (admin-only)
+   * - ``InstallExtension``
+     - Execute
+     - Install, activate, or search TYPO3 extensions (admin-only)
 
 Record-backed tools
 ===================
@@ -125,6 +140,10 @@ workspace-aware execution:
 - ``PublishWorkspace``
 - ``BulkWrite``
 - ``ImportContent``
+- ``RollbackWorkspace``
+- ``ManageRedirects``
+- ``ImportFromUrl``
+- ``CreateSite``
 
 Navigation and discovery
 ========================
@@ -628,6 +647,10 @@ The result is a JSON proposal — an array of element objects with ``CType``,
 No records are created. The chatbot reviews and adjusts the proposal, then
 calls ``BulkWrite`` to create all elements at once.
 
+In ``execute`` mode, the tool creates the content elements directly via
+DataHandler instead of returning a proposal. The result includes the UIDs
+of the created records.
+
 Supported format features:
 
 - **Markdown**: headings, paragraphs, code fences, lists, images, horizontal
@@ -637,9 +660,115 @@ Supported format features:
 - **Plain text**: paragraph splitting on double newlines, heading detection by
   heuristic
 
-CType mapping: heading → ``header``, text → ``text``, text+image →
-``textmedia``, table/code/raw HTML → ``html``, image → ``image``. Falls back
-to the closest available CType when the preferred one is not available.
+CType mapping is dynamic: the tool queries TCA for all available CTypes, builds
+field profiles (bodytext, header, image, assets), and scores each CType against
+the section's needs. Works with core types, extension types, and custom content
+blocks automatically.
+
+Workspace rollback
+==================
+
+RollbackWorkspace
+-----------------
+
+Discard pending workspace changes.
+
+:Parameters:
+   - ``table`` (string): optional table filter — only discard changes for this
+     table
+   - ``uid`` (integer): optional record UID — discard only this record's changes
+   - ``dryRun`` (boolean): if true (default), preview what would be discarded.
+     Set to false to actually discard.
+   - ``workspace_id`` (integer): optional workspace override
+
+This tool is the counterpart to ``PublishWorkspace``. Use it when an import or
+bulk operation produced unwanted results and you want to undo the workspace
+changes instead of publishing them. Discarding is irreversible.
+
+URL redirects
+=============
+
+ManageRedirects
+---------------
+
+Manage TYPO3 URL redirects (``sys_redirect``).
+
+:Parameters:
+   - ``action`` (string, required): ``list``, ``create``, or ``delete``
+   - ``source_host`` (string): host filter for list, or source host for create
+   - ``source_path`` (string): path filter (LIKE) for list, or source path for
+     create (must start with ``/``)
+   - ``target`` (string): redirect target URL or page path (required for create)
+   - ``target_statuscode`` (integer): HTTP status code, default ``301``. Allowed:
+     301, 302, 303, 307
+   - ``force_https`` (boolean): redirect to HTTPS, default false
+   - ``uid`` (integer): redirect UID (required for delete)
+   - ``limit`` (integer): max results for list, default 50
+   - ``offset`` (integer): pagination offset for list
+   - ``workspace_id`` (integer): optional workspace override
+
+Content import from URL
+=======================
+
+ImportFromUrl
+-------------
+
+Fetch a web page and propose or create TYPO3 content from it.
+
+:Parameters:
+   - ``url`` (string, required): URL to fetch
+   - ``targetPid`` (integer, required): parent page ID
+   - ``mode`` (string): ``analyze`` (default) or ``execute``
+   - ``colPos`` (integer): column position, default ``0``
+   - ``pageType`` (integer): doktype for the new page, default ``1``
+   - ``workspace_id`` (integer): optional workspace override
+
+In ``analyze`` mode, returns a proposal with extracted title, slug, content
+sections, and image URLs. In ``execute`` mode, creates the page and content
+elements directly via DataHandler.
+
+SSRF protection: only ``http``/``https`` URLs are allowed, private/reserved IP
+ranges are rejected after DNS resolution.
+
+Site management
+===============
+
+CreateSite
+----------
+
+Create or update TYPO3 site configurations.
+
+:Parameters:
+   - ``action`` (string, required): ``create`` or ``addLanguage``
+   - ``identifier`` (string, required): site identifier (alphanumeric + dash)
+   - ``rootPageId`` (integer): root page UID (required for create)
+   - ``base`` (string): base URL (required for create)
+   - ``defaultLanguage`` (object): default language config (title, locale,
+     iso-639-1)
+   - ``languages`` (array): additional languages for create
+   - ``language`` (object): language to add (required for addLanguage)
+   - ``workspace_id`` (integer): optional workspace override
+
+Admin-only. Site configurations are YAML files, not workspace-versioned.
+Changes take effect immediately.
+
+Extension management
+====================
+
+InstallExtension
+----------------
+
+Install, activate, or search TYPO3 extensions.
+
+:Parameters:
+   - ``action`` (string, required): ``require``, ``activate``, or ``search``
+   - ``package`` (string): Composer package name (required for require)
+   - ``key`` (string): extension key (required for activate)
+   - ``query`` (string): search terms (required for search)
+
+Admin-only. Package names must match Composer naming conventions. Extension keys
+must be lowercase alphanumeric with underscores. Shell injection characters are
+rejected.
 
 File safety model
 =================

@@ -275,4 +275,55 @@ HTML;
             self::assertArrayHasKey('summary', $element);
         }
     }
+
+    public function testExecuteModeCreatesRecords(): void
+    {
+        $result = $this->tool->execute([
+            'content' => "# Welcome\n\nThis is the body text of the page.",
+            'targetPid' => 1,
+            'mode' => 'execute',
+        ]);
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+        self::assertEquals('execute', $data['mode']);
+        self::assertGreaterThan(0, $data['totalCreated']);
+        self::assertEquals(0, $data['totalErrors']);
+
+        // Verify records were actually created
+        foreach ($data['created'] as $created) {
+            self::assertArrayHasKey('uid', $created);
+            self::assertGreaterThan(0, $created['uid']);
+        }
+    }
+
+    public function testAnalyzeModeDoesNotCreateRecords(): void
+    {
+        $result = $this->tool->execute([
+            'content' => '# Test',
+            'targetPid' => 1,
+            'mode' => 'analyze',
+        ]);
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+        self::assertEquals('analyze', $data['mode']);
+        self::assertArrayHasKey('availableContentTypes', $data);
+        self::assertArrayNotHasKey('totalCreated', $data);
+    }
+
+    public function testDefaultModeIsAnalyze(): void
+    {
+        $result = $this->tool->execute([
+            'content' => '# Test',
+            'targetPid' => 1,
+        ]);
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+        self::assertEquals('analyze', $data['mode']);
+    }
 }

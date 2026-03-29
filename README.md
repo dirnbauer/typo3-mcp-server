@@ -19,6 +19,11 @@ should not yet be treated as a fully production-ready, long-term-stable package
 for broad unattended rollout. Validate changes in staging first and pin
 versions deliberately.
 
+**Local DDEV only:** This version includes tools that create sites, install
+extensions, and execute CLI commands. Use it on your **local DDEV development
+environment** only. Do not deploy to production without reviewing and restricting
+the available tool set.
+
 This extension is built for real editor-facing work:
 
 - navigate the page tree and inspect page context
@@ -224,11 +229,32 @@ The extension is explicit about that:
   field-level diffs before publishing
 - `PublishWorkspace` — publish pending workspace changes to live (dry-run by
   default for safety)
+- `RollbackWorkspace` — discard pending workspace changes (dry-run by default)
 
 ### Batch operations
 
 - `BulkWrite` — execute multiple create/update/delete operations in a single
   DataHandler transaction (max 50 per call)
+
+### URL redirects
+
+- `ManageRedirects` — list, create, or delete `sys_redirect` records for 301/302
+  redirects
+
+### Content import from URL
+
+- `ImportFromUrl` — fetch a web page, extract content, and propose or create
+  TYPO3 pages with content elements (SSRF-protected)
+
+### Site management
+
+- `CreateSite` — create or update TYPO3 site configurations with languages
+  (admin-only)
+
+### Extension management
+
+- `InstallExtension` — install, activate, or search TYPO3 extensions via
+  Composer (admin-only)
 
 ### System maintenance
 
