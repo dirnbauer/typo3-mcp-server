@@ -404,25 +404,6 @@ final class WriteTableTool extends AbstractRecordTool
         $newRecordData = $data;
         $newRecordData['pid'] = $positioning['dataPid'];
 
-        // Handle deterministic top/bottom placement for tables with a sorting field.
-        // Without this, "top" would rely on TYPO3's default insert behavior.
-        $sortingField = $this->tableAccessService->getSortingFieldName($table);
-        if ($sortingField !== null && !isset($data[$sortingField])) {
-            if ($position === 'bottom') {
-                $maxSorting = $this->getVisibleMaxSortingValue($table, $effectivePid, $sortingField);
-
-                if ($maxSorting !== false && is_numeric($maxSorting)) {
-                    $newRecordData[$sortingField] = (int)$maxSorting + 128; // Add some space for future insertions
-                }
-            } elseif ($position === 'top') {
-                $minSorting = $this->getVisibleMinSortingValue($table, $effectivePid, $sortingField);
-
-                if ($minSorting !== false && is_numeric($minSorting)) {
-                    $newRecordData[$sortingField] = max(0, (int)$minSorting - 128);
-                }
-            }
-        }
-
         // Create a unique ID for this new record
         $newId = 'NEW' . uniqid();
 
@@ -514,7 +495,6 @@ final class WriteTableTool extends AbstractRecordTool
                 }
             }
         }
-
         // Process file relations with the resolved parent UID
         // For new records: parentUid is the live UID (t3ver_state=1 new placeholders are their own live UID)
         if (!empty($fileRelations)) {
@@ -540,10 +520,19 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function resolveCreatePosition(string $table, int $requestedPid, string $position): array|string
     {
-        if (\in_array($position, ['top', 'bottom'], true)) {
+        if ($position === 'top') {
             return [
                 'parentPid' => $requestedPid,
                 'dataPid' => $requestedPid,
+            ];
+        }
+
+        if ($position === 'bottom') {
+            $lastSiblingUid = $this->findLastVisibleSiblingUid($table, $requestedPid);
+
+            return [
+                'parentPid' => $requestedPid,
+                'dataPid' => $lastSiblingUid === null ? $requestedPid : -$lastSiblingUid,
             ];
         }
 
@@ -639,6 +628,28 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         return null;
+    }
+
+    protected function findLastVisibleSiblingUid(string $table, int $pid): ?int
+    {
+        $queryBuilder = $this->createWorkspaceAwarePositionQueryBuilder($table);
+
+        $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+            );
+
+        $this->applyPositionOrdering($queryBuilder, $table);
+
+        $records = $queryBuilder->executeQuery()->fetchAllAssociative();
+        if ($records === []) {
+            return null;
+        }
+
+        $lastRecord = end($records);
+        return is_array($lastRecord) && is_numeric($lastRecord['uid'] ?? null) ? (int)$lastRecord['uid'] : null;
     }
 
     protected function getVisibleMaxSortingValue(string $table, int $pid, string $sortingField): mixed
@@ -767,10 +778,14 @@ final class WriteTableTool extends AbstractRecordTool
         // Convert data for storage
         $data = $this->convertDataForStorage($table, $data);
 
-        // Resolve the live UID to workspace UID
+        // For translation records, add l10n_state overrides so DataHandler treats
+        // explicitly updated fields as "custom" (not synced from parent)
+        $data = $this->ensureL10nStateForTranslation($table, $uid, $data);
+
+        // Resolve the live UID to workspace UID (once, used throughout)
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
 
-        // First, update the parent record without file relations
+        // First, update the parent record without inline relations
         $dataMap = [$table => [$workspaceUid => $data]];
 
         // Update the record using DataHandler
@@ -1893,6 +1908,51 @@ final class WriteTableTool extends AbstractRecordTool
                     $data[$fieldName] = $xml;
                 }
             }
+        }
+
+        return $data;
+    }
+
+    /**
+     * For translation records, set l10n_state to "custom" for fields that
+     * have allowLanguageSynchronization enabled and are being explicitly updated.
+     *
+     * Without this, DataHandler's DataMapProcessor would sync these fields from
+     * the default language record and silently discard the values the MCP client sent.
+     *
+     * This uses the same mechanism as TYPO3's FormEngine: passing l10n_state as an
+     * array in the dataMap. DataMapProcessor's DataMapItem::buildState() reads the
+     * persisted l10n_state JSON from the database first, then merges incoming array
+     * values on top (see DataMapItem::buildState step 4).
+     */
+    protected function ensureL10nStateForTranslation(string $table, int $uid, array $data): array
+    {
+        $translationParentField = $this->tableAccessService->getTranslationParentFieldName($table);
+        if (!$translationParentField) {
+            return $data;
+        }
+
+        // $uid is already the workspace UID (resolved by the caller)
+        $record = BackendUtility::getRecord($table, $uid, $translationParentField);
+        if (!$record || empty($record[$translationParentField])) {
+            // Not a translation — nothing to do
+            return $data;
+        }
+
+        $columns = $GLOBALS['TCA'][$table]['columns'] ?? [];
+        $l10nStateOverrides = [];
+
+        foreach ($data as $fieldName => $_value) {
+            $behaviour = $columns[$fieldName]['config']['behaviour'] ?? [];
+            if (!empty($behaviour['allowLanguageSynchronization'])) {
+                $l10nStateOverrides[$fieldName] = 'custom';
+            }
+        }
+
+        if (!empty($l10nStateOverrides)) {
+            // Pass as array — DataMapProcessor merges this on top of the DB value,
+            // exactly like FormEngine's LocalizationStateSelector does.
+            $data['l10n_state'] = $l10nStateOverrides;
         }
 
         return $data;
