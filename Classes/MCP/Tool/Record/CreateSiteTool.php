@@ -31,33 +31,33 @@ final class CreateSiteTool extends AbstractRecordTool
      * @var array<string, string>
      */
     private const FLAG_MAP = [
-        'de' => 'flags-de',
-        'fr' => 'flags-fr',
-        'es' => 'flags-es',
-        'it' => 'flags-it',
-        'nl' => 'flags-nl',
-        'pl' => 'flags-pl',
-        'pt' => 'flags-pt',
-        'da' => 'flags-dk',
-        'sv' => 'flags-se',
-        'no' => 'flags-no',
-        'fi' => 'flags-fi',
-        'cs' => 'flags-cz',
-        'sk' => 'flags-sk',
-        'hu' => 'flags-hu',
-        'ro' => 'flags-ro',
-        'bg' => 'flags-bg',
-        'hr' => 'flags-hr',
-        'sl' => 'flags-si',
-        'el' => 'flags-gr',
-        'tr' => 'flags-tr',
-        'ru' => 'flags-ru',
-        'uk' => 'flags-ua',
-        'ja' => 'flags-jp',
-        'zh' => 'flags-cn',
-        'ko' => 'flags-kr',
-        'ar' => 'flags-sa',
-        'en' => 'flags-gb',
+        'de' => 'de',
+        'fr' => 'fr',
+        'es' => 'es',
+        'it' => 'it',
+        'nl' => 'nl',
+        'pl' => 'pl',
+        'pt' => 'pt',
+        'da' => 'dk',
+        'sv' => 'se',
+        'no' => 'no',
+        'fi' => 'fi',
+        'cs' => 'cz',
+        'sk' => 'sk',
+        'hu' => 'hu',
+        'ro' => 'ro',
+        'bg' => 'bg',
+        'hr' => 'hr',
+        'sl' => 'si',
+        'el' => 'gr',
+        'tr' => 'tr',
+        'ru' => 'ru',
+        'uk' => 'ua',
+        'ja' => 'jp',
+        'zh' => 'cn',
+        'ko' => 'kr',
+        'ar' => 'sa',
+        'en' => 'us',
     ];
 
     public function __construct(
@@ -102,11 +102,13 @@ final class CreateSiteTool extends AbstractRecordTool
                     ],
                     'defaultLanguage' => [
                         'type' => 'object',
-                        'description' => 'Default language configuration. Defaults to English (en_US.UTF-8) if omitted (create action only).',
+                        'description' => 'Default language configuration. Defaults to English (en_US.UTF-8) if omitted (create action only). '
+                            . 'If flag is omitted, TYPO3 flag defaults are derived from iso-639-1 (for example en -> us, de -> de).',
                         'properties' => [
                             'title' => ['type' => 'string', 'description' => 'Language title, e.g. "English".'],
                             'locale' => ['type' => 'string', 'description' => 'Locale string, e.g. "en_US.UTF-8".'],
                             'iso-639-1' => ['type' => 'string', 'description' => 'ISO 639-1 code, e.g. "en".'],
+                            'flag' => ['type' => 'string', 'description' => 'Optional TYPO3 flag identifier. Defaults from iso-639-1, e.g. "us" or "de".'],
                         ],
                     ],
                     'languages' => [
@@ -118,6 +120,7 @@ final class CreateSiteTool extends AbstractRecordTool
                                 'title' => ['type' => 'string', 'description' => 'Language title, e.g. "German".'],
                                 'locale' => ['type' => 'string', 'description' => 'Locale string, e.g. "de_DE.UTF-8".'],
                                 'iso-639-1' => ['type' => 'string', 'description' => 'ISO 639-1 code, e.g. "de".'],
+                                'flag' => ['type' => 'string', 'description' => 'Optional TYPO3 flag identifier. Defaults from iso-639-1, e.g. "de".'],
                                 'base' => ['type' => 'string', 'description' => 'Language base path, e.g. "/de/".'],
                                 'fallbackType' => ['type' => 'string', 'description' => 'Fallback type: "strict", "fallback", or "free". Default: "fallback".'],
                             ],
@@ -131,6 +134,7 @@ final class CreateSiteTool extends AbstractRecordTool
                             'title' => ['type' => 'string', 'description' => 'Language title, e.g. "French".'],
                             'locale' => ['type' => 'string', 'description' => 'Locale string, e.g. "fr_FR.UTF-8".'],
                             'iso-639-1' => ['type' => 'string', 'description' => 'ISO 639-1 code, e.g. "fr".'],
+                            'flag' => ['type' => 'string', 'description' => 'Optional TYPO3 flag identifier. Defaults from iso-639-1, e.g. "fr".'],
                             'base' => ['type' => 'string', 'description' => 'Language base path, e.g. "/fr/".'],
                             'fallbackType' => ['type' => 'string', 'description' => 'Fallback type: "strict", "fallback", or "free". Default: "fallback".'],
                         ],
@@ -198,6 +202,7 @@ final class CreateSiteTool extends AbstractRecordTool
             'title' => \is_string($defaultLangParams['title'] ?? null) ? $defaultLangParams['title'] : 'English',
             'locale' => \is_string($defaultLangParams['locale'] ?? null) ? $defaultLangParams['locale'] : 'en_US.UTF-8',
             'iso-639-1' => \is_string($defaultLangParams['iso-639-1'] ?? null) ? $defaultLangParams['iso-639-1'] : 'en',
+            'flag' => \is_string($defaultLangParams['flag'] ?? null) ? $defaultLangParams['flag'] : '',
             'base' => '/',
             'fallbackType' => 'strict',
         ]);
@@ -287,7 +292,8 @@ final class CreateSiteTool extends AbstractRecordTool
     {
         $title = \is_string($langDef['title'] ?? null) ? $langDef['title'] : '';
         $locale = \is_string($langDef['locale'] ?? null) ? $langDef['locale'] : '';
-        $isoCode = \is_string($langDef['iso-639-1'] ?? null) ? $langDef['iso-639-1'] : '';
+        $isoCode = \is_string($langDef['iso-639-1'] ?? null) ? strtolower(trim($langDef['iso-639-1'])) : '';
+        $explicitFlag = \is_string($langDef['flag'] ?? null) ? trim($langDef['flag']) : '';
         $base = \is_string($langDef['base'] ?? null) ? $langDef['base'] : '/';
         $fallbackType = \is_string($langDef['fallbackType'] ?? null) ? $langDef['fallbackType'] : 'strict';
 
@@ -300,7 +306,7 @@ final class CreateSiteTool extends AbstractRecordTool
             $fallbackType = 'fallback';
         }
 
-        $flag = self::FLAG_MAP[$isoCode] ?? 'flags-' . $isoCode;
+        $flag = $this->resolveFlagIdentifier($isoCode, $explicitFlag);
 
         return [
             'languageId' => $languageId,
@@ -312,6 +318,15 @@ final class CreateSiteTool extends AbstractRecordTool
             'iso-639-1' => $isoCode,
             'fallbackType' => $fallbackType,
         ];
+    }
+
+    private function resolveFlagIdentifier(string $isoCode, string $explicitFlag): string
+    {
+        if ($explicitFlag !== '') {
+            return $explicitFlag;
+        }
+
+        return self::FLAG_MAP[$isoCode] ?? $isoCode;
     }
 
     /**

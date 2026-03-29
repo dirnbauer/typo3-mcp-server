@@ -744,13 +744,17 @@ Create or update TYPO3 site configurations.
    - ``rootPageId`` (integer): root page UID (required for create)
    - ``base`` (string): base URL (required for create)
    - ``defaultLanguage`` (object): default language config (title, locale,
-     iso-639-1)
-   - ``languages`` (array): additional languages for create
-   - ``language`` (object): language to add (required for addLanguage)
+     iso-639-1, optional ``flag`` override)
+   - ``languages`` (array): additional languages for create, each with optional
+     ``flag`` override
+   - ``language`` (object): language to add (required for addLanguage, optional
+     ``flag`` override)
    - ``workspace_id`` (integer): optional workspace override
 
 Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
+If ``flag`` is omitted, CreateSite derives the TYPO3 flag identifier from the
+language ISO code (for example ``en`` -> ``us``, ``de`` -> ``de``).
 
 Extension management
 ====================
