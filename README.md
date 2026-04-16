@@ -407,6 +407,32 @@ The functional suite already covers important extension-level scenarios:
 - bulk write operations with per-operation result tracking
 - content import with format detection, CType mapping, and section merging
 
+## Development
+
+### Updating TYPO3 coding standards
+
+`typo3/coding-standards` is pinned to a specific upstream commit in
+`composer.json` so CI builds are reproducible. To pick up the latest rules:
+
+```bash
+# 1. Get the current upstream commit hash
+git ls-remote https://github.com/TYPO3/coding-standards.git refs/heads/main
+
+# 2. Update the hash in composer.json
+#    "typo3/coding-standards": "dev-main#<new-hash>"
+
+# 3. Install, auto-fix, and review
+composer update typo3/coding-standards
+composer php-cs-fixer:fix
+git diff
+
+# 4. Commit everything together
+git add -A && git commit -m "chore: update typo3/coding-standards to <short-hash>"
+```
+
+This keeps the fixer version locked between updates and prevents surprise CI
+failures from upstream rule changes.
+
 ## Repository map
 
 - `Classes/MCP/`
