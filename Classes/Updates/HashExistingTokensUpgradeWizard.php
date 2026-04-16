@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\Updates;
 
 use TYPO3\CMS\Core\Attribute\UpgradeWizard;
-use TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface;
-use TYPO3\CMS\Core\Upgrades\DatabaseUpdatedPrerequisite;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Upgrades\DatabaseUpdatedPrerequisite;
+use TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 #[UpgradeWizard('mcpServer_hashExistingTokens')]

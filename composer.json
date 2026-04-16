@@ -25,7 +25,7 @@
         "phpat/phpat": "^0.12.3",
         "phpstan/phpstan": "^2.1",
         "ssch/typo3-rector": "^3.0",
-        "typo3/coding-standards": "dev-main",
+        "typo3/coding-standards": "dev-main#5b0f6d8cca856f4da04dcdf18ff6d4d4d55b4d2b",
         "typo3/cms-extbase": "^14.0",
         "typo3/cms-fluid": "^14.0",
         "typo3/cms-frontend": "^14.0",
@@ -95,7 +95,12 @@
         "fractor:fix": [
             "fractor process"
         ],
-        "build:ter": "bash Build/build-ter.sh"
+        "build:ter": "bash Build/build-ter.sh",
+        "update-cs": [
+            "@composer update typo3/coding-standards",
+            "@php-cs-fixer:fix",
+            "@echo Run 'git diff' to review changes, then commit."
+        ]
     },
     "config": {
         "allow-plugins": {
