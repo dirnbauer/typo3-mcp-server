@@ -979,7 +979,7 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Offset mixed on array\<non\-empty\-list\> in empty\(\) always exists and is not falsy\.$#'
+			message: '#^Offset mixed on non\-empty\-array\<non\-empty\-list\> in empty\(\) always exists and is not falsy\.$#'
 			identifier: empty.offset
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -1156,6 +1156,12 @@ parameters:
 			message: '#^Part \$language \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Property TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication\:\:\$workspace \(int\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 9
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
