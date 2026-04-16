@@ -409,6 +409,28 @@ The functional suite already covers important extension-level scenarios:
 
 ## Development
 
+### Syncing with upstream
+
+This fork is based on [hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server) (TYPO3 v13).
+We target TYPO3 v14. To pull in new upstream changes:
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+If there are conflicts (usually because we modernized files for v14), resolve them
+by keeping v14 patterns (`final class`, constructor DI, `getToolSchema()` etc.).
+Then verify everything still works:
+
+```bash
+composer php-cs-fixer:fix
+composer phpstan
+composer test
+```
+
+Commit the merge and push.
+
 ### Fixing code style
 
 If CI fails on PHP code style, run:
