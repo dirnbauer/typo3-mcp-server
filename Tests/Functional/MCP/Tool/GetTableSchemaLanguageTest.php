@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetTableSchemaLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -23,14 +25,14 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create multi-language site configuration
         $this->createMultiLanguageSiteConfiguration();
-        
+
         // Import test data
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);
     }
@@ -89,7 +91,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
         // Write the site configuration
         $configPath = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($configPath);
-        
+
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
     }
@@ -99,25 +101,25 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testShowsIsoCodesForLanguageField(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // Get schema for tt_content
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'text'
+            'type' => 'text',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // Check that sys_language_uid field is shown
-        $this->assertStringContainsString('sys_language_uid', $output);
-        
+        self::assertStringContainsString('sys_language_uid', $output);
+
         // Check that it shows ISO codes
-        $this->assertStringContainsString('[ISO codes accepted: en, de, fr]', $output);
-        
+        self::assertStringContainsString('[ISO codes accepted: en, de, fr]', $output);
+
         // Check that it includes the hint about WriteTable tool
-        $this->assertStringContainsString("Use ISO codes like 'de' instead of numeric IDs in WriteTable tool", $output);
+        self::assertStringContainsString("Use ISO codes like 'de' instead of numeric IDs in WriteTable tool", $output);
     }
 
     /**
@@ -125,23 +127,23 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testNoIsoCodesForNonLanguageTables(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // Get schema for sys_category which doesn't typically have language field in showitem
         $result = $tool->execute([
-            'table' => 'sys_category'
+            'table' => 'sys_category',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $output = $result->content[0]->text;
-        
+
         // sys_category may have language support but not in visible fields
         // So we just check that if sys_language_uid appears, it has ISO codes
-        if (strpos($output, '- sys_language_uid') !== false) {
-            $this->assertStringContainsString('[ISO codes accepted:', $output);
+        if (str_contains((string)$output, '- sys_language_uid')) {
+            self::assertStringContainsString('[ISO codes accepted:', $output);
         } else {
             // If no sys_language_uid in fields, that's also fine
-            $this->assertTrue(true);
+            self::assertTrue(true);
         }
     }
 
@@ -150,27 +152,27 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
      */
     public function testIsoCodeListMatchesConfiguration(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // Get schema for tt_content
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'text'
+            'type' => 'text',
         ]);
-        
+
         $output = $result->content[0]->text;
-        
+
         // Extract the ISO codes from the output
-        if (preg_match('/\[ISO codes accepted: ([^\]]+)\]/', $output, $matches)) {
-            $isoCodes = array_map('trim', explode(',', $matches[1]));
-            
+        if (preg_match('/\[ISO codes accepted: ([^\]]+)\]/', (string)$output, $matches)) {
+            $isoCodes = array_map(trim(...), explode(',', $matches[1]));
+
             // Should have exactly the configured languages
-            $this->assertCount(3, $isoCodes);
-            $this->assertContains('en', $isoCodes);
-            $this->assertContains('de', $isoCodes);
-            $this->assertContains('fr', $isoCodes);
+            self::assertCount(3, $isoCodes);
+            self::assertContains('en', $isoCodes);
+            self::assertContains('de', $isoCodes);
+            self::assertContains('fr', $isoCodes);
         } else {
-            $this->fail('ISO codes not found in output');
+            self::fail('ISO codes not found in output');
         }
     }
 }

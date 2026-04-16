@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<guides xmlns="https://www.phpdoc.org/guides"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://www.phpdoc.org/guides https://docs.typo3.org/render-guides/guides.xsd"
+        links-are-relative="true">
+    <project title="MCP Server"
+             version="0.1.0"/>
+    <extension name="mcp_server"/>
+    <inventory id="t3coreapi"
+               url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>
+    <settings>
+        <setting name="edit_on_github"
+                 value="https://github.com/dirnbauer/typo3-mcp-server/edit/main/Documentation/"/>
+        <setting name="edit_on_github_branch"
+                 value="main"/>
+    </settings>
+</guides>

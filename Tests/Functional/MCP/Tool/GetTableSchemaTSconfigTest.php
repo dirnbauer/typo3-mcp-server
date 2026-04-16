@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -16,6 +17,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class GetTableSchemaTSconfigTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -56,30 +58,30 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testHidesGloballyDisabledFields(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section for field presence checks
-        $fieldsSection = substr($content, strpos($content, 'FIELDS:') ?: 0);
+        $fieldsSection = substr((string)$content, strpos((string)$content, 'FIELDS:') ?: 0);
 
         // bodytext field definition should NOT appear in FIELDS section
-        $this->assertStringNotContainsString('- bodytext (', $fieldsSection);
+        self::assertStringNotContainsString('- bodytext (', $fieldsSection);
         // date field definition should NOT appear in FIELDS section
-        $this->assertStringNotContainsString('- date (', $fieldsSection);
-        $this->assertStringNotContainsString('├─ date (', $fieldsSection);
+        self::assertStringNotContainsString('- date (', $fieldsSection);
+        self::assertStringNotContainsString('├─ date (', $fieldsSection);
 
         // Other fields should still appear
-        $this->assertStringContainsString('header', $content);
-        $this->assertStringContainsString('CType', $content);
+        self::assertStringContainsString('header', $content);
+        self::assertStringContainsString('CType', $content);
     }
 
     /**
@@ -87,20 +89,20 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testNonDisabledFieldsAppearNormally(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Essential fields should still appear
-        $this->assertStringContainsString('header', $content);
-        $this->assertStringContainsString('CType', $content);
-        $this->assertStringContainsString('hidden', $content);
-        $this->assertStringContainsString('header_layout', $content);
+        self::assertStringContainsString('header', $content);
+        self::assertStringContainsString('CType', $content);
+        self::assertStringContainsString('hidden', $content);
+        self::assertStringContainsString('header_layout', $content);
     }
 
     /**
@@ -109,22 +111,22 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
     public function testDisabledAppliesToAdminUsers(): void
     {
         // Verify admin user is set up
-        $this->assertTrue($GLOBALS['BE_USER']->isAdmin());
+        self::assertTrue($GLOBALS['BE_USER']->isAdmin());
 
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'textmedia'
+            'type' => 'textmedia',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section
-        $fieldsSection = substr($content, strpos($content, 'FIELDS:') ?: 0);
+        $fieldsSection = substr((string)$content, strpos((string)$content, 'FIELDS:') ?: 0);
 
         // Even for admin, bodytext field definition should be hidden
-        $this->assertStringNotContainsString('- bodytext (', $fieldsSection);
+        self::assertStringNotContainsString('- bodytext (', $fieldsSection);
     }
 
     /**
@@ -132,25 +134,25 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testDisabledFieldInPagesTable(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
-            'table' => 'pages'
+            'table' => 'pages',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section
-        $fieldsSection = substr($content, strpos($content, 'FIELDS:') ?: 0);
+        $fieldsSection = substr((string)$content, strpos((string)$content, 'FIELDS:') ?: 0);
 
         // abstract field definition should be hidden
-        $this->assertStringNotContainsString('- abstract (', $fieldsSection);
-        $this->assertStringNotContainsString('├─ abstract (', $fieldsSection);
-        $this->assertStringNotContainsString('└─ abstract (', $fieldsSection);
+        self::assertStringNotContainsString('- abstract (', $fieldsSection);
+        self::assertStringNotContainsString('├─ abstract (', $fieldsSection);
+        self::assertStringNotContainsString('└─ abstract (', $fieldsSection);
 
         // Other fields should appear
-        $this->assertStringContainsString('title', $content);
-        $this->assertStringContainsString('slug', $content);
+        self::assertStringContainsString('title', $content);
+        self::assertStringContainsString('slug', $content);
     }
 
     /**
@@ -158,22 +160,22 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
      */
     public function testDifferentContentTypes(): void
     {
-        $tool = new GetTableSchemaTool();
+        $tool = $this->getService(GetTableSchemaTool::class);
 
         // Check text type - bodytext should be hidden here too
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'text'
+            'type' => 'text',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section
-        $fieldsSection = substr($content, strpos($content, 'FIELDS:') ?: 0);
+        $fieldsSection = substr((string)$content, strpos((string)$content, 'FIELDS:') ?: 0);
 
         // bodytext field definition should be hidden
-        $this->assertStringNotContainsString('- bodytext (', $fieldsSection);
-        $this->assertStringContainsString('header', $content);
+        self::assertStringNotContainsString('- bodytext (', $fieldsSection);
+        self::assertStringContainsString('header', $content);
     }
 }

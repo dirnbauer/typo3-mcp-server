@@ -68,10 +68,8 @@ class OAuthPkceTest extends AbstractFunctionalTest
 
     public function testPkceWithUnsupportedChallengeMethodFails(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'test-client', '', 'some-plain-challenge', 'plain');
-        $result = $this->service->exchangeCodeForToken($code, 'some-plain-challenge');
-
-        $this->assertNull($result, 'Unsupported PKCE method must fail');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->createAuthorizationCode(1, 'test-client', '', 'some-plain-challenge', 'plain');
     }
 
     public function testCodeExchangeSucceedsWithoutPkceChallenge(): void

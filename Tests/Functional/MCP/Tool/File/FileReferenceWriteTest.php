@@ -28,8 +28,8 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
         // Ensure sys_file fixtures exist
         $this->importCSVDataSet(__DIR__ . '/../../../Fixtures/sys_file.csv');
 
-        $this->writeTool = new WriteTableTool();
-        $this->readTool = new ReadTableTool();
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
     }
 
     /**

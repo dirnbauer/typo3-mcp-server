@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional;
 
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -14,16 +17,18 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Abstract base test class for functional tests
- * 
+ *
  * Provides common setup and utility methods to reduce code duplication
  * across test classes.
  */
 abstract class AbstractFunctionalTest extends FunctionalTestCase
 {
+    use McpAssertionsTrait;
+
     protected Context $context;
     protected ConnectionPool $connectionPool;
     protected LanguageService $languageService;
-    
+
     /**
      * Core extensions that most tests need
      */
@@ -31,24 +36,24 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     /**
      * Test extensions that most tests need
      */
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
-    
+
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->initializeServices();
         $this->setupDefaultLanguage();
         $this->loadStandardFixtures();
         $this->setupDefaultBackendUser();
     }
-    
+
     /**
      * Initialize commonly used services
      */
@@ -56,12 +61,15 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     {
         $this->context = GeneralUtility::makeInstance(Context::class);
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $container = $this->getContainer();
+        $service = $container->get(LanguageService::class);
+        assert($service instanceof LanguageService);
+        $this->languageService = $service;
     }
-    
+
     /**
      * Set up default backend user
-     * 
+     *
      * @param int $uid Backend user UID
      * @return BackendUserAuthentication
      */
@@ -71,53 +79,53 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
         $GLOBALS['BE_USER'] = $backendUser;
         return $backendUser;
     }
-    
+
     /**
      * Set up default language service
-     * 
+     *
      * @param string $languageKey Language key (default: 'default')
      */
     protected function setupDefaultLanguage(string $languageKey = 'default'): void
     {
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create($languageKey);
     }
-    
+
     /**
      * Load standard test fixtures
-     * 
+     *
      * Override this method in child classes to customize fixture loading
      */
     protected function loadStandardFixtures(): void
     {
         // Load common fixtures used by most tests
         $fixturesPath = __DIR__ . '/Fixtures/';
-        
+
         if (file_exists($fixturesPath . 'be_users.csv')) {
             $this->importCSVDataSet($fixturesPath . 'be_users.csv');
         }
-        
+
         if (file_exists($fixturesPath . 'pages.csv')) {
             $this->importCSVDataSet($fixturesPath . 'pages.csv');
         }
-        
+
         if (file_exists($fixturesPath . 'tt_content.csv')) {
             $this->importCSVDataSet($fixturesPath . 'tt_content.csv');
         }
     }
-    
+
     /**
      * Get the root page UID from fixtures
-     * 
+     *
      * @return int
      */
     protected function getRootPageUid(): int
     {
         return 1; // Standard fixture root page
     }
-    
+
     /**
      * Create a workspace and switch to it
-     * 
+     *
      * @param string $title Workspace title
      * @return int Workspace ID
      */
@@ -132,42 +140,51 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
             'db_mountpoints' => '0',
             'file_mountpoints' => '',
             'publish_time' => 0,
-            'unpublish_time' => 0,
-            'freeze' => 0,
-            'live_edit' => 0,
-            'swap_modes' => 0,
             'publish_access' => 0,
             'stagechg_notification' => 0,
-            'custom_stages' => 0,
-            'uid' => 0,
             'pid' => 0,
         ]);
-        
+
         $workspaceId = (int)$connection->lastInsertId();
         $this->switchToWorkspace($workspaceId);
-        
+
         return $workspaceId;
     }
-    
+
     /**
      * Switch to a specific workspace
-     * 
+     *
      * @param int $workspaceId
      */
     protected function switchToWorkspace(int $workspaceId): void
     {
         $GLOBALS['BE_USER']->workspace = $workspaceId;
-        $this->context->setAspect('workspace', new \TYPO3\CMS\Core\Context\WorkspaceAspect($workspaceId));
+        $this->context->setAspect('workspace', new WorkspaceAspect($workspaceId));
     }
-    
+
     /**
      * Get a database connection for a table
-     * 
+     *
      * @param string $table
-     * @return \TYPO3\CMS\Core\Database\Connection
+     * @return Connection
      */
-    protected function getConnectionForTable(string $table): \TYPO3\CMS\Core\Database\Connection
+    protected function getConnectionForTable(string $table): Connection
     {
         return $this->connectionPool->getConnectionForTable($table);
+    }
+
+    /**
+     * Resolve a service from the DI container.
+     *
+     * @template T of object
+     * @param class-string<T> $className
+     * @return T
+     */
+    protected function getService(string $className): object
+    {
+        $service = $this->getContainer()->get($className);
+        assert($service instanceof $className);
+        /** @var T $service */
+        return $service;
     }
 }

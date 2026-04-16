@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tests for structured filter parameter replacing the raw WHERE condition.
@@ -24,7 +25,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
     protected function setUp(): void
     {
         parent::setUp();
-        $this->tool = new ReadTableTool();
+        $this->tool = GeneralUtility::makeInstance(ReadTableTool::class);
     }
 
     // ─── Schema tests ────────────────────────────────────────────────

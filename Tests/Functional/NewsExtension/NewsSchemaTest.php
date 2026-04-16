@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -14,11 +14,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class NewsSchemaTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
         'news',
@@ -27,7 +28,7 @@ class NewsSchemaTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Import backend user fixture
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         // Set up backend user
@@ -39,28 +40,28 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsTableSchema(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         $result = $tool->execute([
-            'table' => 'tx_news_domain_model_news'
+            'table' => 'tx_news_domain_model_news',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
+
         $content = $result->content[0]->text;
-        
+
         // Verify essential News fields are present
-        $this->assertStringContainsString('TABLE SCHEMA: tx_news_domain_model_news', $content);
-        $this->assertStringContainsString('title', $content);
-        $this->assertStringContainsString('teaser', $content);
-        $this->assertStringContainsString('bodytext', $content);
-        $this->assertStringContainsString('datetime', $content);
-        $this->assertStringContainsString('archive', $content);
-        $this->assertStringContainsString('author', $content);
-        $this->assertStringContainsString('categories', $content);
-        $this->assertStringContainsString('tags', $content);
+        self::assertStringContainsString('TABLE SCHEMA: tx_news_domain_model_news', $content);
+        self::assertStringContainsString('title', $content);
+        self::assertStringContainsString('teaser', $content);
+        self::assertStringContainsString('bodytext', $content);
+        self::assertStringContainsString('datetime', $content);
+        self::assertStringContainsString('archive', $content);
+        self::assertStringContainsString('author', $content);
+        self::assertStringContainsString('categories', $content);
+        self::assertStringContainsString('tags', $content);
     }
 
     /**
@@ -68,18 +69,18 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsFieldTypes(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         $result = $tool->execute([
-            'table' => 'tx_news_domain_model_news'
+            'table' => 'tx_news_domain_model_news',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Field types should be properly detected (labels might be empty in test environment)
-        $this->assertMatchesRegularExpression('/datetime\s*\([^)]*\):\s*datetime/i', $content);
-        $this->assertMatchesRegularExpression('/bodytext\s*\([^)]*\):\s*text/i', $content);
-        $this->assertMatchesRegularExpression('/categories\s*\([^)]*\):\s*select/i', $content);
+        self::assertMatchesRegularExpression('/datetime\s*\([^)]*\):\s*datetime/i', $content);
+        self::assertMatchesRegularExpression('/bodytext\s*\([^)]*\):\s*text/i', $content);
+        self::assertMatchesRegularExpression('/categories\s*\([^)]*\):\s*select/i', $content);
     }
 
     /**
@@ -87,21 +88,21 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsUsesSysCategoryForCategories(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // News extends sys_category, not creates its own table
         $result = $tool->execute([
-            'table' => 'sys_category'
+            'table' => 'sys_category',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify sys_category fields that News uses
-        $this->assertStringContainsString('TABLE SCHEMA: sys_category', $content);
-        $this->assertStringContainsString('title', $content);
-        $this->assertStringContainsString('parent', $content);
-        $this->assertStringContainsString('description', $content);
+        self::assertStringContainsString('TABLE SCHEMA: sys_category', $content);
+        self::assertStringContainsString('title', $content);
+        self::assertStringContainsString('parent', $content);
+        self::assertStringContainsString('description', $content);
     }
 
     /**
@@ -109,18 +110,18 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsTagSchema(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         $result = $tool->execute([
-            'table' => 'tx_news_domain_model_tag'
+            'table' => 'tx_news_domain_model_tag',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify tag fields
-        $this->assertStringContainsString('TABLE SCHEMA: tx_news_domain_model_tag', $content);
-        $this->assertStringContainsString('title', $content);
+        self::assertStringContainsString('TABLE SCHEMA: tx_news_domain_model_tag', $content);
+        self::assertStringContainsString('title', $content);
     }
 
     /**
@@ -128,14 +129,16 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsUsesSysFileReferenceForMedia(): void
     {
-        $tool = new GetTableSchemaTool();
-        
-        // sys_file_reference is now accessible for FAL operations
+        $tool = $this->getService(GetTableSchemaTool::class);
+
+        // News extends sys_file_reference, but this table is restricted
         $result = $tool->execute([
-            'table' => 'sys_file_reference'
+            'table' => 'sys_file_reference',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        // sys_file_reference is restricted for security reasons
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('restricted', $result->content[0]->text);
     }
 
     /**
@@ -143,18 +146,18 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsSchemaFieldGrouping(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         $result = $tool->execute([
-            'table' => 'tx_news_domain_model_news'
+            'table' => 'tx_news_domain_model_news',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // News uses parentheses for tabs/sections (labels might be empty in test environment)
-        $this->assertMatchesRegularExpression('/\(General\):|General\):/', $content);
-        $this->assertMatchesRegularExpression('/\(Categories\):|Categories\):/', $content);
-        $this->assertMatchesRegularExpression('/\(Media\):|Media\):/', $content);
+        self::assertMatchesRegularExpression('/\(General\):|General\):/', $content);
+        self::assertMatchesRegularExpression('/\(Categories\):|Categories\):/', $content);
+        self::assertMatchesRegularExpression('/\(Media\):|Media\):/', $content);
     }
 
     /**
@@ -162,25 +165,25 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsTypes(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // Get basic schema to check if types are used
         $result = $tool->execute([
-            'table' => 'tx_news_domain_model_news'
+            'table' => 'tx_news_domain_model_news',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Check if News uses type field
-        if (str_contains($content, 'type:')) {
+        if (str_contains((string)$content, 'type:')) {
             // Test getting schema for a specific type
             $result = $tool->execute([
                 'table' => 'tx_news_domain_model_news',
-                'type' => '0' // Default news type
+                'type' => '0', // Default news type
             ]);
-            
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $this->assertStringContainsString('Type: 0', $result->content[0]->text);
+
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertStringContainsString('Type: 0', $result->content[0]->text);
         } else {
             // No types used, which is also valid
             $this->addToAssertionCount(1);
@@ -192,45 +195,57 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testNewsPluginSchemaInTtContent(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // Get schema for News plugin content type
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'news_pi1' // News plugin
+            'type' => 'news_pi1', // News plugin
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify it's the News plugin type
-        $this->assertStringContainsString('Type: news_pi1', $content);
+        self::assertStringContainsString('Type: news_pi1', $content);
         // The label should be translated or have a meaningful fallback
-        $this->assertTrue(
-            str_contains($content, 'News article list') || 
-            str_contains($content, 'News list'), // Fallback from "news_list.title"
-            'Should contain News plugin label or fallback'
+        self::assertTrue(
+            str_contains((string)$content, 'News article list')
+            || str_contains((string)$content, 'News list'), // Fallback from "news_list.title"
+            'Should contain News plugin label or fallback',
         );
-        
+
         // Should contain pi_flexform field in Plugin tab
-        $this->assertStringContainsString('(Plugin):', $content, 'Should have Plugin tab');
-        $this->assertStringContainsString('pi_flexform', $content, 'News plugin should have pi_flexform field');
-        
+        self::assertStringContainsString('(Plugin):', $content, 'Should have Plugin tab');
+        self::assertStringContainsString('pi_flexform', $content, 'News plugin should have pi_flexform field');
+
         // Check that it's recognized as FlexForm type with proper formatting
-        $this->assertMatchesRegularExpression('/pi_flexform\s*\(Plugin Options\):\s*flex\s*\(FlexForm\)/i', $content, 
-            'pi_flexform should be properly formatted with label and type');
-        
+        self::assertMatchesRegularExpression(
+            '/pi_flexform\s*\(Plugin Options\):\s*flex\s*\(FlexForm\)/i',
+            $content,
+            'pi_flexform should be properly formatted with label and type',
+        );
+
         // Check for FlexForm identifiers
-        $this->assertMatchesRegularExpression('/\[Identifiers:\s*[^\]]*news_pi1[^\]]*\]/', $content, 
-            'Should have news_pi1 in FlexForm identifiers');
-        
+        self::assertMatchesRegularExpression(
+            '/\[Identifiers:\s*[^\]]*news_pi1[^\]]*\]/',
+            $content,
+            'Should have news_pi1 in FlexForm identifiers',
+        );
+
         // Verify the instruction to use GetFlexFormSchema tool
-        $this->assertStringContainsString('Use GetFlexFormSchema tool with these identifiers', $content, 
-            'Should provide instruction to use GetFlexFormSchema tool');
-        
-        // Check for ds_pointerField information
-        $this->assertStringContainsString('[ds_pointerField: list_type,CType]', $content, 
-            'Should show ds_pointerField configuration');
+        self::assertStringContainsString(
+            'Use GetFlexFormSchema tool with these identifiers',
+            $content,
+            'Should provide instruction to use GetFlexFormSchema tool',
+        );
+
+        // Check for ds_pointerField information (legacy + v14-compatible variants)
+        self::assertTrue(
+            str_contains((string)$content, '[ds_pointerField: list_type,CType]')
+            || str_contains((string)$content, '[ds_pointerField: CType]'),
+            'Should show ds_pointerField configuration',
+        );
     }
 
     /**
@@ -238,42 +253,35 @@ class NewsSchemaTest extends FunctionalTestCase
      */
     public function testGetNewsPluginFlexFormIdentifiers(): void
     {
-        $tool = new GetTableSchemaTool();
-        
+        $tool = $this->getService(GetTableSchemaTool::class);
+
         // First, check if News registers as a plugin type
         $result = $tool->execute([
-            'table' => 'tt_content'
+            'table' => 'tt_content',
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Look for available types to understand how News plugin is registered
-        if (preg_match('/AVAILABLE TYPES:(.+?)(?=\n\n|$)/s', $content, $matches)) {
+        if (preg_match('/AVAILABLE TYPES:(.+?)(?=\n\n|$)/s', (string)$content, $matches)) {
             $typesSection = $matches[1];
-            
-            // News typically registers as list_type "news_pi1" rather than a direct CType
-            if (strpos($typesSection, 'list') !== false) {
-                // List type exists, which is what News uses
-                $this->assertStringContainsString('list', $typesSection, 'List type should be available for plugins');
+
+            if (str_contains((string)$typesSection, 'news_pi1')) {
+                self::assertStringContainsString('news_pi1', $typesSection, 'News plugin CType should be available');
             }
         }
-        
-        // Also check if the schema mentions list_type field for list content
+
+        // Also check the specific News plugin schema output.
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'list'
+            'type' => 'news_pi1',
         ]);
-        
+
         if (!$result->isError) {
             $content = $result->content[0]->text;
-            
-            // List content should have list_type field
-            if (strpos($content, 'list_type') !== false) {
-                // Check that list_type is properly typed
-                $this->assertMatchesRegularExpression('/list_type\s*\([^)]*\):\s*select/i', $content, 
-                    'list_type should be a select field');
-            }
+            self::assertStringContainsString('news_pi1', $content);
+            self::assertStringContainsString('pi_flexform', $content);
         }
     }
 

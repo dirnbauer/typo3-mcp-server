@@ -88,7 +88,7 @@ class RecordWriteEventTest extends AbstractFunctionalTest
     protected function setUp(): void
     {
         parent::setUp();
-        $this->tool = new WriteTableTool();
+        $this->tool = GeneralUtility::makeInstance(WriteTableTool::class);
 
         BeforeRecordWriteTestListener::reset();
         AfterRecordWriteTestListener::reset();

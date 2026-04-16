@@ -68,7 +68,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testBrowseRootFolder(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/']);
 
@@ -86,7 +86,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testBrowseSubfolder(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/images/']);
 
@@ -101,7 +101,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testShowsFileMetadata(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/documents/']);
 
@@ -116,7 +116,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testShowsSubfolderFileCount(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/']);
 
@@ -132,7 +132,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testShowsCombinedIdentifierForSubfolders(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/']);
 
@@ -148,7 +148,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
     {
         @mkdir($this->storageBasePath . '/empty', 0777, true);
 
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute(['folder' => '1:/empty/']);
 
@@ -161,7 +161,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
     public function testRecursiveListing(): void
     {
-        $tool = new BrowseFolderTool();
+        $tool = GeneralUtility::makeInstance(BrowseFolderTool::class);
 
         $result = $tool->execute([
             'folder' => '1:/',

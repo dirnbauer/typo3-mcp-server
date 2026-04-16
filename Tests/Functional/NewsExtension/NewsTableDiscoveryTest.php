@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\ListTablesTool;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -14,11 +14,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class NewsTableDiscoveryTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
         'news',
@@ -27,7 +28,7 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Import backend user fixture
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         // Set up backend user for DataHandler and TableAccessService
@@ -39,86 +40,86 @@ class NewsTableDiscoveryTest extends FunctionalTestCase
      */
     public function testNewsTablesAreDiscoverable(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
-        
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
         $content = $result->content[0]->text;
-        
+
         // Expected News tables (News uses sys_category and sys_file_reference, not custom tables)
         $expectedTables = [
             'tx_news_domain_model_news',
             'tx_news_domain_model_tag',
             'tx_news_domain_model_link',
         ];
-        
+
         foreach ($expectedTables as $table) {
-            $this->assertStringContainsString(
+            self::assertStringContainsString(
                 $table,
                 $content,
-                "Expected News table '$table' not found in ListTablesTool output"
+                "Expected News table '$table' not found in ListTablesTool output",
             );
         }
-        
+
         // Verify News table is present
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             'tx_news_domain_model_news',
             $content,
-            'News table should be present in the output'
+            'News table should be present in the output',
         );
     }
-    
+
     /**
      * Test that News tables are properly grouped under the News extension
      */
     public function testNewsTablesGrouping(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Should have a News extension section
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             'EXTENSION: news',
             $content,
-            'News tables should be grouped under News extension'
+            'News tables should be grouped under News extension',
         );
-        
+
         // Check that News tables appear after the extension header
-        $newsSection = strstr($content, 'EXTENSION: news');
-        $this->assertNotFalse($newsSection, 'News extension section not found');
-        
+        $newsSection = strstr((string)$content, 'EXTENSION: news');
+        self::assertNotFalse($newsSection, 'News extension section not found');
+
         // All News tables should be in this section
-        $this->assertStringContainsString('tx_news_domain_model_news', $newsSection);
-        $this->assertStringContainsString('tx_news_domain_model_tag', $newsSection);
+        self::assertStringContainsString('tx_news_domain_model_news', $newsSection);
+        self::assertStringContainsString('tx_news_domain_model_tag', $newsSection);
     }
-    
+
     /**
      * Test that News relation tables (MM tables) are included if they exist
      */
     public function testNewsRelationTables(): void
     {
-        $tool = new ListTablesTool();
+        $tool = $this->getService(ListTablesTool::class);
         $result = $tool->execute([]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Check for possible MM tables (these may or may not exist depending on News version)
         $possibleMmTables = [
             'tx_news_domain_model_news_category_mm',
             'tx_news_domain_model_news_tag_mm',
             'tx_news_domain_model_news_related_mm',
         ];
-        
+
         // Count which MM tables are present
         $foundMmTables = [];
         foreach ($possibleMmTables as $mmTable) {
-            if (strpos($content, $mmTable) !== false) {
+            if (str_contains((string)$content, $mmTable)) {
                 $foundMmTables[] = $mmTable;
             }
         }
-        
+
         // Log which MM tables were found for debugging
         if (!empty($foundMmTables)) {
             $this->addToAssertionCount(1);

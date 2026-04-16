@@ -41,7 +41,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
     public function testListsDefaultStorage(): void
     {
-        $tool = new ListStoragesTool();
+        $tool = GeneralUtility::makeInstance(ListStoragesTool::class);
 
         $result = $tool->execute([]);
 
@@ -59,7 +59,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
     public function testListsMultipleStorages(): void
     {
-        $tool = new ListStoragesTool();
+        $tool = GeneralUtility::makeInstance(ListStoragesTool::class);
 
         $result = $tool->execute([]);
 
@@ -74,7 +74,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
     public function testShowsStorageFlags(): void
     {
-        $tool = new ListStoragesTool();
+        $tool = GeneralUtility::makeInstance(ListStoragesTool::class);
 
         $result = $tool->execute([]);
 
@@ -90,7 +90,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
     public function testShowsRootFolderPath(): void
     {
-        $tool = new ListStoragesTool();
+        $tool = GeneralUtility::makeInstance(ListStoragesTool::class);
 
         $result = $tool->execute([]);
 
@@ -103,7 +103,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
     public function testShowsTotalCount(): void
     {
-        $tool = new ListStoragesTool();
+        $tool = GeneralUtility::makeInstance(ListStoragesTool::class);
 
         $result = $tool->execute([]);
 

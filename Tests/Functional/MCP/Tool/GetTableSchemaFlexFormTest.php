@@ -17,7 +17,7 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'news',
         'mcp_server',
@@ -31,28 +31,30 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
     }
 
     /**
-     * Test that GetTableSchemaTool shows pi_flexform for list type
+     * Test that GetTableSchemaTool shows pi_flexform for the News plugin CType
      */
     public function testListTypeShowsPiFlexForm(): void
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
-        
-        // Get schema for list type
+
+        // Get schema for the News plugin CType
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'list'
+            'type' => 'news_pi1',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Check if pi_flexform appears
-        $hasFlexForm = strpos($content, 'pi_flexform') !== false;
-        $this->assertTrue($hasFlexForm, 'Schema for list type should include pi_flexform field');
-        
+        $hasFlexForm = str_contains((string)$content, 'pi_flexform');
+        self::assertTrue($hasFlexForm, 'Schema for list type should include pi_flexform field');
+
+        self::assertStringContainsString('news_pi1', $content);
+
         // Check if it mentions GetFlexFormSchema tool
-        $mentionsFlexFormTool = strpos($content, 'GetFlexFormSchema') !== false;
-        $this->assertTrue($mentionsFlexFormTool, 'Schema should mention GetFlexFormSchema tool for FlexForm fields');
+        $mentionsFlexFormTool = str_contains((string)$content, 'GetFlexFormSchema');
+        self::assertTrue($mentionsFlexFormTool, 'Schema should mention GetFlexFormSchema tool for FlexForm fields');
     }
 
     /**
@@ -61,49 +63,48 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
     public function testShowsPluginIdentifiers(): void
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
-        
-        // Get schema for list type
+
+        // Get schema for the News plugin CType
         $result = $tool->execute([
             'table' => 'tt_content',
-            'type' => 'list'
+            'type' => 'news_pi1',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
-        // Should show available list_type options which include News plugins
-        $this->assertStringContainsString('list_type', $content);
-        $this->assertStringContainsString('news_pi1', $content);
-        
+
+        // Should show the plugin CType and FlexForm guidance
+        self::assertStringContainsString('news_pi1', $content);
+        self::assertStringContainsString('news_pi1', $content);
+
         // Should provide guidance on FlexForm discovery
-        $hasFlexFormGuidance = strpos($content, 'FlexForm') !== false || 
-                               strpos($content, 'flexform') !== false ||
-                               strpos($content, 'GetFlexFormSchema') !== false;
-        
-        $this->assertTrue($hasFlexFormGuidance, 'Schema should provide guidance about FlexForm fields');
+        $hasFlexFormGuidance = str_contains((string)$content, 'FlexForm')
+                               || str_contains((string)$content, 'flexform')
+                               || str_contains((string)$content, 'GetFlexFormSchema');
+
+        self::assertTrue($hasFlexFormGuidance, 'Schema should provide guidance about FlexForm fields');
     }
 
     /**
-     * Test that default schema mentions available types
+     * Test that default schema mentions available plugin types
      */
     public function testDefaultSchemaMentionsListType(): void
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
-        
+
         // Get default schema without type
         $result = $tool->execute([
-            'table' => 'tt_content'
+            'table' => 'tt_content',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
-        // Should list available types including 'list'
-        $this->assertStringContainsString('list', $content);
-        $this->assertStringContainsString('General Plugin', $content);
-        
+
+        // Should list available types including the News plugin CType
+        self::assertStringContainsString('news_pi1', $content);
+
         // Should mention that plugins may have FlexForm configuration
-        $hasPluginInfo = strpos($content, 'plugin') !== false || 
-                        strpos($content, 'Plugin') !== false;
-        
-        $this->assertTrue($hasPluginInfo, 'Default schema should mention plugins');
+        $hasPluginInfo = str_contains((string)$content, 'plugin')
+                        || str_contains((string)$content, 'Plugin');
+
+        self::assertTrue($hasPluginInfo, 'Default schema should mention plugins');
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Hn\McpServer\Event\ModifyAvailableFieldsEvent;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
@@ -48,6 +50,7 @@ final class TableAccessService
     public function __construct(
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly PageDoktypeRegistry $pageDoktypeRegistry,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {}
 
     /**
@@ -455,7 +458,8 @@ final class TableAccessService
             }
         }
 
-        return $fields;
+        $event = $this->eventDispatcher->dispatch(new ModifyAvailableFieldsEvent($table, $type, $fields));
+        return $event->getFields();
     }
 
     /**

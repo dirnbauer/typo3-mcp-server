@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\OAuthTokenEndpoint;
+use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Tests for CORS header security
- */
 class CorsHeadersTest extends AbstractFunctionalTest
 {
     private mixed $previousRequest;
@@ -28,9 +28,17 @@ class CorsHeadersTest extends AbstractFunctionalTest
         parent::tearDown();
     }
 
+    private function createEndpoint(): OAuthTokenEndpoint
+    {
+        return new OAuthTokenEndpoint(
+            GeneralUtility::makeInstance(LogManager::class)->getLogger(OAuthTokenEndpoint::class),
+            $this->getContainer()->get(OAuthService::class),
+        );
+    }
+
     public function testCorsReflectsRequestOriginNotWildcard(): void
     {
-        $endpoint = new OAuthTokenEndpoint();
+        $endpoint = $this->createEndpoint();
 
         $request = new ServerRequest(
             new Uri('https://example.com/mcp_oauth/token'),
@@ -49,7 +57,7 @@ class CorsHeadersTest extends AbstractFunctionalTest
 
     public function testCorsWithoutOriginHeaderSkipsHeaders(): void
     {
-        $endpoint = new OAuthTokenEndpoint();
+        $endpoint = $this->createEndpoint();
 
         $request = new ServerRequest(
             new Uri('https://example.com/mcp_oauth/token'),

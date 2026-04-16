@@ -7,22 +7,23 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\GetPageTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Service\SiteInformationService;
-use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use Symfony\Component\Yaml\Yaml;
+use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetPageToolTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -30,16 +31,16 @@ class GetPageToolTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Import enhanced page and content fixtures
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_workspace.csv');
-        
+
         // Set up backend user for DataHandler and TableAccessService
         $this->setUpBackendUser(1);
-        
+
         // Create proper site configuration for real URL testing
         $this->createTestSiteConfiguration();
     }
@@ -57,7 +58,7 @@ class GetPageToolTest extends FunctionalTestCase
 
         // Always use manual creation to ensure it works reliably
         $this->createSiteConfigurationManually();
-        
+
         // Flush site configuration cache to ensure it's picked up
         $this->flushSiteConfigurationCache();
     }
@@ -69,7 +70,7 @@ class GetPageToolTest extends FunctionalTestCase
     {
         $siteDir = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($siteDir);
-        
+
         $siteConfiguration = [
             'rootPageId' => 1,
             'base' => 'https://example.com/',
@@ -122,16 +123,16 @@ class GetPageToolTest extends FunctionalTestCase
         }
 
         // Clear global caches if available
-        if (class_exists('TYPO3\\CMS\\Core\\Cache\\CacheManager')) {
+        if (class_exists(CacheManager::class)) {
             try {
-                $cacheManager = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Cache\CacheManager::class);
+                $cacheManager = GeneralUtility::makeInstance(CacheManager::class);
                 if ($cacheManager->hasCache('core')) {
                     $cacheManager->getCache('core')->remove('sites-configuration');
                 }
                 if ($cacheManager->hasCache('runtime')) {
                     $cacheManager->getCache('runtime')->remove('sites-configuration');
                 }
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 // Ignore cache errors during tests
             }
         }
@@ -143,15 +144,15 @@ class GetPageToolTest extends FunctionalTestCase
     public function testSiteConfigurationCreated(): void
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        
+
         try {
             $site = $siteFinder->getSiteByPageId(1);
-            $this->assertNotNull($site);
-            $this->assertEquals('test-site', $site->getIdentifier());
-            $this->assertEquals(1, $site->getRootPageId());
-            $this->assertEquals('https://example.com/', $site->getBase()->__toString());
+            self::assertNotNull($site);
+            self::assertEquals('test-site', $site->getIdentifier());
+            self::assertEquals(1, $site->getRootPageId());
+            self::assertEquals('https://example.com/', $site->getBase()->__toString());
         } catch (\Throwable $e) {
-            $this->fail('Site configuration not found or invalid: ' . $e->getMessage());
+            self::fail('Site configuration not found or invalid: ' . $e->getMessage());
         }
     }
 
@@ -161,20 +162,20 @@ class GetPageToolTest extends FunctionalTestCase
     public function testDirectUrlGeneration(): void
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        
+
         try {
             // Test URL generation for page 6 (Contact)
             $site = $siteFinder->getSiteByPageId(6);
-            $this->assertNotNull($site);
-            
+            self::assertNotNull($site);
+
             $language = $site->getLanguageById(0);
             $uri = $site->getRouter()->generateUri(6, ['_language' => $language]);
             $url = (string)$uri;
-            
-            $this->assertStringContainsString('https://example.com', $url);
-            $this->assertStringContainsString('/contact', $url);
+
+            self::assertStringContainsString('https://example.com', $url);
+            self::assertStringContainsString('/contact', $url);
         } catch (\Throwable $e) {
-            $this->fail('Direct URL generation failed: ' . $e->getMessage());
+            self::fail('Direct URL generation failed: ' . $e->getMessage());
         }
     }
 
@@ -183,39 +184,37 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testGetPageDirectly(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test getting page information for Home page
         $result = $tool->execute([
             'uid' => 1,
             'includeHidden' => false,
-            'languageId' => 0
+            'languageId' => 0,
         ]);
-        
+
         // Verify result structure
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
         $content = $result->content[0]->text;
-        
+
         // Verify basic page information is present
-        $this->assertStringContainsString('PAGE INFORMATION', $content);
-        $this->assertStringContainsString('UID: 1', $content);
-        $this->assertStringContainsString('Title: Home', $content);
-        $this->assertStringContainsString('Parent Page (PID): 0', $content);
-        $this->assertStringContainsString('Hidden: No', $content);
-        
+        self::assertStringContainsString('PAGE INFORMATION', $content);
+        self::assertStringContainsString('UID: 1', $content);
+        self::assertStringContainsString('Title: Home', $content);
+        self::assertStringContainsString('Parent Page (PID): 0', $content);
+        self::assertStringContainsString('Hidden: No', $content);
+
         // Verify content elements are listed
-        $this->assertStringContainsString('RECORDS ON THIS PAGE', $content);
-        $this->assertStringContainsString('Content Elements (tt_content)', $content);
-        $this->assertStringContainsString('[100] Welcome Header', $content);
-        $this->assertStringContainsString('[101] About Section', $content);
-        
+        self::assertStringContainsString('RECORDS ON THIS PAGE', $content);
+        self::assertStringContainsString('Content Elements (tt_content)', $content);
+        self::assertStringContainsString('[100] Welcome Header', $content);
+        self::assertStringContainsString('[101] About Section', $content);
+
         // Hidden content should now be included (always show hidden records)
-        $this->assertStringContainsString('[104] Hidden Content', $content);
+        self::assertStringContainsString('[104] Hidden Content', $content);
     }
 
     /**
@@ -223,27 +222,25 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testGetPageWithUrl(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         $result = $tool->execute([
             'uid' => 2,
-            'languageId' => 0
+            'languageId' => 0,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify page information
-        $this->assertStringContainsString('UID: 2', $content);
-        $this->assertStringContainsString('Title: About', $content);
-        $this->assertStringContainsString('Navigation Title: About Us', $content);
-        
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: About', $content);
+        self::assertStringContainsString('Navigation Title: About Us', $content);
+
         // With site configuration, should generate full URLs
-        $this->assertStringContainsString('URL:', $content);
+        self::assertStringContainsString('URL:', $content);
         // Should show full site URL with site config
-        $this->assertStringContainsString('https://example.com/about', $content);
+        self::assertStringContainsString('https://example.com/about', $content);
     }
 
     /**
@@ -251,32 +248,62 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testGetPageWithContentElements(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test page 2 (About) which has content elements
         $result = $tool->execute([
             'uid' => 2,
-            'includeHidden' => false
+            'includeHidden' => false,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify content elements are properly listed
-        $this->assertStringContainsString('Content Elements (tt_content)', $content);
-        $this->assertStringContainsString('[102] Team Introduction', $content);
-        $this->assertStringContainsString('[103] Team Members', $content);
-        
+        self::assertStringContainsString('Content Elements (tt_content)', $content);
+        self::assertStringContainsString('[102] Team Introduction', $content);
+        self::assertStringContainsString('[103] Team Members', $content);
+
         // Verify content types are shown
-        $this->assertStringContainsString('Type:', $content);
-        $this->assertStringContainsString('textmedia', $content);
-        
+        self::assertStringContainsString('Type:', $content);
+        self::assertStringContainsString('textmedia', $content);
+
         // Verify column position information
-        $this->assertStringContainsString('[colPos: 0]', $content);
+        self::assertStringContainsString('[colPos: 0]', $content);
         // Column name can vary based on backend layout configuration
-        $this->assertMatchesRegularExpression('/Column: .+ \[colPos: 0\]/', $content);
+        self::assertMatchesRegularExpression('/Column: .+ \[colPos: 0\]/', $content);
+    }
+
+    public function testGetPageCountsVisibleImageReferences(): void
+    {
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
+
+        $writeTool = $this->getService(WriteTableTool::class);
+        $writeResult = $writeTool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'position' => 'bottom',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Image Summary Test',
+                'colPos' => 0,
+                'assets' => [1],
+            ],
+        ]);
+
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+
+        $tool = $this->getService(GetPageTool::class);
+        $result = $tool->execute([
+            'uid' => 1,
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $content = $result->content[0]->text;
+
+        self::assertStringContainsString('Image Summary Test', $content);
+        self::assertStringContainsString('Images: 1', $content);
     }
 
     /**
@@ -284,21 +311,19 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testGetNonExistentPage(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         $result = $tool->execute([
-            'uid' => 999
+            'uid' => 999,
         ]);
-        
+
         // Should return an error
-        $this->assertTrue($result->isError);
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
-        
+        self::assertTrue($result->isError);
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
+
         $errorMessage = $result->content[0]->text;
-        $this->assertStringContainsString('Operation failed: GetPage', $errorMessage);
+        self::assertStringContainsString('Operation failed (GetPage)', $errorMessage);
     }
 
     /**
@@ -306,26 +331,24 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testInvalidPageUid(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         $result = $tool->execute([
-            'uid' => 0
+            'uid' => 0,
         ]);
-        
-        $this->assertTrue($result->isError);
+
+        self::assertTrue($result->isError);
         $errorMessage = $result->content[0]->text;
-        $this->assertStringContainsString('Invalid page UID', $errorMessage);
-        
+        self::assertStringContainsString('Invalid page UID', $errorMessage);
+
         // Test negative UID
         $result = $tool->execute([
-            'uid' => -1
+            'uid' => -1,
         ]);
-        
-        $this->assertTrue($result->isError);
+
+        self::assertTrue($result->isError);
         $errorMessage = $result->content[0]->text;
-        $this->assertStringContainsString('Invalid page UID', $errorMessage);
+        self::assertStringContainsString('Invalid page UID', $errorMessage);
     }
 
     /**
@@ -334,26 +357,24 @@ class GetPageToolTest extends FunctionalTestCase
     public function testGetPageThroughRegistry(): void
     {
         // Create tool registry with the GetPageTool
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tools = [new GetPageTool($siteInformationService, $languageService)];
+        $tools = [$this->getService(GetPageTool::class)];
         $registry = new ToolRegistry($tools);
-        
+
         // Get tool from registry
         $tool = $registry->getTool('GetPage');
-        $this->assertNotNull($tool);
-        $this->assertInstanceOf(GetPageTool::class, $tool);
-        
+        self::assertNotNull($tool);
+        self::assertInstanceOf(GetPageTool::class, $tool);
+
         // Execute through registry
         $result = $tool->execute([
             'uid' => 1,
-            'includeHidden' => false
+            'includeHidden' => false,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 1', $content);
-        $this->assertStringContainsString('Title: Home', $content);
+        self::assertStringContainsString('UID: 1', $content);
+        self::assertStringContainsString('Title: Home', $content);
     }
 
     /**
@@ -361,10 +382,8 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testToolName(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        $this->assertEquals('GetPage', $tool->getName());
+        $tool = $this->getService(GetPageTool::class);
+        self::assertEquals('GetPage', $tool->getName());
     }
 
     /**
@@ -372,29 +391,27 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testToolSchema(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
         $schema = $tool->getSchema();
-        
-        $this->assertIsArray($schema);
-        $this->assertArrayHasKey('description', $schema);
-        $this->assertArrayHasKey('inputSchema', $schema);
-        $this->assertArrayHasKey('properties', $schema['inputSchema']);
-        $this->assertArrayHasKey('uid', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('language', $schema['inputSchema']['properties']);
-        $this->assertArrayHasKey('languageId', $schema['inputSchema']['properties']);
-        
+
+        self::assertIsArray($schema);
+        self::assertArrayHasKey('description', $schema);
+        self::assertArrayHasKey('inputSchema', $schema);
+        self::assertArrayHasKey('properties', $schema['inputSchema']);
+        self::assertArrayHasKey('uid', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('language', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('languageId', $schema['inputSchema']['properties']);
+
         // Verify language parameter has enum with ISO codes
-        $this->assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
-        $this->assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
-        $this->assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
-        
+        self::assertArrayHasKey('enum', $schema['inputSchema']['properties']['language']);
+        self::assertContains('en', $schema['inputSchema']['properties']['language']['enum']);
+        self::assertContains('de', $schema['inputSchema']['properties']['language']['enum']);
+
         // Verify languageId is marked as deprecated
-        $this->assertTrue($schema['inputSchema']['properties']['languageId']['deprecated'] ?? false);
-        
+        self::assertTrue($schema['inputSchema']['properties']['languageId']['deprecated'] ?? false);
+
         // Check url parameter was added
-        $this->assertArrayHasKey('url', $schema['inputSchema']['properties']);
+        self::assertArrayHasKey('url', $schema['inputSchema']['properties']);
     }
 
     /**
@@ -402,24 +419,22 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testPageWithDifferentContentTypes(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test Contact page which has a form
         $result = $tool->execute([
-            'uid' => 6
+            'uid' => 6,
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Verify page information
-        $this->assertStringContainsString('Title: Contact', $content);
-        
-        // Verify list content element (old plugin system)
-        $this->assertStringContainsString('[105] Contact Form', $content);
-        $this->assertStringContainsString('list', $content);
+        self::assertStringContainsString('Title: Contact', $content);
+
+        // Verify plugin content element output
+        self::assertStringContainsString('[105] Contact Form', $content);
+        self::assertStringContainsString('news_pi1', $content);
     }
 
     /**
@@ -427,22 +442,20 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testPageTreeStructure(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test child page (Team - child of About)
         $result = $tool->execute([
-            'uid' => 4
+            'uid' => 4,
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Verify it shows the correct parent
-        $this->assertStringContainsString('Title: Team', $content);
-        $this->assertStringContainsString('Navigation Title: Our Team', $content);
-        $this->assertStringContainsString('Parent Page (PID): 2', $content);
+        self::assertStringContainsString('Title: Team', $content);
+        self::assertStringContainsString('Navigation Title: Our Team', $content);
+        self::assertStringContainsString('Parent Page (PID): 2', $content);
     }
 
     /**
@@ -450,21 +463,19 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithFullUrl(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with full URL for About page
         $result = $tool->execute([
-            'url' => 'https://example.com/about'
+            'url' => 'https://example.com/about',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve full URL: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve full URL: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify we got the right page
-        $this->assertStringContainsString('UID: 2', $content);
-        $this->assertStringContainsString('Title: About', $content);
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: About', $content);
     }
 
     /**
@@ -472,21 +483,19 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithPath(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with just path for Contact page
         $result = $tool->execute([
-            'url' => '/contact'
+            'url' => '/contact',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve path: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve path: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify we got the right page
-        $this->assertStringContainsString('UID: 6', $content);
-        $this->assertStringContainsString('Title: Contact', $content);
+        self::assertStringContainsString('UID: 6', $content);
+        self::assertStringContainsString('Title: Contact', $content);
     }
 
     /**
@@ -494,21 +503,19 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithNestedPath(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with nested path for Team page (under About)
         $result = $tool->execute([
-            'url' => '/about/team'
+            'url' => '/about/team',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve nested path: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve nested path: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify we got the right page
-        $this->assertStringContainsString('UID: 4', $content);
-        $this->assertStringContainsString('Title: Team', $content);
+        self::assertStringContainsString('UID: 4', $content);
+        self::assertStringContainsString('Title: Team', $content);
     }
 
     /**
@@ -516,19 +523,17 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithTrailingSlash(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         // Test with trailing slash on path
         $result = $tool->execute([
-            'url' => '/about/'
+            'url' => '/about/',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 2', $content);
-        $this->assertStringContainsString('Title: About', $content);
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: About', $content);
     }
 
     /**
@@ -536,19 +541,17 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithTrailingSlashFullUrl(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         // Test with trailing slash on full URL
         $result = $tool->execute([
-            'url' => 'https://example.com/about/team/'
+            'url' => 'https://example.com/about/team/',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 4', $content);
-        $this->assertStringContainsString('Title: Team', $content);
+        self::assertStringContainsString('UID: 4', $content);
+        self::assertStringContainsString('Title: Team', $content);
     }
 
     /**
@@ -556,21 +559,19 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithoutLeadingSlash(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test without leading slash
         $result = $tool->execute([
-            'url' => 'about'
+            'url' => 'about',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve path without leading slash: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve path without leading slash: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify we got the right page
-        $this->assertStringContainsString('UID: 2', $content);
-        $this->assertStringContainsString('Title: About', $content);
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: About', $content);
     }
 
     /**
@@ -578,30 +579,28 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionForHomePage(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with just domain (home page)
         $result = $tool->execute([
-            'url' => 'https://example.com/'
+            'url' => 'https://example.com/',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve home page URL: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve home page URL: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        
+
         // Verify we got the home page
-        $this->assertStringContainsString('UID: 1', $content);
-        $this->assertStringContainsString('Title: Home', $content);
-        
+        self::assertStringContainsString('UID: 1', $content);
+        self::assertStringContainsString('Title: Home', $content);
+
         // Also test with just /
         $result = $tool->execute([
-            'url' => '/'
+            'url' => '/',
         ]);
-        
-        $this->assertFalse($result->isError, 'Failed to resolve home page path: ' . json_encode($result->jsonSerialize()));
+
+        self::assertFalse($result->isError, 'Failed to resolve home page path: ' . json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 1', $content);
+        self::assertStringContainsString('UID: 1', $content);
     }
 
     /**
@@ -609,19 +608,17 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithWrongDomain(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with wrong domain - should fail because domain doesn't match site config
         $result = $tool->execute([
-            'url' => 'https://wrong-domain.com/about'
+            'url' => 'https://wrong-domain.com/about',
         ]);
-        
-        $this->assertTrue($result->isError, 'Expected error when using wrong domain, but got: ' . json_encode($result->jsonSerialize()));
+
+        self::assertTrue($result->isError, 'Expected error when using wrong domain, but got: ' . json_encode($result->jsonSerialize()));
         $errorMessage = $result->content[0]->text;
-        $this->assertStringContainsString('Could not resolve URL', $errorMessage);
-        $this->assertStringContainsString('domain does not match', $errorMessage);
+        self::assertStringContainsString('Could not resolve URL', $errorMessage);
+        self::assertStringContainsString('domain does not match', $errorMessage);
     }
 
     /**
@@ -629,68 +626,16 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithInvalidPath(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test with non-existent path
         $result = $tool->execute([
-            'url' => '/non-existent-page'
+            'url' => '/non-existent-page',
         ]);
-        
-        $this->assertTrue($result->isError);
+
+        self::assertTrue($result->isError);
         $errorMessage = $result->content[0]->text;
-        $this->assertStringContainsString('Could not resolve URL', $errorMessage);
-    }
-
-    /**
-     * Test URL resolution with domain but no protocol (e.g. www.example.com)
-     */
-    public function testUrlResolutionWithDomainWithoutProtocol(): void
-    {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-
-        // Test with bare domain (no protocol) - should resolve to home page
-        $result = $tool->execute([
-            'url' => 'example.com'
-        ]);
-
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 1', $content);
-        $this->assertStringContainsString('Title: Home', $content);
-
-        // Test with bare domain + path (no protocol)
-        $result = $tool->execute([
-            'url' => 'example.com/about'
-        ]);
-
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 2', $content);
-        $this->assertStringContainsString('Title: About', $content);
-    }
-
-    /**
-     * Test URL resolution with full URL but no trailing slash (e.g. https://example.com)
-     */
-    public function testUrlResolutionWithFullUrlWithoutTrailingSlash(): void
-    {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-
-        // Test with full URL without trailing slash - should resolve to home page
-        $result = $tool->execute([
-            'url' => 'https://example.com'
-        ]);
-
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 1', $content);
-        $this->assertStringContainsString('Title: Home', $content);
+        self::assertStringContainsString('Could not resolve URL', $errorMessage);
     }
 
     /**
@@ -698,19 +643,17 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testUrlResolutionWithLanguage(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
-        
+        $tool = $this->getService(GetPageTool::class);
+
         // Test URL resolution with language ID
         $result = $tool->execute([
             'url' => '/about',
-            'languageId' => 0  // Default language
+            'languageId' => 0,  // Default language
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('UID: 2', $content);
     }
 
     /**
@@ -718,30 +661,28 @@ class GetPageToolTest extends FunctionalTestCase
      */
     public function testRealUrlGenerationForDifferentPages(): void
     {
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $tool = new GetPageTool($siteInformationService, $languageService);
+        $tool = $this->getService(GetPageTool::class);
 
         // Test Home page (root) - should have base URL
         $result = $tool->execute(['uid' => 1]);
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('URL:', $content);
-        $this->assertStringContainsString('https://example.com/', $content);
+        self::assertStringContainsString('URL:', $content);
+        self::assertStringContainsString('https://example.com/', $content);
 
         // Test Contact page
         $result = $tool->execute(['uid' => 6]);
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('URL:', $content);
-        $this->assertStringContainsString('https://example.com/contact', $content);
+        self::assertStringContainsString('URL:', $content);
+        self::assertStringContainsString('https://example.com/contact', $content);
 
         // Test nested page (Team under About)
         $result = $tool->execute(['uid' => 4]);
-        $this->assertFalse($result->isError);
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('URL:', $content);
-        $this->assertStringContainsString('https://example.com/about/team', $content);
+        self::assertStringContainsString('URL:', $content);
+        self::assertStringContainsString('https://example.com/about/team', $content);
     }
 
     /**
@@ -758,7 +699,7 @@ class GetPageToolTest extends FunctionalTestCase
         $workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         // Create a new page in the workspace using WriteTableTool
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
         $createResult = $writeTool->execute([
             'action' => 'create',
             'table' => 'pages',
@@ -766,36 +707,34 @@ class GetPageToolTest extends FunctionalTestCase
             'data' => [
                 'title' => 'Workspace Only Page',
                 'doktype' => 1,
-                'slug' => '/workspace-only-page'
-            ]
+                'slug' => '/workspace-only-page',
+            ],
         ]);
 
-        $this->assertFalse($createResult->isError, 'Failed to create page: ' . json_encode($createResult->jsonSerialize()));
-        $createData = json_decode($createResult->content[0]->text, true);
+        self::assertFalse($createResult->isError, 'Failed to create page: ' . json_encode($createResult->jsonSerialize()));
+        $createData = json_decode((string)$createResult->content[0]->text, true);
         $newPageUid = $createData['uid'];
 
         // Verify we got a valid UID
-        $this->assertGreaterThan(0, $newPageUid, 'Should have received a valid page UID');
+        self::assertGreaterThan(0, $newPageUid, 'Should have received a valid page UID');
 
         // Now try to get this workspace-only page using GetPage
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $getPageTool = new GetPageTool($siteInformationService, $languageService);
+        $getPageTool = $this->getService(GetPageTool::class);
 
         $result = $getPageTool->execute([
-            'uid' => $newPageUid
+            'uid' => $newPageUid,
         ]);
 
         // This is the main assertion - GetPage should find the workspace-only page
-        $this->assertFalse($result->isError, 'GetPage should find workspace-only page: ' . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'GetPage should find workspace-only page: ' . json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Verify page information is present
-        $this->assertStringContainsString('PAGE INFORMATION', $content);
-        $this->assertStringContainsString('UID: ' . $newPageUid, $content);
-        $this->assertStringContainsString('Title: Workspace Only Page', $content);
-        $this->assertStringContainsString('Parent Page (PID): 1', $content);
+        self::assertStringContainsString('PAGE INFORMATION', $content);
+        self::assertStringContainsString('UID: ' . $newPageUid, $content);
+        self::assertStringContainsString('Title: Workspace Only Page', $content);
+        self::assertStringContainsString('Parent Page (PID): 1', $content);
     }
 
     /**
@@ -808,7 +747,7 @@ class GetPageToolTest extends FunctionalTestCase
         $workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         // Create a new page in the workspace
-        $writeTool = new WriteTableTool();
+        $writeTool = $this->getService(WriteTableTool::class);
         $createPageResult = $writeTool->execute([
             'action' => 'create',
             'table' => 'pages',
@@ -816,12 +755,12 @@ class GetPageToolTest extends FunctionalTestCase
             'data' => [
                 'title' => 'Workspace Page With Content',
                 'doktype' => 1,
-                'slug' => '/workspace-page-with-content'
-            ]
+                'slug' => '/workspace-page-with-content',
+            ],
         ]);
 
-        $this->assertFalse($createPageResult->isError, json_encode($createPageResult->jsonSerialize()));
-        $pageData = json_decode($createPageResult->content[0]->text, true);
+        self::assertFalse($createPageResult->isError, json_encode($createPageResult->jsonSerialize()));
+        $pageData = json_decode((string)$createPageResult->content[0]->text, true);
         $newPageUid = $pageData['uid'];
 
         // Create content element on the new workspace page
@@ -832,31 +771,29 @@ class GetPageToolTest extends FunctionalTestCase
             'data' => [
                 'header' => 'Workspace Content Element',
                 'CType' => 'text',
-                'bodytext' => 'This content was created in workspace'
-            ]
+                'bodytext' => 'This content was created in workspace',
+            ],
         ]);
 
-        $this->assertFalse($createContentResult->isError, json_encode($createContentResult->jsonSerialize()));
+        self::assertFalse($createContentResult->isError, json_encode($createContentResult->jsonSerialize()));
 
         // Now get the page and verify it shows the content element
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $getPageTool = new GetPageTool($siteInformationService, $languageService);
+        $getPageTool = $this->getService(GetPageTool::class);
 
         $result = $getPageTool->execute([
-            'uid' => $newPageUid
+            'uid' => $newPageUid,
         ]);
 
-        $this->assertFalse($result->isError, 'GetPage should find workspace page: ' . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'GetPage should find workspace page: ' . json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Verify page info
-        $this->assertStringContainsString('Title: Workspace Page With Content', $content);
+        self::assertStringContainsString('Title: Workspace Page With Content', $content);
 
         // Verify content element is listed
-        $this->assertStringContainsString('Content Elements (tt_content)', $content);
-        $this->assertStringContainsString('Workspace Content Element', $content);
+        self::assertStringContainsString('Content Elements (tt_content)', $content);
+        self::assertStringContainsString('Workspace Content Element', $content);
     }
 
 }

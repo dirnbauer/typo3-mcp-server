@@ -1,3 +1,7 @@
 "sys_file"
-,"uid","pid","name","identifier","storage","type","size"
-,1,0,"test.jpg","/test.jpg",1,2,123456
+,"uid","pid","name","identifier","storage","type","size","mime_type","extension","creation_date"
+,1,0,"test.jpg","/test.jpg",1,2,123456,"image/jpeg","jpg",1700000000
+,2,0,"logo.png","/user_upload/logo.png",1,2,54321,"image/png","png",1700100000
+,3,0,"report.pdf","/user_upload/docs/report.pdf",1,5,1048576,"application/pdf","pdf",1700200000
+,4,0,"demo.mp4","/user_upload/videos/demo.mp4",1,4,10485760,"video/mp4","mp4",1700300000
+,5,0,"icons.svg","/user_upload/icons.svg",1,2,2048,"image/svg+xml","svg",1700400000

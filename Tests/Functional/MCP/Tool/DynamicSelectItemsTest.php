@@ -25,7 +25,7 @@ class DynamicSelectItemsTest extends FunctionalTestCase
     ];
 
     protected array $testExtensionsToLoad = [
-        'typo3conf/ext/mcp_server',
+        'mcp_server',
     ];
 
     protected array $configurationToUseInTestInstance = [
