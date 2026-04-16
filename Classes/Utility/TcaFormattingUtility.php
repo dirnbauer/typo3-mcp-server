@@ -4,223 +4,199 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Utility;
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Localization\LanguageService;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use Hn\McpServer\Service\SelectItemResolver;
-use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Utility for formatting TCA and FlexForm information
  */
-class TcaFormattingUtility
+final class TcaFormattingUtility
 {
-
     /**
      * Add field details inline for TCA or FlexForm configuration
      *
      * @param string &$result The result string to append to
-     * @param array $config The field configuration
+     * @param array<string, mixed> $config The field configuration
      * @param string $fieldName Optional field name for special handling
      * @param string $table Optional table name for authMode filtering
      */
-    public static function addFieldDetailsInline(string &$result, $config, string $fieldName = '', string $table = ''): void
+    public static function addFieldDetailsInline(string &$result, array $config, string $fieldName = '', string $table = ''): void
     {
         // Get the field type
-        $type = $config['type'] ?? '';
-        
+        $type = is_string($config['type'] ?? null) ? $config['type'] : '';
+        $softref = is_string($config['softref'] ?? null) ? $config['softref'] : '';
+        $eval = is_string($config['eval'] ?? null) ? $config['eval'] : '';
+        $size = is_scalar($config['size'] ?? null) ? (string)$config['size'] : null;
+        $max = is_scalar($config['max'] ?? null) ? (string)$config['max'] : null;
+        $cols = is_scalar($config['cols'] ?? null) ? (string)$config['cols'] : null;
+        $rows = is_scalar($config['rows'] ?? null) ? (string)$config['rows'] : null;
+        $defaultValue = is_scalar($config['default'] ?? null) ? (string)$config['default'] : null;
+        $renderType = is_scalar($config['renderType'] ?? null) ? (string)$config['renderType'] : null;
+        $foreignTable = is_scalar($config['foreign_table'] ?? null) ? (string)$config['foreign_table'] : null;
+        $mmTable = is_scalar($config['MM'] ?? null) ? (string)$config['MM'] : null;
+        $allowed = is_scalar($config['allowed'] ?? null) ? (string)$config['allowed'] : null;
+        $dsPointerField = is_scalar($config['ds_pointerField'] ?? null) ? (string)$config['ds_pointerField'] : null;
+
         // Add field details based on type
         switch ($type) {
             case 'input':
-                if (isset($config['size'])) {
-                    $result .= " [size: " . $config['size'] . "]";
+                if ($size !== null) {
+                    $result .= ' [size: ' . $size . ']';
                 }
-                if (isset($config['max'])) {
-                    $result .= " [max: " . $config['max'] . "]";
+                if ($max !== null) {
+                    $result .= ' [max: ' . $max . ']';
                 }
-                
+
                 // Check for typolink support via softref
-                if (isset($config['softref']) && strpos($config['softref'], 'typolink_tag') !== false) {
-                    $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
+                if ($softref !== '' && str_contains($softref, 'typolink_tag')) {
+                    $result .= ' [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]';
                 }
                 break;
-                
+
             case 'text':
-                if (isset($config['cols'])) {
-                    $result .= " [cols: " . $config['cols'] . "]";
+                if ($cols !== null) {
+                    $result .= ' [cols: ' . $cols . ']';
                 }
-                if (isset($config['rows'])) {
-                    $result .= " [rows: " . $config['rows'] . "]";
+                if ($rows !== null) {
+                    $result .= ' [rows: ' . $rows . ']';
                 }
-                
+
                 // Check for richtext enabled
                 if (isset($config['enableRichtext']) && $config['enableRichtext']) {
-                    $result .= " [Richtext/HTML]";
+                    $result .= ' [Richtext/HTML]';
                 }
-                
+
                 // Check for typolink support via softref
-                if (isset($config['softref']) && strpos($config['softref'], 'typolink_tag') !== false) {
-                    $result .= " [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]";
+                if ($softref !== '' && str_contains($softref, 'typolink_tag')) {
+                    $result .= ' [Supports typolinks - Examples: t3://page?uid=123 for pages, t3://record?identifier=table&uid=456 for records, t3://file?uid=789 for files, https://example.com for external URLs, mailto:email@example.com for emails]';
                 }
                 break;
-                
+
             case 'check':
-                if (isset($config['default'])) {
-                    $result .= " [Default: " . $config['default'] . "]";
+                if ($defaultValue !== null) {
+                    $result .= ' [Default: ' . $defaultValue . ']';
                 }
                 break;
-                
+
             case 'select':
                 // Add renderType if available
-                if (isset($config['renderType'])) {
-                    $result .= " [renderType: " . $config['renderType'] . "]";
+                if ($renderType !== null) {
+                    $result .= ' [renderType: ' . $renderType . ']';
                 }
 
                 // Add foreign table and MM information
-                if (isset($config['foreign_table'])) {
-                    $result .= " [foreign table: " . $config['foreign_table'] . "]";
+                if ($foreignTable !== null) {
+                    $result .= ' [foreign table: ' . $foreignTable . ']';
                 }
-                if (isset($config['MM'])) {
-                    $result .= " [MM table: " . $config['MM'] . "]";
-                }
-
-                // Resolve select options using FormDataCompiler (handles static items, foreign_table, itemsProcFunc, TSconfig)
-                $resolved = null;
-                if (!empty($table) && !empty($fieldName)) {
-                    $resolver = GeneralUtility::makeInstance(SelectItemResolver::class);
-                    $resolved = $resolver->resolveSelectItems($table, $fieldName);
+                if ($mmTable !== null) {
+                    $result .= ' [MM table: ' . $mmTable . ']';
                 }
 
-                if ($resolved !== null && !empty($resolved['values'])) {
-                    // Use dynamically resolved items
-                    $hasAuthMode = !empty($config['authMode']);
-                    $beUser = $GLOBALS['BE_USER'] ?? null;
-                    $isAdmin = $beUser && $beUser->isAdmin();
+                // Add select options if available
+                $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
+                $optionLabels = [];
 
-                    $options = [];
-                    foreach ($resolved['values'] as $value) {
-                        // Filter by authMode for non-admin users
-                        if ($hasAuthMode && !$isAdmin && $beUser) {
-                            if (!$beUser->checkAuthMode($table, $fieldName, $value)) {
-                                continue;
-                            }
-                        }
-
-                        $label = $resolved['labels'][$value] ?? '';
-                        if ($label) {
-                            $translatedLabel = TableAccessService::translateLabel($label);
-                            $options[] = $value . " (" . $translatedLabel . ")";
-                        }
-                    }
-
-                    if (!empty($options)) {
-                        $result .= " [Options: " . implode(', ', $options) . "]";
+                if ($table === 'pages' && $fieldName === 'doktype') {
+                    foreach ($tableAccessService->getAvailableTypes('pages') as $value => $label) {
+                        $optionLabels[(string)$value] = $label;
                     }
                 } elseif (isset($config['items']) && is_array($config['items'])) {
-                    // Fallback: use static TCA items
-                    $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
-                    $parsed = $tableAccessService->parseSelectItems($config['items'], false);
+                    $parsed = $tableAccessService->parseSelectItems($config['items'], false); // Include dividers
+                    foreach ($parsed['values'] as $value) {
+                        $optionLabels[(string)$value] = $parsed['labels'][$value] ?? '';
+                    }
+                }
 
+                if ($optionLabels !== []) {
+                    // Check if this field has authMode restrictions
                     $hasAuthMode = !empty($config['authMode']);
                     $beUser = $GLOBALS['BE_USER'] ?? null;
-                    $isAdmin = $beUser && $beUser->isAdmin();
+                    $isAdmin = $beUser instanceof BackendUserAuthentication && $beUser->isAdmin();
 
                     $options = [];
-                    foreach ($parsed['values'] as $value) {
+                    foreach ($optionLabels as $value => $label) {
+                        // Skip dividers
                         if ($value === '--div--') {
                             continue;
                         }
-                        if ($hasAuthMode && !$isAdmin && $beUser && !empty($table) && !empty($fieldName)) {
+
+                        // Filter by authMode for non-admin users
+                        if ($hasAuthMode && !$isAdmin && $beUser instanceof BackendUserAuthentication && !empty($table) && !empty($fieldName)) {
                             if (!$beUser->checkAuthMode($table, $fieldName, $value)) {
-                                continue;
+                                continue; // User doesn't have permission for this value
                             }
                         }
-                        $label = $parsed['labels'][$value] ?? '';
-                        if ($label) {
-                            $translatedLabel = TableAccessService::translateLabel($label);
-                            $options[] = $value . " (" . $translatedLabel . ")";
+
+                        if ($label !== '') {
+                            $translatedLabel = TableAccessService::translateLabel((string)$label);
+                            $options[] = $value . ' (' . $translatedLabel . ')';
+                        } else {
+                            $options[] = $value;
                         }
                     }
 
                     if (!empty($options)) {
-                        $result .= " [Options: " . implode(', ', $options) . "]";
+                        $result .= ' [Options: ' . implode(', ', $options) . ']';
                     }
                 }
-                
+
                 // Special handling for sys_language_uid field
                 if ($fieldName === 'sys_language_uid') {
                     // Add note about ISO code support
                     $languageService = GeneralUtility::makeInstance(McpLanguageService::class);
                     $isoCodes = $languageService->getAvailableIsoCodes();
-                    
+
                     if (!empty($isoCodes)) {
-                        $result .= " [ISO codes accepted: " . implode(', ', $isoCodes) . "]";
+                        $result .= ' [ISO codes accepted: ' . implode(', ', $isoCodes) . ']';
                         $result .= " (Use ISO codes like 'de' instead of numeric IDs in WriteTable tool)";
                     }
                 }
                 break;
-                
+
             case 'group':
                 // Add allowed table if available
-                if (isset($config['allowed'])) {
-                    $result .= " [allowed: " . $config['allowed'] . "]";
+                if ($allowed !== null) {
+                    $result .= ' [allowed: ' . $allowed . ']';
                 }
                 break;
-                
+
             case 'inline':
                 // Add foreign table if available
-                if (isset($config['foreign_table'])) {
-                    $foreignTable = $config['foreign_table'];
-                    $foreignField = $config['foreign_field'] ?? '';
-                    $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-                    $isHiddenTable = !empty($foreignTableTCA['ctrl']['hideTable']);
-                    $foreignFieldType = $foreignTableTCA['columns'][$foreignField]['config']['type'] ?? '';
-                    $isPassthrough = ($foreignFieldType === 'passthrough');
-
-                    $result .= " [foreign table: " . $foreignTable . "]";
-                    if (!empty($foreignField)) {
-                        $result .= " [foreign_field: " . $foreignField . "]";
-                    }
-
-                    if ($isHiddenTable || $isPassthrough) {
-                        $result .= " [EMBEDDED: when creating pass record data arrays;"
-                            . " when updating pass existing UIDs to keep them"
-                            . " and new record data arrays to add — order defines sorting]";
-                    } else {
-                        $result .= " [INDEPENDENT: pass existing UIDs to link, or record data arrays to create and link]";
-                    }
+                if ($foreignTable !== null) {
+                    $result .= ' [foreign table: ' . $foreignTable . ']';
                 }
                 break;
-                
+
             case 'flex':
                 // Only applicable for TCA
-                if (isset($config['ds_pointerField'])) {
-                    $result .= " [ds_pointerField: " . $config['ds_pointerField'] . "]";
+                if ($dsPointerField !== null) {
+                    $result .= ' [ds_pointerField: ' . $dsPointerField . ']';
                 }
                 break;
-                
+
             case 'language':
-                // Special handling for language type fields (TYPO3 11.2+)
+                // Special handling for language type fields.
                 // Add note about ISO code support
                 $languageService = GeneralUtility::makeInstance(McpLanguageService::class);
                 $isoCodes = $languageService->getAvailableIsoCodes();
-                
+
                 if (!empty($isoCodes)) {
-                    $result .= " [ISO codes accepted: " . implode(', ', $isoCodes) . "]";
+                    $result .= ' [ISO codes accepted: ' . implode(', ', $isoCodes) . ']';
                     $result .= " (Use ISO codes like 'de' instead of numeric IDs in WriteTable tool)";
                 }
                 break;
         }
-        
+
         // Add required flag if set
-        if (isset($config['eval']) && strpos($config['eval'], 'required') !== false) {
-            $result .= " [Required]";
+        if ($eval !== '' && str_contains($eval, 'required')) {
+            $result .= ' [Required]';
         }
-        
+
         // Add default value if set
-        if (isset($config['default']) && $type !== 'check') {
-            $result .= " [Default: " . $config['default'] . "]";
+        if ($defaultValue !== null && $type !== 'check') {
+            $result .= ' [Default: ' . $defaultValue . ']';
         }
     }
 }

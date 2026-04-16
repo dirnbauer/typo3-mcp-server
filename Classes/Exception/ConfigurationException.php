@@ -11,7 +11,7 @@ namespace Hn\McpServer\Exception;
  * or incompatible. Maps to HTTP 500 Internal Server Error
  * status as these are system-level issues.
  */
-class ConfigurationException extends McpException
+final class ConfigurationException extends McpException
 {
     /**
      * @param string $config The configuration element that caused the error (e.g., "TCA", "site configuration")

@@ -10,10 +10,6 @@ on:
         required: false
         default: '0.0.0-dev'
 
-permissions:
-  contents: write
-  actions: read
-
 jobs:
   release:
     name: Build and publish to TER
@@ -21,34 +17,29 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        uses: shivammathur/setup-php@2.37.0
         with:
           php-version: '8.3'
           extensions: zip
           coverage: none
 
-      - name: Determine and validate version
+      - name: Determine version
         id: version
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
           INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${TAG_NAME#v}"
+            echo "version=${TAG_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            VERSION="${INPUT_VERSION}"
+            echo "version=${INPUT_VERSION}" >> "$GITHUB_OUTPUT"
           fi
-          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
-            echo "Error: Invalid version format: $VERSION" >&2
-            exit 1
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-dev
+        run: composer install --no-interaction --prefer-dist
 
       - name: Install tailor
         run: composer global require typo3/tailor:^1 --prefer-dist --no-progress
@@ -60,7 +51,7 @@ jobs:
         run: composer build:ter
 
       - name: Upload zip as build artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v7
         with:
           name: mcp_server_${{ steps.version.outputs.version }}
           path: dist/*.zip
@@ -76,14 +67,11 @@ jobs:
         if: github.event_name == 'release'
         env:
           TYPO3_API_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
+          RELEASE_COMMENT: ${{ github.event.release.body }}
           VERSION: ${{ steps.version.outputs.version }}
-          RELEASE_BODY: ${{ github.event.release.body }}
         run: |
-          COMMENT_FILE="$(mktemp)"
-          printf '%s' "$RELEASE_BODY" > "$COMMENT_FILE"
           php ~/.composer/vendor/bin/tailor ter:publish \
             --path .build/mcp_server \
-            --comment "$(cat "$COMMENT_FILE")" \
+            --comment "$RELEASE_COMMENT" \
             "$VERSION" \
             mcp_server
-          rm -f "$COMMENT_FILE"

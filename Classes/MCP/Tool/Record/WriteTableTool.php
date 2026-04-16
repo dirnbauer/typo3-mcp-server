@@ -10,32 +10,53 @@ use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for writing records to TYPO3 tables
+ *
+ * @phpstan-type RecordData array<string, mixed>
+ * @phpstan-type InlineRelation array{config: array<string, mixed>, value: mixed}
+ * @phpstan-type InlineRelations array<string, InlineRelation>
+ * @phpstan-type SearchReplaceOperation array{search: string, replace: string, replaceAll?: bool}
+ * @phpstan-type SearchReplaceMap array<string, list<SearchReplaceOperation>>
+ * @phpstan-type DataMap array<string, array<int|string, array<string, mixed>>>
  */
-class WriteTableTool extends AbstractRecordTool
+final class WriteTableTool extends AbstractRecordTool
 {
-    protected LanguageService $languageService;
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
 
-    public function __construct()
+    private function getBackendUser(): BackendUserAuthentication
     {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new \RuntimeException('No backend user available', 1748000002);
+        }
+        return $backendUser;
     }
 
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get all accessible tables for enum (exclude read-only tables for write operations)
         $accessibleTables = $this->tableAccessService->getAccessibleTables(false);
@@ -233,7 +254,7 @@ class WriteTableTool extends AbstractRecordTool
         }
         
         // Dispatch BeforeRecordWriteEvent — allows listeners to modify data or veto
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher = $this->eventDispatcher;
         $beforeEvent = new BeforeRecordWriteEvent($table, $action, $data, $uid, $pid);
         $eventDispatcher->dispatch($beforeEvent);
 
@@ -359,7 +380,7 @@ class WriteTableTool extends AbstractRecordTool
         $liveUid = $this->getLiveUid($table, $parentUid);
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $pid));
 
         // Return the result with live UID
@@ -426,7 +447,7 @@ class WriteTableTool extends AbstractRecordTool
         }
         
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
 
         // Return the result with the original live UID
@@ -457,7 +478,7 @@ class WriteTableTool extends AbstractRecordTool
         }
         
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
 
         return $this->createJsonResult([
@@ -508,11 +529,11 @@ class WriteTableTool extends AbstractRecordTool
             // Find the last record on the page and move after it
             $sortingField = $this->tableAccessService->getSortingFieldName($table);
             $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-                ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace));
+                ->add(new DeletedRestriction())
+                ->add(new WorkspaceRestriction( $currentWorkspace));
 
             $orderField = $sortingField ?? 'uid';
             $lastUid = $queryBuilder
@@ -582,10 +603,10 @@ class WriteTableTool extends AbstractRecordTool
 
         if ($sortingField && $refSorting > 0) {
             // Find the record just before the reference in sort order on the same page
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                ->add(new DeletedRestriction());
 
             $prevUid = $queryBuilder
                 ->select('uid')
@@ -639,7 +660,7 @@ class WriteTableTool extends AbstractRecordTool
         }
 
         // Check if translation already exists
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
 
         $existingTranslation = $queryBuilder
@@ -687,7 +708,7 @@ class WriteTableTool extends AbstractRecordTool
 
         if (!$newTranslationUid) {
             // Try to find the translation we just created
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
             $newTranslationUid = $queryBuilder
@@ -1037,11 +1058,11 @@ class WriteTableTool extends AbstractRecordTool
             // live records with their live UIDs. This avoids the mismatch where
             // WorkspaceRestriction returns workspace overlay UIDs that don't match
             // the live UIDs in $newChildUids.
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($foreignTable);
             $queryBuilder->getRestrictions()
                 ->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                ->add(new DeletedRestriction());
 
             $existingChildren = $queryBuilder
                 ->select('uid')
@@ -1427,7 +1448,7 @@ class WriteTableTool extends AbstractRecordTool
         }
         
         // Look up the record to get its t3ver_oid
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
         
         $queryBuilder->getRestrictions()->removeAll();

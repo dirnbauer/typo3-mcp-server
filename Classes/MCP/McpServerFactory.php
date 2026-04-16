@@ -4,22 +4,26 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
-use Mcp\Server\Server;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
+use Mcp\Server\Server;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Factory for creating and configuring MCP Server instances
+ * Factory for creating and configuring MCP Server instances.
+ *
+ * Tool dispatch follows MCP ergonomics guidance (Anthropic mcp-builder skill):
+ * https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md
+ * — including actionable client errors without JSON-RPC internal failures when possible.
  */
-class McpServerFactory
+final readonly class McpServerFactory
 {
     public function __construct(
-        private readonly ToolRegistry $toolRegistry
+        private ToolRegistry $toolRegistry,
     ) {}
 
     /**
@@ -48,7 +52,7 @@ class McpServerFactory
         return new InitializationOptions(
             serverName: $this->getServerName(),
             serverVersion: $this->getServerVersion(),
-            capabilities: $capabilities
+            capabilities: $capabilities,
         );
     }
 
@@ -57,7 +61,19 @@ class McpServerFactory
      */
     public function getServerName(): string
     {
-        return $GLOBALS['TYPO3_CONF_VARS']['SYS']['sitename'] ?? 'TYPO3 MCP Server';
+        $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($configuration)) {
+            return 'TYPO3 MCP Server';
+        }
+
+        $sysConfig = $configuration['SYS'] ?? null;
+        if (!is_array($sysConfig)) {
+            return 'TYPO3 MCP Server';
+        }
+
+        return is_string($sysConfig['sitename'] ?? null) && $sysConfig['sitename'] !== ''
+            ? $sysConfig['sitename']
+            : 'TYPO3 MCP Server';
     }
 
     /**
@@ -86,9 +102,12 @@ class McpServerFactory
 
             foreach ($toolRegistry->getTools() as $tool) {
                 $schema = $tool->getSchema();
+                $rawInputSchema = $schema['inputSchema'] ?? [];
+                $schema['inputSchema'] = self::normaliseInputSchema(is_array($rawInputSchema) ? $rawInputSchema : []);
+
                 $tools[] = [
                     'name' => $tool->getName(),
-                    ...$schema
+                    ...$schema,
                 ];
             }
 
@@ -104,18 +123,65 @@ class McpServerFactory
 
             $tool = $toolRegistry->getTool($toolName);
             if (!$tool) {
-                throw new \InvalidArgumentException('Tool not found: ' . $toolName);
-            }
+                // Return CallToolResult instead of throwing: Server::handleMessage maps generic
+                // exceptions to JSON-RPC -32603 and exposes the raw message. Tool-level isError
+                // matches MCP/mcp-builder expectations for recoverable agent mistakes.
+                $debug('Unknown tool name: ' . $toolName);
+                $safeName = is_string($toolName) ? $toolName : '';
+                $hint = 'Call tools/list for the exact tool names exposed by this server '
+                    . '(see TYPO3 docs: Documentation/Tools/Index.rst). '
+                    . 'Optional: use a consistent prefix pattern if you rename tools for LLM ergonomics '
+                    . '(mcp-builder skill: https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).';
 
-            try {
-                return $tool->execute($arguments);
-            } catch (\Throwable $e) {
-                $debug('Error executing tool ' . $toolName . ': ' . $e->getMessage());
                 return new CallToolResult(
-                    [new TextContent($e->getMessage())],
-                    true
+                    [new TextContent(
+                        $safeName !== ''
+                            ? 'Unknown tool "' . $safeName . '". ' . $hint
+                            : 'Unknown tool (missing name). ' . $hint,
+                    )],
+                    true,
                 );
             }
+
+            // Exceptions are normalized to CallToolResult by AbstractTool::executeInternal().
+            return $tool->execute($arguments);
         });
+    }
+
+    /**
+     * Normalise an inputSchema so that it survives strict MCP client validation.
+     *
+     * - Ensures `properties` is always a JSON object (not array), because
+     *   `'properties' => []` in PHP serialises to `[]` instead of `{}` and
+     *   clients such as Cursor reject the entire tool catalog on that mismatch.
+     * - Drops `required` when it is an empty array (invalid per JSON Schema spec).
+     *
+     * All other JSON Schema keywords (enum, default, minimum, maximum, oneOf,
+     * items, etc.) are preserved so that clients can use them for validation
+     * and LLMs benefit from the richer parameter descriptions.
+     *
+     * @param array<string, mixed> $inputSchema
+     * @return array<string, mixed>
+     */
+    private static function normaliseInputSchema(array $inputSchema): array
+    {
+        // Ensure properties is always a JSON object, never a JSON array.
+        if (isset($inputSchema['properties'])) {
+            $props = $inputSchema['properties'];
+            if ($props instanceof \stdClass) {
+                // Already correct (empty object)
+            } elseif (is_array($props) && $props === []) {
+                // Empty PHP array [] would serialise as JSON array []; coerce to object {}.
+                $inputSchema['properties'] = new \stdClass();
+            }
+            // Non-empty associative arrays serialise as JSON objects automatically.
+        }
+
+        // Remove empty required arrays — invalid per JSON Schema spec.
+        if (isset($inputSchema['required']) && $inputSchema['required'] === []) {
+            unset($inputSchema['required']);
+        }
+
+        return $inputSchema;
     }
 }

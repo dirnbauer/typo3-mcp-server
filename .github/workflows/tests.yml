@@ -2,35 +2,104 @@ name: Tests
 
 on:
   push:
-    branches: [main]
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    name: Documentation render check
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Render TYPO3 documentation
+        run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit tests with coverage
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: |
+          composer require --no-update "typo3/cms-core:^14.0"
+          composer install --no-interaction --prefer-dist
+
+      - name: Run unit test suite with coverage
+        run: |
+          mkdir -p var/log
+          vendor/bin/phpunit -c Tests/UnitTests.xml --coverage-clover var/log/unit-coverage.xml
+
   functional-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        include:
+          - php-version: '8.3'
+            typo3-version: '^14.0'
+          - php-version: '8.4'
+            typo3-version: '^14.0'
+          - php-version: '8.2'
+            typo3-version: '^14.0'
 
-    name: PHP ${{ matrix.php-version }}
+    name: "PHP ${{ matrix.php-version }} / TYPO3 ${{ matrix.typo3-version }}"
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        uses: shivammathur/setup-php@2.37.0
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: sqlite3, pdo_sqlite, intl
+          extensions: sqlite3, pdo_sqlite
           coverage: none
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer require --no-update "typo3/cms-core:${{ matrix.typo3-version }}"
+          composer install --no-interaction --prefer-dist
 
       - name: Run functional test suite
         run: composer test
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: |
+          composer require --no-update "typo3/cms-core:^14.0"
+          composer install --no-interaction --prefer-dist
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: PHP CS Fixer
+        run: composer php-cs-fixer
+
+      - name: Rector
+        run: composer rector
+
+      - name: Fractor
+        run: composer fractor

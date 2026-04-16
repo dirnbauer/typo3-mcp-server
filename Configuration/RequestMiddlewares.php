@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
+use Hn\McpServer\Middleware\McpServerMiddleware;
+
 return [
     'frontend' => [
         'hn-mcp-server/routes' => [
-            'target' => \Hn\McpServer\Middleware\McpServerMiddleware::class,
+            'target' => McpServerMiddleware::class,
             'before' => [
                 'typo3/cms-frontend/site',
             ],
@@ -14,7 +18,7 @@ return [
     ],
     'backend' => [
         'hn-mcp-server/routes' => [
-            'target' => \Hn\McpServer\Middleware\McpServerMiddleware::class,
+            'target' => McpServerMiddleware::class,
             'before' => [
                 'typo3/cms-backend/site-resolver',
             ],

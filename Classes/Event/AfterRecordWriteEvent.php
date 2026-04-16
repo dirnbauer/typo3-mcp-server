@@ -14,7 +14,7 @@ namespace Hn\McpServer\Event;
  *
  * Not dispatched on errors or vetoed operations.
  */
-final class AfterRecordWriteEvent
+final readonly class AfterRecordWriteEvent
 {
     /**
      * @param string $table The target table

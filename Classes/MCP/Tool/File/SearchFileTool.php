@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
+use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\ImageContent;
 use Mcp\Types\TextContent;
-use Doctrine\DBAL\ParameterType;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
@@ -18,14 +20,25 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Tool for searching files in TYPO3 FAL with optional thumbnail preview
  */
-class SearchFileTool extends AbstractRecordTool
+final class SearchFileTool extends AbstractRecordTool
 {
     private const DEFAULT_LIMIT = 10;
     private const MAX_LIMIT = 30;
     private const THUMBNAIL_WIDTH = 150;
     private const THUMBNAIL_HEIGHT = 150;
 
-    public function getSchema(): array
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'Search for existing files in TYPO3 FAL by name, extension, folder, or MIME type. '
@@ -88,12 +101,12 @@ class SearchFileTool extends AbstractRecordTool
             return $this->createErrorResult('At least one search criterion is required (name, extension, folder, mimeType, or storage).');
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('sys_file');
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            ->add(new DeletedRestriction());
 
         $queryBuilder
             ->select('uid', 'name', 'identifier', 'storage', 'extension', 'mime_type', 'size', 'sha1', 'creation_date', 'modification_date')

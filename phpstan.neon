@@ -1,0 +1,11 @@
+includes:
+    - vendor/phpat/phpat/extension.neon
+
+parameters:
+    level: 9
+    paths:
+        - Classes
+        - Tests/Architecture
+    excludePaths:
+        - Classes/Domain/Model/*
+    treatPhpDocTypesAsCertain: false

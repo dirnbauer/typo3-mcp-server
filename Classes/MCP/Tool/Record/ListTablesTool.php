@@ -4,19 +4,28 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for listing available tables in TYPO3
  */
-class ListTablesTool extends AbstractRecordTool
+final class ListTablesTool extends AbstractRecordTool
 {
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'List available tables in TYPO3 that can be accessed via MCP, organized by extension.',

@@ -12,12 +12,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Tool for listing available file storages in TYPO3
  */
-class ListStoragesTool extends AbstractRecordTool
+final class ListStoragesTool extends AbstractRecordTool
 {
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'List all available file storages in TYPO3 that can be browsed. Returns storage UIDs, names, and capabilities (public, writable, default).',

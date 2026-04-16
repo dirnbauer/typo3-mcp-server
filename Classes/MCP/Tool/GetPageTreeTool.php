@@ -4,43 +4,43 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
-use Hn\McpServer\Service\SiteInformationService;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for retrieving the TYPO3 page tree
  */
-class GetPageTreeTool extends AbstractRecordTool
+final class GetPageTreeTool extends AbstractRecordTool
 {
     private const SUBPAGE_LIMIT = 10;
 
-    protected SiteInformationService $siteInformationService;
-    protected LanguageService $languageService;
-
     public function __construct(
-        SiteInformationService $siteInformationService,
-        LanguageService $languageService
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly SiteInformationService $siteInformationService,
+        private readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
     ) {
-        parent::__construct();
-        $this->siteInformationService = $siteInformationService;
-        $this->languageService = $languageService;
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         $schema = [
             'description' => 'Get the TYPO3 page tree structure as a readable text tree.Essential for understanding page hierarchy before creating new pages, finding pages by their position, and verifying parent-child relationships.',
@@ -183,12 +183,12 @@ class GetPageTreeTool extends AbstractRecordTool
             return [];
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            ->add(new DeletedRestriction());
 
         $query = $queryBuilder->select('*')
             ->from('pages')
@@ -270,12 +270,12 @@ class GetPageTreeTool extends AbstractRecordTool
             return [];
         }
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            ->add(new DeletedRestriction());
 
         $counts = $queryBuilder
             ->select('pid')
@@ -410,13 +410,13 @@ class GetPageTreeTool extends AbstractRecordTool
                 continue;
             }
 
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
             // Only apply DeletedRestriction
             $queryBuilder->getRestrictions()
                 ->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+                ->add(new DeletedRestriction());
 
             // Count records grouped by pid
             $counts = $queryBuilder
@@ -460,12 +460,12 @@ class GetPageTreeTool extends AbstractRecordTool
         $hints = '';
 
         // Query for plugins on this page
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tt_content');
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            ->add(new DeletedRestriction());
 
         $plugins = $queryBuilder
             ->select('*')

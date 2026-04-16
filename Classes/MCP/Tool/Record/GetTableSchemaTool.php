@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
-use Mcp\Types\CallToolResult;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use Hn\McpServer\Utility\TcaFormattingUtility;
-use Hn\McpServer\Service\TableAccessService;
+use Mcp\Types\CallToolResult;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Tool for getting detailed schema information for a specific table
  */
-class GetTableSchemaTool extends AbstractRecordTool
+final class GetTableSchemaTool extends AbstractRecordTool
 {
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get all accessible tables for enum
         $accessibleTables = $this->tableAccessService->getAccessibleTables(true);

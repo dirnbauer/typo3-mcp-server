@@ -6,7 +6,13 @@ services:
 
   Hn\McpServer\:
     resource: '../Classes/*'
-    exclude: '../Classes/Domain/Model/*'
+    exclude:
+      # Instantiated only via `new` in ToolRegistry — not a DI service (constructor uses `object`).
+      - '../Classes/MCP/Tool/CompatibleToolAdapter.php'
+
+  _instanceof:
+    Hn\McpServer\MCP\Tool\ToolInterface:
+      public: true
 
   # Explicitly register command controllers
   Hn\McpServer\Command\McpServerCommand:
@@ -46,16 +52,15 @@ services:
   # Make SiteInformationService public for eID access
   Hn\McpServer\Service\SiteInformationService:
     public: true
-    
-  # Make SiteInstructionsService public for server access
-  Hn\McpServer\Server\SiteInstructionsService:
+
+  # Make LanguageService public for functional tests and eID access
+  Hn\McpServer\Service\LanguageService:
+    public: true
+
+  # Make TableAccessService public for functional tests
+  Hn\McpServer\Service\TableAccessService:
     public: true
     
   # Explicitly configure the module controller
   Hn\McpServer\Controller\McpServerModuleController:
     public: true
-    arguments:
-      $moduleTemplateFactory: '@TYPO3\CMS\Backend\Template\ModuleTemplateFactory'
-      $toolRegistry: '@Hn\McpServer\MCP\ToolRegistry'
-      $pageRenderer: '@TYPO3\CMS\Core\Page\PageRenderer'
-      $oauthService: '@Hn\McpServer\Service\OAuthService'

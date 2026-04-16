@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * OAuth service for MCP server authentication
  */
-class OAuthService
+final readonly class OAuthService
 {
     private const CLIENT_ID = 'typo3-mcp-server';
     private const CODE_EXPIRY_SECONDS = 600; // 10 minutes
     private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
+
+    public function __construct(
+        private ConnectionPool $connectionPool,
+    ) {}
 
     /**
      * Generate authorization URL for OAuth flow
@@ -50,10 +53,14 @@ class OAuthService
      */
     public function createAuthorizationCode(int $beUserId, string $clientName, string $redirectUri = '', string $pkceChallenge = '', string $challengeMethod = 'S256'): string
     {
+        if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
+            throw new \InvalidArgumentException('Only S256 PKCE challenges are supported');
+        }
+
         $code = $this->generateSecureToken();
         $expires = time() + self::CODE_EXPIRY_SECONDS;
 
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
 
         $connection->insert(
@@ -69,7 +76,7 @@ class OAuthService
                 'pkce_challenge_method' => $challengeMethod,
                 'redirect_uri' => $redirectUri,
                 'expires' => $expires,
-            ]
+            ],
         );
 
         return $code;
@@ -77,10 +84,12 @@ class OAuthService
 
     /**
      * Exchange authorization code for access token
+     *
+     * @return array{access_token: string, token_type: string, expires_in: int}|null
      */
     public function exchangeCodeForToken(string $code, ?string $codeVerifier = null, ?ServerRequestInterface $request = null): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -90,7 +99,7 @@ class OAuthService
             ->where(
                 $queryBuilder->expr()->eq('code', $queryBuilder->createNamedParameter($code)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
@@ -99,17 +108,17 @@ class OAuthService
             return null;
         }
 
-        // Verify PKCE: if a challenge was set, the verifier is mandatory
-        if (!empty($authCode['pkce_challenge'])) {
-            if ($codeVerifier === null) {
+        $pkceChallenge = is_string($authCode['pkce_challenge'] ?? null) ? $authCode['pkce_challenge'] : '';
+        if ($pkceChallenge !== '') {
+            $challengeMethod = is_string($authCode['pkce_challenge_method'] ?? null) ? $authCode['pkce_challenge_method'] : '';
+            if ($challengeMethod !== 'S256') {
                 return null;
             }
-            // Only S256 is supported
-            if (($authCode['pkce_challenge_method'] ?? '') !== 'S256') {
+            if ($codeVerifier === null || $codeVerifier === '') {
                 return null;
             }
             $computedChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-            if (!hash_equals($computedChallenge, $authCode['pkce_challenge'])) {
+            if (!hash_equals($pkceChallenge, $computedChallenge)) {
                 return null;
             }
         }
@@ -121,11 +130,10 @@ class OAuthService
         // Get client IP
         $clientIp = '';
         if ($request !== null) {
-            $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
+            $clientIp = $this->getRemoteAddress($request);
         }
 
-        // Create access token
-        $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $tokenConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $tokenConnection->insert(
@@ -134,21 +142,21 @@ class OAuthService
                 'pid' => 0,
                 'tstamp' => time(),
                 'crdate' => time(),
-                'token' => $this->hashToken($accessToken),
+                'token' => hash('sha256', $accessToken),
+                'token_version' => 1,
                 'be_user_uid' => $authCode['be_user_uid'],
                 'client_name' => $authCode['client_name'],
                 'expires' => $expires,
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,
-                'token_version' => 1,
-            ]
+            ],
         );
 
         // Delete the authorization code (one-time use)
         $connection->delete(
             'tx_mcpserver_oauth_codes',
-            ['uid' => $authCode['uid']]
+            ['uid' => $authCode['uid']],
         );
 
         return [
@@ -160,96 +168,64 @@ class OAuthService
 
     /**
      * Validate access token and return user info
+     *
+     * @return array{be_user_uid: int, client_name: string, token_uid: int}|null
      */
     public function validateToken(string $token, ?ServerRequestInterface $request = null): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $tokenHash = hash('sha256', $token);
+
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
-        // Try hashed lookup first (token_version=1, post-migration)
         $queryBuilder = $connection->createQueryBuilder();
         $tokenRecord = $queryBuilder
             ->select('*')
             ->from('tx_mcpserver_access_tokens')
             ->where(
-                $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($this->hashToken($token))),
+                $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($tokenHash)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
 
-        // Fallback: try plaintext lookup for pre-migration tokens (token_version=0)
         if (!$tokenRecord) {
-            $queryBuilder = $connection->createQueryBuilder();
-            $tokenRecord = $queryBuilder
-                ->select('*')
-                ->from('tx_mcpserver_access_tokens')
-                ->where(
-                    $queryBuilder->expr()->eq('token', $queryBuilder->createNamedParameter($token)),
-                    $queryBuilder->expr()->eq('token_version', $queryBuilder->createNamedParameter(0)),
-                    $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                    $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
-                )
-                ->executeQuery()
-                ->fetchAssociative();
-        }
-
-        if (!$tokenRecord) {
-            return null;
-        }
-
-        // Auto-upgrade version-0 (plaintext) tokens to hashed on successful validation.
-        // Best-effort: if the upgrade fails, authentication still succeeds and the
-        // upgrade will be retried on next validation or handled by the upgrade wizard.
-        if ((int)($tokenRecord['token_version'] ?? 0) === 0) {
-            try {
-                $upgradeBuilder = $connection->createQueryBuilder();
-                $upgradeBuilder
-                    ->update('tx_mcpserver_access_tokens')
-                    ->where(
-                        $upgradeBuilder->expr()->eq('uid', $upgradeBuilder->createNamedParameter($tokenRecord['uid'])),
-                        $upgradeBuilder->expr()->eq('token_version', $upgradeBuilder->createNamedParameter(0))
-                    )
-                    ->set('token', $this->hashToken($token))
-                    ->set('token_version', 1)
-                    ->executeStatement();
-            } catch (\Throwable $e) {
-                // Non-fatal: token is valid, upgrade will be retried later
+            $tokenRecord = $this->fallbackPlaintextLookup($connection, $token);
+            if (!$tokenRecord) {
+                return null;
             }
         }
 
-        // Update last used timestamp and IP (best-effort, must not block authentication)
-        try {
-            $clientIp = '';
-            if ($request !== null) {
-                $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
-            }
-
-            $queryBuilder = $connection->createQueryBuilder();
-            $queryBuilder
-                ->update('tx_mcpserver_access_tokens')
-                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($tokenRecord['uid'])))
-                ->set('last_used', time())
-                ->set('last_used_ip', $clientIp)
-                ->executeStatement();
-        } catch (\Throwable $e) {
-            // Non-fatal: audit trail update failure must not prevent authentication
+        // Update last used timestamp and IP
+        $clientIp = '';
+        if ($request !== null) {
+            $clientIp = $this->getRemoteAddress($request);
         }
+
+        $queryBuilder = $connection->createQueryBuilder();
+        $queryBuilder
+            ->update('tx_mcpserver_access_tokens')
+            ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($tokenRecord['uid'])))
+            ->set('last_used', time())
+            ->set('last_used_ip', $clientIp)
+            ->executeStatement();
 
         return [
-            'be_user_uid' => (int)$tokenRecord['be_user_uid'],
-            'client_name' => $tokenRecord['client_name'],
-            'token_uid' => (int)$tokenRecord['uid'],
+            'be_user_uid' => is_numeric($tokenRecord['be_user_uid'] ?? null) ? (int)$tokenRecord['be_user_uid'] : 0,
+            'client_name' => is_string($tokenRecord['client_name'] ?? null) ? $tokenRecord['client_name'] : '',
+            'token_uid' => is_numeric($tokenRecord['uid'] ?? null) ? (int)$tokenRecord['uid'] : 0,
         ];
     }
 
     /**
      * Get all active tokens for a user
+     *
+     * @return list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}>
      */
     public function getUserTokens(int $beUserId): array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -259,13 +235,25 @@ class OAuthService
             ->where(
                 $queryBuilder->expr()->eq('be_user_uid', $queryBuilder->createNamedParameter($beUserId)),
                 $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->orderBy('crdate', 'DESC')
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return $tokens ?: [];
+        $normalizedTokens = [];
+        foreach ($tokens as $token) {
+            $normalizedTokens[] = [
+                'uid' => is_numeric($token['uid'] ?? null) ? (int)$token['uid'] : 0,
+                'client_name' => is_string($token['client_name'] ?? null) ? $token['client_name'] : '',
+                'token' => is_string($token['token'] ?? null) ? $token['token'] : '',
+                'crdate' => is_numeric($token['crdate'] ?? null) ? (int)$token['crdate'] : 0,
+                'expires' => is_numeric($token['expires'] ?? null) ? (int)$token['expires'] : 0,
+                'last_used' => is_numeric($token['last_used'] ?? null) ? (int)$token['last_used'] : 0,
+            ];
+        }
+
+        return $normalizedTokens;
     }
 
     /**
@@ -273,7 +261,7 @@ class OAuthService
      */
     public function revokeToken(int $tokenUid, int $beUserId): bool
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $affectedRows = $connection->update(
@@ -282,7 +270,7 @@ class OAuthService
             [
                 'uid' => $tokenUid,
                 'be_user_uid' => $beUserId,
-            ]
+            ],
         );
 
         return $affectedRows > 0;
@@ -293,13 +281,28 @@ class OAuthService
      */
     public function revokeAllUserTokens(int $beUserId): int
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         return $connection->update(
             'tx_mcpserver_access_tokens',
             ['deleted' => 1, 'tstamp' => time()],
-            ['be_user_uid' => $beUserId]
+            ['be_user_uid' => $beUserId],
+        );
+    }
+
+    public function revokeUserTokensByClientName(int $beUserId, string $clientName): int
+    {
+        $connection = $this->connectionPool
+            ->getConnectionForTable('tx_mcpserver_access_tokens');
+
+        return $connection->update(
+            'tx_mcpserver_access_tokens',
+            ['deleted' => 1, 'tstamp' => time()],
+            [
+                'be_user_uid' => $beUserId,
+                'client_name' => $clientName,
+            ],
         );
     }
 
@@ -311,84 +314,71 @@ class OAuthService
         $currentTime = time();
 
         // Clean up expired authorization codes
-        $codeConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $codeConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
-
-        $codeConnection->delete(
-            'tx_mcpserver_oauth_codes',
-            ['expires' => $codeConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
-        );
+        $codeQueryBuilder = $codeConnection->createQueryBuilder();
+        $codeQueryBuilder
+            ->delete('tx_mcpserver_oauth_codes')
+            ->where(
+                $codeQueryBuilder->expr()->lt('expires', $codeQueryBuilder->createNamedParameter($currentTime)),
+            )
+            ->executeStatement();
 
         // Mark expired tokens as deleted
-        $tokenConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $tokenConnection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
-
-        $tokenConnection->update(
-            'tx_mcpserver_access_tokens',
-            ['deleted' => 1, 'tstamp' => $currentTime],
-            ['expires' => $tokenConnection->createQueryBuilder()->expr()->lt('expires', $currentTime)]
-        );
+        $tokenQueryBuilder = $tokenConnection->createQueryBuilder();
+        $tokenQueryBuilder
+            ->update('tx_mcpserver_access_tokens')
+            ->set('deleted', $tokenQueryBuilder->createNamedParameter(1, Connection::PARAM_INT))
+            ->set('tstamp', $tokenQueryBuilder->createNamedParameter($currentTime, Connection::PARAM_INT))
+            ->where(
+                $tokenQueryBuilder->expr()->lt('expires', $tokenQueryBuilder->createNamedParameter($currentTime)),
+            )
+            ->executeStatement();
     }
 
     /**
-     * Register a new OAuth client dynamically
+     * Register the fixed public OAuth client used by MCP integrations.
+     *
+     * @param array<string, mixed> $clientData
+     * @return array{
+     *   client_id: string,
+     *   client_name: string,
+     *   grant_types: list<string>,
+     *   response_types: list<string>,
+     *   scope: string,
+     *   redirect_uris: list<string>
+     * }
      */
     public function registerClient(array $clientData): array
     {
-        // Generate client credentials
-        $clientId = 'mcp_client_' . bin2hex(random_bytes(16));
-        $clientSecret = bin2hex(random_bytes(32));
-        
-        // For now, store in database (could be enhanced later)
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_mcpserver_oauth_clients');
-
-        // Check if table exists, if not create it on the fly
-        try {
-            $connection->insert(
-                'tx_mcpserver_oauth_clients',
-                [
-                    'pid' => 0,
-                    'tstamp' => time(),
-                    'crdate' => time(),
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                    'client_name' => $clientData['client_name'] ?? 'MCP Client',
-                    'redirect_uris' => json_encode($clientData['redirect_uris'] ?? []),
-                    'grant_types' => json_encode($clientData['grant_types'] ?? ['authorization_code']),
-                    'scope' => $clientData['scope'] ?? 'mcp_access',
-                ]
-            );
-        } catch (\Exception $e) {
-            // If table doesn't exist, we'll use the fixed client approach for now
-            return [
-                'client_id' => self::CLIENT_ID,
-                'client_name' => $clientData['client_name'] ?? 'MCP Client',
-                'grant_types' => ['authorization_code'],
-                'response_types' => ['code'],
-                'scope' => 'mcp_access',
-                'redirect_uris' => $clientData['redirect_uris'] ?? ['http://localhost'],
-            ];
-        }
+        $clientName = is_string($clientData['client_name'] ?? null) && $clientData['client_name'] !== ''
+            ? $clientData['client_name']
+            : 'MCP Client';
+        $scope = is_string($clientData['scope'] ?? null) && $clientData['scope'] !== ''
+            ? $clientData['scope']
+            : 'mcp_access';
 
         return [
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-            'client_name' => $clientData['client_name'] ?? 'MCP Client',
-            'grant_types' => $clientData['grant_types'] ?? ['authorization_code'],
-            'response_types' => ['code'],
-            'scope' => $clientData['scope'] ?? 'mcp_access',
-            'redirect_uris' => $clientData['redirect_uris'] ?? ['http://localhost'],
+            'client_id' => self::CLIENT_ID,
+            'client_name' => $clientName,
+            'grant_types' => $this->normalizeStringList($clientData['grant_types'] ?? null, ['authorization_code']),
+            'response_types' => $this->normalizeStringList($clientData['response_types'] ?? null, ['code']),
+            'scope' => $scope,
+            'redirect_uris' => $this->normalizeStringList($clientData['redirect_uris'] ?? null, ['http://localhost']),
         ];
     }
 
     /**
      * Get OAuth metadata for discovery
+     *
+     * @return array<string, mixed>
      */
     public function getMetadata(string $baseUrl): array
     {
         $baseUrl = rtrim($baseUrl, '/');
-        
+
         return [
             'issuer' => $baseUrl,
             'authorization_endpoint' => $baseUrl . '/mcp_oauth/authorize',
@@ -397,7 +387,7 @@ class OAuthService
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'],
-            'token_endpoint_auth_methods_supported' => ['none', 'client_secret_post'],
+            'token_endpoint_auth_methods_supported' => ['none'],
             'registration_endpoint_auth_methods_supported' => ['none'],
         ];
     }
@@ -413,11 +403,11 @@ class OAuthService
         // Get client IP
         $clientIp = '';
         if ($request !== null) {
-            $clientIp = $request->getServerParams()['REMOTE_ADDR'] ?? '';
+            $clientIp = $this->getRemoteAddress($request);
         }
 
         // Create access token
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('tx_mcpserver_access_tokens');
 
         $connection->insert(
@@ -426,15 +416,15 @@ class OAuthService
                 'pid' => 0,
                 'tstamp' => time(),
                 'crdate' => time(),
-                'token' => $this->hashToken($accessToken),
+                'token' => hash('sha256', $accessToken),
+                'token_version' => 1,
                 'be_user_uid' => $beUserId,
                 'client_name' => $clientName,
                 'expires' => $expires,
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,
-                'token_version' => 1,
-            ]
+            ],
         );
 
         return $accessToken;
@@ -449,11 +439,55 @@ class OAuthService
     }
 
     /**
-     * Hash a token for storage. Uses SHA-256 which is appropriate for
-     * high-entropy random tokens (unlike passwords, these don't need bcrypt).
+     * Look up a pre-migration plaintext token (token_version=0) and auto-upgrade it to hashed.
+     *
+     * @return array<string, mixed>|false
      */
-    private function hashToken(string $token): string
+    private function fallbackPlaintextLookup(\Doctrine\DBAL\Connection $connection, string $plainToken): array|false
     {
-        return hash('sha256', $token);
+        $qb = $connection->createQueryBuilder();
+        $row = $qb
+            ->select('*')
+            ->from('tx_mcpserver_access_tokens')
+            ->where(
+                $qb->expr()->eq('token', $qb->createNamedParameter($plainToken)),
+                $qb->expr()->eq('token_version', $qb->createNamedParameter(0, \Doctrine\DBAL\ParameterType::INTEGER)),
+                $qb->expr()->gt('expires', $qb->createNamedParameter(time())),
+                $qb->expr()->eq('deleted', $qb->createNamedParameter(0)),
+            )
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!$row) {
+            return false;
+        }
+
+        $connection->update(
+            'tx_mcpserver_access_tokens',
+            ['token' => hash('sha256', $plainToken), 'token_version' => 1],
+            ['uid' => $row['uid']]
+        );
+
+        return $row;
+    }
+
+    private function getRemoteAddress(ServerRequestInterface $request): string
+    {
+        $serverParams = $request->getServerParams();
+        return is_string($serverParams['REMOTE_ADDR'] ?? null) ? $serverParams['REMOTE_ADDR'] : '';
+    }
+
+    /**
+     * @param list<string> $default
+     * @return list<string>
+     */
+    private function normalizeStringList(mixed $value, array $default): array
+    {
+        if (!is_array($value)) {
+            return $default;
+        }
+
+        $normalized = array_values(array_filter($value, static fn(mixed $item): bool => is_string($item) && $item !== ''));
+        return $normalized !== [] ? $normalized : $default;
     }
 }

@@ -5,35 +5,52 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
-use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
-use Hn\McpServer\Service\LanguageService;
 use TYPO3\CMS\Core\Service\FlexFormService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for reading records from TYPO3 tables
+ *
+ * @phpstan-type RecordRow array<string, mixed>
+ * @phpstan-type RecordRows list<RecordRow>
  */
-class ReadTableTool extends AbstractRecordTool
+final class ReadTableTool extends AbstractRecordTool
 {
-    protected LanguageService $languageService;
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
 
-    public function __construct()
+    private function getBackendUser(): BackendUserAuthentication
     {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new \RuntimeException('No backend user available', 1748000001);
+        }
+        return $backendUser;
     }
 
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Check if multiple languages are available
         $availableLanguages = $this->languageService->getAvailableIsoCodes();
@@ -216,15 +233,15 @@ class ReadTableTool extends AbstractRecordTool
         ?int $languageUid = null,
         array $requestedFields = []
     ): array {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -255,7 +272,7 @@ class ReadTableTool extends AbstractRecordTool
             // 1. The UID is a workspace UID (for new records)
             // 2. The UID is a live UID (for existing records with workspace versions)
 
-            $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+            $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
             if ($currentWorkspace > 0) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
@@ -291,13 +308,13 @@ class ReadTableTool extends AbstractRecordTool
         }
 
         // Get total count (without pagination)
-        $countQueryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $countQueryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
         $countQueryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
 
         $countQueryBuilder->count('uid')->from($table);
 
@@ -320,7 +337,7 @@ class ReadTableTool extends AbstractRecordTool
 
         if ($uid !== null) {
             // Apply the same UID filtering logic for count query
-            $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+            $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
             if ($currentWorkspace > 0) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
@@ -530,7 +547,7 @@ class ReadTableTool extends AbstractRecordTool
         if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && strpos($value, '<?xml') === 0) {
             try {
                 // Use TYPO3's FlexFormService to convert XML to array
-                $flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
+                $flexFormService = new FlexFormService();
                 $flexFormArray = $flexFormService->convertFlexFormContentToArray($value);
 
                 // Simplify the structure for easier use in LLMs
@@ -998,7 +1015,7 @@ class ReadTableTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
 
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
@@ -1006,8 +1023,8 @@ class ReadTableTool extends AbstractRecordTool
         // For inline relations, we need proper workspace handling
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0));
 
         // Select all fields
         // Apply default sorting if foreign_sortby is defined
@@ -1070,7 +1087,7 @@ class ReadTableTool extends AbstractRecordTool
      */
     protected function getMmRelationValues(string $mmTable, string $localTable, int $localUid, string $fieldName, array $fieldConfig): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($mmTable);
 
         // Determine if this is an opposite/reverse relation
@@ -1212,15 +1229,15 @@ class ReadTableTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
 
         $records = $queryBuilder
             ->select('*')

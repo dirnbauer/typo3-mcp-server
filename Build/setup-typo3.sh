@@ -9,6 +9,8 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BIN="$ROOT_DIR/vendor/bin/typo3"
 DB_PATH="$ROOT_DIR/var/sqlite.db"
 
+mkdir -p "$ROOT_DIR/public" "$ROOT_DIR/var"
+
 $BIN setup \
   --driver=sqlite \
   --dbname="$DB_PATH" \

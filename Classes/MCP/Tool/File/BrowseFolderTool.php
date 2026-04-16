@@ -15,12 +15,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Tool for browsing folder contents (subfolders and files) in a TYPO3 file storage
  */
-class BrowseFolderTool extends AbstractRecordTool
+final class BrowseFolderTool extends AbstractRecordTool
 {
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'Browse folder contents in a TYPO3 file storage. Lists subfolders and files with metadata (size, type, modification date). ' .

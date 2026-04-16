@@ -4,55 +4,124 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Hn\McpServer\Exception\AccessDeniedException;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
-/**
- * Service for managing workspace context in MCP operations
- */
-class WorkspaceContextService
+final readonly class WorkspaceContextService
 {
+    public function __construct(
+        private ConnectionPool $connectionPool,
+        private Context $context,
+        private LoggerInterface $logger,
+        private WorkspaceService $workspaceService,
+    ) {}
+
     /**
      * Switch to the optimal workspace for the current user.
      * Creates a new workspace if none exists and user can create workspaces.
      */
     public function switchToOptimalWorkspace(BackendUserAuthentication $beUser): int
     {
-        // If already in a workspace, don't switch
-        $currentWorkspace = $beUser->workspace ?? 0;
+        $currentWorkspace = $beUser->workspace;
         if ($currentWorkspace > 0) {
             return $currentWorkspace;
         }
-        
-        // First check if user already has access to workspaces
+
         $workspaceId = $this->getFirstWritableWorkspace($beUser);
-        
-        // If no workspace found and user can create workspaces, create one
+
         if ($workspaceId === 0 && $this->canUserCreateWorkspaces($beUser)) {
             $workspaceId = $this->createMcpWorkspace($beUser);
         }
-        
-        // Set the workspace context
+
         $this->setWorkspaceContext($beUser, $workspaceId);
-        
+
         return $workspaceId;
     }
-    
+
     /**
-     * Get the first workspace the user can write to
+     * Switch to an explicitly requested workspace after validating access.
+     *
+     * @throws AccessDeniedException if the user cannot access the workspace
      */
-    protected function getFirstWritableWorkspace(BackendUserAuthentication $beUser): int
+    public function switchToWorkspace(BackendUserAuthentication $beUser, int $workspaceId): int
+    {
+        if ($workspaceId <= 0) {
+            throw new AccessDeniedException('workspace', 'switch');
+        }
+
+        $workspaceRecord = $beUser->checkWorkspace($workspaceId);
+        if (!$workspaceRecord || !$this->hasWriteAccess($workspaceRecord)) {
+            throw new AccessDeniedException(
+                sprintf('workspace %d (%s)', $workspaceId, $this->formatAvailableWorkspaces($beUser)),
+                'write',
+            );
+        }
+
+        $this->setWorkspaceContext($beUser, $workspaceId);
+
+        return $workspaceId;
+    }
+
+    /**
+     * @return list<array{id: int, title: string, description: string, access: string, active: bool}>
+     */
+    public function getAvailableWorkspaces(BackendUserAuthentication $beUser): array
+    {
+        $currentWs = $beUser->workspace;
+        $result = [];
+
+        try {
+            $availableWorkspaces = $this->workspaceService->getAvailableWorkspaces();
+
+            foreach ($availableWorkspaces as $wsId => $title) {
+                if ($wsId <= 0) {
+                    continue;
+                }
+                $workspaceRecord = $beUser->checkWorkspace($wsId);
+                if (!$workspaceRecord) {
+                    continue;
+                }
+
+                $description = '';
+                try {
+                    $qb = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
+                    $row = $qb->select('description')
+                        ->from('sys_workspace')
+                        ->where($qb->expr()->eq('uid', $qb->createNamedParameter($wsId, Connection::PARAM_INT)))
+                        ->executeQuery()
+                        ->fetchAssociative();
+                    $description = is_array($row) && is_string($row['description'] ?? null) ? $row['description'] : '';
+                } catch (\Throwable) {
+                }
+
+                $result[] = [
+                    'id' => is_int($wsId) ? $wsId : (int)$wsId,
+                    'title' => is_string($title) ? $title : '',
+                    'description' => $description,
+                    'access' => is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : 'unknown',
+                    'active' => $wsId === $currentWs,
+                ];
+            }
+        } catch (\Throwable $e) {
+            $this->logger->warning('Failed to list workspaces via WorkspaceService', ['exception' => $e]);
+        }
+
+        return $result;
+    }
+
+    private function getFirstWritableWorkspace(BackendUserAuthentication $beUser): int
     {
         try {
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceService::class);
-            $availableWorkspaces = $workspaceService->getAvailableWorkspaces();
-            
-            // Check each workspace (excluding live workspace 0)
+            $availableWorkspaces = $this->workspaceService->getAvailableWorkspaces();
+
             foreach ($availableWorkspaces as $workspaceId => $title) {
                 if ($workspaceId > 0) {
                     $workspaceRecord = $beUser->checkWorkspace($workspaceId);
@@ -61,227 +130,182 @@ class WorkspaceContextService
                     }
                 }
             }
-        } catch (\Throwable $e) {
-            // If WorkspaceService fails, fall back to database query
+        } catch (\Throwable) {
             return $this->getWorkspaceFromDatabase($beUser);
         }
-        
-        return 0; // Fallback to live workspace
+
+        return 0;
     }
-    
+
     /**
-     * Check if user has write access to a workspace
+     * @param array<string, mixed> $workspaceRecord
      */
-    protected function hasWriteAccess(array $workspaceRecord): bool
+    private function hasWriteAccess(array $workspaceRecord): bool
     {
-        // Admin users always have write access
-        if (!empty($workspaceRecord['_ACCESS']) && $workspaceRecord['_ACCESS'] === 'admin') {
-            return true;
-        }
-        
-        // Owner has write access
-        if (!empty($workspaceRecord['_ACCESS']) && $workspaceRecord['_ACCESS'] === 'owner') {
-            return true;
-        }
-        
-        // Members have write access
-        if (!empty($workspaceRecord['_ACCESS']) && $workspaceRecord['_ACCESS'] === 'member') {
-            return true;
-        }
-        
-        return false;
+        $access = is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : '';
+        return in_array($access, ['admin', 'owner', 'member'], true);
     }
-    
-    /**
-     * Fallback method to get workspace from database
-     */
-    protected function getWorkspaceFromDatabase(BackendUserAuthentication $beUser): int
+
+    private function getWorkspaceFromDatabase(BackendUserAuthentication $beUser): int
     {
         try {
-            $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-            $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_workspace');
-            
-            // Get workspaces where user is owner or member
-            $workspaces = $queryBuilder
-                ->select('uid', 'title')
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
+            $userId = (int)($beUser->user['uid'] ?? 0);
+
+            $workspace = $queryBuilder
+                ->select('uid')
                 ->from('sys_workspace')
                 ->where(
                     $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq(
-                            'adminusers',
-                            $queryBuilder->createNamedParameter($beUser->user['uid'] ?? 0)
-                        ),
-                        $queryBuilder->expr()->like(
-                            'adminusers',
-                            $queryBuilder->createNamedParameter('%,' . ($beUser->user['uid'] ?? 0) . ',%')
-                        ),
-                        $queryBuilder->expr()->eq(
-                            'members',
-                            $queryBuilder->createNamedParameter($beUser->user['uid'] ?? 0)
-                        ),
-                        $queryBuilder->expr()->like(
-                            'members',
-                            $queryBuilder->createNamedParameter('%,' . ($beUser->user['uid'] ?? 0) . ',%')
-                        )
-                    )
+                        $queryBuilder->expr()->eq('adminusers', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
+                        $queryBuilder->expr()->like('adminusers', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
+                        $queryBuilder->expr()->eq('members', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
+                        $queryBuilder->expr()->like('members', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
+                    ),
                 )
-                ->andWhere(
-                    $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0))
-                )
+                ->andWhere($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
                 ->orderBy('uid', 'ASC')
                 ->setMaxResults(1)
                 ->executeQuery()
                 ->fetchAssociative();
-            
-            if ($workspaces) {
-                return (int)$workspaces['uid'];
+
+            if (is_array($workspace)) {
+                $workspaceUid = $workspace['uid'] ?? 0;
+                return is_numeric($workspaceUid) ? (int)$workspaceUid : 0;
             }
-        } catch (\Throwable $e) {
-            // Ignore database errors
+        } catch (\Throwable) {
         }
-        
+
         return 0;
     }
-    
-    /**
-     * Check if user can create workspaces
-     */
-    protected function canUserCreateWorkspaces(BackendUserAuthentication $beUser): bool
+
+    private function canUserCreateWorkspaces(BackendUserAuthentication $beUser): bool
     {
-        // Admin users can always create workspaces
         if ($beUser->isAdmin()) {
             return true;
         }
-        
-        // Check if user has workspace module access
+
         return $beUser->check('modules', 'web_WorkspacesWorkspaces');
     }
-    
-    /**
-     * Create a new workspace for MCP operations
-     */
-    protected function createMcpWorkspace(BackendUserAuthentication $beUser): int
+
+    private function createMcpWorkspace(BackendUserAuthentication $beUser): int
     {
         try {
             $realName = $beUser->user['realName'] ?? '';
             $username = $beUser->user['username'] ?? 'unknown_user';
             $workspaceTitle = 'MCP Workspace for ' . ($realName ?: $username);
-            $workspaceDescription = 'Automatically created workspace for Model Context Protocol operations';
-            
-            // Create workspace record data
-            // Only use fields that are guaranteed to exist in TYPO3 core
+
             $workspaceData = [
-                'pid' => 0, // Workspaces are created at root level
+                'pid' => 0,
                 'title' => $workspaceTitle,
-                'description' => $workspaceDescription,
+                'description' => 'Automatically created workspace for Model Context Protocol operations',
                 'adminusers' => $beUser->user['uid'] ?? 0,
                 'members' => '',
-                'db_mountpoints' => '', // Inherit from user
-                'file_mountpoints' => '', // Inherit from user
-                'publish_access' => 0, // No publishing restrictions (matches TCA default)
-                'stagechg_notification' => 0, // No email notifications by default
-                'freeze' => 0, // Not frozen
-                'live_edit' => 0, // No live edit
-                'publish_time' => 0, // No scheduled publishing
+                'db_mountpoints' => '',
+                'file_mountpoints' => '',
+                'publish_access' => 0,
+                'stagechg_notification' => 0,
+                'publish_time' => 0,
             ];
-            
-            // Use DataHandler to create the workspace
+
             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->admin = true; // Admin mode to bypass restrictions
-            $dataHandler->bypassWorkspaceRestrictions = true;
-            
+            $originalAdmin = $beUser->user['admin'] ?? 0;
+            $originalWorkspace = $beUser->workspace;
+            $originalWorkspaceId = $beUser->user['workspace_id'] ?? 0;
+
+            $beUser->user['admin'] = 1;
+            $beUser->workspace = 0;
+            $beUser->user['workspace_id'] = 0;
+
             $newId = 'NEW' . uniqid();
-            $dataMap = [
-                'sys_workspace' => [
-                    $newId => $workspaceData
-                ]
-            ];
-            
-            $dataHandler->start($dataMap, []);
-            $dataHandler->process_datamap();
-            
-            // Get the UID of the newly created workspace
+            try {
+                $dataHandler->start(['sys_workspace' => [$newId => $workspaceData]], []);
+                $dataHandler->process_datamap();
+            } finally {
+                $beUser->user['admin'] = $originalAdmin;
+                $beUser->workspace = $originalWorkspace;
+                $beUser->user['workspace_id'] = $originalWorkspaceId;
+            }
+
             $newUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
-            
+
             if ($newUid && !$dataHandler->errorLog) {
                 return (int)$newUid;
             }
         } catch (\Throwable $e) {
-            // Workspace creation failed, log the error but don't fail
-            error_log('MCP Workspace creation failed: ' . $e->getMessage());
+            $this->logger->error('MCP Workspace creation failed', ['exception' => $e]);
         }
-        
-        return 0; // Fallback to live workspace
+
+        return 0;
     }
-    
-    /**
-     * Set the workspace context for the current request
-     */
+
     public function setWorkspaceContext(BackendUserAuthentication $beUser, int $workspaceId): void
     {
-        // Set workspace on the backend user (temporary, doesn't persist to database)
         $beUser->setTemporaryWorkspace($workspaceId);
-        
-        // Update the Context API
-        $context = GeneralUtility::makeInstance(Context::class);
-        $workspaceAspect = GeneralUtility::makeInstance(WorkspaceAspect::class, $workspaceId);
-        $context->setAspect('workspace', $workspaceAspect);
+        $this->context->setAspect('workspace', new WorkspaceAspect($workspaceId));
     }
-    
-    /**
-     * Get current workspace ID
-     */
+
     public function getCurrentWorkspace(): int
     {
-        return $GLOBALS['BE_USER']->workspace ?? 0;
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        return $backendUser instanceof BackendUserAuthentication ? $backendUser->workspace : 0;
     }
-    
+
     /**
-     * Get information about the current workspace
+     * @return array{id: int, title: string, description: string, is_live: bool}
      */
     public function getWorkspaceInfo(): array
     {
         $workspaceId = $this->getCurrentWorkspace();
-        
+
         if ($workspaceId === 0) {
             return [
                 'id' => 0,
                 'title' => 'Live',
                 'description' => 'Live workspace - changes are immediately public',
-                'is_live' => true
+                'is_live' => true,
             ];
         }
-        
+
         try {
-            $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-            $queryBuilder = $connectionPool->getQueryBuilderForTable('sys_workspace');
-            
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
             $workspace = $queryBuilder
                 ->select('uid', 'title', 'description')
                 ->from('sys_workspace')
-                ->where(
-                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($workspaceId))
-                )
+                ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($workspaceId, Connection::PARAM_INT)))
                 ->executeQuery()
                 ->fetchAssociative();
-            
-            if ($workspace) {
+
+            if (is_array($workspace)) {
+                $workspaceUid = $workspace['uid'] ?? $workspaceId;
                 return [
-                    'id' => (int)$workspace['uid'],
-                    'title' => $workspace['title'],
-                    'description' => $workspace['description'],
-                    'is_live' => false
+                    'id' => is_numeric($workspaceUid) ? (int)$workspaceUid : $workspaceId,
+                    'title' => is_string($workspace['title'] ?? null) ? $workspace['title'] : 'Unknown Workspace',
+                    'description' => is_string($workspace['description'] ?? null) ? $workspace['description'] : '',
+                    'is_live' => false,
                 ];
             }
-        } catch (\Throwable $e) {
-            // Ignore errors
+        } catch (\Throwable) {
         }
-        
+
         return [
             'id' => $workspaceId,
             'title' => 'Unknown Workspace',
             'description' => 'Workspace information not available',
-            'is_live' => false
+            'is_live' => false,
         ];
+    }
+
+    private function formatAvailableWorkspaces(BackendUserAuthentication $beUser): string
+    {
+        $workspaces = $this->getAvailableWorkspaces($beUser);
+        if (empty($workspaces)) {
+            return '(none)';
+        }
+
+        return implode(', ', array_map(
+            static fn(array $ws): string => sprintf('%d (%s)', $ws['id'], $ws['title']),
+            $workspaces,
+        ));
     }
 }

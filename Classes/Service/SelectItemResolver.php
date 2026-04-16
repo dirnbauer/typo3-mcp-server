@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * - authMode filtering
  * - Language and doktype restrictions
  */
-class SelectItemResolver
+final class SelectItemResolver
 {
     /**
      * Runtime cache for compiled form data, keyed by "table:pid"

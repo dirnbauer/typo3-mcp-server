@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Utility\TcaFormattingUtility;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Service\FlexFormService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Utility\TcaFormattingUtility;
-use Hn\McpServer\Service\TableAccessService;
 
 /**
  * Tool for getting FlexForm schema information
  */
-class GetFlexFormSchemaTool extends AbstractRecordTool
+final class GetFlexFormSchemaTool extends AbstractRecordTool
 {
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'Get schema information for a specific FlexForm field. Returns field definitions, types, and configuration options for the FlexForm DataStructure.',

@@ -39,9 +39,13 @@ class HashExistingTokensUpgradeWizard implements UpgradeWizardInterface
             ->fetchAllAssociative();
 
         foreach ($rows as $row) {
+            $token = $row['token'] ?? '';
+            if (!is_string($token) || $token === '') {
+                continue;
+            }
             $connection->update(
                 self::TABLE,
-                ['token' => hash('sha256', $row['token']), 'token_version' => 1],
+                ['token' => hash('sha256', $token), 'token_version' => 1],
                 ['uid' => $row['uid']]
             );
         }
@@ -54,13 +58,13 @@ class HashExistingTokensUpgradeWizard implements UpgradeWizardInterface
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable(self::TABLE);
 
-        // Count ALL version-0 tokens including deleted — plaintext is a data leak risk
-        $count = (int)$connection->createQueryBuilder()
+        $result = $connection->createQueryBuilder()
             ->count('uid')
             ->from(self::TABLE)
             ->where('token_version = 0')
             ->executeQuery()
             ->fetchOne();
+        $count = is_numeric($result) ? (int)$result : 0;
 
         return $count > 0;
     }

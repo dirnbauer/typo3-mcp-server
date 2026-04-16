@@ -4,241 +4,273 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
-use Mcp\Server\HttpServerRunner;
-use Mcp\Server\Transport\Http\StandardPhpAdapter;
-use Mcp\Server\Transport\Http\FileSessionStore;
-use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\FileProcessingAspect;
-use TYPO3\CMS\Core\Context\UserAspect;
-use TYPO3\CMS\Core\Context\WorkspaceAspect;
-use TYPO3\CMS\Core\Http\Response;
-use TYPO3\CMS\Core\Http\Stream;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Hn\McpServer\MCP\McpServerFactory;
-use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteInformationService;
-use Hn\McpServer\Http\CorsHeadersTrait;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Mcp\Server\HttpServerRunner;
+use Mcp\Server\Transport\Http\FileSessionStore;
+use Mcp\Server\Transport\Http\HttpMessage;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\UserAspect;
+use TYPO3\CMS\Core\Context\WorkspaceAspect;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Http\Stream;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP HTTP Endpoint for remote access
  */
-class McpEndpoint
+final readonly class McpEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private LoggerInterface $logger,
+        private OAuthService $oauthService,
+        private ConnectionPool $connectionPool,
+        private WorkspaceContextService $workspaceContextService,
+        private LanguageServiceFactory $languageServiceFactory,
+        private ExtensionConfiguration $extensionConfiguration,
+    ) {}
+
     /**
      * eID entry point via __invoke method
      */
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            // Get services through DI container
+            // Preflight for browser-based MCP clients (OAuth redirect / streamable HTTP over HTTPS).
+            // Without this, OPTIONS hits token extraction and returns 401; POST success had no CORS headers.
+            if ($request->getMethod() === 'OPTIONS') {
+                return $this->handlePreflightRequest();
+            }
+
             $container = GeneralUtility::getContainer();
             $serverFactory = $container->get(McpServerFactory::class);
-
-            // Debug: Log all request details
-            $headers = [];
-            foreach ($request->getHeaders() as $name => $values) {
-                $headers[$name] = implode(', ', $values);
+            if (!$serverFactory instanceof McpServerFactory) {
+                throw new \RuntimeException('MCP server factory is not available');
             }
+
             $queryParams = $request->getQueryParams();
+            $this->logger->debug('MCP request received', [
+                'method' => $request->getMethod(),
+                'requestTarget' => $request->getRequestTarget(),
+                'headerNames' => array_keys($request->getHeaders()),
+                'headers' => McpHttpLogRedactor::redactHeadersForLog($request->getHeaders()),
+                'queryParams' => McpHttpLogRedactor::redactQueryParamsForLog($queryParams),
+            ]);
 
-            error_log("MCP: Request method: " . $request->getMethod());
-            error_log("MCP: Request headers: " . json_encode($headers));
-            error_log("MCP: Query params: " . json_encode($queryParams));
-
-            // Check if this is an auth header test request
             if (isset($queryParams['test']) && $queryParams['test'] === 'auth') {
                 return $this->handleAuthHeaderTest($request);
             }
 
-            // Authenticate via Bearer token or query parameter
             $token = $this->extractToken($request);
 
             if (!$token) {
-                error_log("MCP: No token found in Authorization header or query params");
-                return $this->createUnauthorizedResponse('Missing authentication token', $request);
+                $this->logger->warning('No token found in Authorization header (or query parameter when explicitly allowed)');
+                return $this->createUnauthorizedResponse($request, 'Missing authentication token');
             }
 
-            // Log token for debugging (first 20 chars only for security)
-            error_log("MCP: Received token: " . substr($token, 0, 20) . "...");
+            $this->logger->debug('MCP request authenticated via bearer token');
 
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $tokenInfo = $oauthService->validateToken($token, $request);
+            $tokenInfo = $this->oauthService->validateToken($token, $request);
 
-            if (!$tokenInfo) {
-                error_log("MCP: Token validation failed for: " . substr($token, 0, 20) . "...");
-                return $this->createUnauthorizedResponse('Invalid or expired token', $request);
+            if (!$this->isValidTokenInfo($tokenInfo)) {
+                $this->logger->warning('Token validation failed for MCP request');
+                return $this->createUnauthorizedResponse($request, 'Invalid or expired token');
             }
 
-            error_log("MCP: Token validation successful for user: " . $tokenInfo['be_user_uid']);
+            $this->logger->debug('Token validation successful', ['userId' => $tokenInfo['be_user_uid']]);
 
-            // Set up TYPO3 backend context for the authenticated user
             $this->setupBackendUserContext($tokenInfo['be_user_uid']);
 
-            // Set current request context in SiteInformationService
             $siteInformationService = $container->get(SiteInformationService::class);
             if ($siteInformationService instanceof SiteInformationService) {
                 $siteInformationService->setCurrentRequest($request);
             }
 
-            // Create MCP server instance using the factory
             $server = $serverFactory->createServer();
 
-            // Configure HTTP options
             $httpOptions = [
-                'session_timeout' => 1800, // 30 minutes
+                'session_timeout' => 1800,
                 'max_queue_size' => 500,
                 'enable_sse' => false,
                 'shared_hosting' => false,
             ];
 
-            // Create session store in TYPO3's var directory
             $sessionStore = new FileSessionStore(
-                Environment::getVarPath() . '/mcp_sessions'
+                Environment::getVarPath() . '/mcp_sessions',
             );
 
-            // Create initialization options using the factory
             $initOptions = $serverFactory->createInitializationOptions($server);
 
-            // Create runner and adapter
             $runner = new HttpServerRunner(
                 $server,
                 $initOptions,
                 $httpOptions,
-                null,
-                $sessionStore
+                $this->logger,
+                $sessionStore,
             );
 
-            // Handle the request and capture output
-            ob_start();
+            $httpRequest = HttpMessage::fromGlobals();
+            $httpResponse = $runner->handleRequest($httpRequest);
 
-            // Suppress warnings/notices from MCP SDK to prevent deprecation issues
-            $oldErrorReporting = error_reporting(E_ERROR | E_PARSE);
-
-            try {
-                $adapter = new StandardPhpAdapter($runner);
-                $adapter->handle();
-            } finally {
-                // Restore error reporting
-                error_reporting($oldErrorReporting);
-            }
-
-            $output = ob_get_clean();
-
-            // Get the status code set by the adapter
-            $statusCode = http_response_code() ?: 200;
-
-            // Try to decode as JSON, fallback to plain text
-            $decodedOutput = json_decode($output, true);
-            $contentType = $decodedOutput !== null ? 'application/json' : 'text/plain';
-
-            // Create proper stream for response
+            $body = $httpResponse->getBody() ?? '';
             $stream = new Stream('php://temp', 'rw');
-            $stream->write($output);
+            $stream->write($body);
             $stream->rewind();
 
-            return new Response(
+            $headers = [];
+            foreach ($httpResponse->getHeaders() as $name => $value) {
+                $headers[$name] = $value;
+            }
+            if (!isset($headers['Content-Type'])) {
+                $decodedBody = json_decode($body, true);
+                $headers['Content-Type'] = $decodedBody !== null ? 'application/json' : 'text/plain';
+            }
+
+            $response = new Response(
                 $stream,
-                $statusCode,
-                ['Content-Type' => $contentType]
+                $httpResponse->getStatusCode(),
+                $headers,
             );
 
+            return $this->addCorsHeaders($response);
         } catch (\Throwable $e) {
+            $this->logger->error('MCP request failed', ['exception' => $e]);
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode([
+            $stream->write($this->encodeJson([
                 'error' => 'Internal Server Error',
-                'message' => $e->getMessage()
             ]));
             $stream->rewind();
 
-            return new Response(
+            return $this->addCorsHeaders(new Response(
                 $stream,
                 500,
-                ['Content-Type' => 'application/json']
-            );
+                ['Content-Type' => 'application/json'],
+            ));
         }
     }
 
+    private function isQueryTokenAllowed(): bool
+    {
+        return $this->readExtensionBool('allowMcpTokenInQueryString', false);
+    }
+
+    private function isAuthHeaderDiagnosticEnabled(): bool
+    {
+        return $this->readExtensionBool('enableMcpAuthHeaderDiagnostic', true);
+    }
+
+    private function readExtensionBool(string $key, bool $defaultIfMissing): bool
+    {
+        try {
+            $configuration = $this->extensionConfiguration->get('mcp_server');
+        } catch (\Throwable) {
+            return $defaultIfMissing;
+        }
+
+        if (!is_array($configuration) || !array_key_exists($key, $configuration)) {
+            return $defaultIfMissing;
+        }
+
+        $value = $configuration[$key];
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+            return !in_array(strtolower($value), ['0', 'false', 'off', 'no'], true);
+        }
+
+        return (bool)$value;
+    }
+
     /**
-     * Extract token from request (Bearer header or query parameter)
+     * Extract token from Authorization header, or from query string only when explicitly allowed in extension configuration.
      */
     private function extractToken(ServerRequestInterface $request): ?string
     {
-        // Try Authorization header first (preferred method)
         $authHeader = $request->getHeaderLine('Authorization');
-        if (!empty($authHeader) && preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+        if ($authHeader !== '' && preg_match('/Bearer\s+(.+)/', $authHeader, $matches) === 1) {
             return $matches[1];
         }
 
-        // Try HTTP_AUTHORIZATION from Apache environment (fallback for Apache)
         $serverParams = $request->getServerParams();
         $httpAuth = $serverParams['HTTP_AUTHORIZATION'] ?? '';
-        if (!empty($httpAuth) && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches)) {
+        if (is_string($httpAuth) && $httpAuth !== '' && preg_match('/Bearer\s+(.+)/', $httpAuth, $matches) === 1) {
             return $matches[1];
         }
 
-        // Try REDIRECT_HTTP_AUTHORIZATION (Apache mod_rewrite/mod_auth_form strips and prefixes)
+        // Apache mod_rewrite / mod_auth may expose the header as REDIRECT_HTTP_AUTHORIZATION
         $redirectAuth = $serverParams['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-        if (!empty($redirectAuth) && preg_match('/Bearer\s+(.+)/', $redirectAuth, $matches)) {
+        if (is_string($redirectAuth) && $redirectAuth !== '' && preg_match('/Bearer\s+(.+)/', $redirectAuth, $matches) === 1) {
             return $matches[1];
         }
 
-        // Fallback to query parameter for backward compatibility
+        if (!$this->isQueryTokenAllowed()) {
+            return null;
+        }
+
         $queryParams = $request->getQueryParams();
-        return $queryParams['token'] ?? null;
+        $queryToken = $queryParams['token'] ?? null;
+        if ($queryToken !== null) {
+            $this->logger->notice('MCP token accepted from query parameter because allowMcpTokenInQueryString is enabled in extension settings.');
+        }
+
+        return is_string($queryToken) && $queryToken !== '' ? $queryToken : null;
     }
 
-    /**
-     * Create unauthorized response
-     */
-    private function createUnauthorizedResponse(string $message, ServerRequestInterface $request = null): ResponseInterface
+    private function createUnauthorizedResponse(ServerRequestInterface $request, string $message): ResponseInterface
     {
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode([
+        $stream->write($this->encodeJson([
             'error' => 'Unauthorized',
-            'message' => $message
+            'message' => $message,
         ]));
         $stream->rewind();
 
-        // Build WWW-Authenticate header with resource_metadata URL (RFC 9728)
-        $wwwAuth = 'Bearer';
-        if ($request !== null) {
-            $uri = $request->getUri();
-            $baseUrl = $uri->getScheme() . '://' . $uri->getHost();
-            if ($uri->getPort() && $uri->getPort() !== 443 && $uri->getPort() !== 80) {
-                $baseUrl .= ':' . $uri->getPort();
-            }
-            $resourceMetadataUrl = $baseUrl . '/.well-known/oauth-protected-resource/mcp';
-            $wwwAuth = 'Bearer resource_metadata="' . $resourceMetadataUrl . '"';
-        }
+        // RFC 9728: resource_metadata URL must match a served protected-resource metadata document (see middleware).
+        $resourceMetadataUrl = $this->buildBaseUrl($request) . '/.well-known/oauth-protected-resource/mcp';
 
         $response = new Response(
             $stream,
             401,
             [
                 'Content-Type' => 'application/json',
-                'WWW-Authenticate' => $wwwAuth,
-            ]
+                'WWW-Authenticate' => 'Bearer resource_metadata="' . $resourceMetadataUrl . '"',
+            ],
         );
 
-        return $this->addCorsHeaders($response, $request);
+        return $this->addCorsHeaders($response);
     }
 
-    /**
-     * Set up backend user context
-     */
+    private function buildBaseUrl(ServerRequestInterface $request): string
+    {
+        $uri = $request->getUri();
+        $baseUrl = $uri->getScheme() . '://' . $uri->getHost();
+        $port = $uri->getPort();
+        if ($port !== null && !in_array($port, [80, 443], true)) {
+            $baseUrl .= ':' . $port;
+        }
+
+        return $baseUrl;
+    }
+
     private function setupBackendUserContext(int $userId): void
     {
         $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
 
-        // Load user data
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('be_users');
 
         $queryBuilder = $connection->createQueryBuilder();
@@ -249,100 +281,113 @@ class McpEndpoint
             ->executeQuery()
             ->fetchAssociative();
 
-        if ($userData) {
+        if (is_array($userData)) {
             $beUser->user = $userData;
             $GLOBALS['BE_USER'] = $beUser;
 
-            // CRITICAL: Fetch group data to populate permissions
-            // This computes tables_select, tables_modify, non_exclude_fields, webmounts, etc.
-            // Without this, non-admin users have no permissions computed from their groups
             $beUser->fetchGroupData();
 
-            // Initialize language service (required for DataHandler and other core components)
             $this->initializeLanguageService($beUser);
 
-            // Set up workspace context
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceId = $this->workspaceContextService->switchToOptimalWorkspace($beUser);
 
-            // Set up TYPO3 Context API (following BackendUserAuthenticator pattern)
             $context = GeneralUtility::makeInstance(Context::class);
             $context->setAspect('backend.user', new UserAspect($beUser));
             $context->setAspect('workspace', new WorkspaceAspect($workspaceId));
 
-            // Disable deferred image processing — DeferredBackendImageProcessor requires a full
-            // backend session with CSRF tokens, which MCP endpoints don't have (Bearer token only).
-            $context->setAspect('fileProcessing', new FileProcessingAspect(false));
-
-            // Log workspace selection for debugging
-            error_log("MCP: User {$userId} switched to workspace {$workspaceId}");
+            $this->logger->debug('Workspace selected', ['userId' => $userId, 'workspaceId' => $workspaceId]);
         }
 
-        // Ensure TCA is loaded using proper TYPO3 core method
-        $tcaFactory = GeneralUtility::getContainer()->get(\TYPO3\CMS\Core\Configuration\Tca\TcaFactory::class);
-        $GLOBALS['TCA'] = $tcaFactory->get();
+        $tcaFactory = GeneralUtility::getContainer()->get(TcaFactory::class);
+        if ($tcaFactory instanceof TcaFactory) {
+            $GLOBALS['TCA'] = $tcaFactory->get();
+        }
     }
 
-    /**
-     * Initialize language service for the backend user
-     */
     private function initializeLanguageService(BackendUserAuthentication $beUser): void
     {
-        // Get user's preferred language or fall back to default
-        $userLanguage = $beUser->user['lang'] ?? 'default';
-
-        // Create language service
-        $languageServiceFactory = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class);
-        $languageService = $languageServiceFactory->createFromUserPreferences($beUser);
-
-        // Set global language service
+        $languageService = $this->languageServiceFactory->createFromUserPreferences($beUser);
         $GLOBALS['LANG'] = $languageService;
     }
 
     /**
-     * Handle auth header test request
+     * Lightweight check whether Authorization reached PHP. Disabled via extension setting on hardened sites.
+     * Does not expose server software or other fingerprinting details.
      */
     private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
     {
-        $headers = [];
+        if (!$this->isAuthHeaderDiagnosticEnabled()) {
+            $stream = new Stream('php://temp', 'rw');
+            $stream->write($this->encodeJson([
+                'error' => 'forbidden',
+                'message' => 'Auth header diagnostic is disabled (see extension setting enableMcpAuthHeaderDiagnostic).',
+            ]));
+            $stream->rewind();
+
+            return GeneralUtility::makeInstance(Response::class)
+                ->withStatus(403)
+                ->withHeader('Content-Type', 'application/json; charset=utf-8')
+                ->withBody($stream);
+        }
+
         $receivedAuthHeader = false;
 
-        // Check all possible ways the Authorization header might arrive
         $authHeader = $request->getHeaderLine('Authorization');
-        if (!empty($authHeader)) {
-            $headers['authorization'] = $authHeader;
+        if ($authHeader !== '') {
             $receivedAuthHeader = true;
         }
 
-        // Check server params for HTTP_AUTHORIZATION
         $serverParams = $request->getServerParams();
         if (isset($serverParams['HTTP_AUTHORIZATION'])) {
-            $headers['http_authorization'] = $serverParams['HTTP_AUTHORIZATION'];
             $receivedAuthHeader = true;
         }
 
-        // Also check for redirect env variable (Apache specific)
         if (isset($serverParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $headers['redirect_http_authorization'] = $serverParams['REDIRECT_HTTP_AUTHORIZATION'];
             $receivedAuthHeader = true;
         }
 
         $responseData = [
             'test' => 'auth',
-            'headers_received' => $headers,
             'auth_header_detected' => $receivedAuthHeader,
-            'server_software' => $serverParams['SERVER_SOFTWARE'] ?? 'unknown',
-            'hint' => !$receivedAuthHeader ? 'Authorization header not received. See module page for solutions.' : 'Authorization header received successfully.'
+            'headers_received' => [
+                'authorization' => $receivedAuthHeader,
+            ],
+            'hint' => !$receivedAuthHeader
+                ? 'Authorization header not received. See backend MCP module for server configuration hints.'
+                : 'Authorization header received successfully.',
         ];
 
         $body = GeneralUtility::makeInstance(Stream::class, 'php://temp', 'rw');
-        $body->write(json_encode($responseData, JSON_PRETTY_PRINT));
+        $body->write($this->encodeJson($responseData, JSON_PRETTY_PRINT));
 
         $response = GeneralUtility::makeInstance(Response::class)
             ->withHeader('Content-Type', 'application/json; charset=utf-8')
             ->withStatus(200)
             ->withBody($body);
 
-        return $this->addCorsHeaders($response, $request);
+        return $this->addCorsHeaders($response);
     }
+
+    /**
+     * @param array<string, mixed>|null $tokenInfo
+     * @phpstan-assert-if-true array{be_user_uid: int, client_name: string, token_uid: int} $tokenInfo
+     */
+    private function isValidTokenInfo(?array $tokenInfo): bool
+    {
+        return is_array($tokenInfo)
+            && isset($tokenInfo['be_user_uid'], $tokenInfo['client_name'], $tokenInfo['token_uid'])
+            && is_int($tokenInfo['be_user_uid'])
+            && is_string($tokenInfo['client_name'])
+            && is_int($tokenInfo['token_uid']);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data, int $flags = 0): string
+    {
+        $json = json_encode($data, $flags);
+        return is_string($json) ? $json : '{}';
+    }
+
 }

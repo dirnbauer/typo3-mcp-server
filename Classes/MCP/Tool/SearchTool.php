@@ -5,37 +5,40 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Utility\RecordFormattingUtility;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Utility\RecordFormattingUtility;
-use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
-use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use Hn\McpServer\Service\LanguageService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for searching records across TYPO3 tables using TCA-based searchable fields
  */
-class SearchTool extends AbstractRecordTool
+final class SearchTool extends AbstractRecordTool
 {
-    protected LanguageService $languageService;
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         $schema = [
             'description' => "Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. " .
@@ -428,13 +431,13 @@ class SearchTool extends AbstractRecordTool
         string $parentField,
         string $relationType = 'inline'
     ): array {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($parentTable);
         
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0));
         
         $queryBuilder->select('*')->from($parentTable);
         
@@ -580,7 +583,7 @@ class SearchTool extends AbstractRecordTool
      */
     protected function validateSearchableFields(string $table, array $searchableFields): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $connection = $connectionPool->getConnectionForTable($table);
         
         try {
@@ -610,15 +613,15 @@ class SearchTool extends AbstractRecordTool
      */
     protected function searchInTable(string $table, array $searchTerms, string $termLogic, array $searchableFields, ?int $pageId, int $limit, ?int $languageId = null): array
     {
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
         // Apply restrictions
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction($GLOBALS['BE_USER']->workspace ?? 0));
 
         // Select all fields
         $queryBuilder->select('*')->from($table);
@@ -790,13 +793,13 @@ class SearchTool extends AbstractRecordTool
             return [];
         }
 
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        $connectionPool = $this->connectionPool;
         $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0));
 
         $pages = $queryBuilder->select('uid', 'title', 'slug', 'nav_title')
             ->from('pages')
