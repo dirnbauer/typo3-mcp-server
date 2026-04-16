@@ -1,3 +1,10 @@
+.mcp-panel-group > .mcp-panel {
+    display: none;
+}
+.mcp-panel-group > .mcp-panel.mcp-active {
+    display: block;
+}
+
 .endpoint-status {
     display: inline-block;
     position: relative;

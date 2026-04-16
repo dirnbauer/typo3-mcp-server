@@ -56,29 +56,29 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                     </div>
 
                     <!-- Main Navigation Tabs -->
-                    <ul class="nav nav-tabs" id="mcpSetupTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" id="remote-setup-tab" href="#remote-setup" role="tab" aria-controls="remote-setup" aria-selected="true">
+                    <ul class="nav nav-tabs" id="mcpSetupTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" type="button" data-mcp-target="remote-setup">
                                 🌐 Remote MCP Setup
-                            </a>
+                            </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" id="local-mcp-remote-tab" href="#local-mcp-remote" role="tab" aria-controls="local-mcp-remote" aria-selected="false">
+                        <li class="nav-item">
+                            <button class="nav-link" type="button" data-mcp-target="local-mcp-remote">
                                 🔗 Local Setup (mcp-remote)
-                            </a>
+                            </button>
                         </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" id="local-cli-tab" href="#local-cli" role="tab" aria-controls="local-cli" aria-selected="false">
+                        <li class="nav-item">
+                            <button class="nav-link" type="button" data-mcp-target="local-cli">
                                 💻 Local Setup (TYPO3 CLI)
-                            </a>
+                            </button>
                         </li>
                     </ul>
 
                     <!-- Tab Content -->
-                    <div class="tab-content mt-3" id="mcpSetupTabsContent">
-                        
+                    <div class="mcp-panel-group mt-3" id="mcpSetupTabsContent">
+
                         <!-- Remote MCP Setup Tab -->
-                        <div class="tab-pane active" id="remote-setup" role="tabpanel" aria-labelledby="remote-setup-tab">
+                        <div class="mcp-panel mcp-active" id="remote-setup">
                             <p class="text-muted mb-3">
                                 Connect MCP clients to this TYPO3 instance over the internet using OAuth authentication. This is the recommended method for most use cases.
                             </p>
@@ -121,43 +121,43 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                             </div>
 
                             <!-- Nested tabs for different clients -->
-                            <ul class="nav nav-pills mb-3" id="remoteClientTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link active" id="cursor-pill" href="#cursor" role="tab" aria-controls="cursor" aria-selected="true">
+                            <ul class="nav nav-pills mb-3" id="remoteClientTabs">
+                                <li class="nav-item">
+                                    <button class="nav-link active" type="button" data-mcp-target="cursor">
                                         Cursor
-                                    </a>
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" id="claude-desktop-pill" href="#claude-desktop" role="tab" aria-controls="claude-desktop" aria-selected="false">
+                                <li class="nav-item">
+                                    <button class="nav-link" type="button" data-mcp-target="claude-desktop">
                                         Claude Desktop
-                                    </a>
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" id="n8n-pill" href="#n8n" role="tab" aria-controls="n8n" aria-selected="false">
+                                <li class="nav-item">
+                                    <button class="nav-link" type="button" data-mcp-target="n8n">
                                         n8n
-                                    </a>
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" id="manus-pill" href="#manus" role="tab" aria-controls="manus" aria-selected="false">
+                                <li class="nav-item">
+                                    <button class="nav-link" type="button" data-mcp-target="manus">
                                         manus
-                                    </a>
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" id="mcp-inspector-pill" href="#mcp-inspector" role="tab" aria-controls="mcp-inspector" aria-selected="false">
+                                <li class="nav-item">
+                                    <button class="nav-link" type="button" data-mcp-target="mcp-inspector">
                                         MCP Inspector
-                                    </a>
+                                    </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <a class="nav-link" id="other-clients-pill" href="#other-clients" role="tab" aria-controls="other-clients" aria-selected="false">
+                                <li class="nav-item">
+                                    <button class="nav-link" type="button" data-mcp-target="other-clients">
                                         Other MCP Clients
-                                    </a>
+                                    </button>
                                 </li>
                             </ul>
 
-                            <div class="tab-content" id="remoteClientTabsContent">
+                            <div class="mcp-panel-group" id="remoteClientTabsContent">
 
                                 <!-- Cursor Instructions -->
-                                <div class="tab-pane active" id="cursor" role="tabpanel" aria-labelledby="cursor-pill">
+                                <div class="mcp-panel mcp-active" id="cursor">
                                     <h5>Cursor IDE Integration</h5>
                                     <p>The fastest way to connect Cursor to this TYPO3 instance:</p>
 
@@ -192,7 +192,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                 </div>
 
                                 <!-- Claude Desktop Instructions -->
-                                <div class="tab-pane" id="claude-desktop" role="tabpanel" aria-labelledby="claude-desktop-pill">
+                                <div class="mcp-panel" id="claude-desktop">
                                     <h5>🚀 Claude Desktop Integration</h5>
                                     <p>To connect Claude Desktop to this TYPO3 instance:</p>
                                     <ol>
@@ -205,7 +205,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                 </div>
 
                                 <!-- n8n Integration -->
-                                <div class="tab-pane" id="n8n" role="tabpanel" aria-labelledby="n8n-pill">
+                                <div class="mcp-panel" id="n8n">
                                     <h5>🔄 n8n Integration</h5>
 
                                     <p>To configure your n8n MCP Client node:</p>
@@ -220,7 +220,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                 </div>
 
                                 <!-- manus Integration -->
-                                <div class="tab-pane" id="manus" role="tabpanel" aria-labelledby="manus-pill">
+                                <div class="mcp-panel" id="manus">
                                     <h5>🤖 manus Integration</h5>
 
                                     <p>To configure your manus MCP connection:</p>
@@ -236,7 +236,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                 </div>
 
                                 <!-- MCP Inspector -->
-                                <div class="tab-pane" id="mcp-inspector" role="tabpanel" aria-labelledby="mcp-inspector-pill">
+                                <div class="mcp-panel" id="mcp-inspector">
                                     <h5>🔍 MCP Inspector</h5>
                                     <p>Debug and test tools using the official MCP Inspector CLI:</p>
 
@@ -266,7 +266,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                 </div>
 
                                 <!-- Other MCP Clients Instructions -->
-                                <div class="tab-pane" id="other-clients" role="tabpanel" aria-labelledby="other-clients-pill">
+                                <div class="mcp-panel" id="other-clients">
                                     <h5>🔧 Generic MCP Client Setup</h5>
                                     <p>For MCP clients that support OAuth and remote connections:</p>
                                     <ol>
@@ -282,7 +282,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                         </div>
 
                         <!-- Local Setup (mcp-remote) Tab -->
-                        <div class="tab-pane" id="local-mcp-remote" role="tabpanel" aria-labelledby="local-mcp-remote-tab">
+                        <div class="mcp-panel" id="local-mcp-remote">
                             <p class="text-muted mb-3">
                                 For MCP clients that don't support remote connections natively. The mcp-remote package acts as a local bridge, connecting to this TYPO3 instance on behalf of your MCP client.
                             </p>
@@ -313,7 +313,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                         </div>
 
                         <!-- Local Setup (TYPO3 CLI) Tab -->
-                        <div class="tab-pane" id="local-cli" role="tabpanel" aria-labelledby="local-cli-tab">
+                        <div class="mcp-panel" id="local-cli">
                             <p class="text-muted mb-3">
                                 For local development where your MCP client has direct shell access to this TYPO3 installation.
                             </p>

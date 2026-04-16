@@ -81,51 +81,31 @@ class McpModule {
     }
 
     // =========================================================================
-    // Tabs — fully custom, no Bootstrap Tab dependency
+    // Tabs — custom panel switching, no Bootstrap dependency
     // =========================================================================
 
     initTabs() {
-        // Set initial visibility for ALL tab panes in the document
-        document.querySelectorAll('.tab-pane').forEach(pane => {
-            pane.style.display = pane.classList.contains('active') ? 'block' : 'none';
-        });
+        document.querySelectorAll('[data-mcp-target]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-        // Single delegated click handler — no DOM traversal needed
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('.nav-tabs a.nav-link[href^="#"], .nav-pills a.nav-link[href^="#"]');
-            if (!link) return;
+                const targetId = button.getAttribute('data-mcp-target');
+                const targetPanel = document.getElementById(targetId);
+                if (!targetPanel) return;
 
-            e.preventDefault();
+                const nav = button.closest('.nav');
+                if (nav) {
+                    nav.querySelectorAll('[data-mcp-target]').forEach(b => b.classList.remove('active'));
+                }
+                button.classList.add('active');
 
-            const targetId = link.getAttribute('href').substring(1);
-            const targetPane = document.getElementById(targetId);
-            if (!targetPane) return;
-
-            // Find parent nav to deactivate sibling links
-            const nav = link.closest('.nav-tabs, .nav-pills');
-            if (nav) {
-                nav.querySelectorAll('a.nav-link').forEach(l => {
-                    l.classList.remove('active');
-                    l.setAttribute('aria-selected', 'false');
-                });
-            }
-
-            // Hide all sibling panes (same parent container as target)
-            const paneContainer = targetPane.parentElement;
-            if (paneContainer) {
-                Array.from(paneContainer.children).forEach(p => {
-                    if (p.classList.contains('tab-pane')) {
-                        p.classList.remove('active', 'show');
-                        p.style.display = 'none';
-                    }
-                });
-            }
-
-            // Activate clicked link and show target pane
-            link.classList.add('active');
-            link.setAttribute('aria-selected', 'true');
-            targetPane.classList.add('active');
-            targetPane.style.display = 'block';
+                const panelGroup = targetPanel.parentElement;
+                if (panelGroup) {
+                    panelGroup.querySelectorAll(':scope > .mcp-panel').forEach(p => p.classList.remove('mcp-active'));
+                }
+                targetPanel.classList.add('mcp-active');
+            });
         });
     }
 
