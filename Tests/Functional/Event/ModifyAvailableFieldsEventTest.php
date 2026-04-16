@@ -80,8 +80,8 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
     {
         $this->service->getAvailableFields('pages');
 
-        $this->assertTrue(ModifyAvailableFieldsTestListener::$dispatched);
-        $this->assertEquals('pages', ModifyAvailableFieldsTestListener::$table);
+        self::assertTrue(ModifyAvailableFieldsTestListener::$dispatched);
+        self::assertEquals('pages', ModifyAvailableFieldsTestListener::$table);
     }
 
     /**
@@ -90,12 +90,12 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
     public function testListenerCanRemoveFields(): void
     {
         $fieldsBefore = $this->service->getAvailableFields('pages');
-        $this->assertArrayHasKey('title', $fieldsBefore);
+        self::assertArrayHasKey('title', $fieldsBefore);
 
         ModifyAvailableFieldsTestListener::$removeField = 'title';
 
         $fieldsAfter = $this->service->getAvailableFields('pages');
-        $this->assertArrayNotHasKey('title', $fieldsAfter);
+        self::assertArrayNotHasKey('title', $fieldsAfter);
     }
 
     /**
@@ -109,7 +109,7 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
         ];
 
         $fields = $this->service->getAvailableFields('pages');
-        $this->assertArrayHasKey('custom_computed', $fields);
+        self::assertArrayHasKey('custom_computed', $fields);
     }
 
     /**
@@ -119,7 +119,7 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
     {
         $this->service->getAvailableFields('tt_content', 'textmedia');
 
-        $this->assertEquals('textmedia', ModifyAvailableFieldsTestListener::$type);
+        self::assertEquals('textmedia', ModifyAvailableFieldsTestListener::$type);
     }
 
     /**
@@ -132,7 +132,7 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
         ];
 
         $fields = $this->service->getAvailableFields('pages');
-        $this->assertCount(1, $fields);
-        $this->assertArrayHasKey('only_field', $fields);
+        self::assertCount(1, $fields);
+        self::assertArrayHasKey('only_field', $fields);
     }
 }

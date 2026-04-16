@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
-use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\SelectItemResolver;
 use Hn\McpServer\Service\TableAccessService;
@@ -59,41 +58,41 @@ class DynamicSelectItemsTest extends FunctionalTestCase
     public function testSelectItemResolverReturnsStaticItems(): void
     {
         $resolved = $this->selectItemResolver->resolveSelectItems('tt_content', 'CType');
-        $this->assertNotNull($resolved);
-        $this->assertContains('text', $resolved['values']);
-        $this->assertContains('textmedia', $resolved['values']);
+        self::assertNotNull($resolved);
+        self::assertContains('text', $resolved['values']);
+        self::assertContains('textmedia', $resolved['values']);
     }
 
     public function testSelectItemResolverReturnsTsconfigAddedItems(): void
     {
         $resolved = $this->selectItemResolver->resolveSelectItems('tt_content', 'colPos');
-        $this->assertNotNull($resolved, 'colPos should resolve. Values: ' . json_encode($resolved));
+        self::assertNotNull($resolved, 'colPos should resolve. Values: ' . json_encode($resolved));
 
         // Standard colPos value 0 should always be present
-        $this->assertContains('0', $resolved['values'], 'colPos 0 should be present. Resolved: ' . json_encode($resolved['values']));
+        self::assertContains('0', $resolved['values'], 'colPos 0 should be present. Resolved: ' . json_encode($resolved['values']));
 
         // TSconfig-added colPos values
-        $this->assertContains('20', $resolved['values'], 'Custom colPos 20 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
-        $this->assertContains('30', $resolved['values'], 'Custom colPos 30 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
+        self::assertContains('20', $resolved['values'], 'Custom colPos 20 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
+        self::assertContains('30', $resolved['values'], 'Custom colPos 30 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
     }
 
     public function testValidationAcceptsDynamicColPosValues(): void
     {
         $record = ['pid' => 1, 'CType' => 'text', 'colPos' => 20];
-        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 20, $record);
-        $this->assertNull($error, 'Dynamic colPos 20 from TSconfig should pass validation');
+        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 20);
+        self::assertNull($error, 'Dynamic colPos 20 from TSconfig should pass validation');
     }
 
     public function testValidationRejectsInvalidColPosValues(): void
     {
         $record = ['pid' => 1, 'CType' => 'text', 'colPos' => 999];
         $resolved = $this->selectItemResolver->resolveSelectItems('tt_content', 'colPos', $record);
-        $this->assertNotNull($resolved);
-        $this->assertNotContains('999', $resolved['values'], 'colPos 999 should NOT be in resolved items. Got: ' . json_encode($resolved['values']));
+        self::assertNotNull($resolved);
+        self::assertNotContains('999', $resolved['values'], 'colPos 999 should NOT be in resolved items. Got: ' . json_encode($resolved['values']));
 
-        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 999, $record);
-        $this->assertNotNull($error, 'Invalid colPos 999 should fail validation');
-        $this->assertStringContainsString('must be one of', $error);
+        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 999);
+        self::assertNotNull($error, 'Invalid colPos 999 should fail validation');
+        self::assertStringContainsString('must be one of', $error);
     }
 
     public function testWriteTableAcceptsDynamicColPos(): void
@@ -108,7 +107,7 @@ class DynamicSelectItemsTest extends FunctionalTestCase
                 'colPos' => 20,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     public function testWriteTableRejectsInvalidColPos(): void
@@ -123,32 +122,32 @@ class DynamicSelectItemsTest extends FunctionalTestCase
                 'colPos' => 999,
             ],
         ]);
-        $this->assertTrue($result->isError);
+        self::assertTrue($result->isError);
         $errorMessage = $result->jsonSerialize()['content'][0]->text ?? '';
-        $this->assertStringContainsString('colPos', $errorMessage);
+        self::assertStringContainsString('colPos', $errorMessage);
     }
 
     public function testStaticCTypeValidationStillWorks(): void
     {
         // Valid CType should pass
         $error = $this->tableAccessService->validateFieldValue('tt_content', 'CType', 'text');
-        $this->assertNull($error);
+        self::assertNull($error);
 
         // Invalid CType should fail
         $error = $this->tableAccessService->validateFieldValue('tt_content', 'CType', 'invalid_ctype_xyz');
-        $this->assertNotNull($error);
-        $this->assertStringContainsString('must be one of', $error);
+        self::assertNotNull($error);
+        self::assertStringContainsString('must be one of', $error);
     }
 
     public function testSelectItemResolverReturnsNullForNonSelectField(): void
     {
         $resolved = $this->selectItemResolver->resolveSelectItems('tt_content', 'header');
-        $this->assertNull($resolved);
+        self::assertNull($resolved);
     }
 
     public function testSelectItemResolverReturnsNullForInvalidTable(): void
     {
         $resolved = $this->selectItemResolver->resolveSelectItems('nonexistent_table', 'field');
-        $this->assertNull($resolved);
+        self::assertNull($resolved);
     }
 }

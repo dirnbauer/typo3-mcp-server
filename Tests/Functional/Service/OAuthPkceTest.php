@@ -29,7 +29,7 @@ class OAuthPkceTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client', '', $challenge, 'S256');
         $result = $this->service->exchangeCodeForToken($code);
 
-        $this->assertNull($result, 'Exchange without verifier must fail when challenge was set');
+        self::assertNull($result, 'Exchange without verifier must fail when challenge was set');
     }
 
     public function testPkceWithCorrectVerifierSucceeds(): void
@@ -40,8 +40,8 @@ class OAuthPkceTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client', '', $challenge, 'S256');
         $result = $this->service->exchangeCodeForToken($code, $verifier);
 
-        $this->assertNotNull($result);
-        $this->assertArrayHasKey('access_token', $result);
+        self::assertNotNull($result);
+        self::assertArrayHasKey('access_token', $result);
     }
 
     public function testPkceWithWrongVerifierFails(): void
@@ -52,7 +52,7 @@ class OAuthPkceTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client', '', $challenge, 'S256');
         $result = $this->service->exchangeCodeForToken($code, 'wrong-verifier');
 
-        $this->assertNull($result);
+        self::assertNull($result);
     }
 
     public function testPkceWithEmptyStringVerifierFails(): void
@@ -63,7 +63,7 @@ class OAuthPkceTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client', '', $challenge, 'S256');
         $result = $this->service->exchangeCodeForToken($code, '');
 
-        $this->assertNull($result, 'Empty string verifier must fail');
+        self::assertNull($result, 'Empty string verifier must fail');
     }
 
     public function testPkceWithUnsupportedChallengeMethodFails(): void
@@ -77,13 +77,13 @@ class OAuthPkceTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client');
         $result = $this->service->exchangeCodeForToken($code);
 
-        $this->assertNotNull($result, 'Code without PKCE should still exchange');
+        self::assertNotNull($result, 'Code without PKCE should still exchange');
     }
 
     public function testMetadataOnlyAdvertisesS256(): void
     {
         $metadata = $this->service->getMetadata('https://example.com');
 
-        $this->assertEquals(['S256'], $metadata['code_challenge_methods_supported']);
+        self::assertEquals(['S256'], $metadata['code_challenge_methods_supported']);
     }
 }

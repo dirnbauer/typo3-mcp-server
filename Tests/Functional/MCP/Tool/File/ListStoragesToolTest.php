@@ -45,16 +45,16 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('FILE STORAGES', $content);
-        $this->assertStringContainsString('fileadmin', $content);
-        $this->assertStringContainsString('Storage 1:', $content);
-        $this->assertStringContainsString('default', $content);
+        self::assertStringContainsString('FILE STORAGES', $content);
+        self::assertStringContainsString('fileadmin', $content);
+        self::assertStringContainsString('Storage 1:', $content);
+        self::assertStringContainsString('default', $content);
     }
 
     public function testListsMultipleStorages(): void
@@ -63,13 +63,13 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('Storage 1:', $content);
-        $this->assertStringContainsString('Storage 2:', $content);
-        $this->assertStringContainsString('Second Storage', $content);
+        self::assertStringContainsString('Storage 1:', $content);
+        self::assertStringContainsString('Storage 2:', $content);
+        self::assertStringContainsString('Second Storage', $content);
     }
 
     public function testShowsStorageFlags(): void
@@ -78,14 +78,14 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Storage 1 is public, writable, default
-        $this->assertStringContainsString('public', $content);
-        $this->assertStringContainsString('writable', $content);
-        $this->assertStringContainsString('default', $content);
+        self::assertStringContainsString('public', $content);
+        self::assertStringContainsString('writable', $content);
+        self::assertStringContainsString('default', $content);
     }
 
     public function testShowsRootFolderPath(): void
@@ -94,11 +94,11 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('Root: 1:/', $content);
+        self::assertStringContainsString('Root: 1:/', $content);
     }
 
     public function testShowsTotalCount(): void
@@ -107,10 +107,10 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertMatchesRegularExpression('/Total: \d+ storage\(s\)/', $content);
+        self::assertMatchesRegularExpression('/Total: \d+ storage\(s\)/', $content);
     }
 }

@@ -1,0 +1,2077 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method Hn\\McpServer\\Event\\AfterRecordWriteEvent\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/AfterRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\AfterRecordWriteEvent\:\:getData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/AfterRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:getData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:setData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:__construct\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/ModifyAvailableFieldsEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:addField\(\) has parameter \$configuration with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/ModifyAvailableFieldsEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:getFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/ModifyAvailableFieldsEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:setFields\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/ModifyAvailableFieldsEvent.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/MCP/Tool/File/BrowseFolderTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\File\\BrowseFolderTool\:\:renderFolderContents\(\) has parameter \$lines with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/File/BrowseFolderTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 4
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#1 \$mimeType of method Hn\\McpServer\\MCP\\Tool\\File\\SearchFileTool\:\:isImageMimeType\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#2 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#3 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#5 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#6 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Parameter \#7 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Binary operation "\." between ''Unknown language…'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 10
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:batchCountSubpages\(\) has parameter \$parentUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:batchCountSubpages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:buildTreeFromLayers\(\) has parameter \$layerData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:buildTreeFromLayers\(\) has parameter \$subpageCounts with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:buildTreeFromLayers\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:collectPageUids\(\) has parameter \$pageTree with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:collectPageUids\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:fetchChildrenBatch\(\) has parameter \$parentUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:fetchChildrenBatch\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:getPageTree\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:getRecordCounts\(\) has parameter \$pageUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:getRecordCounts\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:renderTextTree\(\) has parameter \$pageTree with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:renderTextTree\(\) has parameter \$pluginHints with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:renderTextTree\(\) has parameter \$recordCounts with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Call to static method translateLabel\(\) on an unknown class Hn\\McpServer\\MCP\\Tool\\Record\\TableAccessService\.$#'
+			identifier: class.notFound
+			count: 6
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''ROOT'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 8
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''default'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''ds'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''ds_pointerField'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''el'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''items'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''value'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset 0 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset 1 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 7
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot assign offset string to array\<string\>\|string\.$#'
+			identifier: offsetAssign.dimType
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:addFieldDetailsInline\(\) has parameter \$config with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:buildJsonExample\(\) has parameter \$fieldNames with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:buildJsonExample\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:formatField\(\) has parameter \$field with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:formatFlexFormSchema\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:generateJsonExample\(\) has parameter \$flexFormDS with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:generateJsonExample\(\) should return string but returns string\|false\.$#'
+			identifier: return.type
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getAvailableFlexForms\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getExampleValueForField\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getFlexFormDS\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getPointerFieldValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processField\(\) has parameter \$field with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processField\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFields\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormDS\(\) has parameter \$flexFormDS with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormField\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormXml\(\) has parameter \$xmlArray with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormXml\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processSheets\(\) has parameter \$sheets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processSheets\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getExampleValueForField\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$xmlArray of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormXml\(\) expects array, array\|string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormField\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$field \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$identifier \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$itemValue \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$table \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Undefined variable\: \$result$#'
+			identifier: variable.undefined
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 3
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Call to static method translateLabel\(\) on an unknown class Hn\\McpServer\\MCP\\Tool\\Record\\TableAccessService\.$#'
+			identifier: class.notFound
+			count: 8
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Call to static method trimExplode\(\) on an unknown class Hn\\McpServer\\MCP\\Tool\\Record\\GeneralUtility\.$#'
+			identifier: class.notFound
+			count: 8
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''descriptionColumn''\|''label''\|''label_alt''\|''languageField''\|''searchFields''\|''title''\|''translationSource''\|''transOrigPointerField''\|''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''palettes'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''showitem'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''types'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:addFieldDetailsInline\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:addFlexFormIdentifiers\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:getRemovedTypesByTSconfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:generateTableSchema\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$filterType of method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:generateTableSchema\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:formatAccessibleTables\(\) has parameter \$accessibleTables with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:formatAccessibleTables\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:formatTablesAsText\(\) has parameter \$groupedTables with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:groupTablesByExtension\(\) has parameter \$tables with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:groupTablesByExtension\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Property Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:\$connectionPool is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''ds'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''eval'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''items'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''pi_flexform'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''tt_content'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''value'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset 1 on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 6
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Class TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools constructor invoked with 0 parameters, 3 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:applyFilters\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:convertFieldValue\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:convertFieldValue\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) has parameter \$parentUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$recordUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeMmRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeMmRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRegularRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRegularRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeStaticItems\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeStaticItems\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:isIntegerArray\(\) has parameter \$values with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:loadParentRecords\(\) has parameter \$parentUids with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:loadParentRecords\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Offset mixed on array\<non\-empty\-list\> in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.offset
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gt\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gte\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:in\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNotNull\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNull\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:like\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lt\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lte\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:neq\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notIn\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notLike\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$haystack of function str_contains expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:getTranslationParentFieldName\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$requestedFields of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$filters of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Part \$language \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and 0 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed~\(0\|0\.0\|''''\|''0''\|array\{\}\|false\|null\) and ''0'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Binary operation "\." between ''Invalid action\: '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''allowLanguageSynchronization'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''authMode'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''behaviour'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''eval'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''multiple'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''search'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 6
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset \(int\|string\) on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access property \$workspace on mixed\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot call method checkAuthMode\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot call method isAdmin\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot call method isInWebMount\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 6
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:buildBeforePositionCmdMap\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:buildInlineDataMap\(\) has parameter \$dataMap with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:buildInlineDataMap\(\) has parameter \$inlineRelations with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertDataForStorage\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertDataForStorage\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:ensureL10nStateForTranslation\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:ensureL10nStateForTranslation\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:ensureLanguageField\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:ensureLanguageField\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractInlineRelations\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractInlineRelations\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:formatDataHandlerErrors\(\) has parameter \$errorLog with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getBackendUser\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:isSearchReplaceArray\(\) has parameter \$value with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) has parameter \$searchReplace with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:syncInlineRelations\(\) has parameter \$cmdMap with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:syncInlineRelations\(\) has parameter \$dataMap with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:syncInlineRelations\(\) has parameter \$inlineRelations with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:updateRecord\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:validateAuthModePermissions\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:validateInlineRelationData\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:validateInlineRelationData\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:validateRecordData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(bool\|float\|GMP\|int\|resource\|string\|null\)\: string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$label of method Hn\\McpServer\\Service\\TableAccessService\:\:translateLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of class Hn\\McpServer\\Event\\BeforeRecordWriteEvent constructor expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:deleteRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:translateRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:updateRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$action of class Hn\\McpServer\\Event\\BeforeRecordWriteEvent constructor expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$pid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$string of static method TYPO3\\CMS\\Core\\Utility\\GeneralUtility\:\:trimExplode\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:deleteRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:translateRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:updateRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$action of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$offset of function substr_replace expects array\|int, int\<0, max\>\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#3 \$position of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$position of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Part \$fieldType \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Property TYPO3\\CMS\\Core\\DataHandling\\DataHandler\:\:\$BE_USER \(TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication\) does not accept mixed\.$#'
+			identifier: assign.propertyType
+			count: 5
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Binary operation "\." between ''Unknown language…'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''languageField'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access property \$workspace on mixed\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) has parameter \$inlineTableMetadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) has parameter \$searchResults with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:enhanceRecordsWithPageInfo\(\) has parameter \$records with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:enhanceRecordsWithPageInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) has parameter \$inlineRecord with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatSearchResults\(\) has parameter \$searchResults with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatSearchResults\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) has parameter \$tableData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getInlineRelatedHiddenTables\(\) has parameter \$primaryTables with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getInlineRelatedHiddenTables\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getPageInfo\(\) has parameter \$pageIds with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getPageInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getSearchableFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getTablesToSearch\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:performSearch\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:performSearch\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:removedExamples\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:removedExamples\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) has parameter \$searchableFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateAndNormalizeSearchTerms\(\) has parameter \$terms with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateAndNormalizeSearchTerms\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateParameters\(\) has parameter \$params with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateSearchableFields\(\) has parameter \$searchableFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateSearchableFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$string of function strtoupper expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$string of function trim expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getSearchableFields\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$terms of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateAndNormalizeSearchTerms\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Variable \$fieldConditions in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:compileFormData\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:compileFormData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:parseItems\(\) has parameter \$items with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:parseItems\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:resolveSelectItems\(\) has parameter \$record with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\SelectItemResolver\:\:resolveSelectItems\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Property Hn\\McpServer\\Service\\SelectItemResolver\:\:\$cache type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Service/SelectItemResolver.php

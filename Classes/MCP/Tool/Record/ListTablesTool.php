@@ -36,8 +36,8 @@ final class ListTablesTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
-                'idempotentHint' => true
-            ]
+                'idempotentHint' => true,
+            ],
         ];
     }
 
@@ -46,27 +46,27 @@ final class ListTablesTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
+
         // Get all accessible tables from TableAccessService (include all, regardless of read-only status)
         $tables = $this->tableAccessService->getAccessibleTables(true);
-        
+
         // Convert to the expected format
         $formattedTables = $this->formatAccessibleTables($tables);
-        
+
         // Group tables by extension
         $groupedTables = $this->groupTablesByExtension($formattedTables);
-        
+
         // Format the result
         return $this->createSuccessResult($this->formatTablesAsText($groupedTables));
     }
-    
+
     /**
      * Format accessible tables from TableAccessService to the expected format
      */
     protected function formatAccessibleTables(array $accessibleTables): array
     {
         $tables = [];
-        
+
         foreach ($accessibleTables as $table => $accessInfo) {
             $tables[$table] = [
                 'name' => $table,
@@ -76,26 +76,26 @@ final class ListTablesTool extends AbstractRecordTool
                 'readOnly' => $accessInfo['read_only'],
                 'type' => $this->getTableType($table),
                 'workspace_capable' => $accessInfo['workspace_capable'],
-                'workspace_info' => $accessInfo['workspace_capable'] 
-                    ? 'Workspace-capable' 
+                'workspace_info' => $accessInfo['workspace_capable']
+                    ? 'Workspace-capable'
                     : 'Not workspace-capable',
                 'restrictions' => $accessInfo['restrictions'],
             ];
         }
-        
+
         return $tables;
     }
-    
+
     /**
      * Group tables by extension
      */
     protected function groupTablesByExtension(array $tables): array
     {
         $grouped = [];
-        
+
         foreach ($tables as $tableName => $tableInfo) {
             $extension = $tableInfo['extension'];
-            
+
             if (!isset($grouped[$extension])) {
                 $grouped[$extension] = [
                     'extension' => $extension,
@@ -103,16 +103,16 @@ final class ListTablesTool extends AbstractRecordTool
                     'tables' => [],
                 ];
             }
-            
+
             $grouped[$extension]['tables'][$tableName] = $tableInfo;
         }
-        
+
         // Sort extensions alphabetically
         ksort($grouped);
-        
+
         return $grouped;
     }
-    
+
     /**
      * Format tables as text
      */
@@ -123,43 +123,43 @@ final class ListTablesTool extends AbstractRecordTool
 
         $result .= "Tables accessible by the current user. Most are workspace-capable (changes require publishing).\n";
         $result .= "Tables marked as [READ-ONLY] can be read but not modified via WriteTable.\n\n";
-        
+
         foreach ($groupedTables as $extension => $extensionInfo) {
             $extensionLabel = $extensionInfo['extensionLabel'];
-            
+
             if ($extension === 'core') {
                 $result .= "CORE TABLES:\n";
             } else {
-                $result .= "EXTENSION: " . $extension . " (" . $extensionLabel . ")\n";
+                $result .= 'EXTENSION: ' . $extension . ' (' . $extensionLabel . ")\n";
             }
-            
+
             foreach ($extensionInfo['tables'] as $tableName => $tableInfo) {
-                $result .= "- " . $tableName . " (" . $tableInfo['label'] . ")";
-                
+                $result .= '- ' . $tableName . ' (' . $tableInfo['label'] . ')';
+
                 if (!empty($tableInfo['description'])) {
-                    $result .= ": " . $tableInfo['description'];
+                    $result .= ': ' . $tableInfo['description'];
                 }
-                
-                $result .= " [" . $tableInfo['type'] . "]";
-                
+
+                $result .= ' [' . $tableInfo['type'] . ']';
+
                 if ($tableInfo['readOnly']) {
-                    $result .= " [READ-ONLY]";
+                    $result .= ' [READ-ONLY]';
                 }
-                
+
                 // Show any restrictions
                 if (!empty($tableInfo['restrictions'])) {
-                    $result .= " [" . implode(', ', $tableInfo['restrictions']) . "]";
+                    $result .= ' [' . implode(', ', $tableInfo['restrictions']) . ']';
                 }
-                
+
                 $result .= "\n";
             }
-            
+
             $result .= "\n";
         }
-        
+
         return $result;
     }
-    
+
     /**
      * Get a description for a table
      */
@@ -169,7 +169,7 @@ final class ListTablesTool extends AbstractRecordTool
         // This could be enhanced in the future if TYPO3 provides table descriptions
         return '';
     }
-    
+
     /**
      * Get a label for an extension
      */
@@ -178,13 +178,12 @@ final class ListTablesTool extends AbstractRecordTool
         if ($extension === 'core') {
             return 'TYPO3 Core';
         }
-        
+
         // Try to get extension info from ExtensionManagementUtility
         // This is a simplified approach
         return ucfirst(str_replace('_', ' ', $extension));
     }
-    
-    
+
     /**
      * Get the type of a table (content, system, etc.)
      */
@@ -194,36 +193,36 @@ final class ListTablesTool extends AbstractRecordTool
         if (in_array($table, ['tt_content', 'pages', 'sys_category'])) {
             return 'content';
         }
-        
+
         // File-related tables
         if (in_array($table, ['sys_file', 'sys_file_reference', 'sys_file_metadata'])) {
             return 'file';
         }
-        
+
         // System tables
-        if (strpos($table, 'sys_') === 0) {
+        if (str_starts_with($table, 'sys_')) {
             return 'system';
         }
-        
+
         // Backend tables
-        if (strpos($table, 'be_') === 0) {
+        if (str_starts_with($table, 'be_')) {
             return 'backend';
         }
-        
+
         // Frontend tables
-        if (strpos($table, 'fe_') === 0) {
+        if (str_starts_with($table, 'fe_')) {
             return 'frontend';
         }
-        
+
         // Extension content tables (most tx_ tables)
-        if (strpos($table, 'tx_') === 0) {
+        if (str_starts_with($table, 'tx_')) {
             // Domain model tables are usually content
-            if (strpos($table, '_domain_model_') !== false) {
+            if (str_contains($table, '_domain_model_')) {
                 return 'content';
             }
             return 'extension';
         }
-        
+
         return 'other';
     }
 

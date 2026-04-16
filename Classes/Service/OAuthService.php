@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -451,7 +452,7 @@ final readonly class OAuthService
             ->from('tx_mcpserver_access_tokens')
             ->where(
                 $qb->expr()->eq('token', $qb->createNamedParameter($plainToken)),
-                $qb->expr()->eq('token_version', $qb->createNamedParameter(0, \Doctrine\DBAL\ParameterType::INTEGER)),
+                $qb->expr()->eq('token_version', $qb->createNamedParameter(0, ParameterType::INTEGER)),
                 $qb->expr()->gt('expires', $qb->createNamedParameter(time())),
                 $qb->expr()->eq('deleted', $qb->createNamedParameter(0)),
             )

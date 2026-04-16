@@ -51,8 +51,8 @@ class CorsHeadersTest extends AbstractFunctionalTest
         $response = $endpoint($request);
 
         $origin = $response->getHeaderLine('Access-Control-Allow-Origin');
-        $this->assertNotEquals('*', $origin, 'CORS must NOT use wildcard origin');
-        $this->assertEquals('https://my-mcp-client.example.com', $origin);
+        self::assertNotEquals('*', $origin, 'CORS must NOT use wildcard origin');
+        self::assertEquals('https://my-mcp-client.example.com', $origin);
     }
 
     public function testCorsWithoutOriginHeaderSkipsHeaders(): void
@@ -67,7 +67,7 @@ class CorsHeadersTest extends AbstractFunctionalTest
 
         $response = $endpoint($request);
 
-        $this->assertFalse(
+        self::assertFalse(
             $response->hasHeader('Access-Control-Allow-Origin'),
             'No CORS headers should be set for non-CORS requests'
         );

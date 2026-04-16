@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\Event;
 
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
+use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
@@ -116,9 +117,9 @@ class RecordWriteEventTest extends AbstractFunctionalTest
         ]);
 
         $this->assertSuccessfulToolResult($result);
-        $this->assertTrue(BeforeRecordWriteTestListener::$dispatched, 'BeforeRecordWriteEvent should be dispatched');
-        $this->assertEquals('pages', BeforeRecordWriteTestListener::$table);
-        $this->assertEquals('create', BeforeRecordWriteTestListener::$action);
+        self::assertTrue(BeforeRecordWriteTestListener::$dispatched, 'BeforeRecordWriteEvent should be dispatched');
+        self::assertEquals('pages', BeforeRecordWriteTestListener::$table);
+        self::assertEquals('create', BeforeRecordWriteTestListener::$action);
     }
 
     /**
@@ -157,14 +158,14 @@ class RecordWriteEventTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         // Use ReadTableTool to read the record (handles workspace overlay)
-        $readTool = new \Hn\McpServer\MCP\Tool\Record\ReadTableTool();
+        $readTool = new ReadTableTool();
         $readResult = $readTool->execute([
             'table' => 'pages',
             'uid' => $data['uid'],
             'fields' => ['title'],
         ]);
         $readData = json_decode($readResult->content[0]->text, true);
-        $this->assertEquals('Modified by listener', $readData['records'][0]['title']);
+        self::assertEquals('Modified by listener', $readData['records'][0]['title']);
     }
 
     /**
@@ -180,9 +181,9 @@ class RecordWriteEventTest extends AbstractFunctionalTest
         ]);
 
         $this->assertSuccessfulToolResult($result);
-        $this->assertTrue(AfterRecordWriteTestListener::$dispatched, 'AfterRecordWriteEvent should be dispatched');
-        $this->assertGreaterThan(0, AfterRecordWriteTestListener::$uid);
-        $this->assertEquals('create', AfterRecordWriteTestListener::$action);
+        self::assertTrue(AfterRecordWriteTestListener::$dispatched, 'AfterRecordWriteEvent should be dispatched');
+        self::assertGreaterThan(0, AfterRecordWriteTestListener::$uid);
+        self::assertEquals('create', AfterRecordWriteTestListener::$action);
     }
 
     /**
@@ -207,7 +208,7 @@ class RecordWriteEventTest extends AbstractFunctionalTest
         ]);
 
         $this->assertSuccessfulToolResult($result);
-        $this->assertEquals('delete', AfterRecordWriteTestListener::$action);
+        self::assertEquals('delete', AfterRecordWriteTestListener::$action);
     }
 
     /**
@@ -225,6 +226,6 @@ class RecordWriteEventTest extends AbstractFunctionalTest
             'data' => ['title' => 'Vetoed page'],
         ]);
 
-        $this->assertFalse(AfterRecordWriteTestListener::$dispatched, 'AfterRecordWriteEvent should NOT fire on veto');
+        self::assertFalse(AfterRecordWriteTestListener::$dispatched, 'AfterRecordWriteEvent should NOT fire on veto');
     }
 }

@@ -73,7 +73,7 @@ final class GetPageTreeTool extends AbstractRecordTool
         // Add annotations
         $schema['annotations'] = [
             'readOnlyHint' => true,
-            'idempotentHint' => true
+            'idempotentHint' => true,
         ];
 
         return $schema;
@@ -481,7 +481,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             // Check for news plugin with startingpoint configuration
             if (isset($plugin['list_type']) && $plugin['list_type'] === 'news_pi1' && !empty($plugin['pi_flexform'])) {
                 // Simple regex to extract startingpoint value
-                if (preg_match('/<field index="settings\.startingpoint">.*?<value[^>]*>(\d+)<\/value>/s', $plugin['pi_flexform'], $matches)) {
+                if (preg_match('/<field index="settings\.startingpoint">.*?<value[^>]*>(\d+)<\/value>/s', (string)$plugin['pi_flexform'], $matches)) {
                     $storagePid = (int)$matches[1];
                     $hints .= ' [news plugin → pid:' . $storagePid . ']';
                 }

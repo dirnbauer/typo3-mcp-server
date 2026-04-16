@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Form\FormDataCompiler;
 use TYPO3\CMS\Backend\Form\FormDataGroup\TcaDatabaseRecord;
 use TYPO3\CMS\Core\Http\NormalizedParams;
@@ -54,7 +55,7 @@ final class SelectItemResolver
 
         try {
             $formData = $this->compileFormData($table, $record);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // FormDataCompiler can fail for various reasons (missing DB records, etc.)
             // Return null to signal callers to use their fallback logic
             return null;
@@ -105,7 +106,7 @@ final class SelectItemResolver
     /**
      * Create a minimal PSR-7 ServerRequest with site context for TSconfig resolution.
      */
-    private function createMinimalServerRequest(int $pid): \Psr\Http\Message\ServerRequestInterface
+    private function createMinimalServerRequest(int $pid): ServerRequestInterface
     {
         $serverParams = [
             'REQUEST_METHOD' => 'GET',
@@ -124,7 +125,7 @@ final class SelectItemResolver
             $site = $siteFinder->getSiteByPageId($pid);
             $request = $request->withAttribute('site', $site);
             $request = $request->withAttribute('language', $site->getDefaultLanguage());
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // No site found for this pid — proceed without site context.
             // TSconfig resolution will still work for global TSconfig.
         }

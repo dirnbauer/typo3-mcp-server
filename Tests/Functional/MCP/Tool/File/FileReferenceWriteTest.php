@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool\File;
 
+use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
@@ -49,14 +50,14 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
 
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        $this->assertArrayHasKey('uid', $data);
+        self::assertArrayHasKey('uid', $data);
 
         // Verify sys_file_reference was created
         $references = $this->getFileReferences('pages', 'media', $data['uid']);
-        $this->assertCount(1, $references);
-        $this->assertEquals(1, $references[0]['uid_local']);
-        $this->assertEquals('pages', $references[0]['tablenames']);
-        $this->assertEquals('media', $references[0]['fieldname']);
+        self::assertCount(1, $references);
+        self::assertEquals(1, $references[0]['uid_local']);
+        self::assertEquals('pages', $references[0]['tablenames']);
+        self::assertEquals('media', $references[0]['fieldname']);
     }
 
     /**
@@ -80,10 +81,10 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         $references = $this->getFileReferences('pages', 'media', $data['uid']);
-        $this->assertCount(1, $references);
-        $this->assertEquals(1, $references[0]['uid_local']);
-        $this->assertEquals('Test Image', $references[0]['title']);
-        $this->assertEquals('Alt text', $references[0]['alternative']);
+        self::assertCount(1, $references);
+        self::assertEquals(1, $references[0]['uid_local']);
+        self::assertEquals('Test Image', $references[0]['title']);
+        self::assertEquals('Alt text', $references[0]['alternative']);
     }
 
     /**
@@ -118,7 +119,7 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         $references = $this->getFileReferences('tt_content', 'assets', $data['uid']);
-        $this->assertCount(2, $references);
+        self::assertCount(2, $references);
     }
 
     /**
@@ -192,11 +193,11 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
 
         // The media field should contain expanded file reference records
         $records = $readData['records'] ?? [];
-        $this->assertNotEmpty($records);
+        self::assertNotEmpty($records);
 
         $record = $records[0];
-        $this->assertEquals('Page for reading', $record['title']);
-        $this->assertIsArray($record['media']);
+        self::assertEquals('Page for reading', $record['title']);
+        self::assertIsArray($record['media']);
     }
 
     /**
@@ -215,7 +216,7 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
             ->where(
                 $queryBuilder->expr()->eq('tablenames', $queryBuilder->createNamedParameter($tablenames)),
                 $queryBuilder->expr()->eq('fieldname', $queryBuilder->createNamedParameter($fieldname)),
-                $queryBuilder->expr()->eq('uid_foreign', $queryBuilder->createNamedParameter($uidForeign, \Doctrine\DBAL\ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('uid_foreign', $queryBuilder->createNamedParameter($uidForeign, ParameterType::INTEGER)),
                 $queryBuilder->expr()->eq('deleted', 0)
             )
             ->orderBy('sorting_foreign', 'ASC')

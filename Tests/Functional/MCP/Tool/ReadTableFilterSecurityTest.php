@@ -35,9 +35,9 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
         $schema = $this->tool->getSchema();
         $properties = $schema['inputSchema']['properties'];
 
-        $this->assertArrayHasKey('filters', $properties, 'Schema must expose a "filters" parameter');
-        $this->assertEquals('array', $properties['filters']['type']);
-        $this->assertArrayHasKey('items', $properties['filters']);
+        self::assertArrayHasKey('filters', $properties, 'Schema must expose a "filters" parameter');
+        self::assertEquals('array', $properties['filters']['type']);
+        self::assertArrayHasKey('items', $properties['filters']);
     }
 
     public function testSchemaDoesNotExposeWhereParameter(): void
@@ -45,7 +45,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
         $schema = $this->tool->getSchema();
         $properties = $schema['inputSchema']['properties'];
 
-        $this->assertArrayNotHasKey('where', $properties, 'Raw "where" parameter must be removed from schema');
+        self::assertArrayNotHasKey('where', $properties, 'Raw "where" parameter must be removed from schema');
     }
 
     // ─── Basic filter functionality ──────────────────────────────────
@@ -59,12 +59,12 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
-        $this->assertGreaterThan(0, count($data['records']));
+        self::assertGreaterThan(0, count($data['records']));
         foreach ($data['records'] as $record) {
-            $this->assertEquals('textmedia', $record['CType']);
+            self::assertEquals('textmedia', $record['CType']);
         }
     }
 
@@ -77,11 +77,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertNotEquals('textmedia', $record['CType']);
+            self::assertNotEquals('textmedia', $record['CType']);
         }
     }
 
@@ -94,12 +94,12 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
-        $this->assertGreaterThan(0, count($data['records']));
+        self::assertGreaterThan(0, count($data['records']));
         foreach ($data['records'] as $record) {
-            $this->assertStringContainsString('Welcome', $record['header']);
+            self::assertStringContainsString('Welcome', $record['header']);
         }
     }
 
@@ -112,11 +112,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertGreaterThan(100, $record['uid']);
+            self::assertGreaterThan(100, $record['uid']);
         }
     }
 
@@ -129,11 +129,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertLessThan(105, $record['uid']);
+            self::assertLessThan(105, $record['uid']);
         }
     }
 
@@ -146,13 +146,13 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         $uids = array_column($data['records'], 'uid');
-        $this->assertCount(2, $uids);
-        $this->assertContains(100, $uids);
-        $this->assertContains(101, $uids);
+        self::assertCount(2, $uids);
+        self::assertContains(100, $uids);
+        self::assertContains(101, $uids);
     }
 
     public function testFilterByLessThanOrEqual(): void
@@ -164,11 +164,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertLessThanOrEqual(100, $record['uid']);
+            self::assertLessThanOrEqual(100, $record['uid']);
         }
     }
 
@@ -181,11 +181,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertGreaterThanOrEqual(105, $record['uid']);
+            self::assertGreaterThanOrEqual(105, $record['uid']);
         }
     }
 
@@ -198,11 +198,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertStringNotContainsString('Welcome', $record['header'] ?? '');
+            self::assertStringNotContainsString('Welcome', $record['header'] ?? '');
         }
     }
 
@@ -215,12 +215,12 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         $uids = array_column($data['records'], 'uid');
-        $this->assertNotContains(100, $uids);
-        $this->assertNotContains(101, $uids);
+        self::assertNotContains(100, $uids);
+        self::assertNotContains(101, $uids);
     }
 
     public function testFilterByIsNull(): void
@@ -233,7 +233,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
         ]);
 
         // Should succeed (even if zero results)
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     public function testFilterByIsNotNull(): void
@@ -245,9 +245,9 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
-        $this->assertGreaterThan(0, count($data['records']));
+        self::assertGreaterThan(0, count($data['records']));
     }
 
     // ─── Multiple filters (AND combination) ──────────────────────────
@@ -262,12 +262,12 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertEquals('textmedia', $record['CType']);
-            $this->assertEquals(1, $record['pid']);
+            self::assertEquals('textmedia', $record['CType']);
+            self::assertEquals(1, $record['pid']);
         }
     }
 
@@ -282,7 +282,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Invalid operator must be rejected');
+        self::assertTrue($result->isError, 'Invalid operator must be rejected');
     }
 
     public function testRejectsFilterWithoutField(): void
@@ -294,7 +294,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Filter without field must be rejected');
+        self::assertTrue($result->isError, 'Filter without field must be rejected');
     }
 
     public function testRejectsFilterWithoutOperator(): void
@@ -306,7 +306,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Filter without operator must be rejected');
+        self::assertTrue($result->isError, 'Filter without operator must be rejected');
     }
 
     public function testRejectsFieldNotInTable(): void
@@ -318,7 +318,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Field not in table must be rejected');
+        self::assertTrue($result->isError, 'Field not in table must be rejected');
     }
 
     public function testRejectsFieldWithSqlInjectionAttempt(): void
@@ -330,7 +330,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'SQL injection in field name must be rejected');
+        self::assertTrue($result->isError, 'SQL injection in field name must be rejected');
     }
 
     public function testRejectsComparisonOperatorWithoutValue(): void
@@ -342,7 +342,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Comparison operator without value must be rejected');
+        self::assertTrue($result->isError, 'Comparison operator without value must be rejected');
     }
 
     public function testNotInOperatorRequiresArrayValue(): void
@@ -354,7 +354,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'notIn operator with non-array value must be rejected');
+        self::assertTrue($result->isError, 'notIn operator with non-array value must be rejected');
     }
 
     // ─── Security: raw WHERE must be rejected ────────────────────────
@@ -373,8 +373,8 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             // If not an error, the WHERE must have been completely ignored
             // — verify no be_users data leaked
             foreach ($data['records'] as $record) {
-                $this->assertArrayNotHasKey('username', $record);
-                $this->assertArrayNotHasKey('password', $record);
+                self::assertArrayNotHasKey('username', $record);
+                self::assertArrayNotHasKey('password', $record);
             }
         }
     }
@@ -392,11 +392,11 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         // Total count must match the number of actual textmedia records, not all records
-        $this->assertEquals(count($data['records']), $data['total']);
+        self::assertEquals(count($data['records']), $data['total']);
     }
 
     // ─── Backwards compatibility: filters + pid/uid coexist ──────────
@@ -411,12 +411,12 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
-            $this->assertEquals('textmedia', $record['CType']);
-            $this->assertEquals(1, $record['pid']);
+            self::assertEquals('textmedia', $record['CType']);
+            self::assertEquals(1, $record['pid']);
         }
     }
 
@@ -429,6 +429,6 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'in operator with non-array value must be rejected');
+        self::assertTrue($result->isError, 'in operator with non-array value must be rejected');
     }
 }

@@ -7,7 +7,6 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
-use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
@@ -62,7 +61,7 @@ final class WriteTableTool extends AbstractRecordTool
         $accessibleTables = $this->tableAccessService->getAccessibleTables(false);
         $tableNames = array_keys($accessibleTables);
         sort($tableNames); // Sort alphabetically for better readability
-        
+
         return [
             'description' => 'Create, update, translate, move, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live. ' .
                 'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). ' .
@@ -112,7 +111,7 @@ final class WriteTableTool extends AbstractRecordTool
                             ['header' => [['search' => 'Welcom', 'replace' => 'Welcome'], ['search' => 'Compnay', 'replace' => 'Company']]],
                             ['header' => 'With images', 'CType' => 'textmedia', 'assets' => [3, 4]],
                             ['image' => [['uid_local' => 5, 'title' => 'Photo', 'alternative' => 'Alt text']]],
-                        ]
+                        ],
                     ],
                     'position' => [
                         'type' => 'string',
@@ -127,8 +126,8 @@ final class WriteTableTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => false,
-                'idempotentHint' => false
-            ]
+                'idempotentHint' => false,
+            ],
         ];
     }
 
@@ -137,7 +136,7 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
+
         // Get parameters
         $action = $params['action'] ?? '';
         $table = $params['table'] ?? '';
@@ -161,8 +160,8 @@ final class WriteTableTool extends AbstractRecordTool
                 $dataType = gettype($params['data']);
                 throw new ValidationException([
                     "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. " .
-                    "The data parameter must be an object like {\"title\": \"My Title\", \"bodytext\": \"Content\"}, " .
-                    "not a plain string. Each field name should be a key with its corresponding value."
+                    'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, ' .
+                    'not a plain string. Each field name should be a key with its corresponding value.',
                 ]);
             }
         }
@@ -195,19 +194,19 @@ final class WriteTableTool extends AbstractRecordTool
 
         // Validate table access using TableAccessService
         $this->ensureTableAccess($table, $action === 'delete' ? 'delete' : 'write');
-        
+
         // Validate action-specific parameters
         switch ($action) {
             case 'create':
                 if ($pid === null) {
                     throw new ValidationException(['Page ID (pid) is required for create action']);
                 }
-                
+
                 if (empty($data)) {
                     throw new ValidationException(['Data is required for create action']);
                 }
                 break;
-                
+
             case 'update':
                 if ($uid === null) {
                     throw new ValidationException(['Record UID is required for update action']);
@@ -217,20 +216,20 @@ final class WriteTableTool extends AbstractRecordTool
                     throw new ValidationException(['Data is required for update action']);
                 }
                 break;
-                
+
             case 'delete':
                 if ($uid === null) {
                     throw new ValidationException(['Record UID is required for delete action']);
                 }
                 break;
-                
+
             case 'move':
                 if ($uid === null) {
                     throw new ValidationException(['Record UID is required for move action']);
                 }
                 if ($pid === null && $position === 'bottom') {
                     // Same-page bottom move is a no-op, but allowed
-                } elseif (!preg_match('/^(after|before):\d+$/', $position) && $position !== 'top' && $position !== 'bottom') {
+                } elseif (!preg_match('/^(after|before):\d+$/', (string)$position) && $position !== 'top' && $position !== 'bottom') {
                     throw new ValidationException(['Position is required for move action. Use "after:UID", "before:UID", "top", or "bottom". For cross-page moves, also provide pid.']);
                 }
                 break;
@@ -252,7 +251,7 @@ final class WriteTableTool extends AbstractRecordTool
             default:
                 throw new ValidationException(['Invalid action: ' . $action . '. Valid actions are: create, update, move, translate, delete']);
         }
-        
+
         // Dispatch BeforeRecordWriteEvent — allows listeners to modify data or veto
         $eventDispatcher = $this->eventDispatcher;
         $beforeEvent = new BeforeRecordWriteEvent($table, $action, $data, $uid, $pid);
@@ -267,7 +266,7 @@ final class WriteTableTool extends AbstractRecordTool
         switch ($action) {
             case 'create':
                 return $this->createRecord($table, $pid, $data, $position);
-                
+
             case 'update':
                 // Resolve search_replace into concrete field values and merge into data
                 if (!empty($searchReplace)) {
@@ -275,7 +274,7 @@ final class WriteTableTool extends AbstractRecordTool
                     $data = array_merge($data, $resolvedFields);
                 }
                 return $this->updateRecord($table, $uid, $data);
-                
+
             case 'move':
                 return $this->moveRecord($table, $uid, $position, $pid);
 
@@ -286,13 +285,13 @@ final class WriteTableTool extends AbstractRecordTool
                 // The language UID has already been converted from ISO code if needed
                 $targetLanguageUid = (int)$data['sys_language_uid'];
                 return $this->translateRecord($table, $uid, $targetLanguageUid);
-                
+
             default:
                 // This should never happen due to earlier validation
                 throw new \LogicException('Invalid action: ' . $action);
         }
     }
-    
+
     /**
      * Create a new record
      */
@@ -318,7 +317,7 @@ final class WriteTableTool extends AbstractRecordTool
         if ($validationResult !== true) {
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
-        
+
         // Extract inline relations and build unified dataMap
         $inlineRelations = $this->extractInlineRelations($table, $data);
 
@@ -375,7 +374,7 @@ final class WriteTableTool extends AbstractRecordTool
                 'warning' => 'Record created but positioning failed: ' . $positionError,
             ]);
         }
-        
+
         // Get the live UID for workspace transparency
         $liveUid = $this->getLiveUid($table, $parentUid);
 
@@ -390,7 +389,7 @@ final class WriteTableTool extends AbstractRecordTool
             'uid' => $liveUid,
         ]);
     }
-    
+
     /**
      * Update an existing record
      */
@@ -401,7 +400,7 @@ final class WriteTableTool extends AbstractRecordTool
         if ($validationResult !== true) {
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
-        
+
         // Extract inline relations and build unified dataMap
         $inlineRelations = $this->extractInlineRelations($table, $data);
 
@@ -445,7 +444,7 @@ final class WriteTableTool extends AbstractRecordTool
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
         }
-        
+
         // Dispatch AfterRecordWriteEvent
         $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
@@ -457,7 +456,7 @@ final class WriteTableTool extends AbstractRecordTool
             'uid' => $uid, // Return the live UID that was passed in
         ]);
     }
-    
+
     /**
      * Delete a record
      */
@@ -465,18 +464,18 @@ final class WriteTableTool extends AbstractRecordTool
     {
         // Resolve the live UID to workspace UID
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
-        
+
         // Delete the record using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $GLOBALS['BE_USER'];
         $dataHandler->start([], [$table => [$workspaceUid => ['delete' => 1]]]);
         $dataHandler->process_cmdmap();
-        
+
         // Check for errors
         if ($dataHandler->errorLog) {
             return $this->createErrorResult('Error deleting record: ' . implode(', ', $dataHandler->errorLog));
         }
-        
+
         // Dispatch AfterRecordWriteEvent
         $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
@@ -487,7 +486,7 @@ final class WriteTableTool extends AbstractRecordTool
             'uid' => $uid, // Return the live UID that was passed in
         ]);
     }
-    
+
     /**
      * Move/reorder an existing record
      */
@@ -533,7 +532,7 @@ final class WriteTableTool extends AbstractRecordTool
                 ->getQueryBuilderForTable($table);
             $queryBuilder->getRestrictions()->removeAll()
                 ->add(new DeletedRestriction())
-                ->add(new WorkspaceRestriction( $currentWorkspace));
+                ->add(new WorkspaceRestriction($currentWorkspace));
 
             $orderField = $sortingField ?? 'uid';
             $lastUid = $queryBuilder
@@ -555,11 +554,11 @@ final class WriteTableTool extends AbstractRecordTool
                 // No other records on page — move to first position on target page
                 $cmdMap = [$table => [$recordUid => ['move' => $pid]]];
             }
-        } elseif (strpos($position, 'after:') === 0) {
+        } elseif (str_starts_with($position, 'after:')) {
             // DataHandler: negative uid = after that record
             $referenceUid = (int)substr($position, 6);
             $cmdMap = [$table => [$recordUid => ['move' => -$referenceUid]]];
-        } elseif (strpos($position, 'before:') === 0) {
+        } elseif (str_starts_with($position, 'before:')) {
             // DataHandler has no native "before" — find the previous sibling and insert after it,
             // or move to first position on the page if the reference is already first.
             $referenceUid = (int)substr($position, 7);
@@ -687,9 +686,9 @@ final class WriteTableTool extends AbstractRecordTool
         $cmdMap = [
             $table => [
                 $uid => [
-                    'localize' => $targetLanguageUid
-                ]
-            ]
+                    'localize' => $targetLanguageUid,
+                ],
+            ],
         ];
 
         $dataHandler->start([], $cmdMap);
@@ -737,7 +736,7 @@ final class WriteTableTool extends AbstractRecordTool
 
     /**
      * Validate record data against TCA
-     * 
+     *
      * @param int|null $uid Record UID (required for update actions)
      * @return true|string True if valid, error message if invalid
      */
@@ -775,7 +774,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             // Validate field value (with record context for dynamic select item resolution)
-            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value, $mergedRecord);
+            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value);
             if ($validationError !== null) {
                 return $validationError;
             }
@@ -806,15 +805,15 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
             // Convert arrays to comma-separated strings for multi-value fields
-            elseif (is_array($value)) {
+            if (is_array($value)) {
                 $fieldType = $fieldConfig['config']['type'] ?? '';
-                if (in_array($fieldType, ['select', 'category']) || 
+                if (in_array($fieldType, ['select', 'category']) ||
                     ($fieldType === 'group' && !empty($fieldConfig['config']['multiple']))) {
-                    $data[$fieldName] = implode(',', array_map('strval', $value));
+                    $data[$fieldName] = implode(',', array_map(strval(...), $value));
                 }
             }
         }
-        
+
         // After validating all field values, check field availability based on record type
         // This ensures type field validation happens first
         $recordType = '';
@@ -835,10 +834,10 @@ final class WriteTableTool extends AbstractRecordTool
                 $recordType = isset($data[$typeField]) ? (string)$data[$typeField] : '';
             }
         }
-        
+
         // Get available fields for this record type
         $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType);
-        
+
         // The type field itself should always be available if it exists
         if ($typeField) {
             $typeFieldConfig = $this->tableAccessService->getFieldConfig($table, $typeField);
@@ -846,7 +845,7 @@ final class WriteTableTool extends AbstractRecordTool
                 $availableFields[$typeField] = $typeFieldConfig;
             }
         }
-        
+
         // If we have type-specific configuration, validate field availability
         if (!empty($availableFields) || !empty($typeField)) {
             // Check each field in data is available
@@ -855,13 +854,13 @@ final class WriteTableTool extends AbstractRecordTool
                 if (!$this->tableAccessService->getFieldConfig($table, $fieldName)) {
                     continue;
                 }
-                
+
                 // Special handling for FlexForm fields which are dynamically added
                 if ($this->isFlexFormField($table, $fieldName)) {
                     // FlexForm fields are valid if they exist in TCA, even if not in showitem
                     continue;
                 }
-                
+
                 // Special handling for passthrough fields (often used for inline relations)
                 $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
                 if ($fieldConfig && isset($fieldConfig['config']['type']) && $fieldConfig['config']['type'] === 'passthrough') {
@@ -869,19 +868,17 @@ final class WriteTableTool extends AbstractRecordTool
                     // Example: tx_news_related_news stores the foreign key for inline relations
                     continue;
                 }
-                
-                
+
                 // If we have available fields configured and this field is not in the list
                 if (!empty($availableFields) && !isset($availableFields[$fieldName])) {
                     return "Field '{$fieldName}' is not available for this record type";
                 }
             }
         }
-        
+
         return true;
     }
-    
-    
+
     /**
      * Extract inline relations from data array.
      *
@@ -911,7 +908,7 @@ final class WriteTableTool extends AbstractRecordTool
                 }
                 $inlineRelations[$fieldName] = [
                     'config' => $config,
-                    'value' => $value
+                    'value' => $value,
                 ];
                 // Remove from data array as we'll process it via buildInlineDataMap
                 unset($data[$fieldName]);
@@ -1131,7 +1128,8 @@ final class WriteTableTool extends AbstractRecordTool
                     continue;
                 }
                 return 'File reference at index ' . $index . ' must be a sys_file UID or an object with uid_local';
-            } elseif (is_array($item)) {
+            }
+            if (is_array($item)) {
                 // Record data arrays for embedded inline relations
                 if (empty($item)) {
                     return 'Embedded inline relation record at index ' . $index . ' is empty';
@@ -1146,7 +1144,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         return null;
     }
-    
+
     /**
      * Check if a field is a FlexForm field
      */
@@ -1154,7 +1152,7 @@ final class WriteTableTool extends AbstractRecordTool
     {
         return $this->tableAccessService->isFlexFormField($table, $fieldName);
     }
-    
+
     /**
      * Extract search-and-replace operations from the data array.
      *
@@ -1296,7 +1294,7 @@ final class WriteTableTool extends AbstractRecordTool
                 $replaceAll = !empty($operation['replaceAll']);
                 $replace = $operation['replace'];
 
-                $count = substr_count($currentValue, $search);
+                $count = substr_count($currentValue, (string)$search);
 
                 if ($count === 0) {
                     throw new ValidationException(["search_replace field '{$fieldName}' operation {$index}: Search string not found in current field value"]);
@@ -1310,8 +1308,8 @@ final class WriteTableTool extends AbstractRecordTool
                     $currentValue = str_replace($search, $replace, $currentValue);
                 } else {
                     // Replace only the first (and only) occurrence
-                    $pos = strpos($currentValue, $search);
-                    $currentValue = substr_replace($currentValue, $replace, $pos, strlen($search));
+                    $pos = strpos($currentValue, (string)$search);
+                    $currentValue = substr_replace($currentValue, $replace, $pos, strlen((string)$search));
                 }
             }
 
@@ -1346,49 +1344,49 @@ final class WriteTableTool extends AbstractRecordTool
             // Handle FlexForm fields
             if ($this->isFlexFormField($table, $fieldName)) {
                 // If the value is already a string (XML), keep it as is
-                if (is_string($value) && strpos($value, '<?xml') === 0) {
+                if (is_string($value) && str_starts_with($value, '<?xml')) {
                     continue;
                 }
-                
+
                 // If the value is an array or JSON string, convert it to XML
-                $flexFormArray = is_array($value) ? $value : (is_string($value) && strpos($value, '{') === 0 ? json_decode($value, true) : null);
-                
+                $flexFormArray = is_array($value) ? $value : (is_string($value) && str_starts_with($value, '{') ? json_decode($value, true) : null);
+
                 if (is_array($flexFormArray)) {
                     // Prepare the data structure for TYPO3's XML conversion
                     $flexFormData = [
                         'data' => [
                             'sDEF' => [
-                                'lDEF' => []
-                            ]
-                        ]
+                                'lDEF' => [],
+                            ],
+                        ],
                     ];
-                    
+
                     // Process settings fields
                     if (isset($flexFormArray['settings']) && is_array($flexFormArray['settings'])) {
                         foreach ($flexFormArray['settings'] as $settingKey => $settingValue) {
                             $flexFormData['data']['sDEF']['lDEF']['settings.' . $settingKey]['vDEF'] = $settingValue;
                         }
                     }
-                    
+
                     // Process other fields
                     foreach ($flexFormArray as $key => $val) {
                         if ($key !== 'settings' && !is_array($val)) {
                             $flexFormData['data']['sDEF']['lDEF'][$key]['vDEF'] = $val;
                         }
                     }
-                    
+
                     // Use TYPO3's GeneralUtility::array2xml to convert the array to XML
                     $xml = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>' . "\n";
                     $xml .= GeneralUtility::array2xml($flexFormData, '', 0, 'T3FlexForms');
-                    
+
                     $data[$fieldName] = $xml;
                 }
             }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * For translation records, set l10n_state to "custom" for fields that
      * have allowLanguageSynchronization enabled and are being explicitly updated.
@@ -1446,13 +1444,13 @@ final class WriteTableTool extends AbstractRecordTool
         if ($currentWorkspace === 0) {
             return $workspaceUid;
         }
-        
+
         // Look up the record to get its t3ver_oid
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
-        
+
         $queryBuilder->getRestrictions()->removeAll();
-        
+
         $record = $queryBuilder
             ->select('t3ver_oid', 't3ver_state', 't3ver_wsid')
             ->from($table)
@@ -1461,27 +1459,27 @@ final class WriteTableTool extends AbstractRecordTool
             )
             ->executeQuery()
             ->fetchAssociative();
-        
+
         if (!$record) {
             // Record not found, return the original UID
             return $workspaceUid;
         }
-        
+
         // If this is a workspace record with an original, return the original UID
         if ($record['t3ver_oid'] > 0) {
             return (int)$record['t3ver_oid'];
         }
-        
+
         // For new records (t3ver_state = 1), the workspace UID IS the UID we should use
         // New records don't have a live counterpart until published
         if ($record['t3ver_state'] == 1) {
             return $workspaceUid;
         }
-        
+
         // Default: return the workspace UID
         return $workspaceUid;
     }
-    
+
     /**
      * Resolve a live UID to its workspace version
      * Used for update/delete operations where we receive a live UID but need the workspace version
@@ -1489,26 +1487,26 @@ final class WriteTableTool extends AbstractRecordTool
     protected function resolveToWorkspaceUid(string $table, int $liveUid): int
     {
         $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
-        
+
         // If we're in live workspace, no resolution needed
         if ($currentWorkspace === 0) {
             return $liveUid;
         }
-        
+
         // Use BackendUtility to get the workspace version
         $record = BackendUtility::getRecord($table, $liveUid);
         if (!$record) {
             return $liveUid;
         }
-        
+
         // Let BackendUtility handle the workspace overlay
         BackendUtility::workspaceOL($table, $record);
-        
+
         // If we got a different UID, that's the workspace version
         if (isset($record['_ORIG_uid']) && $record['_ORIG_uid'] != $liveUid) {
             return (int)$record['uid'];
         }
-        
+
         return $liveUid;
     }
 
@@ -1693,18 +1691,18 @@ final class WriteTableTool extends AbstractRecordTool
 
         foreach ($errorLog as $error) {
             // Parse common TYPO3 DataHandler error patterns
-            if (strpos($error, 'Attempt to insert record on pages:') !== false) {
-                if (strpos($error, 'not allowed') !== false) {
+            if (str_contains((string)$error, 'Attempt to insert record on pages:')) {
+                if (str_contains((string)$error, 'not allowed')) {
                     $errors[] = 'Cannot create record on this page. Check that you have database mount point access ' .
                         'and the necessary table permissions.';
                     continue;
                 }
             }
 
-            if (strpos($error, 'recordEditAccessInternals()') !== false) {
-                if (strpos($error, 'authMode') !== false) {
+            if (str_contains((string)$error, 'recordEditAccessInternals()')) {
+                if (str_contains((string)$error, 'authMode')) {
                     // Already handled by validateAuthModePermissions, but show if it slipped through
-                    preg_match('/field "([^"]+)" with value "([^"]+)"/', $error, $matches);
+                    preg_match('/field "([^"]+)" with value "([^"]+)"/', (string)$error, $matches);
                     if (count($matches) === 3) {
                         $errors[] = sprintf(
                             'Permission denied for %s="%s". Your user group needs explicit permission for this value.',
@@ -1715,7 +1713,7 @@ final class WriteTableTool extends AbstractRecordTool
                     }
                 }
 
-                if (strpos($error, 'languageField') !== false) {
+                if (str_contains((string)$error, 'languageField')) {
                     $errors[] = 'Language permission check failed. Ensure sys_language_uid is set in your data.';
                     continue;
                 }

@@ -123,7 +123,7 @@ final class SearchFileTool extends AbstractRecordTool
         }
 
         if ($extension !== '') {
-            $extensions = array_map('trim', explode(',', $extension));
+            $extensions = array_map(trim(...), explode(',', $extension));
             $extensionConstraints = [];
             foreach ($extensions as $ext) {
                 $extensionConstraints[] = $queryBuilder->expr()->eq(
@@ -173,7 +173,7 @@ final class SearchFileTool extends AbstractRecordTool
 
         foreach ($rows as $row) {
             $line = sprintf(
-                "uid:%d | %s | %s | %s | %d:%s",
+                'uid:%d | %s | %s | %s | %d:%s',
                 $row['uid'],
                 $row['name'],
                 $this->formatFileSize((int)$row['size']),

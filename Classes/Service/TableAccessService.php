@@ -458,6 +458,7 @@ final class TableAccessService
             }
         }
 
+        /** @var ModifyAvailableFieldsEvent $event */
         $event = $this->eventDispatcher->dispatch(new ModifyAvailableFieldsEvent($table, $type, $fields));
         return $event->getFields();
     }

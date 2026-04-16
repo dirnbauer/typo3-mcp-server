@@ -26,7 +26,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
     {
         $plainToken = $this->service->createDirectAccessToken(1, 'test-client');
 
-        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $plainToken);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $plainToken);
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
@@ -38,9 +38,9 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertNotFalse($row);
-        $this->assertNotEquals($plainToken, $row['token'], 'Plain token must NOT be stored in database');
-        $this->assertEquals(hash('sha256', $plainToken), $row['token'], 'Stored value must be SHA-256 hash of token');
+        self::assertNotFalse($row);
+        self::assertNotEquals($plainToken, $row['token'], 'Plain token must NOT be stored in database');
+        self::assertEquals(hash('sha256', $plainToken), $row['token'], 'Stored value must be SHA-256 hash of token');
     }
 
     public function testHashedTokenCanBeValidated(): void
@@ -48,8 +48,8 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         $plainToken = $this->service->createDirectAccessToken(1, 'test-client');
         $result = $this->service->validateToken($plainToken);
 
-        $this->assertNotNull($result, 'Valid token must be accepted');
-        $this->assertEquals(1, $result['be_user_uid']);
+        self::assertNotNull($result, 'Valid token must be accepted');
+        self::assertEquals(1, $result['be_user_uid']);
     }
 
     public function testWrongTokenIsRejected(): void
@@ -57,7 +57,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         $this->service->createDirectAccessToken(1, 'test-client');
         $result = $this->service->validateToken('0000000000000000000000000000000000000000000000000000000000000000');
 
-        $this->assertNull($result, 'Wrong token must be rejected');
+        self::assertNull($result, 'Wrong token must be rejected');
     }
 
     public function testExpiredTokenIsRejected(): void
@@ -68,7 +68,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->getConnectionForTable('tx_mcpserver_access_tokens');
         $connection->update('tx_mcpserver_access_tokens', ['expires' => time() - 1], ['be_user_uid' => 1]);
 
-        $this->assertNull($this->service->validateToken($plainToken), 'Expired token must be rejected');
+        self::assertNull($this->service->validateToken($plainToken), 'Expired token must be rejected');
     }
 
     public function testTokenHashingWorksForCodeExchange(): void
@@ -76,9 +76,9 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         $code = $this->service->createAuthorizationCode(1, 'test-client');
         $tokenData = $this->service->exchangeCodeForToken($code);
 
-        $this->assertNotNull($tokenData);
+        self::assertNotNull($tokenData);
         $result = $this->service->validateToken($tokenData['access_token']);
-        $this->assertNotNull($result);
+        self::assertNotNull($result);
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
@@ -90,7 +90,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertNotEquals($tokenData['access_token'], $row['token']);
+        self::assertNotEquals($tokenData['access_token'], $row['token']);
     }
 
     public function testLegacyPlainTextTokenValidatesViaFallback(): void
@@ -108,8 +108,8 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         ]);
 
         $result = $this->service->validateToken($plainToken);
-        $this->assertNotNull($result, 'Pre-migration plaintext tokens must validate via fallback');
-        $this->assertEquals(1, $result['be_user_uid']);
+        self::assertNotNull($result, 'Pre-migration plaintext tokens must validate via fallback');
+        self::assertEquals(1, $result['be_user_uid']);
 
         // Verify the token was auto-upgraded to hashed (token_version=1)
         $row = $connection->createQueryBuilder()
@@ -118,12 +118,12 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->where('client_name = \'legacy-client\'')
             ->executeQuery()
             ->fetchAssociative();
-        $this->assertEquals(1, (int)$row['token_version'], 'Token must be auto-upgraded to version 1');
-        $this->assertEquals(hash('sha256', $plainToken), $row['token'], 'Token must be hashed after auto-upgrade');
+        self::assertEquals(1, (int)$row['token_version'], 'Token must be auto-upgraded to version 1');
+        self::assertEquals(hash('sha256', $plainToken), $row['token'], 'Token must be hashed after auto-upgrade');
 
         // Second validation should work via hash lookup (no longer needs fallback)
         $result2 = $this->service->validateToken($plainToken);
-        $this->assertNotNull($result2, 'Token must still validate after auto-upgrade via hash lookup');
+        self::assertNotNull($result2, 'Token must still validate after auto-upgrade via hash lookup');
     }
 
     public function testLegacyPlainTextTokenInvalidAfterWizardMigration(): void
@@ -144,27 +144,27 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
 
         // The plain token should validate (hash lookup: hash(plain) == stored hash)
         $result = $this->service->validateToken($plainToken);
-        $this->assertNotNull($result, 'Migrated tokens must validate via hash lookup');
+        self::assertNotNull($result, 'Migrated tokens must validate via hash lookup');
 
         // The raw hash should NOT validate (hash(hash) != stored hash)
-        $this->assertNull($this->service->validateToken($hashedToken), 'Raw hash value must not validate');
+        self::assertNull($this->service->validateToken($hashedToken), 'Raw hash value must not validate');
     }
 
     public function testRevokedTokenIsRejected(): void
     {
         $plainToken = $this->service->createDirectAccessToken(1, 'test-client');
         $valid = $this->service->validateToken($plainToken);
-        $this->assertNotNull($valid);
+        self::assertNotNull($valid);
 
         $this->service->revokeToken($valid['token_uid'], 1);
-        $this->assertNull($this->service->validateToken($plainToken), 'Revoked token must be rejected');
+        self::assertNull($this->service->validateToken($plainToken), 'Revoked token must be rejected');
     }
 
     public function testAuthorizationCodeIsOneTimeUse(): void
     {
         $code = $this->service->createAuthorizationCode(1, 'test-client');
-        $this->assertNotNull($this->service->exchangeCodeForToken($code));
-        $this->assertNull($this->service->exchangeCodeForToken($code), 'Second exchange must fail');
+        self::assertNotNull($this->service->exchangeCodeForToken($code));
+        self::assertNull($this->service->exchangeCodeForToken($code), 'Second exchange must fail');
     }
 
     public function testExpiredAuthorizationCodeIsRejected(): void
@@ -174,6 +174,6 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
         $connection->update('tx_mcpserver_oauth_codes', ['expires' => time() - 1], ['code' => $code]);
 
-        $this->assertNull($this->service->exchangeCodeForToken($code));
+        self::assertNull($this->service->exchangeCodeForToken($code));
     }
 }

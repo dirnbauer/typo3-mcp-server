@@ -72,16 +72,16 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('📁 Storage: fileadmin', $content);
-        $this->assertStringContainsString('📂 /', $content);
-        $this->assertStringContainsString('images', $content);
-        $this->assertStringContainsString('documents', $content);
+        self::assertStringContainsString('📁 Storage: fileadmin', $content);
+        self::assertStringContainsString('📂 /', $content);
+        self::assertStringContainsString('images', $content);
+        self::assertStringContainsString('documents', $content);
     }
 
     public function testBrowseSubfolder(): void
@@ -90,13 +90,13 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/images/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('📂 /images/', $content);
-        $this->assertStringContainsString('logo.png', $content);
-        $this->assertStringContainsString('banner.png', $content);
+        self::assertStringContainsString('📂 /images/', $content);
+        self::assertStringContainsString('logo.png', $content);
+        self::assertStringContainsString('banner.png', $content);
     }
 
     public function testShowsFileMetadata(): void
@@ -105,13 +105,13 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/documents/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('readme.txt', $content);
+        self::assertStringContainsString('readme.txt', $content);
         // File should show size info
-        $this->assertMatchesRegularExpression('/\d+ B/', $content);
+        self::assertMatchesRegularExpression('/\d+ B/', $content);
     }
 
     public function testShowsSubfolderFileCount(): void
@@ -120,14 +120,14 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // images folder has 2 files
-        $this->assertStringContainsString('images (2 files)', $content);
+        self::assertStringContainsString('images (2 files)', $content);
         // documents folder has 1 file
-        $this->assertStringContainsString('documents (1 files)', $content);
+        self::assertStringContainsString('documents (1 files)', $content);
     }
 
     public function testShowsCombinedIdentifierForSubfolders(): void
@@ -136,12 +136,12 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('1:/images/', $content);
-        $this->assertStringContainsString('1:/documents/', $content);
+        self::assertStringContainsString('1:/images/', $content);
+        self::assertStringContainsString('1:/documents/', $content);
     }
 
     public function testEmptyFolder(): void
@@ -152,11 +152,11 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/empty/']);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
-        $this->assertStringContainsString('(empty folder)', $content);
+        self::assertStringContainsString('(empty folder)', $content);
     }
 
     public function testRecursiveListing(): void
@@ -168,15 +168,15 @@ class BrowseFolderToolTest extends FunctionalTestCase
             'recursive' => true,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Should show subfolder contents too
-        $this->assertStringContainsString('images', $content);
-        $this->assertStringContainsString('logo.png', $content);
-        $this->assertStringContainsString('banner.png', $content);
-        $this->assertStringContainsString('documents', $content);
-        $this->assertStringContainsString('readme.txt', $content);
+        self::assertStringContainsString('images', $content);
+        self::assertStringContainsString('logo.png', $content);
+        self::assertStringContainsString('banner.png', $content);
+        self::assertStringContainsString('documents', $content);
+        self::assertStringContainsString('readme.txt', $content);
     }
 }

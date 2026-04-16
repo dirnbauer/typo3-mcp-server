@@ -29,6 +29,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ReadTableTool extends AbstractRecordTool
 {
+    private const ALLOWED_OPERATORS = [
+        'eq', 'neq', 'lt', 'lte', 'gt', 'gte',
+        'like', 'notLike',
+        'in', 'notIn',
+        'isNull', 'isNotNull',
+    ];
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
@@ -141,8 +147,8 @@ final class ReadTableTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
-                'idempotentHint' => true
-            ]
+                'idempotentHint' => true,
+            ],
         ];
     }
 
@@ -161,7 +167,7 @@ final class ReadTableTool extends AbstractRecordTool
         $this->ensureTableAccess($table, 'read');
 
         // Execute main logic
-            // Extract and validate parameters
+        // Extract and validate parameters
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) ? (int)$params['uid'] : null;
         $filters = $params['filters'] ?? [];
@@ -240,8 +246,8 @@ final class ReadTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -313,8 +319,8 @@ final class ReadTableTool extends AbstractRecordTool
         $countQueryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
 
         $countQueryBuilder->count('uid')->from($table);
 
@@ -499,7 +505,7 @@ final class ReadTableTool extends AbstractRecordTool
         $fieldConfig = $this->tableAccessService->getFieldConfig($table, $field);
         if ($fieldConfig) {
             // Check eval rules for int
-            if (isset($fieldConfig['config']['eval']) && strpos($fieldConfig['config']['eval'], 'int') !== false) {
+            if (isset($fieldConfig['config']['eval']) && str_contains($fieldConfig['config']['eval'], 'int')) {
                 return (int)$value;
             }
 
@@ -544,7 +550,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Convert FlexForm XML to JSON
-        if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && strpos($value, '<?xml') === 0) {
+        if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && str_starts_with($value, '<?xml')) {
             try {
                 // Use TYPO3's FlexFormService to convert XML to array
                 $flexFormService = new FlexFormService();
@@ -557,7 +563,7 @@ final class ReadTableTool extends AbstractRecordTool
                 // Process each field and organize settings
                 foreach ($flexFormArray as $key => $val) {
                     // Check if this is a settings field (key starts with "settings")
-                    if (strpos($key, 'settings') === 0 && strlen($key) > 8) {
+                    if (str_starts_with($key, 'settings')   && strlen($key) > 8) {
                         // Extract the setting name (remove "settings" prefix)
                         $settingName = substr($key, 8);
                         // Convert first character to lowercase if it's uppercase
@@ -584,7 +590,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Convert JSON strings to arrays
-        if (is_string($value) && strpos($value, '{') === 0) {
+        if (is_string($value) && str_starts_with($value, '{')) {
             $decoded = json_decode($value, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $decoded;
@@ -621,7 +627,7 @@ final class ReadTableTool extends AbstractRecordTool
         // Build a lowercase → actual name map from TCA columns and essential fields
         $knownFields = [];
         foreach (array_keys($GLOBALS['TCA'][$table]['columns'] ?? []) as $columnName) {
-            $knownFields[strtolower($columnName)] = $columnName;
+            $knownFields[strtolower((string)$columnName)] = $columnName;
         }
         foreach ($this->tableAccessService->getEssentialFields($table) as $essentialName) {
             $knownFields[strtolower($essentialName)] = $essentialName;
@@ -629,19 +635,12 @@ final class ReadTableTool extends AbstractRecordTool
 
         $normalized = [];
         foreach ($requestedFields as $field) {
-            $lower = strtolower($field);
+            $lower = strtolower((string)$field);
             $normalized[] = $knownFields[$lower] ?? $field;
         }
 
         return $normalized;
     }
-
-    private const ALLOWED_OPERATORS = [
-        'eq', 'neq', 'lt', 'lte', 'gt', 'gte',
-        'like', 'notLike',
-        'in', 'notIn',
-        'isNull', 'isNotNull',
-    ];
 
     /**
      * Apply structured filters to a query builder using parameterized queries.
@@ -658,7 +657,7 @@ final class ReadTableTool extends AbstractRecordTool
         $validFields = array_merge(array_keys($GLOBALS['TCA'][$table]['columns'] ?? []), $essentialFields);
         $validFieldsLower = [];
         foreach ($validFields as $fieldName) {
-            $validFieldsLower[strtolower($fieldName)] = $fieldName;
+            $validFieldsLower[strtolower((string)$fieldName)] = $fieldName;
         }
 
         // Operators that require a value
@@ -746,8 +745,8 @@ final class ReadTableTool extends AbstractRecordTool
                         throw new ValidationException(["Filter at index {$index}: '{$operator}' operator requires an array value"]);
                     }
                     $arrayType = $this->isIntegerArray($value)
-                        ? \TYPO3\CMS\Core\Database\Connection::PARAM_INT_ARRAY
-                        : \TYPO3\CMS\Core\Database\Connection::PARAM_STR_ARRAY;
+                        ? Connection::PARAM_INT_ARRAY
+                        : Connection::PARAM_STR_ARRAY;
                     $exprMethod = $operator === 'in' ? 'in' : 'notIn';
                     $queryBuilder->andWhere($expr->$exprMethod(
                         $resolvedField,
@@ -766,9 +765,7 @@ final class ReadTableTool extends AbstractRecordTool
 
     private function isIntegerArray(array $values): bool
     {
-        return !empty($values) && array_reduce($values, static function (bool $carry, $v): bool {
-            return $carry && is_int($v);
-        }, true);
+        return !empty($values) && array_reduce($values, static fn(bool $carry, $v): bool => $carry && is_int($v), true);
     }
 
     /**
@@ -914,7 +911,7 @@ final class ReadTableTool extends AbstractRecordTool
                     }
                 } else {
                     // Single-select field - keep as single value
-                    if (is_string($record[$fieldName]) && strpos($record[$fieldName], ',') !== false) {
+                    if (is_string($record[$fieldName]) && str_contains($record[$fieldName], ',')) {
                         // If there's a comma, take only the first value
                         $values = GeneralUtility::intExplode(',', $record[$fieldName], true);
                         $record[$fieldName] = !empty($values) ? $values[0] : 0;
@@ -1024,7 +1021,7 @@ final class ReadTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0));
 
         // Select all fields
         // Apply default sorting if foreign_sortby is defined
@@ -1036,20 +1033,17 @@ final class ReadTableTool extends AbstractRecordTool
                 ->addOrderBy('uid', 'ASC');  // Secondary sort by UID for consistency;
         }
 
-
         // Ensure we have the sort field in our select
         $records = $queryBuilder->select('*')
             ->from($table)
             ->where(
                 $queryBuilder->expr()->in(
                     $foreignField,
-                    $queryBuilder->createNamedParameter($parentUids, \TYPO3\CMS\Core\Database\Connection::PARAM_INT_ARRAY)
+                    $queryBuilder->createNamedParameter($parentUids, Connection::PARAM_INT_ARRAY)
                 )
             )
             ->executeQuery()
             ->fetchAllAssociative();
-
-
 
         // Process records for workspace transparency
         $processedRecords = [];
@@ -1108,7 +1102,7 @@ final class ReadTableTool extends AbstractRecordTool
 
         // Basic constraints
         $constraints = [
-            $queryBuilder->expr()->eq($localColumn, $queryBuilder->createNamedParameter($localUid, ParameterType::INTEGER))
+            $queryBuilder->expr()->eq($localColumn, $queryBuilder->createNamedParameter($localUid, ParameterType::INTEGER)),
         ];
 
         // Add match fields if specified (e.g., for shared MM tables like sys_category_record_mm)
@@ -1150,7 +1144,7 @@ final class ReadTableTool extends AbstractRecordTool
 
         // These tables definitely don't have a pid field
         $tablesWithoutPid = [
-            'sys_registry', 'sys_log', 'sys_history', 'sys_file', 'be_sessions', 'fe_sessions'
+            'sys_registry', 'sys_log', 'sys_history', 'sys_file', 'be_sessions', 'fe_sessions',
         ];
 
         if (in_array($table, $tablesWithoutPid)) {
@@ -1211,7 +1205,7 @@ final class ReadTableTool extends AbstractRecordTool
                     $translationData[$recordUid] = [
                         'sourceUid' => $parentUid,
                         'sourceLanguage' => $this->languageService->getIsoCodeFromUid(0) ?? 'default',
-                        'inheritedFields' => $inheritedValues
+                        'inheritedFields' => $inheritedValues,
                     ];
                 }
             }
@@ -1236,8 +1230,8 @@ final class ReadTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction( $this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction( $this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
 
         $records = $queryBuilder
             ->select('*')
@@ -1245,7 +1239,7 @@ final class ReadTableTool extends AbstractRecordTool
             ->where(
                 $queryBuilder->expr()->in(
                     'uid',
-                    $queryBuilder->createNamedParameter($parentUids, \TYPO3\CMS\Core\Database\Connection::PARAM_INT_ARRAY)
+                    $queryBuilder->createNamedParameter($parentUids, Connection::PARAM_INT_ARRAY)
                 )
             )
             ->executeQuery()

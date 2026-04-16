@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class UserBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'username' => 'testuser',
@@ -41,12 +39,9 @@ class UserBuilder
         'workspace_perms' => 1,
         'file_permissions' => '',
     ];
-    
-    public function __construct(ConnectionPool $connectionPool)
-    {
-        $this->connectionPool = $connectionPool;
-    }
-    
+
+    public function __construct(private readonly ConnectionPool $connectionPool) {}
+
     /**
      * Set username
      */
@@ -55,7 +50,7 @@ class UserBuilder
         $this->data['username'] = $username;
         return $this;
     }
-    
+
     /**
      * Set password (will be hashed)
      */
@@ -64,7 +59,7 @@ class UserBuilder
         $this->data['password'] = password_hash($password, PASSWORD_BCRYPT);
         return $this;
     }
-    
+
     /**
      * Set as admin user
      */
@@ -73,7 +68,7 @@ class UserBuilder
         $this->data['admin'] = 1;
         return $this;
     }
-    
+
     /**
      * Set as regular user
      */
@@ -82,7 +77,7 @@ class UserBuilder
         $this->data['admin'] = 0;
         return $this;
     }
-    
+
     /**
      * Set usergroups
      */
@@ -91,7 +86,7 @@ class UserBuilder
         $this->data['usergroup'] = $groups;
         return $this;
     }
-    
+
     /**
      * Set email
      */
@@ -100,7 +95,7 @@ class UserBuilder
         $this->data['email'] = $email;
         return $this;
     }
-    
+
     /**
      * Set real name
      */
@@ -109,7 +104,7 @@ class UserBuilder
         $this->data['realName'] = $realName;
         return $this;
     }
-    
+
     /**
      * Set workspace permissions
      */
@@ -118,7 +113,7 @@ class UserBuilder
         $this->data['workspace_perms'] = $perms;
         return $this;
     }
-    
+
     /**
      * Set allowed languages
      */
@@ -127,7 +122,7 @@ class UserBuilder
         $this->data['allowed_languages'] = $languages;
         return $this;
     }
-    
+
     /**
      * Set DB mount points
      */
@@ -136,7 +131,7 @@ class UserBuilder
         $this->data['db_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Set file mount points
      */
@@ -145,7 +140,7 @@ class UserBuilder
         $this->data['file_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Set TSconfig
      */
@@ -154,7 +149,7 @@ class UserBuilder
         $this->data['TSconfig'] = $tsconfig;
         return $this;
     }
-    
+
     /**
      * Disable the user
      */
@@ -163,7 +158,7 @@ class UserBuilder
         $this->data['disable'] = 1;
         return $this;
     }
-    
+
     /**
      * Enable the user
      */
@@ -172,7 +167,7 @@ class UserBuilder
         $this->data['disable'] = 0;
         return $this;
     }
-    
+
     /**
      * Set custom data field
      */
@@ -181,7 +176,7 @@ class UserBuilder
         $this->data[$field] = $value;
         return $this;
     }
-    
+
     /**
      * Create the user record and return its UID
      */
@@ -190,15 +185,15 @@ class UserBuilder
         // Set timestamps
         $this->data['tstamp'] = time();
         $this->data['crdate'] = time();
-        
+
         // Ensure email is unique if not set
         if ($this->data['email'] === 'test@example.com') {
             $this->data['email'] = $this->data['username'] . '@example.com';
         }
-        
+
         $connection = $this->connectionPool->getConnectionForTable('be_users');
         $connection->insert('be_users', $this->data);
-        
+
         return (int)$connection->lastInsertId();
     }
 }
