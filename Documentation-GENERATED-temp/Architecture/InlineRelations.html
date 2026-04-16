@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <title>Inline relations
+        documentation</title>
+
+    
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="phpdocumentor/guides" name="generator">
+<meta content="" name="docsearch:name">
+<meta content="" name="docsearch:package_type">
+<meta content="" name="docsearch:release">
+<meta content="" name="docsearch:version">
+<meta content="2026-04-15T21:20:19+00:00" name="docsearch:modified">
+<meta content="2026-04-15T21:20:19+00:00" name="dc.modified">
+<meta content="2026-04-15T21:20:19+00:00" property="article:modified_time">
+    <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
+<link href="../_resources/css/theme.css" rel="stylesheet">
+<link href="https://docs.typo3.org/search/" rel="search" title="Search">
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
+                        <link href="LanguageOverlays.html" rel="prev" title="Language overlays"/>
+            <link href="SecurityAudit.html" rel="next" title="Security audit"/>
+            <link href="../Index.html" rel="top" title="MCP Server"/>
+    </head>
+<body>
+<div class="page">
+    <header>
+    <div class="page-topbar">
+        <div class="page-topbar-inner">
+            <typo3-universe active="documentation">
+                <div style="display: block; height: 44px; background-color: #313131;"></div>
+            </typo3-universe>
+        </div>
+    </div>
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="d-flex flex-wrap">
+                <div class="logo-wrapper">
+                    <a class="logo" href="https://docs.typo3.org/" title="TYPO3 Documentation">
+                        <img alt="TYPO3 Logo" class="logo-image" src="../_resources/img/typo3-logo.svg" width="484" height="130">
+                    </a>
+                </div>
+                <div class="align-self-center order-lg-2 order-last">
+                    
+<div class="toc-header">
+    <div class="toc-title pe-3">
+                            <a class="toc-title-project" href="../Index.html">MCP Server</a>
+            </div>
+    </div>                </div>
+                <div class="ms-auto order-lg-3 d-flex">
+                    <div class="menu-search-wrapper">
+                        <button id="toc-toggle" class="btn btn-light d-block d-lg-none" tabindex="0" aria-controls="toc-collapse" aria-expanded="false">
+                            <i class="fas fa-bars"></i> <span class="visually-hidden">Mobile Menu</span>
+                        </button>
+                        <all-documentations-menu data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu>
+                                                <search role="search">
+                            <form action="https://docs.typo3.org/search/search" id="global-search-form" method="get">
+                                <div class="sr-only"><label for="globalsearchinput">TYPO3 documentation...</label></div>
+                                <div class="input-group mb-3 mt-sm-3">
+                                    <select class="form-select search__scope" id="searchscope" name="scope">
+                                        <option value="">Search all</option>
+                                    </select>
+                                    <input autocomplete="off" class="form-control shadow-none" id="globalsearchinput" name="q" placeholder="TYPO3 documentation..." type="text" value="">
+                                    <button class="btn btn-light" type="submit"><i class="fa fa-search"></i>&nbsp;<span class="d-none d-md-inline">Search</span></button>
+                                </div>
+                            </form>
+                            <div id="global-search-root"></div>
+                        </search>
+                        <div class="position-relative d-inline-block">
+                            <button id="options-toggle" class="btn btn-light d-block" type="button" aria-expanded="false">
+                                <i class="fas fa-cog"></i> <span class="visually-hidden">Options</span>
+                            </button>
+
+                            <div id="options-panel"
+                                 class="shadow p-3"
+                                 role="menu"
+                                 aria-hidden="true">
+                                <h6 class="dropdown-header text-muted text-uppercase small mb-2">Options</h6>
+
+                                                                                                            <a class="dropdown-item d-flex align-items-center gap-2" href="../_sources/Architecture/InlineRelations.rst.txt" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-code"></i>
+        View source
+    </a>
+    <a class="dropdown-item d-flex align-items-center gap-2" href="https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/WritingDocsOfficial/GithubMethod.html" id="btnHowToEdit" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-info-circle"></i>
+        How to edit
+    </a>
+                                                                                                                <a class="dropdown-item d-flex align-items-center gap-2" href="../singlehtml/Index.html" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i>
+                                            Full documentation (single file)
+                                        </a>
+                                                                                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>    <main class="page-main">
+        <div class="page-main-inner">
+            <div class="page-main-navigation">
+                <nav>
+
+                    <div id="toc-collapse">
+                                                <div aria-label="main navigation" class="toc"
+                             role="navigation">
+                                <all-documentations-menu-mobile
+        data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu-mobile>
+    <div aria-label="Main navigation" class="main_menu" role="navigation">
+                <p class="caption">MCP Server</p>
+            <ul class="menu-level-1" role="menubar">
+    <li class="" role="menuitem">
+    <a href="../Introduction/Index.html">
+        Introduction
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Introduction/IntendedBehavior.html">
+        Intended behavior
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Installation/Index.html">
+        Installation
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Configuration/Index.html">
+        Configuration
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Tools/Index.html">
+        Tools
+    </a></li>    <li class=" active" role="menuitem">
+    <a href="Index.html">
+        Architecture
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="ImplementationOverview.html">
+        Implementation overview
+    </a></li><li class="" role="menuitem">
+    <a href="WorkspaceTransparency.html">
+        Workspace transparency
+    </a></li><li class="" role="menuitem">
+    <a href="LanguageOverlays.html">
+        Language overlays
+    </a></li><li class=" current active" role="menuitem">
+    <a href="#" aria-current="page">
+        Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="SecurityAudit.html">
+        Security audit
+    </a></li></ul></li>    </ul>
+    </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="page-main-content">
+                <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
+        
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
+        <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
+                    <li aria-current="page"  class="breadcrumb-item  active">Inline relations</li>
+        </ol>
+        <div class="breadcrumb-additions"></div>
+    </nav>
+                    
+<article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+    <div itemprop="articleBody">
+        <!-- content start -->
+                
+<section class="section" id="inline-relations">
+            <h1>Inline relations<a class="headerlink" href="#inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="overview">
+            <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>TYPO3 inline relations, also known as IRRE, allow parent-child record
+structures. The MCP tools support reading and writing inline relations with a
+workspace-aware model and a few deliberate limitations.</p>
+
+    </section>
+            <section class="section" id="relation-types">
+            <h2>Relation types<a class="headerlink" href="#relation-types" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="independent-inline-relations">
+            <h3>Independent inline relations<a class="headerlink" href="#independent-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>These relations point to records that also exist independently, for example
+<code>tt_content</code>. In read results they are usually represented as arrays of UIDs.</p>
+
+    </section>
+            <section class="section" id="embedded-inline-relations">
+            <h3>Embedded inline relations<a class="headerlink" href="#embedded-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>These relations point to child records that primarily exist under a parent, for
+example some dependent extension tables. In read results they are typically
+returned as embedded record arrays.</p>
+
+    </section>
+    </section>
+            <section class="section" id="current-write-support">
+            <h2>Current write support<a class="headerlink" href="#current-write-support" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="independent-relations">
+            <h3>Independent relations<a class="headerlink" href="#independent-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Independent relations can be handled in two useful ways:</p>
+
+            
+
+<ul>
+    <li class="dash">Update the child record&#039;s foreign field directly</li>
+    <li class="dash">Update the parent record with an array of related child UIDs</li>
+</ul>
+
+    </section>
+            <section class="section" id="embedded-relations">
+            <h3>Embedded relations<a class="headerlink" href="#embedded-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Embedded child creation works through a two-step approach:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>DataHandler</code> creates the child records</li>
+    <li class="dash">The extension applies the necessary foreign-field update afterwards when TYPO3
+does not manage that relation field directly through TCA columns</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="file-references">
+            <h2>File references<a class="headerlink" href="#file-references" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p><code>sys_file_reference</code> records are now supported through the <code>WriteTable</code>
+tool. When a file field (TCA type <code>file</code>) receives an array of
+<code>sys_file</code> UIDs or objects with UID and metadata, the extension creates
+<code>sys_file_reference</code> records and wires them to the parent record through
+<code>DataHandler</code>. File references are workspace-versioned like other records.</p>
+
+    </section>
+            <section class="section" id="automatic-workspace-handling">
+            <h2>Automatic workspace handling<a class="headerlink" href="#automatic-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Inline relation reads and writes use the same workspace context service as the
+rest of the extension:</p>
+
+            
+
+<ul>
+    <li class="dash">The current non-live workspace is kept when one is already active;
+otherwise a writable workspace is selected automatically, or created when
+needed</li>
+    <li class="dash">Live IDs stay visible to clients</li>
+    <li class="dash">Workspace-specific implementation details stay internal</li>
+</ul>
+
+    </section>
+            <section class="section" id="best-practices">
+            <h2>Best practices<a class="headerlink" href="#best-practices" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Prefer the foreign-field method for simple independent relations</li>
+    <li class="dash">Check TCA configuration to understand whether a relation is independent or
+embedded</li>
+    <li class="dash">Validate embedded payloads carefully</li>
+    <li class="dash">Use TYPO3 error output from <code>DataHandler</code> when diagnosing relation failures</li>
+</ul>
+
+    </section>
+            <section class="section" id="future-improvements">
+            <h2>Future improvements<a class="headerlink" href="#future-improvements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Bulk updates for relation management</li>
+    <li class="dash">Better ordering and positioning support</li>
+    <li class="dash">Stronger validation of embedded record payloads</li>
+</ul>
+
+    </section>
+    </section>
+        <!-- content end -->
+    </div>
+</article>
+                        
+            <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center"><li class="page-item">
+                            <a class="page-link" href="LanguageOverlays.html"
+                               title="Accesskey Alt(+Shift)+p">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    <li class="page-item">
+                            <a class="page-link" href="SecurityAudit.html"
+                               title="Accesskey Alt(+Shift)+n">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+        </nav>
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="linkReferenceModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Architecture/InlineRelations">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkReferenceModalLabel">Reference to the headline</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="permalink-alert-success" role="alert"></div>
+                <div class="mb-3">
+                    <div class="permalink-short-wrapper">
+                        <label for="permalink-short" class="col-form-label">Permalink (Shortlink)</label>
+                        <div class="input-group">
+                            <input class="form-control code" id="permalink-short" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-short"><i class="far fa-clone"></i></button>
+                        </div>
+                        <p><em>Copy and freely share the link</em></p>
+                    </div>
+                    <label for="permalink-uri" class="col-form-label">URL</label>
+                    <div class="input-group">
+                        <input class="form-control code" id="permalink-uri" readonly>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-uri"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-warning alert-permalink-rst" role="alert">This link target has no permanent anchor assigned.The link below can be used, but is prone to change if the page gets moved.
+                    </div>
+                    <label for="permalink-rst" class="col-form-label">Link in reStructuredText (reST)</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-rst" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-rst"><i class="far fa-clone"></i></button>
+                    </div>
+                    <p><em>Copy this link into your TYPO3 manual.</em></p>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-md" class="col-form-label">Link in Markdown</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-md" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-md"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-html" class="col-form-label">Link in HTML</label>
+                                        <div class="input-group">
+                        <textarea class="form-control code" id="permalink-html" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-html"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>    <div class="modal fade" id="generalModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Architecture/InlineRelations"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="general-alert-success" role="alert"></div>
+                <div id="generalModalContent">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div id="generalModalCustomButtons"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i>&nbsp;Close</button>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+
+<footer class="page-footer">
+    <div class="frame frame-ruler-before frame-background-dark">
+        <div class="frame-container">
+            <div class="frame-inner">
+                                <div class="footer-additional">
+                    <p class="text-center">Last rendered: Apr 15, 2026 21:20</p>
+                </div>
+                <div class="footer-meta">
+                    <ul class="footer-meta-navigation">
+                        <li><a href="https://typo3.org/legal-notice" rel="nofollow" target="_blank" title="Legal Notice">Legal Notice</a></li>
+                        <li><a href="https://typo3.org/privacy-policy" rel="nofollow" target="_blank" title="Privacy Policy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="../_resources/js/popper.min.js"></script>
+<script src="../_resources/js/bootstrap.min.js"></script>
+<script src="../_resources/js/theme.min.js"></script>
+
+<!--
+ Locally rendered. No tracking embedded.
+-->
+</body>
+</html>

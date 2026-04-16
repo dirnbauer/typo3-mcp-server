@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <title>Intended behavior
+        documentation</title>
+
+    
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="phpdocumentor/guides" name="generator">
+<meta content="" name="docsearch:name">
+<meta content="" name="docsearch:package_type">
+<meta content="" name="docsearch:release">
+<meta content="" name="docsearch:version">
+<meta content="2026-04-15T21:20:19+00:00" name="docsearch:modified">
+<meta content="2026-04-15T21:20:19+00:00" name="dc.modified">
+<meta content="2026-04-15T21:20:19+00:00" property="article:modified_time">
+    <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
+<link href="../_resources/css/theme.css" rel="stylesheet">
+<link href="https://docs.typo3.org/search/" rel="search" title="Search">
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
+                        <link href="Index.html" rel="prev" title="Introduction"/>
+            <link href="../Installation/Index.html" rel="next" title="Installation"/>
+            <link href="../Index.html" rel="top" title="MCP Server"/>
+    </head>
+<body>
+<div class="page">
+    <header>
+    <div class="page-topbar">
+        <div class="page-topbar-inner">
+            <typo3-universe active="documentation">
+                <div style="display: block; height: 44px; background-color: #313131;"></div>
+            </typo3-universe>
+        </div>
+    </div>
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="d-flex flex-wrap">
+                <div class="logo-wrapper">
+                    <a class="logo" href="https://docs.typo3.org/" title="TYPO3 Documentation">
+                        <img alt="TYPO3 Logo" class="logo-image" src="../_resources/img/typo3-logo.svg" width="484" height="130">
+                    </a>
+                </div>
+                <div class="align-self-center order-lg-2 order-last">
+                    
+<div class="toc-header">
+    <div class="toc-title pe-3">
+                            <a class="toc-title-project" href="../Index.html">MCP Server</a>
+            </div>
+    </div>                </div>
+                <div class="ms-auto order-lg-3 d-flex">
+                    <div class="menu-search-wrapper">
+                        <button id="toc-toggle" class="btn btn-light d-block d-lg-none" tabindex="0" aria-controls="toc-collapse" aria-expanded="false">
+                            <i class="fas fa-bars"></i> <span class="visually-hidden">Mobile Menu</span>
+                        </button>
+                        <all-documentations-menu data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu>
+                                                <search role="search">
+                            <form action="https://docs.typo3.org/search/search" id="global-search-form" method="get">
+                                <div class="sr-only"><label for="globalsearchinput">TYPO3 documentation...</label></div>
+                                <div class="input-group mb-3 mt-sm-3">
+                                    <select class="form-select search__scope" id="searchscope" name="scope">
+                                        <option value="">Search all</option>
+                                    </select>
+                                    <input autocomplete="off" class="form-control shadow-none" id="globalsearchinput" name="q" placeholder="TYPO3 documentation..." type="text" value="">
+                                    <button class="btn btn-light" type="submit"><i class="fa fa-search"></i>&nbsp;<span class="d-none d-md-inline">Search</span></button>
+                                </div>
+                            </form>
+                            <div id="global-search-root"></div>
+                        </search>
+                        <div class="position-relative d-inline-block">
+                            <button id="options-toggle" class="btn btn-light d-block" type="button" aria-expanded="false">
+                                <i class="fas fa-cog"></i> <span class="visually-hidden">Options</span>
+                            </button>
+
+                            <div id="options-panel"
+                                 class="shadow p-3"
+                                 role="menu"
+                                 aria-hidden="true">
+                                <h6 class="dropdown-header text-muted text-uppercase small mb-2">Options</h6>
+
+                                                                                                            <a class="dropdown-item d-flex align-items-center gap-2" href="../_sources/Introduction/IntendedBehavior.rst.txt" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-code"></i>
+        View source
+    </a>
+    <a class="dropdown-item d-flex align-items-center gap-2" href="https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/WritingDocsOfficial/GithubMethod.html" id="btnHowToEdit" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-info-circle"></i>
+        How to edit
+    </a>
+                                                                                                                <a class="dropdown-item d-flex align-items-center gap-2" href="../singlehtml/Index.html" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i>
+                                            Full documentation (single file)
+                                        </a>
+                                                                                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>    <main class="page-main">
+        <div class="page-main-inner">
+            <div class="page-main-navigation">
+                <nav>
+
+                    <div id="toc-collapse">
+                                                <div aria-label="main navigation" class="toc"
+                             role="navigation">
+                                <all-documentations-menu-mobile
+        data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu-mobile>
+    <div aria-label="Main navigation" class="main_menu" role="navigation">
+                <p class="caption">MCP Server</p>
+            <ul class="menu-level-1" role="menubar">
+    <li class=" active" role="menuitem">
+    <a href="Index.html">
+        Introduction
+    </a>        <ul class="menu-level-1"><li class=" current active" role="menuitem">
+    <a href="#" aria-current="page">
+        Intended behavior
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Installation/Index.html">
+        Installation
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Configuration/Index.html">
+        Configuration
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Tools/Index.html">
+        Tools
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Architecture/Index.html">
+        Architecture
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Architecture/ImplementationOverview.html">
+        Implementation overview
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/WorkspaceTransparency.html">
+        Workspace transparency
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/LanguageOverlays.html">
+        Language overlays
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/InlineRelations.html">
+        Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/SecurityAudit.html">
+        Security audit
+    </a></li></ul></li>    </ul>
+    </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="page-main-content">
+                <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
+        
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
+        <li class="breadcrumb-item"><a href="Index.html">Introduction</a></li>
+                    <li aria-current="page"  class="breadcrumb-item  active">Intended behavior</li>
+        </ol>
+        <div class="breadcrumb-additions"></div>
+    </nav>
+                    
+<article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+    <div itemprop="articleBody">
+        <!-- content start -->
+                
+<section class="section" id="intended-behavior-1" data-rst-anchor="intended-behavior">
+            <a id="intended-behavior"></a>
+            <h1>Intended behavior<a class="headerlink" href="#intended-behavior-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>This page is the product-level specification for the maintained TYPO3 MCP
+Server line. The goal is not only to describe which tools exist, but also how
+they are expected to behave when an MCP client uses them correctly.</p>
+
+            <section class="section" id="core-contract">
+            <h2>Core contract<a class="headerlink" href="#core-contract" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension is intended to behave like this:</p>
+
+            
+
+<ul>
+    <li class="dash">MCP clients discover the available surface through <code>tools/list</code> instead of
+assuming a fixed contract forever</li>
+    <li class="dash">tool names stay TYPO3-oriented (<code>ReadTable</code>, <code>GetPageTree</code>, <code>WriteTable</code>)
+even when parameters or descriptions evolve between releases</li>
+    <li class="dash">successful tool results are usually returned as JSON encoded into MCP text
+content, because the bundled PHP SDK does not expose structured
+<code>outputSchema</code> results in the same way as some other MCP stacks</li>
+    <li class="dash">validation and recoverable workflow mistakes should return actionable tool
+errors instead of generic internal failures</li>
+</ul>
+
+    </section>
+            <section class="section" id="record-behavior">
+            <h2>Record behavior<a class="headerlink" href="#record-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="workspace-first-writes">
+            <h3>Workspace-first writes<a class="headerlink" href="#workspace-first-writes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Record-backed modifications are expected to stay behind TYPO3 workspaces:</p>
+
+            
+
+<ul>
+    <li class="dash">direct live edits are not the normal MCP write path</li>
+    <li class="dash">the optional <code>workspace_id</code> parameter lets a client choose a specific draft
+workspace explicitly</li>
+    <li class="dash">when <code>workspace_id</code> is omitted, the extension keeps the current non-live
+workspace if possible, otherwise selects or creates a writable one</li>
+    <li class="dash">returned record identifiers stay live-facing even when TYPO3 stores an
+internal workspace version row underneath</li>
+</ul>
+
+    </section>
+            <section class="section" id="read-transparency">
+            <h3>Read transparency<a class="headerlink" href="#read-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Read tools are expected to hide TYPO3 workspace internals:</p>
+
+            
+
+<ul>
+    <li class="dash">delete placeholders should not leak into normal client-facing reads</li>
+    <li class="dash">reads should prefer the visible draft state in the active workspace context</li>
+    <li class="dash">clients should not need to know <code>t3ver_*</code> internals to understand results</li>
+</ul>
+
+    </section>
+            <section class="section" id="type-and-schema-behavior">
+            <h3>Type and schema behavior<a class="headerlink" href="#type-and-schema-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The MCP server is intended to stay TCA-first:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>GetTableSchema</code> explains fields, types, palettes, visibility, and
+validation based on TYPO3 configuration</li>
+    <li class="dash"><code>GetFlexFormSchema</code> explains FlexForm structures that a client may need
+before writing plugin or content-block data</li>
+    <li class="dash">field visibility respects permissions and TSconfig instead of exposing every
+raw database column</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="file-behavior">
+            <h2>File behavior<a class="headerlink" href="#file-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The file tools intentionally do <strong>not</strong> promise workspace versioning for
+physical files:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>BrowseFiles</code>, <code>ReadFileMetadata</code>, <code>WriteFile</code>, <code>UploadFile</code>, and
+<code>UploadFileFromUrl</code> only operate inside the MCP file sandbox</li>
+    <li class="dash">uploading or overwriting a physical file takes effect immediately on disk</li>
+    <li class="dash">workspace safety still applies to records and <code>sys_file_reference</code> rows, not
+to the file itself</li>
+    <li class="dash"><code>AttachImage</code> is intended to bridge those worlds by staging or transforming
+sandbox files first and then creating workspace-versioned references on record
+fields</li>
+</ul>
+
+    </section>
+            <section class="section" id="import-review-and-execution">
+            <h2>Import, review, and execution<a class="headerlink" href="#import-review-and-execution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The import tools are intended to support review-first editorial workflows:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>ImportContent</code> can analyze text, Markdown, or HTML and propose content
+elements, or create them directly in execute mode</li>
+    <li class="dash"><code>ImportFromUrl</code> can fetch a public page, extract likely main content, and
+either return a proposal or create the page plus elements directly</li>
+    <li class="dash"><code>WorkspaceReview</code> should help the client or editor inspect pending changes
+before publishing</li>
+    <li class="dash"><code>PublishWorkspace</code> and <code>RollbackWorkspace</code> default to dry-run style
+previews so irreversible steps require explicit confirmation</li>
+</ul>
+
+    </section>
+            <section class="section" id="optional-capability-families">
+            <h2>Optional capability families<a class="headerlink" href="#optional-capability-families" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Some tools are intentionally optional because they depend on TYPO3 packages or
+instance configuration that may not exist everywhere:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>ManageRedirects</code> requires the <code>sys_redirect</code> table to be available; when
+it is available, list access works, but redirect writes stay blocked because
+TYPO3 does not workspace-version <code>sys_redirect</code></li>
+    <li class="dash"><code>ListPaidContent</code>, <code>GetPaidContent</code>, and <code>GetPaymentStats</code> require the
+optional x402 paywall extension surface; when that surface is missing they
+should return configuration guidance instead of raw SQL errors</li>
+    <li class="dash"><code>CreateSite</code> changes YAML site configuration immediately and therefore
+remains admin-only</li>
+    <li class="dash"><code>InstallExtension</code> and <code>SafeCli</code> remain intentionally narrow and validated
+instead of acting like general shell access</li>
+</ul>
+
+    </section>
+            <section class="section" id="verification-expectations">
+            <h2>Verification expectations<a class="headerlink" href="#verification-expectations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>This repository intends the specification, implementation, and tests to move
+together:</p>
+
+            
+
+<ul>
+    <li class="dash">functional tests should cover behavior that is documented here</li>
+    <li class="dash">when the intended behavior changes, the relevant documentation and tests
+should change in the same pull request</li>
+    <li class="dash">LLM-oriented tests are a secondary validation layer and do not replace
+deterministic unit or functional coverage</li>
+</ul>
+
+    </section>
+    </section>
+        <!-- content end -->
+    </div>
+</article>
+                        
+            <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center"><li class="page-item">
+                            <a class="page-link" href="Index.html"
+                               title="Accesskey Alt(+Shift)+p">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    <li class="page-item">
+                            <a class="page-link" href="../Installation/Index.html"
+                               title="Accesskey Alt(+Shift)+n">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+        </nav>
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="linkReferenceModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Introduction/IntendedBehavior">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkReferenceModalLabel">Reference to the headline</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="permalink-alert-success" role="alert"></div>
+                <div class="mb-3">
+                    <div class="permalink-short-wrapper">
+                        <label for="permalink-short" class="col-form-label">Permalink (Shortlink)</label>
+                        <div class="input-group">
+                            <input class="form-control code" id="permalink-short" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-short"><i class="far fa-clone"></i></button>
+                        </div>
+                        <p><em>Copy and freely share the link</em></p>
+                    </div>
+                    <label for="permalink-uri" class="col-form-label">URL</label>
+                    <div class="input-group">
+                        <input class="form-control code" id="permalink-uri" readonly>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-uri"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-warning alert-permalink-rst" role="alert">This link target has no permanent anchor assigned.The link below can be used, but is prone to change if the page gets moved.
+                    </div>
+                    <label for="permalink-rst" class="col-form-label">Link in reStructuredText (reST)</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-rst" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-rst"><i class="far fa-clone"></i></button>
+                    </div>
+                    <p><em>Copy this link into your TYPO3 manual.</em></p>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-md" class="col-form-label">Link in Markdown</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-md" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-md"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-html" class="col-form-label">Link in HTML</label>
+                                        <div class="input-group">
+                        <textarea class="form-control code" id="permalink-html" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-html"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>    <div class="modal fade" id="generalModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Introduction/IntendedBehavior"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="general-alert-success" role="alert"></div>
+                <div id="generalModalContent">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div id="generalModalCustomButtons"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i>&nbsp;Close</button>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+
+<footer class="page-footer">
+    <div class="frame frame-ruler-before frame-background-dark">
+        <div class="frame-container">
+            <div class="frame-inner">
+                                <div class="footer-additional">
+                    <p class="text-center">Last rendered: Apr 15, 2026 21:20</p>
+                </div>
+                <div class="footer-meta">
+                    <ul class="footer-meta-navigation">
+                        <li><a href="https://typo3.org/legal-notice" rel="nofollow" target="_blank" title="Legal Notice">Legal Notice</a></li>
+                        <li><a href="https://typo3.org/privacy-policy" rel="nofollow" target="_blank" title="Privacy Policy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="../_resources/js/popper.min.js"></script>
+<script src="../_resources/js/bootstrap.min.js"></script>
+<script src="../_resources/js/theme.min.js"></script>
+
+<!--
+ Locally rendered. No tracking embedded.
+-->
+</body>
+</html>

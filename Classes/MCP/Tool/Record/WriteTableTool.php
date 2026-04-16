@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
+use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Mcp\Types\CallToolResult;
@@ -78,6 +79,7 @@ class WriteTableTool extends AbstractRecordTool
                         'description' => 'Record data as field-value pairs. ' .
                             'INLINE RELATIONS: For embedded tables, pass record data arrays to create new children or {"uid": N} to reference existing ones (optionally with fields to update). ' .
                             'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. ' .
+                            'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. ' .
                             'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. ' .
                             'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. ' .
                             'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML.',
@@ -87,6 +89,8 @@ class WriteTableTool extends AbstractRecordTool
                             ['header' => 'Content Element Header', 'bodytext' => 'Content <b>text</b>', 'CType' => 'text'],
                             ['sys_language_uid' => 'de', 'title' => 'German translation'],
                             ['header' => [['search' => 'Welcom', 'replace' => 'Welcome'], ['search' => 'Compnay', 'replace' => 'Company']]],
+                            ['header' => 'With images', 'CType' => 'textmedia', 'assets' => [3, 4]],
+                            ['image' => [['uid_local' => 5, 'title' => 'Photo', 'alternative' => 'Alt text']]],
                         ]
                     ],
                     'position' => [
@@ -771,8 +775,8 @@ class WriteTableTool extends AbstractRecordTool
                 }
             }
 
-            // Validate inline field types
-            if ($fieldConfig['config']['type'] === 'inline') {
+            // Validate inline and file field types (file fields are inline to sys_file_reference)
+            if (in_array($fieldConfig['config']['type'], ['inline', 'file'], true)) {
                 // Validate inline relation data
                 $validationError = $this->validateInlineRelationData($fieldConfig, $value);
                 if ($validationError !== null) {
@@ -874,8 +878,16 @@ class WriteTableTool extends AbstractRecordTool
         foreach ($data as $fieldName => $value) {
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
             $fieldType = $fieldConfig['config']['type'] ?? '';
-            if ($fieldConfig && $fieldType === 'inline') {
+            // Handle both inline and file fields (file is inline to sys_file_reference)
+            if ($fieldConfig && in_array($fieldType, ['inline', 'file'], true)) {
                 $config = $fieldConfig['config'];
+                // For file fields, ensure foreign_table defaults to sys_file_reference
+                if ($fieldType === 'file' && empty($config['foreign_table'])) {
+                    $config['foreign_table'] = 'sys_file_reference';
+                }
+                if ($fieldType === 'file' && empty($config['foreign_field'])) {
+                    $config['foreign_field'] = 'uid_foreign';
+                }
                 $inlineRelations[$fieldName] = [
                     'config' => $config,
                     'value' => $value
@@ -920,10 +932,12 @@ class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
+            $isFileReference = ($foreignTable === 'sys_file_reference');
+
             // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
             $childIdentifiers = [];
 
-            foreach ($value as $item) {
+            foreach ($value as $index => $item) {
                 if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
                     // Existing record reference via {"uid": N, ...} — keep or update
                     $existingUid = (int)$item['uid'];
@@ -943,20 +957,21 @@ class WriteTableTool extends AbstractRecordTool
                     unset($item[$foreignField]);
                     $item['pid'] = $pid;
 
-                    // Recursively handle nested inline relations in the child record
-                    $nestedInlineRelations = $this->extractInlineRelations($foreignTable, $item);
-                    if (!empty($nestedInlineRelations)) {
-                        // Add child to dataMap first so buildInlineDataMap can reference it
-                        $dataMap[$foreignTable][$childNewId] = $item;
-                        $this->buildInlineDataMap($dataMap, $foreignTable, $childNewId, $pid, $nestedInlineRelations);
+                    if ($isFileReference) {
+                        // File reference shorthand: plain UID means uid_local (sys_file UID)
+                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
+                        $dataMap[$foreignTable][$childNewId] = [
+                            'uid_local' => (int)$item,
+                            'pid' => $pid,
+                            'tablenames' => $parentTable,
+                            'fieldname' => $fieldName,
+                            'table_local' => 'sys_file',
+                        ];
+                        $childIdentifiers[] = $childNewId;
                     } else {
-                        $dataMap[$foreignTable][$childNewId] = $item;
+                        // Existing UID — reference it directly
+                        $childIdentifiers[] = (int)$item;
                     }
-
-                    $childIdentifiers[] = $childNewId;
-                } elseif (is_numeric($item) && (int)$item > 0) {
-                    // Existing UID — reference it directly
-                    $childIdentifiers[] = (int)$item;
                 }
                 // Invalid items were already caught by validateInlineRelationData
             }
@@ -1079,9 +1094,23 @@ class WriteTableTool extends AbstractRecordTool
             return 'Invalid inline relation configuration: missing foreign_table';
         }
 
+        $isFileReference = ($foreignTable === 'sys_file_reference');
+
         // Validate each item - accept both record data arrays and UIDs
         foreach ($value as $index => $item) {
-            if (is_array($item)) {
+            if ($isFileReference) {
+                // File references accept either plain UIDs (shorthand) or record data arrays
+                if (is_numeric($item) && (int)$item > 0) {
+                    continue;
+                }
+                if (is_array($item)) {
+                    if (empty($item['uid_local']) || !is_numeric($item['uid_local'])) {
+                        return 'File reference at index ' . $index . ' must contain uid_local (sys_file UID)';
+                    }
+                    continue;
+                }
+                return 'File reference at index ' . $index . ' must be a sys_file UID or an object with uid_local';
+            } elseif (is_array($item)) {
                 // Record data arrays for embedded inline relations
                 if (empty($item)) {
                     return 'Embedded inline relation record at index ' . $index . ' is empty';
@@ -1129,7 +1158,7 @@ class WriteTableTool extends AbstractRecordTool
 
             // Check if this is an inline/file relation field — those genuinely use arrays
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'inline') {
+            if ($fieldConfig && in_array($fieldConfig['config']['type'] ?? '', ['inline', 'file'], true)) {
                 continue;
             }
 

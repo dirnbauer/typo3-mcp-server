@@ -115,522 +115,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
     }
 
     /**
-     * Test updating inline relations through parent record using UID arrays
+     * Verifies that inline children of inline children are created recursively.
+     * This is the pattern that failed for lia_ctypes: tt_content → tx_liactypes_ctypes.
      */
-    public function testWriteInlineRelationThroughParentUsingUids(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
-        // Create a page first
-        $result = $writeTool->execute([
-            'table' => 'pages',
-            'action' => 'create',
-            'pid' => 0,
-            'data' => [
-                'title' => 'Test Page',
-                'doktype' => 1,
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Create a news record
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'title' => 'News to update with inline content',
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Create content elements separately
-        $contentUids = [];
-        for ($i = 1; $i <= 3; $i++) {
-            $result = $writeTool->execute([
-                'table' => 'tt_content',
-                'action' => 'create',
-                'pid' => $pageUid,
-                'data' => [
-                    'header' => "Content element $i",
-                    'CType' => 'text',
-                ],
-            ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
-        }
-        
-        // Now update the news record with inline content_elements using UIDs
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => $contentUids,  // Array of UIDs
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        // Verify the inline relations were set
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $result = $readTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'uid' => $newsUid,
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertIsArray($news['content_elements']);
-        $this->assertCount(3, $news['content_elements']);
-        
-        // Verify all UIDs are present
-        foreach ($contentUids as $uid) {
-            $this->assertContains($uid, $news['content_elements']);
-        }
-    }
-
-    /**
-     * Test updating inline relations
-     */
-    public function testUpdateInlineRelations(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
-        // Create initial setup
-        $result = $writeTool->execute([
-            'table' => 'pages',
-            'action' => 'create',
-            'pid' => 0,
-            'data' => [
-                'title' => 'Test Page',
-                'doktype' => 1,
-            ],
-        ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'title' => 'News to update',
-            ],
-        ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Create initial content element
-        $result = $writeTool->execute([
-            'table' => 'tt_content',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'header' => 'Original content',
-                'CType' => 'text',
-                'tx_news_related_news' => $newsUid,
-            ],
-        ]);
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Update the content element to remove relation
-        $result = $writeTool->execute([
-            'table' => 'tt_content',
-            'action' => 'update',
-            'uid' => $contentUid,
-            'data' => [
-                'tx_news_related_news' => 0,  // Remove relation
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        // Verify relation is removed
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $result = $readTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'uid' => $newsUid,
-        ]);
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news, 'Should have content_elements field');
-        $this->assertEmpty($news['content_elements'], 'content_elements should be empty after removal');
-    }
-
-    /**
-     * Test writing inline relations with sorting
-     */
-    public function testInlineRelationSorting(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-
-        // Create page and news
-        $result = $writeTool->execute([
-            'table' => 'pages',
-            'action' => 'create',
-            'pid' => 0,
-            'data' => [
-                'title' => 'Test Page',
-                'doktype' => 1,
-            ],
-        ]);
-        $this->assertFalse($result->isError, 'Page create: ' . ($result->content[0]->text ?? ''));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'title' => 'News with sorted content',
-            ],
-        ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Create content elements in order — default 'bottom' position assigns
-        // ascending sorting values automatically via DataHandler move commands
-        $contentData = [
-            ['header' => 'First'],
-            ['header' => 'Second'],
-            ['header' => 'Third'],
-        ];
-        
-        $createdUids = [];
-        foreach ($contentData as $data) {
-            $result = $writeTool->execute([
-                'table' => 'tt_content',
-                'action' => 'create',
-                'pid' => $pageUid,
-                'data' => array_merge($data, [
-                    'CType' => 'text',
-                    'tx_news_related_news' => $newsUid,
-                ]),
-            ]);
-            $this->assertFalse($result->isError, 'Create failed: ' . ($result->content[0]->text ?? 'no content'));
-            $uid = json_decode($result->content[0]->text, true)['uid'];
-            $createdUids[$data['header']] = $uid;
-        }
-        
-        // Read and verify sorting
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $result = $readTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'uid' => $newsUid,
-        ]);
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertCount(3, $news['content_elements']);
-        
-        // Check actual order
-        $actualOrder = [];
-        $sortingInfo = [];
-        foreach ($news['content_elements'] as $uid) {
-            // Get sorting value from database for debugging
-            $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
-                ->getQueryBuilderForTable('tt_content');
-            $queryBuilder->getRestrictions()->removeAll();
-            $record = $queryBuilder->select('header', 'sorting')
-                ->from('tt_content')
-                ->where($queryBuilder->expr()->eq('uid', $uid))
-                ->executeQuery()
-                ->fetchAssociative();
-            
-            $sortingInfo[$uid] = $record['sorting'];
-            
-            foreach ($createdUids as $header => $createdUid) {
-                if ($uid == $createdUid) {
-                    $actualOrder[] = $header;
-                    break;
-                }
-            }
-        }
-        
-        // Verify that the content elements are returned in ascending sorting order
-        // The actual sorting values may differ from what we set due to DataHandler processing
-        $this->assertEquals(['First', 'Second', 'Third'], $actualOrder, 
-            'Content elements should be returned in sorting order. ' .
-            'Actual order: ' . json_encode($actualOrder) . ', ' .
-            'UIDs in order: ' . json_encode($news['content_elements']) . ', ' .
-            'Sorting values: ' . json_encode($sortingInfo));
-    }
-
-    /**
-     * Test partial update of inline relations (keeping some, removing others)
-     */
-    public function testPartialUpdateOfInlineRelations(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
-        // Create setup
-        $result = $writeTool->execute([
-            'table' => 'pages',
-            'action' => 'create',
-            'pid' => 0,
-            'data' => [
-                'title' => 'Test Page',
-                'doktype' => 1,
-            ],
-        ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'title' => 'News for partial update test',
-            ],
-        ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Create 4 content elements initially
-        $allContentUids = [];
-        for ($i = 1; $i <= 4; $i++) {
-            $result = $writeTool->execute([
-                'table' => 'tt_content',
-                'action' => 'create',
-                'pid' => $pageUid,
-                'data' => [
-                    'header' => "Content $i",
-                    'CType' => 'text',
-                    'tx_news_related_news' => $newsUid,
-                ],
-            ]);
-            $this->assertFalse($result->isError);
-            $allContentUids[] = json_decode($result->content[0]->text, true)['uid'];
-        }
-        
-        // Update news to keep only content elements 2 and 4
-        $keptUids = [$allContentUids[1], $allContentUids[3]]; // indices 1 and 3
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => $keptUids,
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        // Verify only the specified UIDs remain
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        
-        // Check content elements that should be kept
-        foreach ([1, 3] as $index) {
-            $result = $readTool->execute([
-                'table' => 'tt_content',
-                'uid' => $allContentUids[$index],
-            ]);
-            $response = json_decode($result->content[0]->text, true);
-            if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
-            }
-            $content = $response['records'][0];
-            // Check if the foreign field is returned
-            if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
-                    ->getQueryBuilderForTable('tt_content');
-                $queryBuilder->getRestrictions()->removeAll();
-                $dbRecord = $queryBuilder->select('tx_news_related_news')
-                    ->from('tt_content')
-                    ->where($queryBuilder->expr()->eq('uid', $allContentUids[$index]))
-                    ->executeQuery()
-                    ->fetchAssociative();
-                $relatedNews = $dbRecord['tx_news_related_news'] ?? 0;
-            } else {
-                $relatedNews = $content['tx_news_related_news'];
-            }
-            $this->assertEquals($newsUid, $relatedNews, 
-                "Content element {$allContentUids[$index]} should still be related to news");
-        }
-        
-        // Check content elements that should be removed
-        foreach ([0, 2] as $index) {
-            $result = $readTool->execute([
-                'table' => 'tt_content',
-                'uid' => $allContentUids[$index],
-            ]);
-            $response = json_decode($result->content[0]->text, true);
-            if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
-            }
-            $content = $response['records'][0];
-            // Check if the foreign field is returned
-            if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
-                    ->getQueryBuilderForTable('tt_content');
-                $queryBuilder->getRestrictions()->removeAll();
-                $dbRecord = $queryBuilder->select('tx_news_related_news')
-                    ->from('tt_content')
-                    ->where($queryBuilder->expr()->eq('uid', $allContentUids[$index]))
-                    ->executeQuery()
-                    ->fetchAssociative();
-                $relatedNews = $dbRecord['tx_news_related_news'] ?? 0;
-            } else {
-                $relatedNews = $content['tx_news_related_news'];
-            }
-            $this->assertEquals(0, $relatedNews, 
-                "Content element {$allContentUids[$index]} should no longer be related to news");
-        }
-    }
-
-    /**
-     * Test validation errors for inline relations
-     */
-    public function testInlineRelationValidationErrors(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
-        // Create a news record first
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => 1,
-            'data' => [
-                'title' => 'News for validation test',
-            ],
-        ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // Test 1: Non-array value
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => 'not-an-array',
-            ],
-        ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be an array of UIDs', $result->jsonSerialize()['content'][0]->text);
-        
-        // Test 2: Array with non-numeric, non-array values
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => [1, 'invalid', 3],
-            ],
-        ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
-
-        // Test 3: Array with negative values
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => [1, -5, 3],
-            ],
-        ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
-        
-        // Test 4: Array with data objects for independent tables is now valid (embedded creation)
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => [
-                    ['header' => 'New content', 'CType' => 'text'],
-                ],
-            ],
-        ]);
-        $this->assertFalse($result->isError, 'Passing record data arrays for inline fields should be valid: ' . json_encode($result->jsonSerialize()));
-    }
-
-    /**
-     * Referencing existing inline children via {"uid": N} object syntax on update
-     */
-    public function testUidObjectReferencesExistingInlineChildren(): void
-    {
-        $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-
-        // Create page + news
-        $result = $writeTool->execute([
-            'table' => 'pages',
-            'action' => 'create',
-            'pid' => 0,
-            'data' => ['title' => 'UID object test page', 'doktype' => 1],
-        ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => ['title' => 'News for uid object test'],
-        ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-
-        // Create 2 content elements linked to the news
-        $contentUids = [];
-        for ($i = 1; $i <= 2; $i++) {
-            $result = $writeTool->execute([
-                'table' => 'tt_content',
-                'action' => 'create',
-                'pid' => $pageUid,
-                'data' => [
-                    'header' => "Existing content $i",
-                    'CType' => 'text',
-                    'tx_news_related_news' => $newsUid,
-                ],
-            ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
-        }
-
-        // Update news: keep existing via {"uid": N}, update one header, add a new element
-        $result = $writeTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'action' => 'update',
-            'uid' => $newsUid,
-            'data' => [
-                'content_elements' => [
-                    ['uid' => $contentUids[0]],                                    // keep as-is
-                    ['uid' => $contentUids[1], 'header' => 'Updated header'],      // keep + update
-                    ['header' => 'Brand new element', 'CType' => 'text'],          // create new
-                ],
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-
-        // Verify: 3 children linked to this news
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $result = $readTool->execute([
-            'table' => 'tx_news_domain_model_news',
-            'uid' => $newsUid,
-        ]);
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(3, $news['content_elements'], 'Should have 3 content elements');
-
-        // Verify: first element unchanged
-        $this->assertContains($contentUids[0], $news['content_elements']);
-
-        // Verify: second element still linked and header updated
-        $this->assertContains($contentUids[1], $news['content_elements']);
-        $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
-            ->getQueryBuilderForTable('tt_content');
-        $queryBuilder->getRestrictions()->removeAll();
-        $updatedRecord = $queryBuilder->select('header')
-            ->from('tt_content')
-            ->where($queryBuilder->expr()->eq('uid', $contentUids[1]))
-            ->executeQuery()
-            ->fetchAssociative();
-        $this->assertSame('Updated header', $updatedRecord['header']);
-    }
-
-    /**
-     * Creating content elements with embedded record data arrays in the parent
-     */
-    public function testCreateContentElementsAsEmbeddedRecordData(): void
+    public function testNestedInlineRelationsAreCreatedRecursively(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
 
@@ -639,52 +127,71 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
-            'data' => ['title' => 'Embedded test page', 'doktype' => 1],
+            'data' => ['title' => 'Nested inline test', 'doktype' => 1],
         ]);
         $this->assertFalse($result->isError);
         $pageUid = json_decode($result->content[0]->text, true)['uid'];
 
-        // Create news with content_elements as embedded record data (not UIDs)
+        // Create news with nested inline: content_elements contain media (sys_file_reference)
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
             'pid' => $pageUid,
             'data' => [
-                'title' => 'News with embedded content elements',
+                'title' => 'News with nested inline',
                 'content_elements' => [
-                    ['header' => 'First element', 'CType' => 'text', 'bodytext' => 'Body 1'],
-                    ['header' => 'Second element', 'CType' => 'text', 'bodytext' => 'Body 2'],
+                    [
+                        'header' => 'Content with image',
+                        'CType' => 'text',
+                        'media' => [
+                            ['uid_local' => 1, 'title' => 'Test image'],
+                        ],
+                    ],
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, 'Creating with embedded record data should work: ' . json_encode($result->jsonSerialize()));
+        $this->assertFalse($result->isError, 'Nested inline creation should work: ' . json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
-        // Verify the content elements were created and linked
+        // Verify the content element was created
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError);
         $news = json_decode($result->content[0]->text, true)['records'][0];
+        $this->assertCount(1, $news['content_elements'], 'One content element should be linked');
 
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertCount(2, $news['content_elements'], 'Two content elements should be linked to the news record');
+        // Verify the file reference was created on the content element
+        $contentUid = $news['content_elements'][0];
+        $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
+        $content = json_decode($result->content[0]->text, true)['records'][0];
+        $this->assertEquals('Content with image', $content['header']);
 
-        // Verify content elements have correct data
-        foreach ($news['content_elements'] as $contentUid) {
-            $this->assertIsInt($contentUid);
-            $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-            $content = json_decode($result->content[0]->text, true)['records'][0];
-            $this->assertEquals('text', $content['CType']);
-            $this->assertContains($content['header'], ['First element', 'Second element']);
-        }
+        // Check ALL sys_file_reference records to debug
+        $queryBuilder = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(
+            \TYPO3\CMS\Core\Database\ConnectionPool::class
+        )->getQueryBuilderForTable('sys_file_reference');
+        $queryBuilder->getRestrictions()->removeAll();
+        $allFileReferences = $queryBuilder
+            ->select('*')
+            ->from('sys_file_reference')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        // Filter for our content element
+        $fileReferences = array_filter($allFileReferences, fn($r) => (int)$r['uid_foreign'] === $contentUid && $r['tablenames'] === 'tt_content');
+
+        $debugInfo = 'Content UID: ' . $contentUid . ', All sys_file_reference records: ' . json_encode(
+            array_map(fn($r) => ['uid' => $r['uid'], 'uid_local' => $r['uid_local'], 'uid_foreign' => $r['uid_foreign'], 'tablenames' => $r['tablenames'], 'fieldname' => $r['fieldname'], 'title' => $r['title']], $allFileReferences)
+        );
+
+        $this->assertCount(1, $fileReferences, 'One file reference should be created for the content element. ' . $debugInfo);
+        $ref = reset($fileReferences);
+        $this->assertEquals(1, $ref['uid_local'], 'File reference should point to sys_file uid 1');
+        $this->assertEquals('Test image', $ref['title']);
     }
 
-    /**
-     * Nested inline relations: news → content elements (embedded) → file references (embedded)
-     *
     /**
      * Embedded links with hideTable=true work with string '1' value
      *

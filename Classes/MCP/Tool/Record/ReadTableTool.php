@@ -807,7 +807,7 @@ class ReadTableTool extends AbstractRecordTool
 
             match ($fieldType) {
                 'select', 'category' => $this->includeSelectRelations($result['records'], $fieldName, $fieldConfig, $table),
-                'inline' => $this->includeInlineRelations($result['records'], $fieldName, $fieldConfig, $recordUids),
+                'inline', 'file' => $this->includeInlineRelations($result['records'], $fieldName, $fieldConfig, $recordUids),
                 default => null,
             };
         }

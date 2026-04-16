@@ -1,0 +1,3685 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <title>
+        documentation</title>
+
+    
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="phpdocumentor/guides" name="generator">
+<meta content="" name="docsearch:name">
+<meta content="" name="docsearch:package_type">
+<meta content="" name="docsearch:release">
+<meta content="" name="docsearch:version">
+<meta content="2026-04-15T21:20:19+00:00" name="docsearch:modified">
+<meta content="2026-04-15T21:20:19+00:00" name="dc.modified">
+<meta content="2026-04-15T21:20:19+00:00" property="article:modified_time">
+    <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
+<link href="../_resources/css/theme.css" rel="stylesheet">
+<link href="https://docs.typo3.org/search/" rel="search" title="Search">
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
+                </head>
+<body>
+<div class="page">
+    <header>
+    <div class="page-topbar">
+        <div class="page-topbar-inner">
+            <typo3-universe active="documentation">
+                <div style="display: block; height: 44px; background-color: #313131;"></div>
+            </typo3-universe>
+        </div>
+    </div>
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="d-flex flex-wrap">
+                <div class="logo-wrapper">
+                    <a class="logo" href="https://docs.typo3.org/" title="TYPO3 Documentation">
+                        <img alt="TYPO3 Logo" class="logo-image" src="../_resources/img/typo3-logo.svg" width="484" height="130">
+                    </a>
+                </div>
+                <div class="align-self-center order-lg-2 order-last">
+                    
+<div class="toc-header">
+    <div class="toc-title pe-3">
+                            <a class="toc-title-project" href="../Index.html">MCP Server</a>
+            </div>
+    </div>                </div>
+                <div class="ms-auto order-lg-3 d-flex">
+                    <div class="menu-search-wrapper">
+                        <button id="toc-toggle" class="btn btn-light d-block d-lg-none" tabindex="0" aria-controls="toc-collapse" aria-expanded="false">
+                            <i class="fas fa-bars"></i> <span class="visually-hidden">Mobile Menu</span>
+                        </button>
+                        <all-documentations-menu data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu>
+                                                <search role="search">
+                            <form action="https://docs.typo3.org/search/search" id="global-search-form" method="get">
+                                <div class="sr-only"><label for="globalsearchinput">TYPO3 documentation...</label></div>
+                                <div class="input-group mb-3 mt-sm-3">
+                                    <select class="form-select search__scope" id="searchscope" name="scope">
+                                        <option value="">Search all</option>
+                                    </select>
+                                    <input autocomplete="off" class="form-control shadow-none" id="globalsearchinput" name="q" placeholder="TYPO3 documentation..." type="text" value="">
+                                    <button class="btn btn-light" type="submit"><i class="fa fa-search"></i>&nbsp;<span class="d-none d-md-inline">Search</span></button>
+                                </div>
+                            </form>
+                            <div id="global-search-root"></div>
+                        </search>
+                        <div class="position-relative d-inline-block">
+                            <button id="options-toggle" class="btn btn-light d-block" type="button" aria-expanded="false">
+                                <i class="fas fa-cog"></i> <span class="visually-hidden">Options</span>
+                            </button>
+
+                            <div id="options-panel"
+                                 class="shadow p-3"
+                                 role="menu"
+                                 aria-hidden="true">
+                                <h6 class="dropdown-header text-muted text-uppercase small mb-2">Options</h6>
+
+                                                                                                        <a class="dropdown-item d-flex align-items-center gap-2" href="../Index.html" rel="noopener">
+                                        <i class="fas fa-file-alt"></i>
+                                        Switch to regular view
+                                    </a>
+                                                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>    <main class="page-main">
+        <div class="page-main-inner">
+            <div class="page-main-navigation">
+                <nav>
+
+                    <div id="toc-collapse">
+                                                <div aria-label="main navigation" class="toc"
+                             role="navigation">
+                                                                                </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="page-main-content">
+                <div class="rst-content">                                                                <!-- content start -->
+    <article>
+            
+<section class="section" id="mcp-server" data-rst-anchor="start">
+            <a id="start"></a>
+            <h1>MCP Server<a class="headerlink" href="#mcp-server" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <dl class="field-list simple ">
+            <dt class="field-odd">Extension key</dt>
+
+        <dd class="field-odd">
+            
+    <p>mcp_server</p>
+        </dd>
+            <dt class="field-odd">Package name</dt>
+
+        <dd class="field-odd">
+            
+    <p>hn/typo3-mcp-server</p>
+        </dd>
+            <dt class="field-odd">Version</dt>
+
+        <dd class="field-odd">
+            
+        </dd>
+            <dt class="field-odd">Language</dt>
+
+        <dd class="field-odd">
+            
+    <p>en</p>
+        </dd>
+            <dt class="field-odd">Author</dt>
+
+        <dd class="field-odd">
+            
+    <p>Marco Pfeiffer</p>
+        </dd>
+            <dt class="field-odd">License</dt>
+
+        <dd class="field-odd">
+            
+    <p>This document is published under the
+<a href="https://www.gnu.org/licenses/gpl-2.0.html">GNU General Public License v2.0 or later</a></p>
+        </dd>
+            <dt class="field-odd">Rendered</dt>
+
+        <dd class="field-odd">
+            
+    <p>Wed, 15 Apr 2026 21:20:19 +0000</p>
+        </dd>
+    </dl>
+            <hr />
+            
+    <p>A TYPO3 extension that provides a
+<a href="https://modelcontextprotocol.io/">Model Context Protocol (MCP)</a>
+server for AI-assisted TYPO3 work.</p>
+
+                
+<div class="admonition note" role="alert">
+    <p class="admonition-title">Note</p>
+        
+    <p><strong>Thanks</strong> to <a href="https://github.com/hauptsacheNet">hauptsacheNet</a> and Marco
+Pfeiffer for the original TYPO3 MCP Server. This manual documents an
+actively maintained line that <strong>updates and extends</strong> that work; some newer
+capabilities are <strong>experimental</strong> and may evolve between releases—validate
+in staging before production use.</p>
+
+</div>
+            
+    <p>The extension gives MCP clients structured access to TYPO3 pages, records,
+schemas, workspaces, and selected file operations without bypassing TYPO3&#039;s
+editorial model.</p>
+
+            <section class="section" id="highlights">
+            <h2>Highlights<a class="headerlink" href="#highlights" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Read and write TYPO3 content through MCP tools</li>
+    <li class="dash">Keep record changes in TYPO3 workspaces</li>
+    <li class="dash">Support translations and language-aware content access</li>
+    <li class="dash">Inspect table schemas and FlexForms before writing</li>
+    <li class="dash">Browse, upload, and manage files inside a dedicated MCP file sandbox</li>
+    <li class="dash">Connect remote MCP clients using OAuth 2.1 with PKCE</li>
+</ul>
+
+            
+    <p>The public tool surface adapts to the current TYPO3 instance. For example,
+language parameters are only exposed when multiple site languages exist, and
+record tools automatically switch to an appropriate workspace unless a client
+explicitly requests a <code>workspace_id</code>.</p>
+
+                
+<div class="admonition note" role="alert">
+    <p class="admonition-title">Note</p>
+        
+    <p>Physical files are not workspace-versioned in TYPO3. The extension reduces
+file-related risk through a configurable MCP file sandbox and optional
+workspace-specific upload folders, but uploaded files still exist
+immediately once stored.</p>
+
+</div>
+    </section>
+            <section class="section" id="documentation-map">
+            <h2>Documentation map<a class="headerlink" href="#documentation-map" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Start here depending on your role:</p>
+
+            
+
+<ul>
+    <li class="dash"><a href="#">Introduction</a> for the product overview and safety model</li>
+    <li class="dash"><a href="#">Intended behavior</a> for the explicit intended-behavior spec</li>
+    <li class="dash"><a href="#">Installation</a> for Composer installation and first setup</li>
+    <li class="dash"><a href="#">Configuration</a> for module, OAuth, workspace, and file sandbox
+configuration</li>
+    <li class="dash"><a href="#">Tools</a> for the complete MCP tool reference</li>
+    <li class="dash"><a href="#">Architecture</a> for design decisions, implementation layers, and
+deeper architecture notes</li>
+</ul>
+
+    </section>
+            <section class="section" id="further-reading">
+            <h2>Further reading<a class="headerlink" href="#further-reading" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash"><code class="code-inline file" translate="no" title="File path">README.<wbr>md</code> for the GitHub-facing project overview</li>
+    <li class="dash"><code class="code-inline file" translate="no" title="File path">TECHNICAL_<wbr>OVERVIEW.<wbr>md</code> for the long-form architecture and scenarios</li>
+</ul>
+
+            <div class="toctree-wrapper compound">
+        <ul class="menu-level">
+    <li class="toc-item">
+    <a href="#introduction-1">Introduction</a>
+        <ul class="menu-level-1">
+            <li class="toc-item">
+    <a href="#intended-behavior-1">Intended behavior</a>
+
+
+</li>
+                    </ul>
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#what-this-extension-does">What this extension does</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#why-typo3-needs-mcp">Why TYPO3 needs MCP</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#how-it-works">How it works</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#core-principles">Core principles</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#important-limitations">Important limitations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#supported-versions">Supported versions</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#acknowledgements">Acknowledgements</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#installation-1">Installation</a>
+
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#requirements">Requirements</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#recommended-prerequisites">Recommended prerequisites</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#composer-installation">Composer installation</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#first-backend-check">First backend check</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#backend-module-setup">Backend module setup</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#connection-options">Connection options</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#after-installation">After installation</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#configuration-1">Configuration</a>
+
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#backend-module">Backend module</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#oauth-setup">OAuth setup</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-behavior">Workspace behavior</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-sandbox-configuration">File sandbox configuration</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#extension-configuration-values">Extension configuration values</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#why-the-sandbox-matters">Why the sandbox matters</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-safety-notes">File safety notes</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#configuration-checklist">Configuration checklist</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#tools-1">Tools</a>
+
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#general-notes">General notes</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#tool-names-mcp-tools-list">Tool names (MCP tools/list)</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#record-backed-tools">Record-backed tools</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#navigation-and-discovery">Navigation and discovery</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#schema-inspection">Schema inspection</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#reading-and-writing-records">Reading and writing records</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-tool">Workspace tool</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-tools">File tools</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#media-search">Media search</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#content-quality-and-diagnostics">Content quality and diagnostics</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-operations">Workspace operations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#record-duplication">Record duplication</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#system-maintenance">System maintenance</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-publishing">Workspace publishing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#batch-operations">Batch operations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#content-import">Content import</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-rollback">Workspace rollback</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#url-redirects">URL redirects</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#content-import-from-url">Content import from URL</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#site-management">Site management</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#extension-management">Extension management</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#optional-x402-monetization">Optional x402 monetization</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-safety-model">File safety model</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#architecture-1">Architecture</a>
+        <ul class="menu-level-1">
+            <li class="toc-item">
+    <a href="#implementation-overview">Implementation overview</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#workspace-transparency">Workspace transparency</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#language-overlays">Language overlays</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#inline-relations">Inline relations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#security-audit">Security audit</a>
+
+
+</li>
+                    </ul>
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#design-decisions">Design decisions</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#implementation-layers">Implementation layers</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-handling-and-sandboxing">File handling and sandboxing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#security">Security</a>
+
+
+</li>
+                    </ul>
+</li>
+    </ul>
+</div>
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="introduction-1" data-rst-anchor="introduction">
+            <a id="introduction"></a>
+            <h1>Introduction<a class="headerlink" href="#introduction-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="what-this-extension-does">
+            <h2>What this extension does<a class="headerlink" href="#what-this-extension-does" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p><strong>Thank you</strong> to <a href="https://github.com/hauptsacheNet">hauptsacheNet</a> and Marco
+Pfeiffer for the original TYPO3 MCP Server. This documentation describes a
+maintained line of that work, including <strong>updates and additional features</strong>;
+some of the newer surface is <strong>experimental</strong> and may change—see the project
+<code>README.md</code> for rollout guidance.</p>
+
+            
+    <p>TYPO3 MCP Server exposes TYPO3 through the
+<a href="https://modelcontextprotocol.io/">Model Context Protocol</a> so AI assistants
+can work with structured TYPO3 data instead of scraping backend HTML.</p>
+
+            
+    <p>It is built for editor-facing use cases such as:</p>
+
+            
+
+<ul>
+    <li class="dash">creating or updating content records</li>
+    <li class="dash">translating content</li>
+    <li class="dash">searching large sites</li>
+    <li class="dash">inspecting TCA and FlexForm schemas before writing</li>
+    <li class="dash">browsing and managing files inside a dedicated MCP file sandbox</li>
+</ul>
+
+            
+    <p>The extension is not a shortcut around TYPO3. It keeps TYPO3 in control.</p>
+
+            
+    <p>Operator setup (endpoint URL, OAuth clients, tokens) is documented under
+<a href="#">Configuration</a> and exposed in the backend module
+<strong>User → MCP Server</strong>.</p>
+
+            
+    <p>For the explicit product-level specification of how the maintained line is
+intended to behave, see <a href="#">Intended behavior</a>.</p>
+
+    </section>
+            <section class="section" id="why-typo3-needs-mcp">
+            <h2>Why TYPO3 needs MCP<a class="headerlink" href="#why-typo3-needs-mcp" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>TYPO3 backends are designed for people working in forms, lists, and trees.
+LLMs need:</p>
+
+            
+
+<ul>
+    <li class="dash">predictable tool calls</li>
+    <li class="dash">structured responses</li>
+    <li class="dash">schema descriptions</li>
+    <li class="dash">safe write paths</li>
+</ul>
+
+            
+    <p>MCP provides that interface, and TYPO3 MCP Server maps it back to TYPO3
+concepts such as page trees, TCA, workspaces, language overlays, and
+DataHandler-based writes.</p>
+
+    </section>
+            <section class="section" id="how-it-works">
+            <h2>How it works<a class="headerlink" href="#how-it-works" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    
+<ol start="1" type="1">
+    <li value="1">An MCP client connects to TYPO3 over HTTP or stdio.</li>
+    <li value="2">The client authenticates using OAuth, or runs locally through the TYPO3 CLI.</li>
+    <li value="3">The client discovers available tools and their schemas.</li>
+    <li value="4">Read operations return TYPO3 content, structure, and metadata.</li>
+    <li value="5">Record writes happen in workspace context.</li>
+    <li value="6">Editors review and publish workspace changes in TYPO3.</li>
+</ol>
+
+                
+<div class="admonition note" role="alert">
+    <p class="admonition-title">Note</p>
+        
+    <p><strong>Local stdio</strong> (this maintained line): host security is <strong>not</strong> the same as
+TYPO3 permissions. See <a href="#installation-local-cli">Local TYPO3 CLI server</a> in
+<a href="#">Installation</a> and <strong>Local stdio and the host OS boundary</strong> in
+<code>TECHNICAL_OVERVIEW.md</code> at the repository root.</p>
+
+</div>
+    </section>
+            <section class="section" id="core-principles">
+            <h2>Core principles<a class="headerlink" href="#core-principles" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="workspace-first-writes">
+            <h3>Workspace-first writes<a class="headerlink" href="#workspace-first-writes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Record changes are staged in TYPO3 workspaces. Live content is not directly
+edited through MCP.</p>
+
+    </section>
+            <section class="section" id="tca-first-modeling">
+            <h3>TCA-first modeling<a class="headerlink" href="#tca-first-modeling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The extension uses TCA as the source of truth for schemas and validation
+behavior wherever possible.</p>
+
+    </section>
+            <section class="section" id="transparent-workspace-handling">
+            <h3>Transparent workspace handling<a class="headerlink" href="#transparent-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>MCP clients do not need to know TYPO3 workspace internals. The extension
+selects or creates a suitable workspace and keeps returned identifiers stable.</p>
+
+    </section>
+            <section class="section" id="file-sandboxing">
+            <h3>File sandboxing<a class="headerlink" href="#file-sandboxing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>File tools do not get unrestricted <code>fileadmin</code> access. They operate inside a
+configurable MCP file sandbox, which defaults to <code>fileadmin/mcp/</code>.</p>
+
+    </section>
+            <section class="section" id="permission-aware-access">
+            <h3>Permission-aware access<a class="headerlink" href="#permission-aware-access" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The extension runs with the authenticated backend user&#039;s permissions. MCP
+should never see more than that backend user could manage manually.</p>
+
+    </section>
+    </section>
+            <section class="section" id="important-limitations">
+            <h2>Important limitations<a class="headerlink" href="#important-limitations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+                
+<div class="admonition important" role="alert">
+    <p class="admonition-title">Important</p>
+        
+    <p>Physical files in TYPO3 are not workspace-versioned.</p>
+
+</div>
+            
+    <p>That means:</p>
+
+            
+
+<ul>
+    <li class="dash">uploading a file stores it immediately</li>
+    <li class="dash">overwriting a file changes the physical file immediately</li>
+    <li class="dash">workspace safety applies to records and references, not to the physical file
+itself</li>
+</ul>
+
+            
+    <p>The extension mitigates this with a dedicated file sandbox and optional
+workspace-specific upload folders, but it does not pretend TYPO3 files are
+versioned when they are not.</p>
+
+    </section>
+            <section class="section" id="supported-versions">
+            <h2>Supported versions<a class="headerlink" href="#supported-versions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">TYPO3 v14</li>
+    <li class="dash">PHP 8.2 or higher</li>
+</ul>
+
+            
+    <p>The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
+clients evolve: tool names, parameters, and behavior <strong>may change</strong> between
+releases when that improves safety or LLM ergonomics (see also the project
+<code>README.md</code>).</p>
+
+    </section>
+            <section class="section" id="acknowledgements">
+            <h2>Acknowledgements<a class="headerlink" href="#acknowledgements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p><strong>Thanks again</strong> to the original authors at hauptsacheNet and to Marco Pfeiffer
+for the open foundation this extension extends. Ongoing <strong>updates and
+experimental features</strong> are documented alongside stable behavior; pin Composer
+versions and validate upgrades in a non-production environment first.</p>
+
+            
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="intended-behavior-1" data-rst-anchor="intended-behavior">
+            <a id="intended-behavior"></a>
+            <h1>Intended behavior<a class="headerlink" href="#intended-behavior-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>This page is the product-level specification for the maintained TYPO3 MCP
+Server line. The goal is not only to describe which tools exist, but also how
+they are expected to behave when an MCP client uses them correctly.</p>
+
+            <section class="section" id="core-contract">
+            <h2>Core contract<a class="headerlink" href="#core-contract" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension is intended to behave like this:</p>
+
+            
+
+<ul>
+    <li class="dash">MCP clients discover the available surface through <code>tools/list</code> instead of
+assuming a fixed contract forever</li>
+    <li class="dash">tool names stay TYPO3-oriented (<code>ReadTable</code>, <code>GetPageTree</code>, <code>WriteTable</code>)
+even when parameters or descriptions evolve between releases</li>
+    <li class="dash">successful tool results are usually returned as JSON encoded into MCP text
+content, because the bundled PHP SDK does not expose structured
+<code>outputSchema</code> results in the same way as some other MCP stacks</li>
+    <li class="dash">validation and recoverable workflow mistakes should return actionable tool
+errors instead of generic internal failures</li>
+</ul>
+
+    </section>
+            <section class="section" id="record-behavior">
+            <h2>Record behavior<a class="headerlink" href="#record-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="workspace-first-writes">
+            <h3>Workspace-first writes<a class="headerlink" href="#workspace-first-writes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Record-backed modifications are expected to stay behind TYPO3 workspaces:</p>
+
+            
+
+<ul>
+    <li class="dash">direct live edits are not the normal MCP write path</li>
+    <li class="dash">the optional <code>workspace_id</code> parameter lets a client choose a specific draft
+workspace explicitly</li>
+    <li class="dash">when <code>workspace_id</code> is omitted, the extension keeps the current non-live
+workspace if possible, otherwise selects or creates a writable one</li>
+    <li class="dash">returned record identifiers stay live-facing even when TYPO3 stores an
+internal workspace version row underneath</li>
+</ul>
+
+    </section>
+            <section class="section" id="read-transparency">
+            <h3>Read transparency<a class="headerlink" href="#read-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Read tools are expected to hide TYPO3 workspace internals:</p>
+
+            
+
+<ul>
+    <li class="dash">delete placeholders should not leak into normal client-facing reads</li>
+    <li class="dash">reads should prefer the visible draft state in the active workspace context</li>
+    <li class="dash">clients should not need to know <code>t3ver_*</code> internals to understand results</li>
+</ul>
+
+    </section>
+            <section class="section" id="type-and-schema-behavior">
+            <h3>Type and schema behavior<a class="headerlink" href="#type-and-schema-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The MCP server is intended to stay TCA-first:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>GetTableSchema</code> explains fields, types, palettes, visibility, and
+validation based on TYPO3 configuration</li>
+    <li class="dash"><code>GetFlexFormSchema</code> explains FlexForm structures that a client may need
+before writing plugin or content-block data</li>
+    <li class="dash">field visibility respects permissions and TSconfig instead of exposing every
+raw database column</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="file-behavior">
+            <h2>File behavior<a class="headerlink" href="#file-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The file tools intentionally do <strong>not</strong> promise workspace versioning for
+physical files:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>BrowseFiles</code>, <code>ReadFileMetadata</code>, <code>WriteFile</code>, <code>UploadFile</code>, and
+<code>UploadFileFromUrl</code> only operate inside the MCP file sandbox</li>
+    <li class="dash">uploading or overwriting a physical file takes effect immediately on disk</li>
+    <li class="dash">workspace safety still applies to records and <code>sys_file_reference</code> rows, not
+to the file itself</li>
+    <li class="dash"><code>AttachImage</code> is intended to bridge those worlds by staging or transforming
+sandbox files first and then creating workspace-versioned references on record
+fields</li>
+</ul>
+
+    </section>
+            <section class="section" id="import-review-and-execution">
+            <h2>Import, review, and execution<a class="headerlink" href="#import-review-and-execution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The import tools are intended to support review-first editorial workflows:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>ImportContent</code> can analyze text, Markdown, or HTML and propose content
+elements, or create them directly in execute mode</li>
+    <li class="dash"><code>ImportFromUrl</code> can fetch a public page, extract likely main content, and
+either return a proposal or create the page plus elements directly</li>
+    <li class="dash"><code>WorkspaceReview</code> should help the client or editor inspect pending changes
+before publishing</li>
+    <li class="dash"><code>PublishWorkspace</code> and <code>RollbackWorkspace</code> default to dry-run style
+previews so irreversible steps require explicit confirmation</li>
+</ul>
+
+    </section>
+            <section class="section" id="optional-capability-families">
+            <h2>Optional capability families<a class="headerlink" href="#optional-capability-families" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Some tools are intentionally optional because they depend on TYPO3 packages or
+instance configuration that may not exist everywhere:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>ManageRedirects</code> requires the <code>sys_redirect</code> table to be available; when
+it is available, list access works, but redirect writes stay blocked because
+TYPO3 does not workspace-version <code>sys_redirect</code></li>
+    <li class="dash"><code>ListPaidContent</code>, <code>GetPaidContent</code>, and <code>GetPaymentStats</code> require the
+optional x402 paywall extension surface; when that surface is missing they
+should return configuration guidance instead of raw SQL errors</li>
+    <li class="dash"><code>CreateSite</code> changes YAML site configuration immediately and therefore
+remains admin-only</li>
+    <li class="dash"><code>InstallExtension</code> and <code>SafeCli</code> remain intentionally narrow and validated
+instead of acting like general shell access</li>
+</ul>
+
+    </section>
+            <section class="section" id="verification-expectations">
+            <h2>Verification expectations<a class="headerlink" href="#verification-expectations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>This repository intends the specification, implementation, and tests to move
+together:</p>
+
+            
+
+<ul>
+    <li class="dash">functional tests should cover behavior that is documented here</li>
+    <li class="dash">when the intended behavior changes, the relevant documentation and tests
+should change in the same pull request</li>
+    <li class="dash">LLM-oriented tests are a secondary validation layer and do not replace
+deterministic unit or functional coverage</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="installation-1" data-rst-anchor="installation">
+            <a id="installation"></a>
+            <h1>Installation<a class="headerlink" href="#installation-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="requirements" data-rst-anchor="installation-requirements">
+            <a id="installation-requirements"></a>
+            <h2>Requirements<a class="headerlink" href="#requirements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">TYPO3 v14</li>
+    <li class="dash">PHP 8.2+</li>
+    <li class="dash">TYPO3 backend access for the editors who will use MCP</li>
+    <li class="dash">TYPO3 Workspaces extension, installed as a dependency</li>
+</ul>
+
+    </section>
+            <section class="section" id="recommended-prerequisites">
+            <h2>Recommended prerequisites<a class="headerlink" href="#recommended-prerequisites" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Before you connect an MCP client, make sure TYPO3 is already configured with:</p>
+
+            
+
+<ul>
+    <li class="dash">at least one backend user who can access the relevant page tree</li>
+    <li class="dash">table permissions for the records you want MCP to manage</li>
+    <li class="dash">a writable workspace, or permission for the extension to create one</li>
+    <li class="dash">a reachable base URL for remote clients</li>
+</ul>
+
+    </section>
+            <section class="section" id="composer-installation">
+            <h2>Composer installation<a class="headerlink" href="#composer-installation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Install the extension with Composer:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Install the extension with Composer</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">composer require hn/typo3-mcp-server</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Activate the extension:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Activate the extension</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 extension:activate mcp_server</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>The backend module will then be available under <span class="guilabel">User &gt; MCP Server</span>.</p>
+
+    </section>
+            <section class="section" id="first-backend-check">
+            <h2>First backend check<a class="headerlink" href="#first-backend-check" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Open the backend module and verify that you can see:</p>
+
+            
+
+<ul>
+    <li class="dash">the MCP endpoint URL</li>
+    <li class="dash">the main connection setup tabs</li>
+    <li class="dash">the remote client setup tabs</li>
+    <li class="dash">the active token management area</li>
+    <li class="dash">endpoint status indicators for MCP and OAuth discovery URLs</li>
+</ul>
+
+    </section>
+            <section class="section" id="backend-module-setup">
+            <h2>Backend module setup<a class="headerlink" href="#backend-module-setup" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The backend module is designed around the most common connection flow first.</p>
+
+            
+    <p>At the top of the page you get:</p>
+
+            
+
+<ul>
+    <li class="dash">the remote MCP server URL</li>
+    <li class="dash">a copy button for the server URL</li>
+    <li class="dash">endpoint health checks for the MCP and OAuth discovery URLs</li>
+</ul>
+
+            
+    <p>The client chooser then provides focused setup steps for:</p>
+
+            
+
+<ul>
+    <li class="dash">Claude Desktop</li>
+    <li class="dash">n8n</li>
+    <li class="dash">Manus</li>
+    <li class="dash">MCP Inspector</li>
+    <li class="dash">other MCP clients</li>
+</ul>
+
+            
+    <p>Separate top-level tabs also cover:</p>
+
+            
+
+<ul>
+    <li class="dash">Remote MCP Setup</li>
+    <li class="dash">Local Setup (mcp-remote)</li>
+    <li class="dash">Local Setup (TYPO3 CLI)</li>
+</ul>
+
+            
+    <p>The common path is:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">Open <span class="guilabel">User &gt; MCP Server</span>.</li>
+    <li value="2">Copy the server URL.</li>
+    <li value="3">Choose your client tab.</li>
+    <li value="4">Follow the short client-specific setup.</li>
+    <li value="5">Complete OAuth in TYPO3, or create a direct-access token for clients such as
+n8n or Manus.</li>
+</ol>
+
+    </section>
+            <section class="section" id="connection-options" data-rst-anchor="installation-connection-options">
+            <a id="installation-connection-options"></a>
+            <h2>Connection options<a class="headerlink" href="#connection-options" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="remote-mcp-over-oauth">
+            <h3>Remote MCP over OAuth<a class="headerlink" href="#remote-mcp-over-oauth" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>This is the recommended setup for remote MCP clients.</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">Open <span class="guilabel">User &gt; MCP Server</span>.</li>
+    <li value="2">Copy the server URL shown in the module.</li>
+    <li value="3">Add the server URL to your MCP client.</li>
+    <li value="4">Complete the OAuth flow in TYPO3 when the client requests access.</li>
+</ol>
+
+            
+    <p>The module includes setup instructions for multiple client types.</p>
+
+    </section>
+            <section class="section" id="local-typo3-cli-server" data-rst-anchor="installation-local-cli">
+            <a id="installation-local-cli"></a>
+            <h3>Local TYPO3 CLI server<a class="headerlink" href="#local-typo3-cli-server" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>For local development or shell-based MCP clients, use the TYPO3 CLI command.</p>
+
+            
+    <p>Example MCP client configuration:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Example local stdio MCP client configuration</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs json">{
+  <span class="hljs-attr">"mcpServers"</span>: {
+    <span class="hljs-attr">"my-typo3-site"</span>: {
+      <span class="hljs-attr">"command"</span>: <span class="hljs-string">"php"</span>,
+      <span class="hljs-attr">"args"</span>: [<span class="hljs-string">"vendor/bin/typo3"</span>, <span class="hljs-string">"mcp:server"</span>]
+    }
+  }
+}</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>This is convenient for development, but it uses a different trust model than
+the remote OAuth endpoint.</p>
+
+                
+<div class="admonition caution" role="alert">
+    <p class="admonition-title">Caution</p>
+        
+    <p><strong>Local stdio and the host (guidance for this maintained distribution):</strong>
+The CLI server runs as the <strong>operating-system user</strong> that starts it. TYPO3
+enforces editorial and table permissions for MCP tools, but it does <strong>not</strong>
+sandbox the underlying machine. If your MCP client also exposes a shell or
+terminal—or you launch the server via <code>bash</code>, <code>sh</code>, or other
+wrappers—the effective risk includes <strong>arbitrary host commands</strong> at that
+user’s privilege level (files, environment secrets, system changes beyond
+TYPO3). Use this setup only on <strong>trusted local or non-production</strong> systems,
+with least-privilege OS accounts and without mixing it with production
+secrets or unrestricted terminal access.</p>
+
+    <p>The same topic is covered technically under <strong>Local stdio and the host OS
+boundary</strong> in <code>TECHNICAL_OVERVIEW.md</code> (repository root).</p>
+
+</div>
+    </section>
+    </section>
+            <section class="section" id="after-installation">
+            <h2>After installation<a class="headerlink" href="#after-installation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Continue with:</p>
+
+            
+
+<ul>
+    <li class="dash"><a href="#">Configuration</a> to configure the file sandbox and understand
+workspace behavior</li>
+    <li class="dash"><a href="#">Tools</a> to review the available MCP tools</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="configuration-1" data-rst-anchor="configuration">
+            <a id="configuration"></a>
+            <h1>Configuration<a class="headerlink" href="#configuration-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="backend-module">
+            <h2>Backend module<a class="headerlink" href="#backend-module" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The MCP Server module is available under <span class="guilabel">User &gt; MCP Server</span> in the
+TYPO3 backend.</p>
+
+            
+    <p>The module is the main control center for editors and integrators. From there
+you can:</p>
+
+            
+
+<ul>
+    <li class="dash">View the MCP endpoint URL</li>
+    <li class="dash">Review endpoint reachability checks for the MCP and OAuth discovery URLs</li>
+    <li class="dash">Review remote and local client setup instructions</li>
+    <li class="dash">Create and revoke access tokens for supported client types</li>
+    <li class="dash">See workspace-related warnings when no workspace is configured</li>
+</ul>
+
+    </section>
+            <section class="section" id="oauth-setup">
+            <h2>OAuth setup<a class="headerlink" href="#oauth-setup" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension supports OAuth 2.1 with PKCE for authentication. Dynamic
+client discovery is exposed through the well-known endpoints used by MCP
+clients.</p>
+
+            
+    <p>Access tokens are:</p>
+
+            
+
+<ul>
+    <li class="dash">stored as hashes in the database</li>
+    <li class="dash">scoped to the backend user that created them</li>
+    <li class="dash">revocable through the backend module</li>
+</ul>
+
+    </section>
+            <section class="section" id="workspace-behavior">
+            <h2>Workspace behavior<a class="headerlink" href="#workspace-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>All record tools are workspace-aware.</p>
+
+            
+    <p>Default behavior:</p>
+
+            
+
+<ul>
+    <li class="dash">if the user is already in a non-live workspace, that workspace is kept</li>
+    <li class="dash">otherwise the first writable workspace is selected</li>
+    <li class="dash">if needed, the extension can create an MCP workspace for the user</li>
+</ul>
+
+            
+    <p>Explicit behavior:</p>
+
+            
+
+<ul>
+    <li class="dash">tools that operate on records accept <code>workspace_id</code></li>
+    <li class="dash">clients can use <code>ListWorkspaces</code> to inspect available workspaces</li>
+    <li class="dash">clients only need the public workspace ID, not TYPO3&#039;s internal versioning
+details</li>
+</ul>
+
+                
+<div class="admonition important" role="alert">
+    <p class="admonition-title">Important</p>
+        
+    <p>Live records are not directly edited through the record tools.</p>
+
+</div>
+    </section>
+            <section class="section" id="file-sandbox-configuration">
+            <h2>File sandbox configuration<a class="headerlink" href="#file-sandbox-configuration" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension uses a dedicated file sandbox so MCP file tools do not receive
+unrestricted <code>fileadmin</code> access.</p>
+
+            
+    <p>By default, the sandbox root is:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">1:/mcp/</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>This usually maps to:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">fileadmin/mcp/</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+            <section class="section" id="extension-configuration-values">
+            <h2>Extension configuration values<a class="headerlink" href="#extension-configuration-values" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section data-search-title="fileSandboxRoot"
+         data-search-id="confval-ext-mcp-server-filesandboxroot"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-filesandboxroot"
+>
+    <h3 class="sr-only">fileSandboxRoot</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">file<wbr>Sandbox<wbr>Root</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-filesandboxroot"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-filesandboxroot"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">string
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">&#039;1:/mcp/&#039;
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Combined folder identifier that defines the MCP file sandbox root.</p>
+
+    <p>All MCP file tools are restricted to this root. Use a combined identifier,
+for example <code>1:/mcp/</code> or <code>1:/ai-content/</code>.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
+            <section data-search-title="workspaceUploadSubfolders"
+         data-search-id="confval-ext-mcp-server-workspaceuploadsubfolders"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-workspaceuploadsubfolders"
+>
+    <h3 class="sr-only">workspaceUploadSubfolders</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">workspace<wbr>Upload<wbr>Subfolders</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-workspaceuploadsubfolders"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-workspaceuploadsubfolders"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">boolean
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">true
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>When enabled, <code>UploadFile</code> stores uploads below workspace-specific
+subfolders inside the sandbox root.</p>
+
+    <p>Example:</p>
+<div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">1:/mcp/workspaces/ws-3/images/</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            </div>
+        </dd>
+    </dl>
+</section>
+    </section>
+            <section class="section" id="why-the-sandbox-matters">
+            <h2>Why the sandbox matters<a class="headerlink" href="#why-the-sandbox-matters" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The sandbox improves safety and maintainability:</p>
+
+            
+
+<ul>
+    <li class="dash">AI-generated files stay inside a known directory</li>
+    <li class="dash">cleanup is easier</li>
+    <li class="dash">file operations become auditable and predictable</li>
+    <li class="dash">workspace upload folders reduce collisions between draft and live-oriented
+assets</li>
+</ul>
+
+    </section>
+            <section class="section" id="file-safety-notes">
+            <h2>File safety notes<a class="headerlink" href="#file-safety-notes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+                
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>TYPO3 does not workspace-version physical files.</p>
+
+</div>
+            
+    <p>This remains true even with the sandbox:</p>
+
+            
+
+<ul>
+    <li class="dash">uploaded files exist immediately once stored</li>
+    <li class="dash">text file overwrites change the physical file immediately</li>
+    <li class="dash">record references and metadata workflows can still be staged in TYPO3
+workspaces</li>
+</ul>
+
+            
+    <p>Use the sandbox and workspace upload folders to reduce risk, not to simulate
+physical file versioning.</p>
+
+    </section>
+            <section class="section" id="configuration-checklist">
+            <h2>Configuration checklist<a class="headerlink" href="#configuration-checklist" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Use this checklist when rolling out the extension:</p>
+
+            
+
+<ul>
+    <li class="dash">confirm the TYPO3 base URL is correct for remote MCP clients</li>
+    <li class="dash">verify backend user permissions and page mounts</li>
+    <li class="dash">verify workspace access</li>
+    <li class="dash">review the configured file sandbox root</li>
+    <li class="dash">decide whether workspace upload subfolders should stay enabled</li>
+    <li class="dash">test remote OAuth login with your target MCP client</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="tools-1" data-rst-anchor="tools">
+            <a id="tools"></a>
+            <h1>Tools<a class="headerlink" href="#tools-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>The MCP server exposes a focused tool set for TYPO3 navigation, schema
+inspection, record operations, workspaces, and file handling.</p>
+
+            <section class="section" id="general-notes">
+            <h2>General notes<a class="headerlink" href="#general-notes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Record-backed tools keep the current non-live workspace by default, or
+otherwise select or create a suitable workspace automatically.</li>
+    <li class="dash">Most record-backed tools also accept an optional <code>workspace_id</code> override.</li>
+    <li class="dash">Language-related parameters are only exposed when the TYPO3 instance has
+multiple configured languages.</li>
+    <li class="dash">File tools are always restricted to the configured MCP file sandbox.</li>
+    <li class="dash">Some tool families are optional at runtime. For example, <code>ManageRedirects</code>
+requires <code>sys_redirect</code> to be available, and the x402 tools require the
+optional paywall extension surface.</li>
+    <li class="dash">Several tools return human-readable text, while record and file write tools
+typically return JSON encoded into MCP text content.</li>
+</ul>
+
+            <section class="section" id="third-party-tools">
+            <h3>Third-party tools<a class="headerlink" href="#third-party-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Any Symfony DI service tagged <code>mcp.tool</code> is registered automatically. Services
+that implement <code>Hn\\McpServer\\MCP\\Tool\\ToolInterface</code> are used directly.
+Services that do not implement the interface but expose <code>getName()</code> and
+<code>execute()</code> methods are wrapped in <code>CompatibleToolAdapter</code>, which normalizes
+their schema and result types. This lets third-party extensions contribute MCP
+tools without taking a hard dependency on this extension&#039;s interface.</p>
+
+    </section>
+    </section>
+            <section class="section" id="tool-names-mcp-tools-list">
+            <h2>Tool names (MCP <code>tools/list</code>)<a class="headerlink" href="#tool-names-mcp-tools-list" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Exact names match the PHP tool classes (e.g. <code>ReadTableTool</code> → <code>ReadTable</code>).
+Use this overview for discoverability (aligned with MCP tool-naming guidance):</p>
+
+            <div class="table-responsive">
+    <table class="table table-bordered align-default colwidths-grid">
+                    <colgroup>
+                                    <col style="width: 22%">
+                        </colgroup>
+            <thead>
+            <tr>
+                            <th>Tool name</th>
+                            <th>Access</th>
+                            <th>Summary</th>
+                    </tr>
+        </thead>
+        <tbody>
+    <tr>
+            <td><code>ListWorkspaces</code></td>            <td>Read</td>            <td>List workspaces; use for optional <code>workspace_id</code> on record tools</td>    </tr>    <tr>
+            <td><code>GetPageTree</code></td>            <td>Read</td>            <td>Page tree with depth control (workspace overlay)</td>    </tr>    <tr>
+            <td><code>GetPage</code></td>            <td>Read</td>            <td>Resolve page by UID or URL; content context</td>    </tr>    <tr>
+            <td><code>ListTables</code></td>            <td>Read</td>            <td>Tables available to the current user via MCP</td>    </tr>    <tr>
+            <td><code>GetTableSchema</code></td>            <td>Read</td>            <td>TCA fields, types, and relations for one table</td>    </tr>    <tr>
+            <td><code>GetFlexFormSchema</code></td>            <td>Read</td>            <td>FlexForm structure for a plugin/content type</td>    </tr>    <tr>
+            <td><code>ReadTable</code></td>            <td>Read</td>            <td>Query records with filters, limit/offset, language options</td>    </tr>    <tr>
+            <td><code>Search</code></td>            <td>Read</td>            <td>Cross-table LIKE search (per-table cap)</td>    </tr>    <tr>
+            <td><code>WriteTable</code></td>            <td>Write</td>            <td>Create/update/translate/delete in workspace (not live)</td>    </tr>    <tr>
+            <td><code>AttachImage</code></td>            <td>Write</td>            <td>Stage images in the sandbox (URL or <code>sys_file</code>), optional FAL processing, attach to TCA file fields</td>    </tr>    <tr>
+            <td><code>BrowseFiles</code></td>            <td>Read</td>            <td>List MCP file sandbox folders</td>    </tr>    <tr>
+            <td><code>ReadFileMetadata</code></td>            <td>Read</td>            <td>Metadata for a file in the sandbox</td>    </tr>    <tr>
+            <td><code>UploadFile</code></td>            <td>Write</td>            <td>Upload via base64 into sandbox</td>    </tr>    <tr>
+            <td><code>UploadFileFromUrl</code></td>            <td>Write</td>            <td>Fetch URL server-side into sandbox (SSRF-protected)</td>    </tr>    <tr>
+            <td><code>WriteFile</code></td>            <td>Write</td>            <td>Create/replace text file in sandbox</td>    </tr>    <tr>
+            <td><code>SearchMedia</code></td>            <td>Read</td>            <td>Search files across all FAL storage by metadata, type, or dimensions</td>    </tr>    <tr>
+            <td><code>ContentAudit</code></td>            <td>Read</td>            <td>Audit page tree for SEO and content quality issues</td>    </tr>    <tr>
+            <td><code>GetSystemLog</code></td>            <td>Read</td>            <td>Read TYPO3 system log entries for debugging</td>    </tr>    <tr>
+            <td><code>WorkspaceReview</code></td>            <td>Read</td>            <td>Review pending workspace changes with field-level diffs</td>    </tr>    <tr>
+            <td><code>CopyContent</code></td>            <td>Write</td>            <td>Duplicate records preserving relations and file references</td>    </tr>    <tr>
+            <td><code>SafeCli</code></td>            <td>Execute</td>            <td>Run whitelisted TYPO3 CLI commands</td>    </tr>    <tr>
+            <td><code>PublishWorkspace</code></td>            <td>Write</td>            <td>Publish pending workspace changes to live (dry-run by default)</td>    </tr>    <tr>
+            <td><code>BulkWrite</code></td>            <td>Write</td>            <td>Execute multiple write operations in a single transaction</td>    </tr>    <tr>
+            <td><code>ImportContent</code></td>            <td>Read/Write</td>            <td>Analyze raw content and propose or create TYPO3 content elements</td>    </tr>    <tr>
+            <td><code>RollbackWorkspace</code></td>            <td>Write</td>            <td>Discard pending workspace changes (dry-run by default)</td>    </tr>    <tr>
+            <td><code>ManageRedirects</code></td>            <td>Read</td>            <td>List URL redirects and explain workspace write limitations</td>    </tr>    <tr>
+            <td><code>ImportFromUrl</code></td>            <td>Read/Write</td>            <td>Fetch URL content and propose or create page with elements</td>    </tr>    <tr>
+            <td><code>CreateSite</code></td>            <td>Write</td>            <td>Create or update TYPO3 site configurations (admin-only)</td>    </tr>    <tr>
+            <td><code>InstallExtension</code></td>            <td>Execute</td>            <td>Install, activate, or search TYPO3 extensions (admin-only)</td>    </tr>    <tr>
+            <td><code>ListPaidContent</code></td>            <td>Read</td>            <td>List pages gated by the optional x402 paywall extension</td>    </tr>    <tr>
+            <td><code>GetPaidContent</code></td>            <td>Read</td>            <td>Return x402 payment requirements or paid content for one page</td>    </tr>    <tr>
+            <td><code>GetPaymentStats</code></td>            <td>Read</td>            <td>Summarize x402 payment activity and revenue when payment logging exists</td>    </tr></tbody>    </table>
+</div>
+    </section>
+            <section class="section" id="record-backed-tools">
+            <h2>Record-backed tools<a class="headerlink" href="#record-backed-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The following tools use the shared record-tool base class and therefore support
+workspace-aware execution:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>GetPageTree</code></li>
+    <li class="dash"><code>GetPage</code></li>
+    <li class="dash"><code>ListTables</code></li>
+    <li class="dash"><code>Search</code></li>
+    <li class="dash"><code>ReadTable</code></li>
+    <li class="dash"><code>GetTableSchema</code></li>
+    <li class="dash"><code>GetFlexFormSchema</code></li>
+    <li class="dash"><code>WriteTable</code></li>
+    <li class="dash"><code>AttachImage</code></li>
+    <li class="dash"><code>ContentAudit</code></li>
+    <li class="dash"><code>GetSystemLog</code></li>
+    <li class="dash"><code>WorkspaceReview</code></li>
+    <li class="dash"><code>CopyContent</code></li>
+    <li class="dash"><code>PublishWorkspace</code></li>
+    <li class="dash"><code>BulkWrite</code></li>
+    <li class="dash"><code>ImportContent</code></li>
+    <li class="dash"><code>RollbackWorkspace</code></li>
+    <li class="dash"><code>ManageRedirects</code></li>
+    <li class="dash"><code>ImportFromUrl</code></li>
+    <li class="dash"><code>CreateSite</code></li>
+</ul>
+
+    </section>
+            <section class="section" id="navigation-and-discovery">
+            <h2>Navigation and discovery<a class="headerlink" href="#navigation-and-discovery" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="getpagetree">
+            <h3>GetPageTree<a class="headerlink" href="#getpagetree" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Browse the TYPO3 page tree.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>startPage</code> (integer, required): page UID to start from, or <code>0</code> for
+the root level</li>
+    <li class="dash"><code>depth</code> (integer): tree depth, default <code>3</code></li>
+    <li class="dash"><code>language</code> (string): ISO language code for translated page titles when
+language support is available</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The result is a readable tree with page URLs, record counts, and plugin storage
+hints. Workspace-only pages and draft page edits are included transparently.</p>
+
+    </section>
+            <section class="section" id="getpage">
+            <h3>GetPage<a class="headerlink" href="#getpage" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Resolve a page by URL or UID and return page details plus page content context.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>uid</code> (integer): page UID</li>
+    <li class="dash"><code>url</code> (string): full URL, path, or slug</li>
+    <li class="dash"><code>language</code> (string): ISO language code for translated page and content
+output when language support is available</li>
+    <li class="dash"><code>languageId</code> (integer): deprecated numeric language ID</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The result includes page metadata, generated URL, visible records, and
+available page translations.</p>
+
+    </section>
+            <section class="section" id="listtables">
+            <h3>ListTables<a class="headerlink" href="#listtables" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>List TYPO3 tables that are available through MCP, grouped by extension.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The output marks read-only tables and includes workspace-capability context.</p>
+
+    </section>
+            <section class="section" id="search">
+            <h3>Search<a class="headerlink" href="#search" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Search across TYPO3 tables using TCA-derived searchable fields.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>terms</code> (array, required): search terms</li>
+    <li class="dash"><code>termLogic</code> (string): <code>AND</code> or <code>OR</code>, default <code>OR</code></li>
+    <li class="dash"><code>table</code> (string): restrict search to a specific table</li>
+    <li class="dash"><code>pageId</code> (integer): restrict search to one page</li>
+    <li class="dash"><code>language</code> (string): ISO language code when language support is
+available</li>
+    <li class="dash"><code>limit</code> (integer): maximum results per table, default <code>50</code>, max
+<code>200</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Search applies the same workspace transparency rules as the read tools, so
+workspace rows and delete placeholders do not leak into client-facing results.
+The per-table <code>limit</code> is enforced, and the response text reports when a table
+was truncated so agents can narrow and re-run intentionally.</p>
+
+    </section>
+    </section>
+            <section class="section" id="schema-inspection">
+            <h2>Schema inspection<a class="headerlink" href="#schema-inspection" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="gettableschema">
+            <h3>GetTableSchema<a class="headerlink" href="#gettableschema" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Inspect the TCA-derived schema of a TYPO3 table.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required): table name</li>
+    <li class="dash"><code>type</code> (string): optional specific record type such as <code>text</code> for
+<code>tt_content</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The output summarizes table control fields, available record types, and the
+fields visible for the selected type.</p>
+
+    </section>
+            <section class="section" id="getflexformschema">
+            <h3>GetFlexFormSchema<a class="headerlink" href="#getflexformschema" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Inspect a FlexForm DataStructure by identifier.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>identifier</code> (string, required): FlexForm identifier such as
+<code>form_formframework</code> or <code>*,news_pi1</code></li>
+    <li class="dash"><code>table</code> (string): table that contains the FlexForm field, default
+<code>tt_content</code></li>
+    <li class="dash"><code>field</code> (string): FlexForm field name, default <code>pi_flexform</code></li>
+    <li class="dash"><code>recordUid</code> (integer): optional compatibility parameter, currently not
+used for resolution</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>This tool resolves inline XML, PHP-array DataStructures, and <code>FILE:</code>
+references and formats the result as a readable schema summary.</p>
+
+    </section>
+    </section>
+            <section class="section" id="reading-and-writing-records">
+            <h2>Reading and writing records<a class="headerlink" href="#reading-and-writing-records" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="readtable">
+            <h3>ReadTable<a class="headerlink" href="#readtable" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Read records from any accessible TYPO3 table.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required): table name</li>
+    <li class="dash"><code>pid</code> (integer): page filter, recommended for page content</li>
+    <li class="dash"><code>uid</code> (integer): single record UID lookup</li>
+    <li class="dash"><code>where</code> (string): restricted filter expression</li>
+    <li class="dash"><code>limit</code> (integer): maximum number of records, default <code>20</code></li>
+    <li class="dash"><code>offset</code> (integer): pagination offset</li>
+    <li class="dash"><code>fields</code> (array): explicit field selection</li>
+    <li class="dash"><code>language</code> (string): ISO language code when language support is
+available</li>
+    <li class="dash"><code>includeTranslationSource</code> (boolean): include translation source details
+for translated records when language support is available</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Without a language filter, records from all languages are returned together,
+matching TYPO3 list-module behavior more closely than a frontend-style overlay.
+Pagination metadata includes <code>total</code>, <code>count</code>, <code>limit</code>, <code>offset</code>,
+<code>nextOffset</code>, and <code>hasMore</code>.</p>
+
+    </section>
+            <section class="section" id="writetable">
+            <h3>WriteTable<a class="headerlink" href="#writetable" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Create, update, translate, or delete TYPO3 records.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>update</code>, <code>translate</code>, or
+<code>delete</code></li>
+    <li class="dash"><code>table</code> (string, required): table name</li>
+    <li class="dash"><code>pid</code> (integer): parent page for <code>create</code></li>
+    <li class="dash"><code>uid</code> (integer): record UID for <code>update</code>, <code>translate</code>, or
+<code>delete</code></li>
+    <li class="dash"><code>data</code> (object): field payload for <code>create</code>, <code>update</code>, or
+<code>translate</code></li>
+    <li class="dash"><code>position</code> (string): create position, one of <code>top</code>, <code>bottom</code>,
+<code>after:UID</code>, or <code>before:UID</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Important behavior:</p>
+
+            
+
+<ul>
+    <li class="dash">writes always happen in workspace context</li>
+    <li class="dash">language-aware tables accept ISO codes such as <code>de</code> for
+<code>sys_language_uid</code></li>
+    <li class="dash">file fields can receive <code>sys_file</code> UIDs or objects with UID and metadata,
+which creates <code>sys_file_reference</code> rows</li>
+    <li class="dash">update payloads can use structured search-and-replace operations for text
+fields</li>
+    <li class="dash">translation creates language overlays from default-language source records</li>
+</ul>
+
+            <section class="section" id="positioning-semantics-for-action-create">
+            <h4>Positioning semantics for <code>action=create</code><a class="headerlink" href="#positioning-semantics-for-action-create" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h4>
+            
+    <p>The <code>position</code> parameter is simpler than TYPO3&#039;s raw <code>DataHandler</code> API, but
+it maps deliberately to TYPO3 behavior:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>bottom</code>:
+create on the requested page and, for sortable tables, place the record after
+the last visible sibling in the active workspace context</li>
+    <li class="dash"><code>top</code>:
+create on the requested page and place the record before the first visible
+sibling when the table uses sorting</li>
+    <li class="dash"><code>after:UID</code>:
+resolve the visible target record and use TYPO3&#039;s create-after-record
+behavior</li>
+    <li class="dash"><code>before:UID</code>:
+resolve the target record, find the previous visible sibling, and translate
+the request to a create-after operation; if the target is already first, this
+becomes a top insert</li>
+</ul>
+
+            
+    <p>If the requested <code>pid</code> and the resolved position target belong to different
+parent pages, the tool returns an error.</p>
+
+    </section>
+    </section>
+            <section class="section" id="attachimage">
+            <h3>AttachImage<a class="headerlink" href="#attachimage" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Attach one or more images to a TCA <strong>file</strong> field on an existing record. The
+image is always scoped to the MCP file sandbox first: either pass
+<code>source.sys_file_uid</code> for a file already under the sandbox, or
+<code>source.url</code> with a public <code>https</code> URL (same SSRF and size limits as
+<code>UploadFileFromUrl</code> — suitable for direct image URLs such as Unsplash).</p>
+
+            
+    <p>Optional <code>transform</code> / <code>renditions</code> use TYPO3 FAL <code>Image.CropScaleMask</code>
+processing (<code>maxWidth</code>, <code>maxHeight</code>, <code>minWidth</code>, <code>minHeight</code>, <code>width</code>,
+<code>height</code>, <code>crop</code>, <code>fileExtension</code>). Each rendition becomes a separate
+sandbox file and <code>sys_file_reference</code>. <code>mode</code> is <code>append</code> (keep existing
+references) or <code>replace</code> (only new references). <code>reference</code> sets metadata
+(title, alternative, crop, …) on every new reference.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required)</li>
+    <li class="dash"><code>uid</code> (integer, required): live record UID</li>
+    <li class="dash"><code>field</code> (string, required): TCA file field name</li>
+    <li class="dash"><code>source</code> (object, required): <code>url</code> <strong>or</strong> <code>sys_file_uid</code></li>
+    <li class="dash"><code>transform</code> (object): single CropScaleMask configuration</li>
+    <li class="dash"><code>renditions</code> (array): list of transform objects; if set, <code>transform</code> is ignored</li>
+    <li class="dash"><code>reference</code> (object): optional <code>sys_file_reference</code> metadata</li>
+    <li class="dash"><code>mode</code> (string): <code>append</code> or <code>replace</code>, default <code>append</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+    </section>
+    </section>
+            <section class="section" id="workspace-tool">
+            <h2>Workspace tool<a class="headerlink" href="#workspace-tool" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="listworkspaces">
+            <h3>ListWorkspaces<a class="headerlink" href="#listworkspaces" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>List the workspaces available to the current user.</p>
+
+            
+    <p>This tool is read-only and does not accept parameters. It shows:</p>
+
+            
+
+<ul>
+    <li class="dash">workspace ID</li>
+    <li class="dash">title</li>
+    <li class="dash">access level</li>
+    <li class="dash">active workspace marker</li>
+</ul>
+
+            
+    <p>Clients can pass the returned <code>workspace_id</code> to record-backed tools when they
+need explicit workspace selection. Otherwise the extension auto-selects or
+creates a suitable workspace.</p>
+
+    </section>
+    </section>
+            <section class="section" id="file-tools">
+            <h2>File tools<a class="headerlink" href="#file-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="browsefiles">
+            <h3>BrowseFiles<a class="headerlink" href="#browsefiles" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Browse folders inside the MCP file sandbox.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>path</code> (string): relative folder path or combined identifier inside the
+sandbox</li>
+    <li class="dash"><code>recursive</code> (boolean): include subfolder listing</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Omit <code>path</code> to inspect the configured sandbox root, current workspace upload
+folder, and upload-folder behavior.</p>
+
+    </section>
+            <section class="section" id="readfilemetadata">
+            <h3>ReadFileMetadata<a class="headerlink" href="#readfilemetadata" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Read metadata for a file inside the MCP file sandbox.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>uid</code> (integer): file UID</li>
+    <li class="dash"><code>identifier</code> (string): relative file path or combined identifier inside
+the sandbox</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The result includes core file data, metadata fields, categories, and a summary
+of where the file is referenced.</p>
+
+    </section>
+            <section class="section" id="writefile">
+            <h3>WriteFile<a class="headerlink" href="#writefile" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Create or overwrite a text-based file inside the MCP file sandbox, or update
+metadata on an existing file.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>path</code> (string, required): relative path or combined identifier inside
+the sandbox</li>
+    <li class="dash"><code>content</code> (string): text content to write</li>
+    <li class="dash"><code>overwrite</code> (boolean): overwrite an existing file</li>
+    <li class="dash"><code>metadata</code> (object): title, description, alternative text, copyright</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>This tool supports TYPO3 text file extensions such as <code>.txt</code>, <code>.html</code>,
+<code>.css</code>, <code>.js</code>, <code>.json</code>, <code>.xml</code>, <code>.csv</code>, <code>.svg</code>, <code>.yaml</code>,
+<code>.md</code>, and others configured in TYPO3.</p>
+
+                
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>Physical files are not workspace-versioned. Overwriting a file changes the
+underlying file immediately across all workspaces.</p>
+
+</div>
+    </section>
+            <section class="section" id="uploadfile">
+            <h3>UploadFile<a class="headerlink" href="#uploadfile" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Upload a binary or text file into the MCP file sandbox via base64.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>path</code> (string, required): requested target path inside the sandbox</li>
+    <li class="dash"><code>content_base64</code> (string, required): base64 payload or data URL</li>
+    <li class="dash"><code>metadata</code> (object): optional file metadata</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Upload behavior:</p>
+
+            
+
+<ul>
+    <li class="dash">the requested folder path is respected</li>
+    <li class="dash">the stored filename is randomized</li>
+    <li class="dash">existing files are never overwritten</li>
+    <li class="dash">uploads can be routed into workspace-specific folders inside the sandbox</li>
+</ul>
+
+    </section>
+            <section class="section" id="uploadfilefromurl">
+            <h3>UploadFileFromUrl<a class="headerlink" href="#uploadfilefromurl" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Download a public HTTP or HTTPS URL server-side and store the result in the MCP
+file sandbox.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>url</code> (string, required): public file URL</li>
+    <li class="dash"><code>path</code> (string): target path inside the sandbox, derived from the URL if
+omitted</li>
+    <li class="dash"><code>metadata</code> (object): optional file metadata</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Security measures include:</p>
+
+            
+
+<ul>
+    <li class="dash">allow-listing only <code>http</code> and <code>https</code></li>
+    <li class="dash">rejecting private and reserved network targets after DNS resolution</li>
+    <li class="dash">streaming downloads with a 20 MB size limit</li>
+    <li class="dash">limiting redirects and request timeout</li>
+    <li class="dash">relying on TYPO3 file validation when the file is stored</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="media-search">
+            <h2>Media search<a class="headerlink" href="#media-search" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="searchmedia">
+            <h3>SearchMedia<a class="headerlink" href="#searchmedia" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Search for files across all TYPO3 file storage by metadata, type, or
+dimensions.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>keyword</code> (string): search in file name, metadata title, description,
+and alternative text</li>
+    <li class="dash"><code>mimeType</code> (string): MIME type prefix filter, e.g. <code>image/</code>,
+<code>application/pdf</code></li>
+    <li class="dash"><code>extension</code> (string): file extension filter, e.g. <code>jpg</code>, <code>pdf</code></li>
+    <li class="dash"><code>folder</code> (string): folder path prefix filter</li>
+    <li class="dash"><code>minWidth</code> (integer): minimum image width in pixels</li>
+    <li class="dash"><code>minHeight</code> (integer): minimum image height in pixels</li>
+    <li class="dash"><code>createdAfter</code> (string): ISO date, only files created after this date</li>
+    <li class="dash"><code>createdBefore</code> (string): ISO date, only files created before this date</li>
+    <li class="dash"><code>limit</code> (integer): maximum results, default <code>50</code>, max <code>200</code></li>
+    <li class="dash"><code>offset</code> (integer): pagination offset</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>At least one filter parameter is required. Unlike the sandbox-restricted file
+tools, <code>SearchMedia</code> searches across all FAL storage (read-only).</p>
+
+            
+    <p>The result includes file UID, name, identifier, MIME type, dimensions, and
+metadata summary. Use <code>ReadFileMetadata</code> for full details on a specific file.</p>
+
+    </section>
+    </section>
+            <section class="section" id="content-quality-and-diagnostics">
+            <h2>Content quality and diagnostics<a class="headerlink" href="#content-quality-and-diagnostics" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="contentaudit">
+            <h3>ContentAudit<a class="headerlink" href="#contentaudit" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Audit a page tree for content quality and SEO issues.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>rootPageId</code> (integer): root page to audit, default <code>1</code></li>
+    <li class="dash"><code>checks</code> (array): check types to run, default: all available checks</li>
+    <li class="dash"><code>depth</code> (integer): maximum page tree depth, default <code>5</code>, max <code>10</code></li>
+    <li class="dash"><code>limit</code> (integer): maximum issues per check type, default <code>50</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Available checks:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>missing_meta_description</code>: pages with empty meta description</li>
+    <li class="dash"><code>missing_alt_text</code>: image file references without alternative text</li>
+    <li class="dash"><code>empty_content</code>: text content elements with empty body</li>
+    <li class="dash"><code>pages_without_content</code>: pages that have no content elements</li>
+    <li class="dash"><code>missing_page_title</code>: pages with no title</li>
+</ul>
+
+            
+    <p>The result is grouped by check type with per-issue details (page UID, title,
+content UID where applicable) and a summary count per check.</p>
+
+    </section>
+            <section class="section" id="getsystemlog">
+            <h3>GetSystemLog<a class="headerlink" href="#getsystemlog" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Read TYPO3 system log entries for debugging.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>severity</code> (integer): minimum severity level (0–4), default <code>0</code></li>
+    <li class="dash"><code>action</code> (integer): filter by action type</li>
+    <li class="dash"><code>component</code> (string): filter by log component</li>
+    <li class="dash"><code>tablename</code> (string): filter by affected table name</li>
+    <li class="dash"><code>userId</code> (integer): filter by backend user (admin only)</li>
+    <li class="dash"><code>since</code> (string): ISO datetime, only entries after this time</li>
+    <li class="dash"><code>until</code> (string): ISO datetime, only entries before this time</li>
+    <li class="dash"><code>limit</code> (integer): maximum entries, default <code>50</code>, max <code>500</code></li>
+    <li class="dash"><code>offset</code> (integer): pagination offset</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Admin users see all entries; non-admin users see only their own log entries.
+Severity levels map to PSR-3: 0=info, 1=notice, 2=warning, 3=error, 4=fatal.</p>
+
+    </section>
+    </section>
+            <section class="section" id="workspace-operations">
+            <h2>Workspace operations<a class="headerlink" href="#workspace-operations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="workspacereview">
+            <h3>WorkspaceReview<a class="headerlink" href="#workspacereview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Review all pending changes in a workspace before publishing.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string): optional table filter</li>
+    <li class="dash"><code>limit</code> (integer): maximum changes, default <code>100</code>, max <code>500</code></li>
+    <li class="dash"><code>offset</code> (integer): pagination offset</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>For each changed record, the result includes the version state (<code>new</code>,
+<code>modified</code>, <code>deleted</code>, <code>moved</code>), the record label, and for modified
+records a field-level diff showing live vs. draft values.</p>
+
+            
+    <p>This tool closes the draft → review → publish workflow by letting the AI
+inspect what will be published.</p>
+
+    </section>
+    </section>
+            <section class="section" id="record-duplication">
+            <h2>Record duplication<a class="headerlink" href="#record-duplication" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="copycontent">
+            <h3>CopyContent<a class="headerlink" href="#copycontent" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Copy/duplicate a record to the same or different page.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required): table name</li>
+    <li class="dash"><code>uid</code> (integer, required): source record UID</li>
+    <li class="dash"><code>targetPid</code> (integer, required): destination page ID</li>
+    <li class="dash"><code>overrides</code> (object): optional field values to override in the copy</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The copy is created through TYPO3&#039;s <code>DataHandler</code> copy command, which
+preserves all field values, file references, and relations automatically.
+The copy is workspace-safe. Overrides are applied after the copy is created.</p>
+
+    </section>
+    </section>
+            <section class="section" id="system-maintenance">
+            <h2>System maintenance<a class="headerlink" href="#system-maintenance" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="safecli">
+            <h3>SafeCli<a class="headerlink" href="#safecli" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Execute a whitelisted TYPO3 CLI command.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>command</code> (string, required): command name from the allowed list</li>
+    <li class="dash"><code>arguments</code> (array): optional command arguments, validated per command</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Allowed commands:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>cache:flush</code> (option: <code>--group</code>)</li>
+    <li class="dash"><code>cache:warmup</code></li>
+    <li class="dash"><code>referenceindex:update</code></li>
+    <li class="dash"><code>extension:list</code></li>
+    <li class="dash"><code>site:list</code></li>
+    <li class="dash"><code>site:show</code></li>
+</ul>
+
+            
+    <p>Arguments are validated against a per-command allowlist, and shell injection
+characters are rejected. Each command has an individual timeout. The result
+includes stdout, stderr, exit code, and execution time.</p>
+
+    </section>
+    </section>
+            <section class="section" id="workspace-publishing">
+            <h2>Workspace publishing<a class="headerlink" href="#workspace-publishing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="publishworkspace">
+            <h3>PublishWorkspace<a class="headerlink" href="#publishworkspace" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Publish pending workspace changes to live.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string): optional table filter — only publish changes for this
+table</li>
+    <li class="dash"><code>dryRun</code> (boolean): if true (default), preview what would be published
+without executing. Set to false to actually publish.</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>By default this tool runs in <strong>dry-run mode</strong> and returns a preview of what
+would be published (tables, record counts, UIDs). The AI must explicitly set
+<code>dryRun=false</code> to publish. Publishing is irreversible — changes become live
+immediately.</p>
+
+            
+    <p>Use <code>WorkspaceReview</code> first to inspect field-level diffs, then
+<code>PublishWorkspace</code> with <code>dryRun=true</code> to confirm the scope, then
+<code>dryRun=false</code> to execute.</p>
+
+    </section>
+    </section>
+            <section class="section" id="batch-operations">
+            <h2>Batch operations<a class="headerlink" href="#batch-operations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="bulkwrite">
+            <h3>BulkWrite<a class="headerlink" href="#bulkwrite" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Execute multiple write operations in a single DataHandler transaction.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash">
+    <p><code>operations</code> (array, required): list of operation objects, each with:</p>
+
+
+<ul>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>update</code>, or <code>delete</code></li>
+    <li class="dash"><code>table</code> (string, required): table name</li>
+    <li class="dash"><code>uid</code> (integer): record UID (required for update and delete)</li>
+    <li class="dash"><code>pid</code> (integer): page ID (required for create)</li>
+    <li class="dash"><code>data</code> (object): field values for create or update</li>
+</ul>
+</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Maximum 50 operations per call. All operations execute atomically in a single
+DataHandler invocation. The result includes per-operation success/failure
+status and new UIDs for creates.</p>
+
+            
+    <p>For complex single-record operations (positioning, translation,
+search-and-replace), use <code>WriteTable</code> instead.</p>
+
+    </section>
+    </section>
+            <section class="section" id="content-import">
+            <h2>Content import<a class="headerlink" href="#content-import" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="importcontent">
+            <h3>ImportContent<a class="headerlink" href="#importcontent" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Analyze raw content (text, Markdown, or HTML) and either propose TYPO3
+content elements for review or create them directly.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>content</code> (string, required): raw content to import</li>
+    <li class="dash"><code>targetPid</code> (integer, required): target page ID</li>
+    <li class="dash"><code>mode</code> (string): <code>analyze</code> (default) or <code>execute</code></li>
+    <li class="dash"><code>format</code> (string): format hint — <code>auto</code> (default), <code>markdown</code>,
+<code>html</code>, or <code>text</code></li>
+    <li class="dash"><code>colPos</code> (integer): column position, default <code>0</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The tool detects the content format, splits it into logical sections (headings,
+paragraphs, tables, code blocks, images), and maps each section to the
+best-fitting CType from what is actually available to the current user.</p>
+
+            
+    <p>In <code>analyze</code> mode, the result is a JSON proposal — an array of element
+objects with <code>CType</code>, <code>header</code>, <code>bodytext</code>, <code>header_layout</code>, and a
+human-readable <code>summary</code>. No records are created in this mode. The chatbot
+can review and adjust the proposal, then call <code>BulkWrite</code> or rerun
+<code>ImportContent</code> in <code>execute</code> mode.</p>
+
+            
+    <p>In <code>execute</code> mode, the tool creates the content elements directly via
+DataHandler instead of returning a proposal. The result includes the UIDs
+of the created records.</p>
+
+            
+    <p>Supported format features:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>Markdown</strong>: headings, paragraphs, code fences, lists, images, horizontal
+rules</li>
+    <li class="dash"><strong>HTML</strong>: block-level elements (headings, paragraphs, tables, pre/code,
+lists, images)</li>
+    <li class="dash"><strong>Plain text</strong>: paragraph splitting on double newlines, heading detection by
+heuristic</li>
+</ul>
+
+            
+    <p>CType mapping is dynamic: the tool queries TCA for all available CTypes, builds
+field profiles (bodytext, header, image, assets), and scores each CType against
+the section&#039;s needs. Works with core types, extension types, and custom content
+blocks automatically.</p>
+
+    </section>
+    </section>
+            <section class="section" id="workspace-rollback">
+            <h2>Workspace rollback<a class="headerlink" href="#workspace-rollback" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="rollbackworkspace">
+            <h3>RollbackWorkspace<a class="headerlink" href="#rollbackworkspace" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Discard pending workspace changes.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string): optional table filter — only discard changes for this
+table</li>
+    <li class="dash"><code>uid</code> (integer): optional record UID — discard only this record&#039;s
+changes; requires <code>table</code></li>
+    <li class="dash"><code>dryRun</code> (boolean): if true (default), preview what would be discarded.
+Set to false to actually discard.</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>This tool is the counterpart to <code>PublishWorkspace</code>. Use it when an import or
+bulk operation produced unwanted results and you want to undo the workspace
+changes instead of publishing them. Discarding is irreversible.</p>
+
+    </section>
+    </section>
+            <section class="section" id="url-redirects">
+            <h2>URL redirects<a class="headerlink" href="#url-redirects" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="manageredirects">
+            <h3>ManageRedirects<a class="headerlink" href="#manageredirects" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Inspect TYPO3 URL redirects (<code>sys_redirect</code>).</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>action</code> (string, required): <code>list</code>, <code>create</code>, or <code>delete</code></li>
+    <li class="dash"><code>source_host</code> (string): host filter for list, or source host for create</li>
+    <li class="dash"><code>source_path</code> (string): path filter (LIKE) for list, or source path for
+create (must start with <code>/</code>)</li>
+    <li class="dash"><code>target</code> (string): redirect target URL or page path (required for create)</li>
+    <li class="dash"><code>target_statuscode</code> (integer): HTTP status code, default <code>301</code>. Allowed:
+301, 302, 303, 307</li>
+    <li class="dash"><code>force_https</code> (boolean): redirect to HTTPS, default false</li>
+    <li class="dash"><code>respect_query_parameters</code> (boolean): include source query parameters in
+redirect matching for create, default false</li>
+    <li class="dash"><code>uid</code> (integer): redirect UID (required for delete)</li>
+    <li class="dash"><code>limit</code> (integer): max results for list, default 50</li>
+    <li class="dash"><code>offset</code> (integer): pagination offset for list</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>If the redirects surface is not available on the current TYPO3 instance, the
+tool returns configuration guidance instead of a raw table-access failure.</p>
+
+            
+    <p>If the redirects extension is available, <code>list</code> works normally. TYPO3 core
+keeps <code>sys_redirect</code> outside workspaces, so <code>create</code> and <code>delete</code> return
+an explicit workspace-safety error instead of editing live redirect rows
+through MCP.</p>
+
+    </section>
+    </section>
+            <section class="section" id="content-import-from-url">
+            <h2>Content import from URL<a class="headerlink" href="#content-import-from-url" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="importfromurl">
+            <h3>ImportFromUrl<a class="headerlink" href="#importfromurl" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Fetch a web page and propose or create TYPO3 content from it.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>url</code> (string, required): URL to fetch</li>
+    <li class="dash"><code>targetPid</code> (integer, required): parent page ID</li>
+    <li class="dash"><code>mode</code> (string): <code>analyze</code> (default) or <code>execute</code></li>
+    <li class="dash"><code>colPos</code> (integer): column position, default <code>0</code></li>
+    <li class="dash"><code>pageType</code> (integer): doktype for the new page, default <code>1</code></li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>In <code>analyze</code> mode, returns a proposal with extracted title, slug, content
+sections, and image URLs. In <code>execute</code> mode, creates the page and content
+elements directly via DataHandler.</p>
+
+            
+    <p>SSRF protection: only <code>http</code>/<code>https</code> URLs are allowed, private/reserved IP
+ranges are rejected after DNS resolution.</p>
+
+    </section>
+    </section>
+            <section class="section" id="site-management">
+            <h2>Site management<a class="headerlink" href="#site-management" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="createsite">
+            <h3>CreateSite<a class="headerlink" href="#createsite" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Create or update TYPO3 site configurations.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>action</code> (string, required): <code>create</code> or <code>addLanguage</code></li>
+    <li class="dash"><code>identifier</code> (string, required): site identifier (alphanumeric + dash)</li>
+    <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
+    <li class="dash"><code>base</code> (string): base URL (required for create)</li>
+    <li class="dash"><code>defaultLanguage</code> (object): default language config (title, locale,
+iso-639-1, optional <code>flag</code> override)</li>
+    <li class="dash"><code>languages</code> (array): additional languages for create, each with optional
+<code>flag</code> override</li>
+    <li class="dash"><code>language</code> (object): language to add (required for addLanguage, optional
+<code>flag</code> override)</li>
+    <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Admin-only. Site configurations are YAML files, not workspace-versioned.
+Changes take effect immediately.
+If <code>flag</code> is omitted, CreateSite derives the TYPO3 flag identifier from the
+language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).</p>
+
+    </section>
+    </section>
+            <section class="section" id="extension-management">
+            <h2>Extension management<a class="headerlink" href="#extension-management" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="installextension">
+            <h3>InstallExtension<a class="headerlink" href="#installextension" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Install, activate, or search TYPO3 extensions.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>action</code> (string, required): <code>require</code>, <code>activate</code>, or <code>search</code></li>
+    <li class="dash"><code>package</code> (string): Composer package name (required for require)</li>
+    <li class="dash"><code>key</code> (string): extension key (required for activate)</li>
+    <li class="dash"><code>query</code> (string): search terms (required for search)</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Admin-only. Package names must match Composer naming conventions. Extension keys
+must be lowercase alphanumeric with underscores. Shell injection characters are
+rejected.</p>
+
+    </section>
+    </section>
+            <section class="section" id="optional-x402-monetization">
+            <h2>Optional x402 monetization<a class="headerlink" href="#optional-x402-monetization" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The following tools are only meaningful when the optional x402 paywall
+extension surface is present on the TYPO3 instance. When that surface is
+missing, the tools return configuration guidance instead of raw SQL failures.</p>
+
+            <section class="section" id="listpaidcontent">
+            <h3>ListPaidContent<a class="headerlink" href="#listpaidcontent" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>List pages that are gated by the optional x402 paywall fields on <code>pages</code>.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>limit</code> (integer): maximum number of results, default <code>50</code>, max <code>200</code></li>
+    <li class="dash"><code>offset</code> (integer): pagination offset</li>
+    <li class="dash"><code>parentPageUid</code> (integer): optional parent page filter</li>
+</ul>
+        </dd>
+    </dl>
+    </section>
+            <section class="section" id="getpaidcontent">
+            <h3>GetPaidContent<a class="headerlink" href="#getpaidcontent" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Return either payment requirements or paid content for a page managed by the
+optional x402 paywall extension.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>pageUid</code> (integer, required): page UID to inspect</li>
+    <li class="dash"><code>paymentProof</code> (string): optional x402 payment signature payload</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>If the page is gated and <code>paymentProof</code> is omitted, the tool returns the
+payment requirement payload. If the page is not gated, it returns page content
+directly.</p>
+
+    </section>
+            <section class="section" id="getpaymentstats">
+            <h3>GetPaymentStats<a class="headerlink" href="#getpaymentstats" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Summarize x402 payment statistics when the optional payment-log table exists.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>period</code> (string): <code>today</code>, <code>7days</code>, <code>30days</code> (default), or <code>all</code></li>
+    <li class="dash"><code>groupBy</code> (string): <code>page</code> (default), <code>day</code>, or <code>network</code></li>
+</ul>
+        </dd>
+    </dl>
+    </section>
+    </section>
+            <section class="section" id="file-safety-model">
+            <h2>File safety model<a class="headerlink" href="#file-safety-model" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+                
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>TYPO3 physical files are not workspace-versioned.</p>
+
+</div>
+            
+    <p>The MCP file sandbox improves safety, but it does not change TYPO3 core file
+semantics:</p>
+
+            
+
+<ul>
+    <li class="dash">uploaded files exist immediately</li>
+    <li class="dash">overwritten text files change immediately</li>
+    <li class="dash">workspace safety applies to records and file references, not to the physical
+file itself</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="architecture-1" data-rst-anchor="architecture">
+            <a id="architecture"></a>
+            <h1>Architecture<a class="headerlink" href="#architecture-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+            <section class="section" id="design-decisions">
+            <h2>Design decisions<a class="headerlink" href="#design-decisions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt>Workspace-first</dt>
+        
+        <dd>Every write operation goes through a TYPO3 workspace. Live data is never
+directly modified. This gives editors full control over what gets published.</dd>
+                                <dt>Transparent workspaces</dt>
+        
+        <dd>The workspace concept is invisible to the MCP client. Tools automatically
+select an appropriate workspace. The client sees records as if workspaces
+don&#039;t exist -- live and workspace data are merged transparently.</dd>
+                                <dt>TCA-driven access</dt>
+        
+        <dd>Table and field access is derived from TCA configuration, not hardcoded
+lists. When a new extension is installed, its tables become available
+automatically.</dd>
+                                <dt>Language overlay</dt>
+        
+        <dd>Language overlays use TYPO3&#039;s <code>PageRepository</code> API. Workspace overlays
+use a custom implementation for transparency. See
+<a href="#">Language overlays</a> for details.</dd>
+                                <dt>MCP tool ergonomics</dt>
+        
+        <dd>Tool schemas, annotations, pagination hints, and error shaping follow MCP
+best-practice guidance (see the public <code>mcp-builder</code> skill). Details:
+<a href="#">Implementation overview</a> (“MCP ergonomics”) and the tools overview
+<a href="#">Tools</a>.</dd>
+            </dl>
+    </section>
+            <section class="section" id="implementation-layers">
+            <h2>Implementation layers<a class="headerlink" href="#implementation-layers" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The repository is split into a few deliberate layers:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>Classes/Http/</code> for the remote MCP endpoint and OAuth/discovery endpoints.
+The MCP endpoint calls the SDK&#039;s <code>HttpServerRunner</code> directly and forwards
+all protocol headers (including <code>Mcp-Session-Id</code>) into the PSR-7 response.</li>
+    <li class="dash"><code>Classes/Command/</code> for the local stdio server and maintenance commands</li>
+    <li class="dash"><code>Classes/MCP/</code> for the server factory, tool registry, tool classes, and the
+<code>CompatibleToolAdapter</code> that wraps third-party tagged tools to the native
+<code>ToolInterface</code></li>
+    <li class="dash"><code>Classes/Service/</code> for shared workspace, TCA, language, file, OAuth, and
+site services</li>
+    <li class="dash"><code>Classes/Utility/</code> and <code>Classes/Database/Query/Restriction/</code> for
+formatting and workspace-specific query behavior</li>
+</ul>
+
+            
+    <p>See <a href="#">Implementation overview</a> for the request flow and the role of the
+main services.</p>
+
+    </section>
+            <section class="section" id="file-handling-and-sandboxing">
+            <h2>File handling and sandboxing<a class="headerlink" href="#file-handling-and-sandboxing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Physical files in TYPO3 (FAL) are <strong>not</strong> workspace-versioned:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>sys_file</code> records are read-only through MCP</li>
+    <li class="dash"><code>sys_file_metadata</code> records can be read</li>
+    <li class="dash"><code>sys_file_reference</code> records are workspace-versioned and can be created
+to attach existing files to content elements</li>
+    <li class="dash">Folder-based file collections are not workspace-safe; prefer static collections</li>
+</ul>
+
+            
+    <p>To reduce risk, MCP file tools are restricted to a configurable file sandbox.</p>
+
+            
+    <p>Default sandbox root:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">1:/mcp/</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Optional workspace upload folders:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">1:/mcp/workspaces/ws-&lt;id&gt;/</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>This does not change TYPO3&#039;s physical file semantics. It only limits where MCP
+is allowed to work and helps separate draft-oriented uploads from other file
+areas.</p>
+
+    </section>
+            <section class="section" id="security">
+            <h2>Security<a class="headerlink" href="#security" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>See <a href="#">Security audit</a> for the security notes and accepted risks.</p>
+
+            
+    <p>Key security measures:</p>
+
+            
+
+<ul>
+    <li class="dash">Access tokens are SHA-256 hashed before database storage</li>
+    <li class="dash">PKCE is enforced for OAuth authorization flows</li>
+    <li class="dash">All database queries use parameterized QueryBuilder</li>
+    <li class="dash">Exception details are logged server-side, not returned to clients</li>
+    <li class="dash"><code>DataHandler-&gt;admin = true</code> is scoped to workspace creation only</li>
+    <li class="dash">File access is restricted to the MCP file sandbox instead of unrestricted
+<code>fileadmin</code> paths</li>
+    <li class="dash">Uploads use randomized stored filenames to reduce predictable file exposure</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="implementation-overview">
+            <h1>Implementation overview<a class="headerlink" href="#implementation-overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="overview">
+            <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension is organized around a small MCP runtime with a set of TYPO3-aware
+tool classes. The important design goal is that MCP clients see stable,
+editor-friendly behavior while TYPO3 keeps control over permissions,
+workspaces, TCA, language overlays, and file access.</p>
+
+    </section>
+            <section class="section" id="request-flow">
+            <h2>Request flow<a class="headerlink" href="#request-flow" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Remote MCP requests follow this path:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1"><code>Classes/Middleware/McpServerMiddleware.php</code> intercepts the <code>/mcp</code> path
+before TYPO3&#039;s site resolver and dispatches to <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="McpEndpoint"
+          data-shortdescription="Code written in PHP"
+          data-details="Dynamic server-side scripting language."
+          data-morelink=""          data-bs-html="true"
+    >
+        Mcp<wbr>Endpoint</code>.</li>
+    <li value="2"><code>Classes/Http/McpEndpoint.php</code> authenticates the request with
+<code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="OAuthService"
+          data-shortdescription="Code written in PHP"
+          data-details="Dynamic server-side scripting language."
+          data-morelink=""          data-bs-html="true"
+    >
+        OAuth<wbr>Service</code>, initializes a backend user context, and creates an
+<code>HttpServerRunner</code> from the MCP PHP SDK.</li>
+    <li value="3">The endpoint calls <code>HttpServerRunner::handleRequest()</code> directly (not via
+<code>StandardPhpAdapter</code>) and forwards <strong>all</strong> SDK response headers --
+including the critical <code>Mcp-Session-Id</code> -- into the PSR-7 response that
+TYPO3 emits. This ensures MCP clients can maintain sessions across
+requests.</li>
+    <li value="4"><code>Classes/MCP/McpServerFactory.php</code> builds the MCP server and registers the
+<code>tools/list</code> and <code>tools/call</code> handlers.</li>
+    <li value="5"><code>Classes/MCP/ToolRegistry.php</code> provides the discovered tool instances.</li>
+    <li value="6">A tool executes and delegates most TYPO3-specific work to shared services.</li>
+    <li value="7">The tool returns MCP text content, usually as readable text or as JSON
+encoded into text content.</li>
+</ol>
+
+            
+    <p>Local stdio requests skip the HTTP/OAuth layer and start at
+<code>Classes/Command/McpServerCommand.php</code>.</p>
+
+    </section>
+            <section class="section" id="mcp-ergonomics-external-guidance">
+            <h2>MCP ergonomics (external guidance)<a class="headerlink" href="#mcp-ergonomics-external-guidance" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Tool design is checked against the public <code class="code-inline" translate="no">mcp-<wbr>builder</code> skill (Anthropic,
+<a href="https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md">https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md</a> ):
+clear descriptions, JSON Schema properties, the four MCP tool <strong>annotations</strong>
+on every tool, pagination hints where results are bounded (e.g. <code>ReadTable</code>
+<code>hasMore</code>), and actionable errors via <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="AbstractTool"
+          data-shortdescription="Code written in PHP"
+          data-details="Dynamic server-side scripting language."
+          data-morelink=""          data-bs-html="true"
+    >
+        Abstract<wbr>Tool</code> /
+<code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="ExceptionHandlerTrait"
+          data-shortdescription="Code written in PHP"
+          data-details="Dynamic server-side scripting language."
+          data-morelink=""          data-bs-html="true"
+    >
+        Exception<wbr>Handler<wbr>Trait</code>. For an unknown tool name, <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="McpServerFactory"
+          data-shortdescription="Code written in PHP"
+          data-details="Dynamic server-side scripting language."
+          data-morelink=""          data-bs-html="true"
+    >
+        Mcp<wbr>Server<wbr>Factory</code>
+returns a <code>CallToolResult</code> with <code>isError</code> instead of throwing (so the client
+gets a normal tool error, not a JSON-RPC internal error).</p>
+
+            
+    <p><strong>Naming:</strong> Tools use PascalCase names aligned with TYPO3 concepts
+(<code>ReadTable</code>, <code>GetPageTree</code>, …), not a <code>prefix_action</code> pattern; the
+official tools table in <a href="#">Tools</a> lists names and access mode for
+LLM discoverability.</p>
+
+            
+    <p><strong>Structured outputs:</strong> The bundled PHP MCP SDK does not advertise
+<code>outputSchema</code> on tool results; outputs remain JSON-in-text (or plain text)
+as documented in <a href="#">Security audit</a>.</p>
+
+    </section>
+            <section class="section" id="main-layers">
+            <h2>Main layers<a class="headerlink" href="#main-layers" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="http-and-backend-module-layer">
+            <h3>HTTP and backend module layer<a class="headerlink" href="#http-and-backend-module-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p><code>Classes/Http/</code> contains:</p>
+
+            
+
+<ul>
+    <li class="dash">the MCP endpoint (<code>McpEndpoint</code>), which handles OAuth validation, backend
+user context setup, and the MCP SDK HTTP transport. The endpoint calls the
+SDK&#039;s <code>HttpServerRunner::handleRequest()</code> directly and maps the SDK
+response (headers, status, body) into TYPO3&#039;s PSR-7 response pipeline.
+Session state is persisted to <code>var/mcp_sessions/</code> via <code>FileSessionStore</code>.</li>
+    <li class="dash">OAuth authorization, token, metadata, and registration endpoints</li>
+    <li class="dash">shared CORS helpers</li>
+</ul>
+
+            
+    <p><code>Classes/Controller/McpServerModuleController.php</code> powers the backend module
+under <span class="guilabel">User &gt; MCP Server</span>. That module is the operator-facing control
+surface for endpoint discovery, client setup, token management, and current
+workspace information.</p>
+
+    </section>
+            <section class="section" id="mcp-runtime-layer">
+            <h3>MCP runtime layer<a class="headerlink" href="#mcp-runtime-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The runtime itself is intentionally thin:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>McpServerFactory</code> wires the MCP SDK server and registers the
+<code>tools/list</code> and <code>tools/call</code> JSON-RPC handlers</li>
+    <li class="dash"><code>ToolRegistry</code> collects every Symfony DI service tagged <code>mcp.tool</code>.
+Services implementing <code>ToolInterface</code> are kept as-is. Any other tagged
+object that exposes <code>getName()</code> and <code>execute()</code> is wrapped in
+<code>CompatibleToolAdapter</code>, which normalizes its schema, description, and
+result types to the native <code>ToolInterface</code> contract. This lets
+lightweight or third-party tools participate without depending on the
+extension&#039;s interface directly.</li>
+    <li class="dash"><code>AbstractTool</code> centralizes initialization and exception handling</li>
+    <li class="dash"><code>AbstractRecordTool</code> adds one important behavior: it injects an optional
+<code>workspace_id</code> parameter into record-backed tools and switches workspace
+context before the concrete tool runs</li>
+</ul>
+
+    </section>
+            <section class="section" id="tool-layer">
+            <h3>Tool layer<a class="headerlink" href="#tool-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The public MCP surface lives in <code>Classes/MCP/Tool/</code>:</p>
+
+            
+
+<ul>
+    <li class="dash">page navigation and page context tools</li>
+    <li class="dash">cross-table search</li>
+    <li class="dash">workspace discovery</li>
+    <li class="dash">file sandbox tools</li>
+    <li class="dash">maintenance and extension-management tools</li>
+    <li class="dash">optional x402 monetization helpers</li>
+</ul>
+
+            
+    <p><code>Classes/MCP/Tool/Record/</code> contains the TCA-driven record tools:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>ListTables</code></li>
+    <li class="dash"><code>ReadTable</code></li>
+    <li class="dash"><code>GetTableSchema</code></li>
+    <li class="dash"><code>GetFlexFormSchema</code></li>
+    <li class="dash"><code>WriteTable</code></li>
+    <li class="dash"><code>AttachImage</code></li>
+    <li class="dash"><code>BulkWrite</code></li>
+    <li class="dash"><code>PublishWorkspace</code> / <code>RollbackWorkspace</code> / <code>WorkspaceReview</code></li>
+    <li class="dash"><code>ImportContent</code> / <code>ImportFromUrl</code> / <code>ContentAudit</code></li>
+    <li class="dash"><code>CopyContent</code> / <code>CreateSite</code> / <code>ManageRedirects</code></li>
+</ul>
+
+            
+    <p>These tools are deliberately generic. They are not built around one specific
+extension. Instead they derive their behavior from TYPO3 TCA and the current
+backend user&#039;s permissions.</p>
+
+    </section>
+    </section>
+            <section class="section" id="shared-services">
+            <h2>Shared services<a class="headerlink" href="#shared-services" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt><code>WorkspaceContextService</code></dt>
+        
+        <dd>Keeps the current non-live workspace by default, switches to an explicit
+workspace when requested, otherwise selects a writable workspace, or creates
+an MCP workspace if none exists and the user is allowed to create one.</dd>
+                                <dt><code>TableAccessService</code></dt>
+        
+        <dd>The central gatekeeper for table and field visibility. It combines TCA,
+backend permissions, workspace capability checks, read-only restrictions,
+and TSconfig-based field disabling.</dd>
+                                <dt><code>LanguageService</code></dt>
+        
+        <dd>Maps TYPO3 site languages to ISO codes. Tool schemas use this service to
+decide whether to expose language parameters at all.</dd>
+                                <dt><code>McpFileSandboxService</code></dt>
+        
+        <dd>Restricts file operations to a configured sandbox root such as <code>1:/mcp/</code>
+and computes workspace-specific upload folders when that feature is enabled.</dd>
+                                <dt><code>SiteInformationService</code></dt>
+        
+        <dd>Resolves available domains and generates page URLs so page-oriented tools
+can work with URLs as well as page UIDs.</dd>
+                                <dt><code>OAuthService</code></dt>
+        
+        <dd>Stores authorization codes and access tokens, hashes access tokens before
+database storage, validates PKCE, and tracks token usage metadata.</dd>
+            </dl>
+    </section>
+            <section class="section" id="typo3-core-integration">
+            <h2>TYPO3 core integration<a class="headerlink" href="#typo3-core-integration" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension tries to stay close to TYPO3 core behavior:</p>
+
+            
+
+<ul>
+    <li class="dash">writes use <code>DataHandler</code></li>
+    <li class="dash">page language overlays use <code>PageRepository</code> and <code>LanguageAspect</code></li>
+    <li class="dash">TCA-driven schema information comes from raw TCA plus <code>TcaSchemaFactory</code></li>
+    <li class="dash">file operations go through TYPO3 FAL</li>
+</ul>
+
+            
+    <p>Where TYPO3 core does not provide transparent MCP behavior directly, the
+extension adds a small adaptation layer instead of replacing TYPO3 wholesale.
+The main example is workspace transparency.</p>
+
+    </section>
+            <section class="section" id="transparency-contracts">
+            <h2>Transparency contracts<a class="headerlink" href="#transparency-contracts" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="workspace-transparency">
+            <h3>Workspace transparency<a class="headerlink" href="#workspace-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>MCP clients should not have to understand TYPO3 version rows or workspace
+overlay internals. The implementation therefore keeps client-facing UIDs stable
+and resolves workspace rows internally.</p>
+
+            
+    <p>Important pieces:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>WorkspaceDeletePlaceholderRestriction</code> hides live rows that are deleted in
+the active workspace</li>
+    <li class="dash">tools resolve live UIDs to workspace rows for writes</li>
+    <li class="dash">read and search results are normalized back to stable live-facing UIDs</li>
+</ul>
+
+            
+    <p>See <a href="#">Workspace transparency</a> for the detailed rationale.</p>
+
+    </section>
+            <section class="section" id="language-visibility">
+            <h3>Language visibility<a class="headerlink" href="#language-visibility" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Language handling is intentionally conditional. If an instance has only one
+language, tools do not expose translation-oriented parameters just for the sake
+of symmetry. When multiple languages exist, tools expose ISO-code based
+language parameters so MCP clients do not need numeric language IDs.</p>
+
+            
+    <p>See <a href="#">Language overlays</a> for the overlay strategy.</p>
+
+    </section>
+            <section class="section" id="file-safety-model">
+            <h3>File safety model<a class="headerlink" href="#file-safety-model" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>File tools are sandboxed to the MCP file sandbox, but TYPO3 physical files are
+not workspace-versioned. The implementation does not hide that fact. Workspace
+subfolders only reduce collisions and keep draft-oriented uploads grouped more
+predictably.</p>
+
+    </section>
+    </section>
+            <section class="section" id="tests-and-quality">
+            <h2>Tests and quality<a class="headerlink" href="#tests-and-quality" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The repository uses several test layers:</p>
+
+            
+
+<ul>
+    <li class="dash">unit tests for focused service behavior</li>
+    <li class="dash">TYPO3 functional tests for tool contracts, permissions, workspaces,
+translations, file handling, and extension compatibility</li>
+    <li class="dash">architecture tests with PHPat for a few dependency rules</li>
+    <li class="dash">LLM-oriented tests that verify tool descriptions are usable in realistic,
+multi-step workflows</li>
+</ul>
+
+            
+    <p>The functional test surface is broad enough that the documentation should be
+read as executable behavior, not only as product copy. When tool behavior
+changes, the corresponding functional tests are expected to change with it.</p>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="workspace-transparency">
+            <h1>Workspace transparency<a class="headerlink" href="#workspace-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="overview">
+            <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>This document describes how the MCP server hides TYPO3 workspace complexity
+from MCP clients. The goal is to expose a simplified content model while still
+keeping all writes safely inside TYPO3 workspaces.</p>
+
+    </section>
+            <section class="section" id="background">
+            <h2>Background<a class="headerlink" href="#background" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt>TYPO3 workspaces provide isolated editing areas before content is published to</dt>
+        
+        <dd>live. The system uses:</dd>
+            </dl>
+            
+
+<ul>
+    <li class="dash">Live records with <code>t3ver_wsid = 0</code></li>
+    <li class="dash">Workspace versions of live records</li>
+    <li class="dash">Version states for create, update, move, and delete handling</li>
+    <li class="dash">Overlay processing after database queries</li>
+</ul>
+
+            
+    <p>TYPO3&#039;s default backend approach combines SQL restrictions with
+<code>BackendUtility::workspaceOL()</code> post-processing. That works well for human
+editors who understand workspace states, but it is not transparent enough for
+an MCP API.</p>
+
+    </section>
+            <section class="section" id="requirements">
+            <h2>Requirements<a class="headerlink" href="#requirements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The MCP server needs:</p>
+
+            
+
+<ul>
+    <li class="dash">Transparent operations without exposing workspace mechanics</li>
+    <li class="dash">Stable record identities for the same logical record</li>
+    <li class="dash">Automatic workspace handling in every tool</li>
+    <li class="dash">Deleted records to disappear from results immediately</li>
+</ul>
+
+    </section>
+            <section class="section" id="implementation">
+            <h2>Implementation<a class="headerlink" href="#implementation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="delete-placeholders">
+            <h3>Delete placeholders<a class="headerlink" href="#delete-placeholders" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The custom <code>WorkspaceDeletePlaceholderRestriction</code> excludes live records that
+have a delete placeholder in the active workspace. This prevents deleted
+content from leaking into read results.</p>
+
+    </section>
+            <section class="section" id="uid-resolution">
+            <h3>UID resolution<a class="headerlink" href="#uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>The implementation uses two complementary mechanisms:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>getLiveUid()</code> maps workspace records back to the client-visible live UID</li>
+    <li class="dash"><code>resolveToWorkspaceUid()</code> finds the workspace version when a client refers
+to a live UID for updates or deletes</li>
+</ul>
+
+            
+    <p>This keeps record identities stable even when TYPO3 internally works with
+workspace versions.</p>
+
+    </section>
+            <section class="section" id="query-time-workspace-handling">
+            <h3>Query-time workspace handling<a class="headerlink" href="#query-time-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p><code>ReadTableTool</code> resolves both the direct <code>uid</code> and matching <code>t3ver_oid</code>
+records in a workspace. Combined with the delete-placeholder restriction, this
+allows clients to address records by their live UID while TYPO3 still reads and
+writes the correct workspace version.</p>
+
+    </section>
+            <section class="section" id="search-result-normalization">
+            <h3>Search result normalization<a class="headerlink" href="#search-result-normalization" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p><code>SearchTool</code> applies the same transparency rules by:</p>
+
+            
+
+<ul>
+    <li class="dash">Filtering delete placeholders</li>
+    <li class="dash">Returning live UIDs instead of internal workspace UIDs</li>
+    <li class="dash">De-duplicating matching live and workspace versions</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="rationale">
+            <h2>Rationale<a class="headerlink" href="#rationale" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Using TYPO3&#039;s standard overlay flow alone would leave too much logic in
+post-processing. The current approach keeps workspace handling closer to the
+query, which improves consistency and avoids exposing workspace artifacts to
+clients.</p>
+
+    </section>
+            <section class="section" id="benefits">
+            <h2>Benefits<a class="headerlink" href="#benefits" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Workspace handling is transparent to MCP clients</li>
+    <li class="dash">All tools behave consistently</li>
+    <li class="dash">Fewer incorrect intermediary results need post-processing</li>
+    <li class="dash">Delete handling is more predictable</li>
+</ul>
+
+    </section>
+            <section class="section" id="limitations">
+            <h2>Limitations<a class="headerlink" href="#limitations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">The approach intentionally differs from standard TYPO3 backend patterns</li>
+    <li class="dash">Query construction is more complex than pure live-workspace querying</li>
+    <li class="dash">Some special cases, such as move handling, still need explicit care</li>
+</ul>
+
+    </section>
+            <section class="section" id="testing">
+            <h2>Testing<a class="headerlink" href="#testing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The implementation is covered by functional tests around workspace edge cases,
+write flows, and search behavior.</p>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="language-overlays">
+            <h1>Language overlays<a class="headerlink" href="#language-overlays" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="decision">
+            <h2>Decision<a class="headerlink" href="#decision" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension uses TYPO3&#039;s <code>PageRepository</code> API for language overlays while
+keeping workspace overlays in custom code.</p>
+
+    </section>
+            <section class="section" id="context">
+            <h2>Context<a class="headerlink" href="#context" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The MCP server must combine two concerns:</p>
+
+            
+
+<ul>
+    <li class="dash">Workspace transparency for MCP clients</li>
+    <li class="dash">Correct TYPO3 language behavior, including overlays and fallbacks</li>
+</ul>
+
+            
+    <p>Both concerns were initially handled manually, but language overlays are a
+better fit for TYPO3&#039;s existing APIs than for custom query logic.</p>
+
+    </section>
+            <section class="section" id="rationale">
+            <h2>Rationale<a class="headerlink" href="#rationale" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Language overlays differ from workspace overlays:</p>
+
+            
+
+<ul>
+    <li class="dash">They represent content variation, not versioning</li>
+    <li class="dash">Clients ask for a target language and should not need overlay internals</li>
+    <li class="dash">TYPO3 already ships battle-tested logic for language fallbacks and overlay
+modes</li>
+</ul>
+
+            
+    <p>Using <code>PageRepository</code> with the proper <code>Context</code> and <code>LanguageAspect</code>
+keeps the implementation aligned with TYPO3 core behavior while preserving the
+custom workspace transparency model.</p>
+
+    </section>
+            <section class="section" id="implementation">
+            <h2>Implementation<a class="headerlink" href="#implementation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>When a language is requested, the extension:</p>
+
+            
+
+<ul>
+    <li class="dash">Creates a <code>Context</code> with the appropriate <code>LanguageAspect</code></li>
+    <li class="dash">Instantiates <code>PageRepository</code> with that context</li>
+    <li class="dash">Reads pages through TYPO3&#039;s language-aware APIs</li>
+</ul>
+
+            
+    <p>This means the extension reuses TYPO3&#039;s overlay logic instead of reimplementing
+fallback and translation behavior itself.</p>
+
+    </section>
+            <section class="section" id="benefits">
+            <h2>Benefits<a class="headerlink" href="#benefits" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Less custom code for language behavior</li>
+    <li class="dash">Aligned with TYPO3 v14 PageRepository and overlay behaviour</li>
+    <li class="dash">Correct handling of fallbacks and overlay modes</li>
+    <li class="dash">Lower maintenance cost when TYPO3 evolves</li>
+</ul>
+
+    </section>
+            <section class="section" id="related-code">
+            <h2>Related code<a class="headerlink" href="#related-code" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash"><code>Classes/MCP/Tool/GetPageTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/GetPageTreeTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/Record/AbstractRecordTool.php</code></li>
+</ul>
+
+    </section>
+            <section class="section" id="future-considerations">
+            <h2>Future considerations<a class="headerlink" href="#future-considerations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>If TYPO3 changes its language overlay internals, the extension only needs to
+adjust its <code>Context</code> and <code>PageRepository</code> integration instead of replacing
+an entire custom overlay system.</p>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="inline-relations">
+            <h1>Inline relations<a class="headerlink" href="#inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="overview">
+            <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>TYPO3 inline relations, also known as IRRE, allow parent-child record
+structures. The MCP tools support reading and writing inline relations with a
+workspace-aware model and a few deliberate limitations.</p>
+
+    </section>
+            <section class="section" id="relation-types">
+            <h2>Relation types<a class="headerlink" href="#relation-types" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="independent-inline-relations">
+            <h3>Independent inline relations<a class="headerlink" href="#independent-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>These relations point to records that also exist independently, for example
+<code>tt_content</code>. In read results they are usually represented as arrays of UIDs.</p>
+
+    </section>
+            <section class="section" id="embedded-inline-relations">
+            <h3>Embedded inline relations<a class="headerlink" href="#embedded-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>These relations point to child records that primarily exist under a parent, for
+example some dependent extension tables. In read results they are typically
+returned as embedded record arrays.</p>
+
+    </section>
+    </section>
+            <section class="section" id="current-write-support">
+            <h2>Current write support<a class="headerlink" href="#current-write-support" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="independent-relations">
+            <h3>Independent relations<a class="headerlink" href="#independent-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Independent relations can be handled in two useful ways:</p>
+
+            
+
+<ul>
+    <li class="dash">Update the child record&#039;s foreign field directly</li>
+    <li class="dash">Update the parent record with an array of related child UIDs</li>
+</ul>
+
+    </section>
+            <section class="section" id="embedded-relations">
+            <h3>Embedded relations<a class="headerlink" href="#embedded-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Embedded child creation works through a two-step approach:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>DataHandler</code> creates the child records</li>
+    <li class="dash">The extension applies the necessary foreign-field update afterwards when TYPO3
+does not manage that relation field directly through TCA columns</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="file-references">
+            <h2>File references<a class="headerlink" href="#file-references" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p><code>sys_file_reference</code> records are now supported through the <code>WriteTable</code>
+tool. When a file field (TCA type <code>file</code>) receives an array of
+<code>sys_file</code> UIDs or objects with UID and metadata, the extension creates
+<code>sys_file_reference</code> records and wires them to the parent record through
+<code>DataHandler</code>. File references are workspace-versioned like other records.</p>
+
+    </section>
+            <section class="section" id="automatic-workspace-handling">
+            <h2>Automatic workspace handling<a class="headerlink" href="#automatic-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Inline relation reads and writes use the same workspace context service as the
+rest of the extension:</p>
+
+            
+
+<ul>
+    <li class="dash">The current non-live workspace is kept when one is already active;
+otherwise a writable workspace is selected automatically, or created when
+needed</li>
+    <li class="dash">Live IDs stay visible to clients</li>
+    <li class="dash">Workspace-specific implementation details stay internal</li>
+</ul>
+
+    </section>
+            <section class="section" id="best-practices">
+            <h2>Best practices<a class="headerlink" href="#best-practices" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Prefer the foreign-field method for simple independent relations</li>
+    <li class="dash">Check TCA configuration to understand whether a relation is independent or
+embedded</li>
+    <li class="dash">Validate embedded payloads carefully</li>
+    <li class="dash">Use TYPO3 error output from <code>DataHandler</code> when diagnosing relation failures</li>
+</ul>
+
+    </section>
+            <section class="section" id="future-improvements">
+            <h2>Future improvements<a class="headerlink" href="#future-improvements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">Bulk updates for relation management</li>
+    <li class="dash">Better ordering and positioning support</li>
+    <li class="dash">Stronger validation of embedded record payloads</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="security-audit">
+            <h1>Security audit<a class="headerlink" href="#security-audit" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="date">
+            <h2>Date<a class="headerlink" href="#date" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>2026-03-15 (TYPO3 v14-only extension; transport/logging hardening)</p>
+
+    </section>
+            <section class="section" id="scope">
+            <h2>Scope<a class="headerlink" href="#scope" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p><code>Classes/</code> directory, OAuth implementation, MCP HTTP endpoint, file sandbox
+URL download tool, and extension settings.</p>
+
+    </section>
+            <section class="section" id="findings-and-remediation">
+            <h2>Findings and remediation<a class="headerlink" href="#findings-and-remediation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="fixed-findings">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>Access tokens were stored in plain text.</p>
+
+    <p>Status: Fixed. Access tokens are now SHA-256 hashed before storage.</p>
+</li>
+    <li value="2">
+    <p>PKCE was not enforced consistently when a challenge was present.</p>
+
+    <p>Status: Fixed. The verifier is now required and validated with constant-time
+comparison.</p>
+</li>
+    <li value="3">
+    <p>Internal exception messages leaked to HTTP clients.</p>
+
+    <p>Status: Fixed. Generic responses are returned and details are logged
+server-side.</p>
+</li>
+    <li value="4">
+    <p>Access tokens in URL query parameters.</p>
+
+    <p>Status: Fixed for default configuration. Query-string tokens are <strong>disabled</strong>
+unless <code>allowMcpTokenInQueryString</code> is enabled in extension settings (off by
+default). When enabled, acceptance is logged at notice level.</p>
+</li>
+    <li value="5">
+    <p>Debug logging of MCP requests could leak secrets.</p>
+
+    <p>Status: Fixed. <code>Authorization</code>, cookies, and related sensitive headers are
+redacted; the <code>token</code> query parameter is redacted in logged query params.
+Implementation: <code>Classes/Http/McpHttpLogRedactor.php</code> (covered by unit tests).</p>
+</li>
+    <li value="6">
+    <p>Unauthenticated <code>?test=auth</code> probe exposed server fingerprint data.</p>
+
+    <p>Status: Mitigated. The diagnostic can be disabled via
+<code>enableMcpAuthHeaderDiagnostic</code> (default on for the backend MCP module).
+When disabled, the endpoint returns <strong>403</strong> without detail. When enabled,
+the JSON response is minimal (header presence only; no <code>server_software</code> or
+similar fingerprint fields).</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks">
+            <h3>Accepted risks<a class="headerlink" href="#accepted-risks" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p><code>DataHandler-&gt;admin = true</code> is still used during workspace creation.</p>
+
+    <p>Rationale: the scope is limited to workspace creation and gated by explicit
+permission checks.</p>
+</li>
+    <li value="2">
+    <p>The OAuth consent form does not add a separate CSRF token.</p>
+
+    <p>Rationale: the flow already depends on a backend session and PKCE verifier.</p>
+</li>
+    <li value="3">
+    <p>Redirect handling accepts client-provided redirect URIs within the supported
+OAuth registration model.</p>
+
+    <p>Rationale: the implementation now restricts unsafe remote HTTP(S) targets and
+enforces PKCE <code>S256</code>.</p>
+</li>
+    <li value="4">
+    <p>CORS reflects allowed origins for cross-origin MCP clients.</p>
+
+    <p>Rationale: bearer-token usage makes this acceptable at the current risk
+profile.</p>
+</li>
+    <li value="5">
+    <p><code>UploadFileFromUrl</code> resolves hostnames before download (SSRF mitigation) but
+cannot fully eliminate DNS rebinding races without additional infrastructure.</p>
+
+    <p>Rationale: documented limits; private/reserved resolved IPs are rejected;
+redirects/size limits apply. Extend functional coverage when changing this
+code path.</p>
+</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="structured-mcp-results">
+            <h2>Structured MCP results<a class="headerlink" href="#structured-mcp-results" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The bundled <code>logiscape/mcp-sdk-php</code> build in this project does not expose
+<code>outputSchema</code> / structured content on <code>CallToolResult</code>. Tools therefore
+return JSON in <code>TextContent</code>; keep schemas and descriptions accurate for client
+parsing.</p>
+
+    </section>
+            <section class="section" id="no-issues-found">
+            <h2>No issues found<a class="headerlink" href="#no-issues-found" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash">SQL injection paths were closed by parameterized <code>QueryBuilder</code> usage and
+the constrained <code>where</code> parser</li>
+    <li class="dash">Input validation remains TCA-driven in write operations</li>
+    <li class="dash">No authentication bypass was identified for tool execution</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
+<!-- content end -->
+                                                        </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="linkReferenceModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkReferenceModalLabel">Reference to the headline</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="permalink-alert-success" role="alert"></div>
+                <div class="mb-3">
+                    <div class="permalink-short-wrapper">
+                        <label for="permalink-short" class="col-form-label">Permalink (Shortlink)</label>
+                        <div class="input-group">
+                            <input class="form-control code" id="permalink-short" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-short"><i class="far fa-clone"></i></button>
+                        </div>
+                        <p><em>Copy and freely share the link</em></p>
+                    </div>
+                    <label for="permalink-uri" class="col-form-label">URL</label>
+                    <div class="input-group">
+                        <input class="form-control code" id="permalink-uri" readonly>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-uri"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-warning alert-permalink-rst" role="alert">This link target has no permanent anchor assigned.The link below can be used, but is prone to change if the page gets moved.
+                    </div>
+                    <label for="permalink-rst" class="col-form-label">Link in reStructuredText (reST)</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-rst" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-rst"><i class="far fa-clone"></i></button>
+                    </div>
+                    <p><em>Copy this link into your TYPO3 manual.</em></p>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-md" class="col-form-label">Link in Markdown</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-md" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-md"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-html" class="col-form-label">Link in HTML</label>
+                                        <div class="input-group">
+                        <textarea class="form-control code" id="permalink-html" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-html"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>    <div class="modal fade" id="generalModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename=""
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="general-alert-success" role="alert"></div>
+                <div id="generalModalContent">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div id="generalModalCustomButtons"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i>&nbsp;Close</button>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+
+<footer class="page-footer">
+    <div class="frame frame-ruler-before frame-background-dark">
+        <div class="frame-container">
+            <div class="frame-inner">
+                                <div class="footer-additional">
+                    <p class="text-center">Last rendered: Apr 15, 2026 21:20</p>
+                </div>
+                <div class="footer-meta">
+                    <ul class="footer-meta-navigation">
+                        <li><a href="https://typo3.org/legal-notice" rel="nofollow" target="_blank" title="Legal Notice">Legal Notice</a></li>
+                        <li><a href="https://typo3.org/privacy-policy" rel="nofollow" target="_blank" title="Privacy Policy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="../_resources/js/popper.min.js"></script>
+<script src="../_resources/js/bootstrap.min.js"></script>
+<script src="../_resources/js/theme.min.js"></script>
+
+<!--
+ Locally rendered. No tracking embedded.
+-->
+</body>
+</html>

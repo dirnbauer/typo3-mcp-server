@@ -1,0 +1,1102 @@
+{
+    "std:doc": {
+        "Architecture\/ImplementationOverview": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html",
+            "Implementation overview"
+        ],
+        "Architecture\/Index": [
+            "-",
+            "-",
+            "Architecture\/Index.html",
+            "Architecture"
+        ],
+        "Architecture\/InlineRelations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html",
+            "Inline relations"
+        ],
+        "Architecture\/LanguageOverlays": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html",
+            "Language overlays"
+        ],
+        "Architecture\/SecurityAudit": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html",
+            "Security audit"
+        ],
+        "Architecture\/WorkspaceTransparency": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html",
+            "Workspace transparency"
+        ],
+        "Configuration\/Index": [
+            "-",
+            "-",
+            "Configuration\/Index.html",
+            "Configuration"
+        ],
+        "Index": [
+            "-",
+            "-",
+            "Index.html",
+            "MCP Server"
+        ],
+        "Installation\/Index": [
+            "-",
+            "-",
+            "Installation\/Index.html",
+            "Installation"
+        ],
+        "Introduction\/Index": [
+            "-",
+            "-",
+            "Introduction\/Index.html",
+            "Introduction"
+        ],
+        "Introduction\/IntendedBehavior": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html",
+            "Intended behavior"
+        ],
+        "Tools\/Index": [
+            "-",
+            "-",
+            "Tools\/Index.html",
+            "Tools"
+        ]
+    },
+    "std:label": {
+        "architecture": [
+            "-",
+            "-",
+            "Architecture\/Index.html#architecture",
+            "Architecture"
+        ],
+        "configuration": [
+            "-",
+            "-",
+            "Configuration\/Index.html#configuration",
+            "Configuration"
+        ],
+        "start": [
+            "-",
+            "-",
+            "Index.html#start",
+            "MCP Server"
+        ],
+        "installation": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation",
+            "Installation"
+        ],
+        "installation-requirements": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-requirements",
+            "Requirements"
+        ],
+        "installation-connection-options": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-connection-options",
+            "Connection options"
+        ],
+        "installation-local-cli": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-local-cli",
+            "Local TYPO3 CLI server"
+        ],
+        "introduction": [
+            "-",
+            "-",
+            "Introduction\/Index.html#introduction",
+            "Introduction"
+        ],
+        "intended-behavior": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#intended-behavior",
+            "Intended behavior"
+        ],
+        "tools": [
+            "-",
+            "-",
+            "Tools\/Index.html#tools",
+            "Tools"
+        ],
+        "confval-ext-mcp-server-filesandboxroot": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-filesandboxroot",
+            "fileSandboxRoot"
+        ],
+        "confval-ext-mcp-server-workspaceuploadsubfolders": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-workspaceuploadsubfolders",
+            "workspaceUploadSubfolders"
+        ]
+    },
+    "std:title": {
+        "implementation-overview": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#implementation-overview",
+            "Implementation overview"
+        ],
+        "overview": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#overview",
+            "Overview"
+        ],
+        "request-flow": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#request-flow",
+            "Request flow"
+        ],
+        "mcp-ergonomics-external-guidance": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#mcp-ergonomics-external-guidance",
+            "MCP ergonomics (external guidance)"
+        ],
+        "main-layers": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#main-layers",
+            "Main layers"
+        ],
+        "http-and-backend-module-layer": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#http-and-backend-module-layer",
+            "HTTP and backend module layer"
+        ],
+        "mcp-runtime-layer": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#mcp-runtime-layer",
+            "MCP runtime layer"
+        ],
+        "tool-layer": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#tool-layer",
+            "Tool layer"
+        ],
+        "shared-services": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#shared-services",
+            "Shared services"
+        ],
+        "typo3-core-integration": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#typo3-core-integration",
+            "TYPO3 core integration"
+        ],
+        "transparency-contracts": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#transparency-contracts",
+            "Transparency contracts"
+        ],
+        "workspace-transparency": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#workspace-transparency",
+            "Workspace transparency"
+        ],
+        "language-visibility": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#language-visibility",
+            "Language visibility"
+        ],
+        "file-safety-model": [
+            "-",
+            "-",
+            "Tools\/Index.html#file-safety-model",
+            "File safety model"
+        ],
+        "tests-and-quality": [
+            "-",
+            "-",
+            "Architecture\/ImplementationOverview.html#tests-and-quality",
+            "Tests and quality"
+        ],
+        "architecture-1": [
+            "-",
+            "-",
+            "Architecture\/Index.html#architecture",
+            "Architecture"
+        ],
+        "design-decisions": [
+            "-",
+            "-",
+            "Architecture\/Index.html#design-decisions",
+            "Design decisions"
+        ],
+        "implementation-layers": [
+            "-",
+            "-",
+            "Architecture\/Index.html#implementation-layers",
+            "Implementation layers"
+        ],
+        "file-handling-and-sandboxing": [
+            "-",
+            "-",
+            "Architecture\/Index.html#file-handling-and-sandboxing",
+            "File handling and sandboxing"
+        ],
+        "security": [
+            "-",
+            "-",
+            "Architecture\/Index.html#security",
+            "Security"
+        ],
+        "inline-relations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#inline-relations",
+            "Inline relations"
+        ],
+        "relation-types": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#relation-types",
+            "Relation types"
+        ],
+        "independent-inline-relations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#independent-inline-relations",
+            "Independent inline relations"
+        ],
+        "embedded-inline-relations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#embedded-inline-relations",
+            "Embedded inline relations"
+        ],
+        "current-write-support": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#current-write-support",
+            "Current write support"
+        ],
+        "independent-relations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#independent-relations",
+            "Independent relations"
+        ],
+        "embedded-relations": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#embedded-relations",
+            "Embedded relations"
+        ],
+        "file-references": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#file-references",
+            "File references"
+        ],
+        "automatic-workspace-handling": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#automatic-workspace-handling",
+            "Automatic workspace handling"
+        ],
+        "best-practices": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#best-practices",
+            "Best practices"
+        ],
+        "future-improvements": [
+            "-",
+            "-",
+            "Architecture\/InlineRelations.html#future-improvements",
+            "Future improvements"
+        ],
+        "language-overlays": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#language-overlays",
+            "Language overlays"
+        ],
+        "decision": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#decision",
+            "Decision"
+        ],
+        "context": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#context",
+            "Context"
+        ],
+        "rationale": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#rationale",
+            "Rationale"
+        ],
+        "implementation": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#implementation",
+            "Implementation"
+        ],
+        "benefits": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#benefits",
+            "Benefits"
+        ],
+        "related-code": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#related-code",
+            "Related code"
+        ],
+        "future-considerations": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#future-considerations",
+            "Future considerations"
+        ],
+        "security-audit": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#security-audit",
+            "Security audit"
+        ],
+        "date": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#date",
+            "Date"
+        ],
+        "scope": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#scope",
+            "Scope"
+        ],
+        "findings-and-remediation": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#findings-and-remediation",
+            "Findings and remediation"
+        ],
+        "fixed-findings": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#fixed-findings",
+            "Fixed findings"
+        ],
+        "accepted-risks": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#accepted-risks",
+            "Accepted risks"
+        ],
+        "structured-mcp-results": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#structured-mcp-results",
+            "Structured MCP results"
+        ],
+        "no-issues-found": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#no-issues-found",
+            "No issues found"
+        ],
+        "background": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#background",
+            "Background"
+        ],
+        "requirements": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-requirements",
+            "Requirements"
+        ],
+        "delete-placeholders": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#delete-placeholders",
+            "Delete placeholders"
+        ],
+        "uid-resolution": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#uid-resolution",
+            "UID resolution"
+        ],
+        "query-time-workspace-handling": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#query-time-workspace-handling",
+            "Query-time workspace handling"
+        ],
+        "search-result-normalization": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#search-result-normalization",
+            "Search result normalization"
+        ],
+        "limitations": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#limitations",
+            "Limitations"
+        ],
+        "testing": [
+            "-",
+            "-",
+            "Architecture\/WorkspaceTransparency.html#testing",
+            "Testing"
+        ],
+        "configuration-1": [
+            "-",
+            "-",
+            "Configuration\/Index.html#configuration",
+            "Configuration"
+        ],
+        "backend-module": [
+            "-",
+            "-",
+            "Configuration\/Index.html#backend-module",
+            "Backend module"
+        ],
+        "oauth-setup": [
+            "-",
+            "-",
+            "Configuration\/Index.html#oauth-setup",
+            "OAuth setup"
+        ],
+        "workspace-behavior": [
+            "-",
+            "-",
+            "Configuration\/Index.html#workspace-behavior",
+            "Workspace behavior"
+        ],
+        "file-sandbox-configuration": [
+            "-",
+            "-",
+            "Configuration\/Index.html#file-sandbox-configuration",
+            "File sandbox configuration"
+        ],
+        "extension-configuration-values": [
+            "-",
+            "-",
+            "Configuration\/Index.html#extension-configuration-values",
+            "Extension configuration values"
+        ],
+        "why-the-sandbox-matters": [
+            "-",
+            "-",
+            "Configuration\/Index.html#why-the-sandbox-matters",
+            "Why the sandbox matters"
+        ],
+        "file-safety-notes": [
+            "-",
+            "-",
+            "Configuration\/Index.html#file-safety-notes",
+            "File safety notes"
+        ],
+        "configuration-checklist": [
+            "-",
+            "-",
+            "Configuration\/Index.html#configuration-checklist",
+            "Configuration checklist"
+        ],
+        "mcp-server": [
+            "-",
+            "-",
+            "Index.html#start",
+            "MCP Server"
+        ],
+        "highlights": [
+            "-",
+            "-",
+            "Index.html#highlights",
+            "Highlights"
+        ],
+        "documentation-map": [
+            "-",
+            "-",
+            "Index.html#documentation-map",
+            "Documentation map"
+        ],
+        "further-reading": [
+            "-",
+            "-",
+            "Index.html#further-reading",
+            "Further reading"
+        ],
+        "installation-1": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation",
+            "Installation"
+        ],
+        "recommended-prerequisites": [
+            "-",
+            "-",
+            "Installation\/Index.html#recommended-prerequisites",
+            "Recommended prerequisites"
+        ],
+        "composer-installation": [
+            "-",
+            "-",
+            "Installation\/Index.html#composer-installation",
+            "Composer installation"
+        ],
+        "first-backend-check": [
+            "-",
+            "-",
+            "Installation\/Index.html#first-backend-check",
+            "First backend check"
+        ],
+        "backend-module-setup": [
+            "-",
+            "-",
+            "Installation\/Index.html#backend-module-setup",
+            "Backend module setup"
+        ],
+        "connection-options": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-connection-options",
+            "Connection options"
+        ],
+        "remote-mcp-over-oauth": [
+            "-",
+            "-",
+            "Installation\/Index.html#remote-mcp-over-oauth",
+            "Remote MCP over OAuth"
+        ],
+        "local-typo3-cli-server": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-local-cli",
+            "Local TYPO3 CLI server"
+        ],
+        "after-installation": [
+            "-",
+            "-",
+            "Installation\/Index.html#after-installation",
+            "After installation"
+        ],
+        "introduction-1": [
+            "-",
+            "-",
+            "Introduction\/Index.html#introduction",
+            "Introduction"
+        ],
+        "what-this-extension-does": [
+            "-",
+            "-",
+            "Introduction\/Index.html#what-this-extension-does",
+            "What this extension does"
+        ],
+        "why-typo3-needs-mcp": [
+            "-",
+            "-",
+            "Introduction\/Index.html#why-typo3-needs-mcp",
+            "Why TYPO3 needs MCP"
+        ],
+        "how-it-works": [
+            "-",
+            "-",
+            "Introduction\/Index.html#how-it-works",
+            "How it works"
+        ],
+        "core-principles": [
+            "-",
+            "-",
+            "Introduction\/Index.html#core-principles",
+            "Core principles"
+        ],
+        "workspace-first-writes": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#workspace-first-writes",
+            "Workspace-first writes"
+        ],
+        "tca-first-modeling": [
+            "-",
+            "-",
+            "Introduction\/Index.html#tca-first-modeling",
+            "TCA-first modeling"
+        ],
+        "transparent-workspace-handling": [
+            "-",
+            "-",
+            "Introduction\/Index.html#transparent-workspace-handling",
+            "Transparent workspace handling"
+        ],
+        "file-sandboxing": [
+            "-",
+            "-",
+            "Introduction\/Index.html#file-sandboxing",
+            "File sandboxing"
+        ],
+        "permission-aware-access": [
+            "-",
+            "-",
+            "Introduction\/Index.html#permission-aware-access",
+            "Permission-aware access"
+        ],
+        "important-limitations": [
+            "-",
+            "-",
+            "Introduction\/Index.html#important-limitations",
+            "Important limitations"
+        ],
+        "supported-versions": [
+            "-",
+            "-",
+            "Introduction\/Index.html#supported-versions",
+            "Supported versions"
+        ],
+        "acknowledgements": [
+            "-",
+            "-",
+            "Introduction\/Index.html#acknowledgements",
+            "Acknowledgements"
+        ],
+        "intended-behavior-1": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#intended-behavior",
+            "Intended behavior"
+        ],
+        "core-contract": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#core-contract",
+            "Core contract"
+        ],
+        "record-behavior": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#record-behavior",
+            "Record behavior"
+        ],
+        "read-transparency": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#read-transparency",
+            "Read transparency"
+        ],
+        "type-and-schema-behavior": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#type-and-schema-behavior",
+            "Type and schema behavior"
+        ],
+        "file-behavior": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#file-behavior",
+            "File behavior"
+        ],
+        "import-review-and-execution": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#import-review-and-execution",
+            "Import, review, and execution"
+        ],
+        "optional-capability-families": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#optional-capability-families",
+            "Optional capability families"
+        ],
+        "verification-expectations": [
+            "-",
+            "-",
+            "Introduction\/IntendedBehavior.html#verification-expectations",
+            "Verification expectations"
+        ],
+        "tools-1": [
+            "-",
+            "-",
+            "Tools\/Index.html#tools",
+            "Tools"
+        ],
+        "general-notes": [
+            "-",
+            "-",
+            "Tools\/Index.html#general-notes",
+            "General notes"
+        ],
+        "third-party-tools": [
+            "-",
+            "-",
+            "Tools\/Index.html#third-party-tools",
+            "Third-party tools"
+        ],
+        "tool-names-mcp-tools-list": [
+            "-",
+            "-",
+            "Tools\/Index.html#tool-names-mcp-tools-list",
+            "Tool names (MCP tools\/list)"
+        ],
+        "record-backed-tools": [
+            "-",
+            "-",
+            "Tools\/Index.html#record-backed-tools",
+            "Record-backed tools"
+        ],
+        "navigation-and-discovery": [
+            "-",
+            "-",
+            "Tools\/Index.html#navigation-and-discovery",
+            "Navigation and discovery"
+        ],
+        "getpagetree": [
+            "-",
+            "-",
+            "Tools\/Index.html#getpagetree",
+            "GetPageTree"
+        ],
+        "getpage": [
+            "-",
+            "-",
+            "Tools\/Index.html#getpage",
+            "GetPage"
+        ],
+        "listtables": [
+            "-",
+            "-",
+            "Tools\/Index.html#listtables",
+            "ListTables"
+        ],
+        "search": [
+            "-",
+            "-",
+            "Tools\/Index.html#search",
+            "Search"
+        ],
+        "schema-inspection": [
+            "-",
+            "-",
+            "Tools\/Index.html#schema-inspection",
+            "Schema inspection"
+        ],
+        "gettableschema": [
+            "-",
+            "-",
+            "Tools\/Index.html#gettableschema",
+            "GetTableSchema"
+        ],
+        "getflexformschema": [
+            "-",
+            "-",
+            "Tools\/Index.html#getflexformschema",
+            "GetFlexFormSchema"
+        ],
+        "reading-and-writing-records": [
+            "-",
+            "-",
+            "Tools\/Index.html#reading-and-writing-records",
+            "Reading and writing records"
+        ],
+        "readtable": [
+            "-",
+            "-",
+            "Tools\/Index.html#readtable",
+            "ReadTable"
+        ],
+        "writetable": [
+            "-",
+            "-",
+            "Tools\/Index.html#writetable",
+            "WriteTable"
+        ],
+        "positioning-semantics-for-action-create": [
+            "-",
+            "-",
+            "Tools\/Index.html#positioning-semantics-for-action-create",
+            "Positioning semantics for action=create"
+        ],
+        "attachimage": [
+            "-",
+            "-",
+            "Tools\/Index.html#attachimage",
+            "AttachImage"
+        ],
+        "workspace-tool": [
+            "-",
+            "-",
+            "Tools\/Index.html#workspace-tool",
+            "Workspace tool"
+        ],
+        "listworkspaces": [
+            "-",
+            "-",
+            "Tools\/Index.html#listworkspaces",
+            "ListWorkspaces"
+        ],
+        "file-tools": [
+            "-",
+            "-",
+            "Tools\/Index.html#file-tools",
+            "File tools"
+        ],
+        "browsefiles": [
+            "-",
+            "-",
+            "Tools\/Index.html#browsefiles",
+            "BrowseFiles"
+        ],
+        "readfilemetadata": [
+            "-",
+            "-",
+            "Tools\/Index.html#readfilemetadata",
+            "ReadFileMetadata"
+        ],
+        "writefile": [
+            "-",
+            "-",
+            "Tools\/Index.html#writefile",
+            "WriteFile"
+        ],
+        "uploadfile": [
+            "-",
+            "-",
+            "Tools\/Index.html#uploadfile",
+            "UploadFile"
+        ],
+        "uploadfilefromurl": [
+            "-",
+            "-",
+            "Tools\/Index.html#uploadfilefromurl",
+            "UploadFileFromUrl"
+        ],
+        "media-search": [
+            "-",
+            "-",
+            "Tools\/Index.html#media-search",
+            "Media search"
+        ],
+        "searchmedia": [
+            "-",
+            "-",
+            "Tools\/Index.html#searchmedia",
+            "SearchMedia"
+        ],
+        "content-quality-and-diagnostics": [
+            "-",
+            "-",
+            "Tools\/Index.html#content-quality-and-diagnostics",
+            "Content quality and diagnostics"
+        ],
+        "contentaudit": [
+            "-",
+            "-",
+            "Tools\/Index.html#contentaudit",
+            "ContentAudit"
+        ],
+        "getsystemlog": [
+            "-",
+            "-",
+            "Tools\/Index.html#getsystemlog",
+            "GetSystemLog"
+        ],
+        "workspace-operations": [
+            "-",
+            "-",
+            "Tools\/Index.html#workspace-operations",
+            "Workspace operations"
+        ],
+        "workspacereview": [
+            "-",
+            "-",
+            "Tools\/Index.html#workspacereview",
+            "WorkspaceReview"
+        ],
+        "record-duplication": [
+            "-",
+            "-",
+            "Tools\/Index.html#record-duplication",
+            "Record duplication"
+        ],
+        "copycontent": [
+            "-",
+            "-",
+            "Tools\/Index.html#copycontent",
+            "CopyContent"
+        ],
+        "system-maintenance": [
+            "-",
+            "-",
+            "Tools\/Index.html#system-maintenance",
+            "System maintenance"
+        ],
+        "safecli": [
+            "-",
+            "-",
+            "Tools\/Index.html#safecli",
+            "SafeCli"
+        ],
+        "workspace-publishing": [
+            "-",
+            "-",
+            "Tools\/Index.html#workspace-publishing",
+            "Workspace publishing"
+        ],
+        "publishworkspace": [
+            "-",
+            "-",
+            "Tools\/Index.html#publishworkspace",
+            "PublishWorkspace"
+        ],
+        "batch-operations": [
+            "-",
+            "-",
+            "Tools\/Index.html#batch-operations",
+            "Batch operations"
+        ],
+        "bulkwrite": [
+            "-",
+            "-",
+            "Tools\/Index.html#bulkwrite",
+            "BulkWrite"
+        ],
+        "content-import": [
+            "-",
+            "-",
+            "Tools\/Index.html#content-import",
+            "Content import"
+        ],
+        "importcontent": [
+            "-",
+            "-",
+            "Tools\/Index.html#importcontent",
+            "ImportContent"
+        ],
+        "workspace-rollback": [
+            "-",
+            "-",
+            "Tools\/Index.html#workspace-rollback",
+            "Workspace rollback"
+        ],
+        "rollbackworkspace": [
+            "-",
+            "-",
+            "Tools\/Index.html#rollbackworkspace",
+            "RollbackWorkspace"
+        ],
+        "url-redirects": [
+            "-",
+            "-",
+            "Tools\/Index.html#url-redirects",
+            "URL redirects"
+        ],
+        "manageredirects": [
+            "-",
+            "-",
+            "Tools\/Index.html#manageredirects",
+            "ManageRedirects"
+        ],
+        "content-import-from-url": [
+            "-",
+            "-",
+            "Tools\/Index.html#content-import-from-url",
+            "Content import from URL"
+        ],
+        "importfromurl": [
+            "-",
+            "-",
+            "Tools\/Index.html#importfromurl",
+            "ImportFromUrl"
+        ],
+        "site-management": [
+            "-",
+            "-",
+            "Tools\/Index.html#site-management",
+            "Site management"
+        ],
+        "createsite": [
+            "-",
+            "-",
+            "Tools\/Index.html#createsite",
+            "CreateSite"
+        ],
+        "extension-management": [
+            "-",
+            "-",
+            "Tools\/Index.html#extension-management",
+            "Extension management"
+        ],
+        "installextension": [
+            "-",
+            "-",
+            "Tools\/Index.html#installextension",
+            "InstallExtension"
+        ],
+        "optional-x402-monetization": [
+            "-",
+            "-",
+            "Tools\/Index.html#optional-x402-monetization",
+            "Optional x402 monetization"
+        ],
+        "listpaidcontent": [
+            "-",
+            "-",
+            "Tools\/Index.html#listpaidcontent",
+            "ListPaidContent"
+        ],
+        "getpaidcontent": [
+            "-",
+            "-",
+            "Tools\/Index.html#getpaidcontent",
+            "GetPaidContent"
+        ],
+        "getpaymentstats": [
+            "-",
+            "-",
+            "Tools\/Index.html#getpaymentstats",
+            "GetPaymentStats"
+        ]
+    },
+    "std:confval": {
+        "ext-mcp-server-filesandboxroot": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-filesandboxroot",
+            "fileSandboxRoot"
+        ],
+        "ext-mcp-server-workspaceuploadsubfolders": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-workspaceuploadsubfolders",
+            "workspaceUploadSubfolders"
+        ]
+    }
+}
