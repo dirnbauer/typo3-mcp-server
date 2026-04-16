@@ -158,7 +158,7 @@ class RecordWriteEventTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         // Use ReadTableTool to read the record (handles workspace overlay)
-        $readTool = new ReadTableTool();
+        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $readResult = $readTool->execute([
             'table' => 'pages',
             'uid' => $data['uid'],

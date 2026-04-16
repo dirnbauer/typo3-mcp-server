@@ -382,12 +382,22 @@ final class WriteTableTool extends AbstractRecordTool
         $eventDispatcher = $this->eventDispatcher;
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $pid));
 
-        // Return the result with live UID
-        return $this->createJsonResult([
+        // Build response with additional useful info
+        $result = [
             'action' => 'create',
             'table' => $table,
             'uid' => $liveUid,
-        ]);
+            'pid' => $pid,
+        ];
+        $record = BackendUtility::getRecord($table, $liveUid);
+        if ($record !== null) {
+            $sortingField = $GLOBALS['TCA'][$table]['ctrl']['sortby'] ?? null;
+            if (is_string($sortingField) && isset($record[$sortingField])) {
+                $result['sorting'] = (int)$record[$sortingField];
+            }
+        }
+
+        return $this->createJsonResult($result);
     }
 
     /**
