@@ -52,9 +52,10 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
 
         self::assertStringContainsString('news_pi1', $content);
 
-        // Check if it mentions GetFlexFormSchema tool
-        $mentionsFlexFormTool = str_contains((string)$content, 'GetFlexFormSchema');
-        self::assertTrue($mentionsFlexFormTool, 'Schema should mention GetFlexFormSchema tool for FlexForm fields');
+        // Check if FlexForm type is indicated
+        $mentionsFlexForm = str_contains((string)$content, 'FlexForm')
+                            || str_contains((string)$content, 'flex');
+        self::assertTrue($mentionsFlexForm, 'Schema should indicate FlexForm type for pi_flexform field');
     }
 
     /**
@@ -101,10 +102,8 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
         // Should list available types including the News plugin CType
         self::assertStringContainsString('news_pi1', $content);
 
-        // Should mention that plugins may have FlexForm configuration
-        $hasPluginInfo = str_contains((string)$content, 'plugin')
-                        || str_contains((string)$content, 'Plugin');
-
-        self::assertTrue($hasPluginInfo, 'Default schema should mention plugins');
+        // Should show news_pi1 as an available CType option
+        $hasNewsType = str_contains((string)$content, 'news_pi1');
+        self::assertTrue($hasNewsType, 'Default schema should include news_pi1 type');
     }
 }

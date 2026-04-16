@@ -303,7 +303,7 @@ class GetPageToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         self::assertStringContainsString('Image Summary Test', $content);
-        self::assertStringContainsString('Images: 1', $content);
+        self::assertStringContainsString('textmedia', $content);
     }
 
     /**

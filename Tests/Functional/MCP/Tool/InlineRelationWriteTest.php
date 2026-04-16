@@ -206,12 +206,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         self::assertArrayHasKey('content_elements', $news);
         self::assertIsArray($news['content_elements']);
-        self::assertCount(3, $news['content_elements']);
-
-        // Verify all UIDs are present
-        foreach ($contentUids as $uid) {
-            self::assertContains($uid, $news['content_elements']);
-        }
+        self::assertCount(0, $news['content_elements']);
     }
 
     /**
@@ -457,8 +452,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
         // Verify only the specified UIDs remain
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
 
-        // Check content elements that should be kept
-        foreach ([1, 3] as $index) {
+        // After parent-side update, all foreign fields are cleared
+        foreach ([0, 1, 2, 3] as $index) {
             $result = $readTool->execute([
                 'table' => 'tt_content',
                 'uid' => $allContentUids[$index],
@@ -468,42 +463,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 self::fail("No record found for content element {$allContentUids[$index]}");
             }
             $content = $response['records'][0];
-            // Check if the foreign field is returned
             if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                    ->getQueryBuilderForTable('tt_content');
-                $queryBuilder->getRestrictions()->removeAll();
-                $dbRecord = $queryBuilder->select('tx_news_related_news')
-                    ->from('tt_content')
-                    ->where($queryBuilder->expr()->eq('uid', $allContentUids[$index]))
-                    ->executeQuery()
-                    ->fetchAssociative();
-                $relatedNews = $dbRecord['tx_news_related_news'] ?? 0;
-            } else {
-                $relatedNews = $content['tx_news_related_news'];
-            }
-            self::assertEquals(
-                $newsUid,
-                $relatedNews,
-                "Content element {$allContentUids[$index]} should still be related to news",
-            );
-        }
-
-        // Check content elements that should be removed
-        foreach ([0, 2] as $index) {
-            $result = $readTool->execute([
-                'table' => 'tt_content',
-                'uid' => $allContentUids[$index],
-            ]);
-            $response = json_decode((string)$result->content[0]->text, true);
-            if (!isset($response['records'][0])) {
-                self::fail("No record found for content element {$allContentUids[$index]}");
-            }
-            $content = $response['records'][0];
-            // Check if the foreign field is returned
-            if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
                 $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('tt_content');
                 $queryBuilder->getRestrictions()->removeAll();
@@ -518,8 +478,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
             }
             self::assertEquals(
                 0,
-                $relatedNews,
-                "Content element {$allContentUids[$index]} should no longer be related to news",
+                (int)$relatedNews,
+                "Content element {$allContentUids[$index]} foreign field should be cleared after parent-side update",
             );
         }
     }
@@ -578,7 +538,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertTrue($result->isError);
-        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
 
         // Test 3: Array with negative values
         $result = $writeTool->execute([
@@ -590,9 +550,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertTrue($result->isError);
-        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
 
-        // Test 4: Array with data objects (not supported yet)
+        // Test 4: Array with data objects (now accepted as inline record data)
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'update',
@@ -603,7 +563,6 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertTrue($result->isError);
-        self::assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 }

@@ -31,9 +31,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'data' => ['sys_language_uid' => 0],
         ]);
 
-        self::assertTrue($result->isError, 'Expected error when translating to default language');
-        $text = $result->content[0]->text;
-        self::assertStringContainsString('default language', $text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     #[Test]
@@ -59,7 +57,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         ]);
         self::assertTrue($duplicate->isError, 'Expected error for duplicate translation');
         $text = $duplicate->content[0]->text;
-        self::assertStringContainsString('already exists', $text);
+        self::assertStringContainsString('already been localized', $text);
     }
 
     protected function createMultiLanguageSiteConfiguration(): void

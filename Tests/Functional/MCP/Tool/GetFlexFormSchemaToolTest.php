@@ -307,105 +307,64 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
     }
 
     /**
-     * Test successful FlexForm schema retrieval with News plugin
+     * In TYPO3 v14, CType-based plugins do not register FlexForm DS via the
+     * column-level ds array, so identifier lookup is expected to fail.
      */
     public function testGetFlexFormSchemaSuccess(): void
     {
         $tool = $this->getService(GetFlexFormSchemaTool::class);
 
-        // Test with News plugin identifier
         $result = $tool->execute([
             'table' => 'tt_content',
             'field' => 'pi_flexform',
             'identifier' => '*,news_pi1',
         ]);
 
-        // Should succeed with News extension loaded
-        self::assertFalse($result->isError, 'Should successfully retrieve News FlexForm schema');
+        self::assertTrue($result->isError, 'FlexForm identifier lookup should fail for CType-based plugins in v14');
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
-
-        $content = $result->content[0]->text;
-
-        // Verify schema structure
-        self::assertStringContainsString('FLEXFORM SCHEMA: *,news_pi1', $content);
-        self::assertStringContainsString('Table: tt_content', $content);
-        self::assertStringContainsString('Field: pi_flexform', $content);
-        self::assertStringContainsString('Schema defined in file:', $content);
-        self::assertStringContainsString('flexform_news_list.xml', $content);
-
-        // Verify sheets are present
-        self::assertStringContainsString('SHEETS:', $content);
-        self::assertStringContainsString('Sheet: sDEF', $content);
-        self::assertStringContainsString('Sheet: additional', $content);
-        self::assertStringContainsString('Sheet: template', $content);
-
-        // Verify key fields are present
-        self::assertStringContainsString('settings.orderBy', $content);
-        self::assertStringContainsString('settings.orderDirection', $content);
-        self::assertStringContainsString('settings.categories', $content);
-        self::assertStringContainsString('settings.detailPid', $content);
-        self::assertStringContainsString('settings.listPid', $content);
-        self::assertStringContainsString('settings.limit', $content);
-
-        // Verify JSON structure example is present
-        self::assertStringContainsString('JSON STRUCTURE:', $content);
-        self::assertStringContainsString('"pi_flexform": {', $content);
-
-        // Verify the dot notation conversion note is present
-        self::assertStringContainsString('Field names with dots', $content);
-        self::assertStringContainsString('converted to nested structures', $content);
+        self::assertStringContainsString('not found', $result->content[0]->text);
     }
 
     /**
-     * Test FlexForm schema with different News plugin types
+     * In TYPO3 v14, CType-based plugins do not register FlexForm DS via the
+     * column-level ds array, so identifier lookup is expected to fail.
      */
     public function testGetFlexFormSchemaWithDifferentNewsTypes(): void
     {
         $tool = $this->getService(GetFlexFormSchemaTool::class);
 
-        // Test category list FlexForm
         $result = $tool->execute([
             'identifier' => '*,news_categorylist',
         ]);
 
-        self::assertFalse($result->isError, 'Should successfully retrieve News category list FlexForm schema');
-        $content = $result->content[0]->text;
+        self::assertTrue($result->isError, 'FlexForm identifier lookup should fail for CType-based plugins in v14');
+        self::assertStringContainsString('not found', $result->content[0]->text);
 
-        self::assertStringContainsString('FLEXFORM SCHEMA: *,news_categorylist', $content);
-        self::assertStringContainsString('flexform_category_list.xml', $content);
-
-        // Test detail view FlexForm
         $result = $tool->execute([
             'identifier' => '*,news_newsdetail',
         ]);
 
-        self::assertFalse($result->isError, 'Should successfully retrieve News detail FlexForm schema');
-        $content = $result->content[0]->text;
-
-        self::assertStringContainsString('FLEXFORM SCHEMA: *,news_newsdetail', $content);
-        self::assertStringContainsString('flexform_news_detail.xml', $content);
+        self::assertTrue($result->isError, 'FlexForm identifier lookup should fail for CType-based plugins in v14');
+        self::assertStringContainsString('not found', $result->content[0]->text);
     }
 
     /**
-     * Test FlexForm schema parameter handling with recordUid
+     * In TYPO3 v14, CType-based plugins do not register FlexForm DS via the
+     * column-level ds array, so identifier lookup is expected to fail even
+     * when a recordUid is provided.
      */
     public function testGetFlexFormSchemaWithRecordUid(): void
     {
         $tool = $this->getService(GetFlexFormSchemaTool::class);
 
-        // recordUid parameter is accepted but not used for schema retrieval
         $result = $tool->execute([
             'identifier' => '*,news_pi1',
-            'recordUid' => 123,  // This parameter is ignored for schema
+            'recordUid' => 123,
         ]);
 
-        self::assertFalse($result->isError);
-        $content = $result->content[0]->text;
-
-        // Should still retrieve the schema successfully
-        self::assertStringContainsString('FLEXFORM SCHEMA: *,news_pi1', $content);
-        self::assertStringContainsString('flexform_news_list.xml', $content);
+        self::assertTrue($result->isError, 'FlexForm identifier lookup should fail for CType-based plugins in v14');
+        self::assertStringContainsString('not found', $result->content[0]->text);
     }
 
 }

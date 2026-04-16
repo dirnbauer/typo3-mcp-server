@@ -356,10 +356,10 @@ class WriteTableLanguageTest extends FunctionalTestCase
 
         self::assertTrue($result->isError);
         $errorMessage = $result->error ?? ($result->content[0]->text ?? '');
-        // TYPO3 returns a different error message when using DataHandler
         self::assertTrue(
             str_contains((string)$errorMessage, 'Translation already exists')
-            || str_contains((string)$errorMessage, 'already are localizations'),
+            || str_contains((string)$errorMessage, 'already are localizations')
+            || str_contains((string)$errorMessage, 'already been localized'),
             'Expected error about existing translation, got: ' . $errorMessage,
         );
     }

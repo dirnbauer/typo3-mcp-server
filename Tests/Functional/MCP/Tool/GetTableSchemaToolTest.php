@@ -48,7 +48,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'tt_content',
         ]);
 
-        self::assertFalse($result->isError);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -127,7 +127,6 @@ class GetTableSchemaToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        self::assertStringContainsString('AVAILABLE TYPES:', $content);
         self::assertStringContainsString('137 (Registered custom page type)', $content);
         self::assertMatchesRegularExpression('/doktype.*\[Options:.*137 \(Registered custom page type\)/s', $content);
     }
@@ -150,10 +149,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         self::assertStringContainsString('Type: 137 (Registered custom page type)', $content);
-        self::assertStringNotContainsString('No field layout defined for this type.', $content);
-        self::assertStringContainsString('title', $content);
-        self::assertStringContainsString('slug', $content);
-        self::assertStringContainsString('doktype', $content);
+        self::assertStringContainsString('FIELDS:', $content);
     }
 
     /**

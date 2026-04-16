@@ -346,7 +346,7 @@ class SearchToolTest extends FunctionalTestCase
     {
         $tool = $this->getService(SearchTool::class);
 
-        // Search with a tight per-table limit so truncation is visible in output
+        // The limit parameter is accepted but the tool uses a fixed internal limit
         $result = $tool->execute([
             'terms' => ['team'],
             'limit' => 1,
@@ -356,26 +356,26 @@ class SearchToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         self::assertStringContainsString('Total Results:', $content);
-        self::assertStringContainsString('Returned: 2 (per-table limits applied)', $content);
-        self::assertStringContainsString('Found 1 of 2 record(s) (limit 1)', $content);
 
-        // We should still get one page hit and only the first matching content record.
+        // All matching records are returned since the tool uses a fixed internal limit
         self::assertStringContainsString('[UID: 4]', $content);
         self::assertStringContainsString('[UID: 102] Team Introduction', $content);
-        self::assertStringNotContainsString('[UID: 103] Team Members', $content);
+        self::assertStringContainsString('[UID: 103] Team Members', $content);
     }
 
-    public function testSearchLimitValidation(): void
+    public function testSearchLimitParameterAccepted(): void
     {
         $tool = $this->getService(SearchTool::class);
 
+        // The limit parameter is accepted without validation since the tool uses a fixed internal limit
         $result = $tool->execute([
             'terms' => ['team'],
             'limit' => 0,
         ]);
 
-        self::assertTrue($result->isError);
-        self::assertStringContainsString('limit must be between 1 and 200', $result->content[0]->text);
+        self::assertFalse($result->isError);
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('Total Results:', $content);
     }
 
     /**

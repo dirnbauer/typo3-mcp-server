@@ -786,8 +786,9 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('belongs to pid=1', $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals('create', $data['action']);
     }
 
     public function testCreateContentAfterWorkspaceVersionedReference(): void

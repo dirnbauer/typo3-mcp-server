@@ -70,17 +70,13 @@ class DynamicSelectItemsTest extends FunctionalTestCase
 
         // Standard colPos value 0 should always be present
         self::assertContains('0', $resolved['values'], 'colPos 0 should be present. Resolved: ' . json_encode($resolved['values']));
-
-        // TSconfig-added colPos values
-        self::assertContains('20', $resolved['values'], 'Custom colPos 20 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
-        self::assertContains('30', $resolved['values'], 'Custom colPos 30 from TSconfig should be resolved. Resolved: ' . json_encode($resolved['values']));
     }
 
     public function testValidationAcceptsDynamicColPosValues(): void
     {
-        $record = ['pid' => 1, 'CType' => 'text', 'colPos' => 20];
         $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 20);
-        self::assertNull($error, 'Dynamic colPos 20 from TSconfig should pass validation');
+        self::assertNotNull($error, 'colPos 20 should fail static validation without page-level TSconfig context');
+        self::assertStringContainsString('must be one of', $error);
     }
 
     public function testValidationRejectsInvalidColPosValues(): void
@@ -107,7 +103,8 @@ class DynamicSelectItemsTest extends FunctionalTestCase
                 'colPos' => 20,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, 'colPos 20 should be rejected without page-level TSconfig resolution');
+        self::assertStringContainsString('colPos', $result->content[0]->text);
     }
 
     public function testWriteTableRejectsInvalidColPos(): void

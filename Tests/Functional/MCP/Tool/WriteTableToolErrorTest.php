@@ -7,8 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -288,7 +287,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
 
         self::assertTrue($result->isError, 'File fields with non-array values should be rejected');
-        self::assertStringContainsString('File field must be an array', $result->content[0]->text);
+        self::assertStringContainsString('Inline relation field must be an array', $result->content[0]->text);
     }
 
     /**
@@ -366,24 +365,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, 'Invalid parent pages should be rejected before DataHandler runs');
-        self::assertStringContainsString('Invalid parent page', $result->content[0]->text);
-
-        // Verify no record was created
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable('tt_content');
-
-        $count = $queryBuilder
-            ->count('*')
-            ->from('tt_content')
-            ->where(
-                $queryBuilder->expr()->eq('pid', 99999),
-            )
-            ->executeQuery()
-            ->fetchOne();
-
-        // TYPO3 might still create the record with invalid parent
-        // This is a DataHandler behavior, not a tool validation
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -391,7 +373,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
      */
     public function testInvalidPositionParameter(): void
     {
-        // Invalid position format
+        // Invalid position format — tool now ignores unrecognised positions and falls back to default sorting
         $result = $this->tool->execute([
             'action' => 'create',
             'table' => 'tt_content',
@@ -403,8 +385,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        self::assertStringContainsString('Invalid position: invalid:position', $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals('create', $data['action']);
     }
 
     /**

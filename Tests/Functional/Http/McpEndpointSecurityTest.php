@@ -35,9 +35,13 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
     /** @var array<string, mixed> */
     private array $originalMcpExtensionSettings = [];
 
+    private mixed $previousRequest = null;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->previousRequest = $GLOBALS['TYPO3_REQUEST'] ?? null;
 
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $backendUser = $this->setUpBackendUser(1);
@@ -51,6 +55,7 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
 
     protected function tearDown(): void
     {
+        $GLOBALS['TYPO3_REQUEST'] = $this->previousRequest;
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $this->originalMcpExtensionSettings;
         parent::tearDown();
     }

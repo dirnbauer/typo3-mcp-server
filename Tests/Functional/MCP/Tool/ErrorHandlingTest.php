@@ -167,17 +167,17 @@ final class ErrorHandlingTest extends AbstractFunctionalTest
     {
         $tool = $this->getService(ReadTableTool::class);
 
-        // Create a condition that would cause a database error
-        // Using invalid SQL syntax in where clause
+        // Trigger a validation error via filters with an invalid operator
         $result = $tool->execute([
             'table' => 'pages',
-            'where' => 'invalid SQL syntax @@@ error',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'INVALID_OP', 'value' => '1'],
+            ],
         ]);
 
-        // Should handle the database error gracefully
+        // Should handle the error gracefully
         $errorText = $this->assertToolError($result);
-        // The error message should be user-friendly, not exposing SQL details
-        self::assertStringNotContainsString('@@@ error', $errorText);
+        self::assertStringContainsString('invalid operator', $errorText);
     }
 
     /**

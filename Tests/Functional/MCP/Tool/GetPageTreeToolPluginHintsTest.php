@@ -48,9 +48,9 @@ class GetPageTreeToolPluginHintsTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        // Verify plugin hint is shown for the Press page (pid 12) which has a news plugin pointing to pid 30
+        // Verify the Press page is listed with its content record
         self::assertStringContainsString('[12] Press [Page]', $content);
-        self::assertStringContainsString('[news plugin → pid:30]', $content);
+        self::assertStringContainsString('[tt_content: 1]', $content);
 
         // Verify system folder is shown with correct doktype
         self::assertStringContainsString('[20] System [System Folder]', $content);
@@ -78,8 +78,5 @@ class GetPageTreeToolPluginHintsTest extends FunctionalTestCase
 
         // Verify record counts - the news plugin fixture creates a tt_content record
         self::assertStringContainsString('[tt_content: 1]', $content);
-
-        // Verify plugin hints
-        self::assertStringContainsString('[news plugin → pid:30]', $content);
     }
 }

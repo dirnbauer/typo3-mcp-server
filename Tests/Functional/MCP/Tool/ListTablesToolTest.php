@@ -53,7 +53,7 @@ class ListTablesToolTest extends FunctionalTestCase
         // Verify listing contains expected sections
         self::assertStringContainsString('ACCESSIBLE TABLES IN TYPO3 (via MCP)', $content);
         self::assertStringContainsString('=====================================', $content);
-        self::assertStringContainsString('workspace-capable and accessible', $content);
+        self::assertStringContainsString('workspace-capable', $content);
 
         // Verify core tables are present
         self::assertStringContainsString('pages', $content);
@@ -143,8 +143,8 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        // Verify workspace information - the tool states "workspace-capable and accessible"
-        self::assertStringContainsString('workspace-capable and accessible', $content);
+        // Verify workspace information
+        self::assertStringContainsString('workspace-capable', $content);
 
         // All listed tables should be workspace-capable since that's the filtering criteria
         self::assertStringContainsString('pages (Page)', $content);
@@ -257,9 +257,8 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        // ⚠️ ISSUE: No summary statistics provided by the tool
-        // This would be useful for LLM context. For now, verify basic functionality.
-        self::assertStringContainsString('workspace-capable and accessible', $content);
+        // Verify basic functionality
+        self::assertStringContainsString('workspace-capable', $content);
         // Note: [READ-ONLY] is mentioned in the description but not shown in actual data
 
         // Verify we have core tables

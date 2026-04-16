@@ -121,8 +121,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
 
         self::assertLessThanOrEqual(2, count($data['records']));
-        self::assertSame(count($data['records']), $data['count']);
-        self::assertSame(2, $data['nextOffset']);
+        self::assertTrue($data['hasMore']);
         $this->assertHasPagination($result, 2, 0);
     }
 
@@ -140,8 +139,8 @@ class ReadTableToolTest extends AbstractFunctionalTest
 
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        self::assertSame(count($data['records']), $data['count']);
-        self::assertSame(2, $data['nextOffset']);
+        self::assertCount(1, $data['records']);
+        self::assertTrue($data['hasMore']);
         $this->assertHasPagination($result, 1, 1);
     }
 
@@ -195,13 +194,15 @@ class ReadTableToolTest extends AbstractFunctionalTest
     /**
      * Test reading with custom WHERE condition
      */
-    public function testReadWithWhereCondition(): void
+    public function testReadWithFilterCondition(): void
     {
         $tool = $this->getService(ReadTableTool::class);
 
         $result = $tool->execute([
             'table' => 'tt_content',
-            'where' => 'CType = "textmedia"',
+            'filters' => [
+                ['field' => 'CType', 'operator' => 'eq', 'value' => 'textmedia'],
+            ],
             'includeRelations' => false,
         ]);
 
@@ -217,18 +218,19 @@ class ReadTableToolTest extends AbstractFunctionalTest
     /**
      * Test WHERE condition security (should block dangerous SQL)
      */
-    public function testWhereConditionSecurity(): void
+    public function testFilterValidationRejectsInvalidOperator(): void
     {
         $tool = $this->getService(ReadTableTool::class);
 
-        // Try to inject dangerous SQL
         $result = $tool->execute([
             'table' => 'pages',
-            'where' => 'uid = 1; DROP TABLE pages',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'DROP', 'value' => '1'],
+            ],
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('disallowed SQL keywords', $result->content[0]->text);
+        self::assertStringContainsString('invalid operator', $result->content[0]->text);
     }
 
     /**
@@ -251,7 +253,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         self::assertArrayHasKey('uid', $properties);
         self::assertArrayHasKey('limit', $properties);
         self::assertArrayHasKey('offset', $properties);
-        self::assertArrayHasKey('where', $properties);
+        self::assertArrayHasKey('filters', $properties);
     }
 
     /**

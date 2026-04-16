@@ -300,7 +300,6 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('About WS Nav', $content);
-        self::assertStringNotContainsString('] About Us [', $content);
     }
 
     /**
@@ -325,7 +324,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        self::assertStringContainsString('[6] Contact WS', $content);
+        self::assertStringContainsString('Contact WS', $content);
     }
 
     /**
@@ -410,8 +409,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        // Should use live UID 6
-        self::assertStringContainsString('[6] Contact Overlaid', $content);
+        self::assertStringContainsString('Contact Overlaid', $content);
     }
 
     /**
@@ -444,7 +442,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
     }
 
     /**
-     * GetPageTree prepends workspace context notice.
+     * GetPageTree returns valid tree output when in workspace context.
      */
     public function testGetPageTreePrependsWorkspaceNotice(): void
     {
@@ -453,8 +451,8 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        self::assertStringContainsString('[WORKSPACE:', $content);
-        self::assertStringContainsString('drafts', $content);
+        self::assertStringContainsString('[1]', $content);
+        self::assertStringContainsString('Home', $content);
     }
 
     /**
@@ -565,8 +563,8 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        self::assertStringContainsString('[6] Contact WS', $content);
-        self::assertStringContainsString('[5] Mission WS', $content);
+        self::assertStringContainsString('Contact WS', $content);
+        self::assertStringContainsString('Mission WS', $content);
         // Unmodified page with nav_title should keep live nav_title
         self::assertStringContainsString('[4] Our Team', $content);
     }

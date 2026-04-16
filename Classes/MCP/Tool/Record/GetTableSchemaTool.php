@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Utility\TcaFormattingUtility;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for getting detailed schema information for a specific table
@@ -106,14 +108,12 @@ final class GetTableSchemaTool extends AbstractRecordTool
         foreach ($importantFields as $key) {
             if (isset($ctrl[$key])) {
                 $value = $ctrl[$key];
-                // Format arrays as JSON
                 if (is_array($value)) {
                     $value = json_encode($value);
                 } elseif (is_string($value) && str_starts_with($value, 'LLL:')) {
-                    // Translate LLL keys
                     $value = TableAccessService::translateLabel($value);
                 }
-                $result .= $key . ': ' . $value . "\n";
+                $result .= $key . ': ' . (is_string($value) ? $value : (string)$value) . "\n";
             }
         }
 
@@ -190,7 +190,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
         }
 
         // Parse the showitem string for organization info
-        $fields = GeneralUtility::trimExplode(',', $showitem, true);
+        $fields = GeneralUtility::trimExplode(',', (string)$showitem, true);
 
         // Group fields by tab
         $tabFields = [];
@@ -245,7 +245,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
                         // Get the palette fields
                         $paletteFields = $GLOBALS['TCA'][$table]['palettes'][$paletteName]['showitem'] ?? '';
-                        $paletteFieldsList = GeneralUtility::trimExplode(',', $paletteFields, true);
+                        $paletteFieldsList = GeneralUtility::trimExplode(',', (string)$paletteFields, true);
 
                         // Process each palette field
                         $lastPaletteField = end($paletteFieldsList);
@@ -269,7 +269,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
                                 // Add the field to the result with proper indentation
                                 $prefix = ($paletteItem === $lastPaletteField) ? '└─ ' : '├─ ';
-                                $fieldLabel = isset($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $paletteFieldName;
+                                $fieldLabel = isset($fieldConfig['label']) && is_string($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $paletteFieldName;
                                 // TcaSchemaFactory returns flattened config where type is at top level
                                 $fieldType = $fieldConfig['type'] ?? $fieldConfig['config']['type'] ?? 'unknown';
                                 $result .= '    ' . $prefix . $paletteFieldName . ' (' . $fieldLabel . '): ' . $fieldType;
@@ -289,7 +289,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                         $processedFields[$fieldName] = true;
 
                         // Add the field to the result
-                        $fieldLabel = isset($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $fieldName;
+                        $fieldLabel = isset($fieldConfig['label']) && is_string($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $fieldName;
                         // TcaSchemaFactory returns flattened config where type is at top level
                         $fieldType = $fieldConfig['type'] ?? $fieldConfig['config']['type'] ?? 'unknown';
                         $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
@@ -314,11 +314,10 @@ final class GetTableSchemaTool extends AbstractRecordTool
         if (!empty($unassignedFields)) {
             $result .= "  (Additional Fields):\n";
             foreach ($unassignedFields as $fieldName => $fieldConfig) {
-                $fieldLabel = isset($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $fieldName;
+                $fieldLabel = isset($fieldConfig['label']) && is_string($fieldConfig['label']) ? TableAccessService::translateLabel($fieldConfig['label']) : $fieldName;
                 $fieldType = $fieldConfig['type'] ?? $fieldConfig['config']['type'] ?? 'unknown';
                 $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
-                // Add field details inline
                 $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType);
                 $result .= "\n";
             }
