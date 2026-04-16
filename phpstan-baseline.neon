@@ -1221,7 +1221,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1267,6 +1267,12 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Cannot access offset ''sortby'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 6
@@ -1287,7 +1293,7 @@ parameters:
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 4
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
