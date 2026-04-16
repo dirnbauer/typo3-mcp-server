@@ -71,6 +71,12 @@
             "-",
             "Tools\/Index.html",
             "Tools"
+        ],
+        "Troubleshooting\/Index": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html",
+            "Troubleshooting"
         ]
     },
     "std:label": {
@@ -134,6 +140,12 @@
             "Tools\/Index.html#tools",
             "Tools"
         ],
+        "troubleshooting": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#troubleshooting",
+            "Troubleshooting"
+        ],
         "confval-ext-mcp-server-filesandboxroot": [
             "-",
             "-",
@@ -145,6 +157,18 @@
             "-",
             "Configuration\/Index.html#confval-ext-mcp-server-workspaceuploadsubfolders",
             "workspaceUploadSubfolders"
+        ],
+        "confval-ext-mcp-server-allowmcptokeninquerystring": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-allowmcptokeninquerystring",
+            "allowMcpTokenInQueryString"
+        ],
+        "confval-ext-mcp-server-enablemcpauthheaderdiagnostic": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-enablemcpauthheaderdiagnostic",
+            "enableMcpAuthHeaderDiagnostic"
         ]
     },
     "std:title": {
@@ -868,6 +892,24 @@
             "Tools\/Index.html#file-tools",
             "File tools"
         ],
+        "liststorages": [
+            "-",
+            "-",
+            "Tools\/Index.html#liststorages",
+            "ListStorages"
+        ],
+        "browsefolder": [
+            "-",
+            "-",
+            "Tools\/Index.html#browsefolder",
+            "BrowseFolder"
+        ],
+        "searchfile": [
+            "-",
+            "-",
+            "Tools\/Index.html#searchfile",
+            "SearchFile"
+        ],
         "browsefiles": [
             "-",
             "-",
@@ -1083,6 +1125,84 @@
             "-",
             "Tools\/Index.html#getpaymentstats",
             "GetPaymentStats"
+        ],
+        "troubleshooting-1": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#troubleshooting",
+            "Troubleshooting"
+        ],
+        "the-mcp-endpoint-is-not-reachable": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#the-mcp-endpoint-is-not-reachable",
+            "The MCP endpoint is not reachable"
+        ],
+        "the-oauth-discovery-urls-return-404": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#the-oauth-discovery-urls-return-404",
+            "The OAuth discovery URLs return 404"
+        ],
+        "authorization-header-missing-after-login": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#authorization-header-missing-after-login",
+            "\"Authorization header missing\" after login"
+        ],
+        "no-writable-workspace-when-writing-records": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#no-writable-workspace-when-writing-records",
+            "\"No writable workspace\" when writing records"
+        ],
+        "tool-calls-return-table-not-allowed": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#tool-calls-return-table-not-allowed",
+            "Tool calls return \"Table not allowed\""
+        ],
+        "cursor-claude-n8n-ask-to-authorize-again-every-time": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#cursor-claude-n8n-ask-to-authorize-again-every-time",
+            "Cursor \/ Claude \/ n8n ask to authorize again every time"
+        ],
+        "local-vendor-bin-typo3-mcp-server-connects-but-tools-fail": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#local-vendor-bin-typo3-mcp-server-connects-but-tools-fail",
+            "Local vendor\/bin\/typo3 mcp:server connects but tools fail"
+        ],
+        "file-tools-refuse-my-path": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#file-tools-refuse-my-path",
+            "File tools refuse my path"
+        ],
+        "publishworkspace-published-nothing": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#publishworkspace-published-nothing",
+            "PublishWorkspace published nothing"
+        ],
+        "the-backend-module-tabs-do-nothing": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#the-backend-module-tabs-do-nothing",
+            "The backend module tabs do nothing"
+        ],
+        "still-stuck": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#still-stuck",
+            "Still stuck?"
+        ],
+        "see-also": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#see-also",
+            "See also"
         ]
     },
     "std:confval": {
@@ -1097,6 +1217,18 @@
             "-",
             "Configuration\/Index.html#confval-ext-mcp-server-workspaceuploadsubfolders",
             "workspaceUploadSubfolders"
+        ],
+        "ext-mcp-server-allowmcptokeninquerystring": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-allowmcptokeninquerystring",
+            "allowMcpTokenInQueryString"
+        ],
+        "ext-mcp-server-enablemcpauthheaderdiagnostic": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-enablemcpauthheaderdiagnostic",
+            "enableMcpAuthHeaderDiagnostic"
         ]
     }
 }

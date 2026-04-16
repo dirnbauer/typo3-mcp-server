@@ -81,6 +81,7 @@ Start here depending on your role:
 - :doc:`Tools/Index` for the complete MCP tool reference
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
   deeper architecture notes
+- :doc:`Troubleshooting/Index` when something is not working
 
 Further reading
 ===============
@@ -96,3 +97,4 @@ Further reading
    Configuration/Index
    Tools/Index
    Architecture/Index
+   Troubleshooting/Index

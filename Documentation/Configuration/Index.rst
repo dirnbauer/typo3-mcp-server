@@ -103,6 +103,37 @@ Extension configuration values
 
       1:/mcp/workspaces/ws-3/images/
 
+.. confval:: allowMcpTokenInQueryString
+   :name: ext-mcp-server-allowMcpTokenInQueryString
+   :type: boolean
+   :default: false
+   :required: false
+
+   When enabled, the ``/mcp`` endpoint accepts a bearer token in a
+   ``?token=…`` query string instead of the ``Authorization: Bearer``
+   header.
+
+   .. warning::
+
+      Disabled by default on purpose. Query-string tokens leak into reverse
+      proxy logs, access logs, browser history, and referrer headers. Only
+      turn this on for legacy clients that cannot send the Authorization
+      header, and rotate tokens regularly.
+
+.. confval:: enableMcpAuthHeaderDiagnostic
+   :name: ext-mcp-server-enableMcpAuthHeaderDiagnostic
+   :type: boolean
+   :default: true
+   :required: false
+
+   Controls the lightweight ``?test=auth`` diagnostic used by the backend
+   module to verify whether a reverse proxy strips the ``Authorization``
+   header.
+
+   Disable this on hardened environments that should not expose any
+   diagnostic probe to the outside world. The backend module falls back to
+   hiding the associated health-check indicator when disabled.
+
 Why the sandbox matters
 =======================
 

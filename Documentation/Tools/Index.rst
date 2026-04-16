@@ -77,6 +77,15 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``AttachImage``
      - Write
      - Stage images in the sandbox (URL or ``sys_file``), optional FAL processing, attach to TCA file fields
+   * - ``ListStorages``
+     - Read
+     - List all FAL file storages (UIDs, names, capabilities)
+   * - ``BrowseFolder``
+     - Read
+     - Browse folder contents in any FAL storage (not sandbox-restricted)
+   * - ``SearchFile``
+     - Read
+     - Search FAL for files by name, extension, folder, or MIME type
    * - ``BrowseFiles``
      - Read
      - List MCP file sandbox folders
@@ -399,6 +408,55 @@ creates a suitable workspace.
 
 File tools
 ==========
+
+The extension exposes two tiers of file tools:
+
+- **FAL-wide, read-only** — ``ListStorages``, ``BrowseFolder``,
+  ``SearchFile``. These inspect any TYPO3 file storage the backend user can
+  access.
+- **Sandbox-scoped, read/write** — ``BrowseFiles``, ``ReadFileMetadata``,
+  ``WriteFile``, ``UploadFile``, ``UploadFileFromUrl``. These are restricted
+  to the configured MCP file sandbox (default ``1:/mcp/``).
+
+ListStorages
+------------
+
+List all TYPO3 FAL file storages visible to the current user.
+
+:Parameters:
+   - ``includeOffline`` (boolean): include storages that are currently
+     offline (default ``false``)
+
+Returns storage UIDs, names, and capability flags (public, writable,
+default). Use the returned UID to drive ``BrowseFolder`` / ``SearchFile``
+with combined identifiers like ``1:/user_upload/``.
+
+BrowseFolder
+------------
+
+Browse folder contents in any file storage the user can access.
+
+:Parameters:
+   - ``folder`` (string): combined identifier such as ``1:/user_upload/``;
+     omit or use ``/`` for the root of the default storage
+   - ``recursive`` (boolean): list nested folders
+
+Useful for auditing where media is stored outside the MCP sandbox. Read-only.
+
+SearchFile
+----------
+
+Search FAL for existing files across storages.
+
+:Parameters:
+   - ``name`` (string): partial, case-insensitive filename match
+   - ``extensions`` (string): comma-separated extensions, e.g. ``png,jpg,svg``
+   - ``folder`` (string): restrict search to a folder
+   - ``mimeType`` (string): filter by MIME type prefix, e.g. ``image/``
+   - ``limit`` (integer): max results
+
+Returns file UIDs that can be passed to ``AttachImage`` or ``WriteTable`` when
+wiring records up to existing media.
 
 BrowseFiles
 -----------

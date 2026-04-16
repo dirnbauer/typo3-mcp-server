@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-15T21:20:19+00:00" name="docsearch:modified">
-<meta content="2026-04-15T21:20:19+00:00" name="dc.modified">
-<meta content="2026-04-15T21:20:19+00:00" property="article:modified_time">
+<meta content="2026-04-16T16:14:53+00:00" name="docsearch:modified">
+<meta content="2026-04-16T16:14:53+00:00" name="dc.modified">
+<meta content="2026-04-16T16:14:53+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -147,7 +147,7 @@
 
         <dd class="field-odd">
             
-    <p>Wed, 15 Apr 2026 21:20:19 +0000</p>
+    <p>Thu, 16 Apr 2026 16:14:53 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -218,6 +218,7 @@ configuration</li>
     <li class="dash"><a href="#">Tools</a> for the complete MCP tool reference</li>
     <li class="dash"><a href="#">Architecture</a> for design decisions, implementation layers, and
 deeper architecture notes</li>
+    <li class="dash"><a href="#">Troubleshooting</a> when something is not working</li>
 </ul>
 
     </section>
@@ -534,6 +535,72 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="#security">Security</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#troubleshooting-1">Troubleshooting</a>
+
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#the-mcp-endpoint-is-not-reachable">The MCP endpoint is not reachable</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#the-oauth-discovery-urls-return-404">The OAuth discovery URLs return 404</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#authorization-header-missing-after-login">&quot;Authorization header missing&quot; after login</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#no-writable-workspace-when-writing-records">&quot;No writable workspace&quot; when writing records</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#tool-calls-return-table-not-allowed">Tool calls return &quot;Table not allowed&quot;</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#cursor-claude-n8n-ask-to-authorize-again-every-time">Cursor / Claude / n8n ask to authorize again every time</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#local-vendor-bin-typo3-mcp-server-connects-but-tools-fail">Local vendor/bin/typo3 mcp:server connects but tools fail</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#file-tools-refuse-my-path">File tools refuse my path</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#publishworkspace-published-nothing">PublishWorkspace published nothing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#the-backend-module-tabs-do-nothing">The backend module tabs do nothing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#still-stuck">Still stuck?</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#see-also">See also</a>
 
 
 </li>
@@ -1330,6 +1397,99 @@ subfolders inside the sandbox root.</p>
         </dd>
     </dl>
 </section>
+            <section data-search-title="allowMcpTokenInQueryString"
+         data-search-id="confval-ext-mcp-server-allowmcptokeninquerystring"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-allowmcptokeninquerystring"
+>
+    <h3 class="sr-only">allowMcpTokenInQueryString</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">allow<wbr>Mcp<wbr>Token<wbr>In<wbr>Query<wbr>String</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-allowmcptokeninquerystring"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-allowmcptokeninquerystring"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">boolean
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">false
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>When enabled, the <code>/mcp</code> endpoint accepts a bearer token in a
+<code>?token=…</code> query string instead of the <code>Authorization: Bearer</code>
+header.</p>
+    
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>Disabled by default on purpose. Query-string tokens leak into reverse
+proxy logs, access logs, browser history, and referrer headers. Only
+turn this on for legacy clients that cannot send the Authorization
+header, and rotate tokens regularly.</p>
+
+</div>
+            </div>
+        </dd>
+    </dl>
+</section>
+            <section data-search-title="enableMcpAuthHeaderDiagnostic"
+         data-search-id="confval-ext-mcp-server-enablemcpauthheaderdiagnostic"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-enablemcpauthheaderdiagnostic"
+>
+    <h3 class="sr-only">enableMcpAuthHeaderDiagnostic</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">enable<wbr>Mcp<wbr>Auth<wbr>Header<wbr>Diagnostic</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-enablemcpauthheaderdiagnostic"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-enablemcpauthheaderdiagnostic"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">boolean
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">true
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Controls the lightweight <code>?test=auth</code> diagnostic used by the backend
+module to verify whether a reverse proxy strips the <code>Authorization</code>
+header.</p>
+
+    <p>Disable this on hardened environments that should not expose any
+diagnostic probe to the outside world. The backend module falls back to
+hiding the associated health-check indicator when disabled.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
     </section>
             <section class="section" id="why-the-sandbox-matters">
             <h2>Why the sandbox matters<a class="headerlink" href="#why-the-sandbox-matters" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1462,6 +1622,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
             <td><code>Search</code></td>            <td>Read</td>            <td>Cross-table LIKE search (per-table cap)</td>    </tr>    <tr>
             <td><code>WriteTable</code></td>            <td>Write</td>            <td>Create/update/translate/delete in workspace (not live)</td>    </tr>    <tr>
             <td><code>AttachImage</code></td>            <td>Write</td>            <td>Stage images in the sandbox (URL or <code>sys_file</code>), optional FAL processing, attach to TCA file fields</td>    </tr>    <tr>
+            <td><code>ListStorages</code></td>            <td>Read</td>            <td>List all FAL file storages (UIDs, names, capabilities)</td>    </tr>    <tr>
+            <td><code>BrowseFolder</code></td>            <td>Read</td>            <td>Browse folder contents in any FAL storage (not sandbox-restricted)</td>    </tr>    <tr>
+            <td><code>SearchFile</code></td>            <td>Read</td>            <td>Search FAL for files by name, extension, folder, or MIME type</td>    </tr>    <tr>
             <td><code>BrowseFiles</code></td>            <td>Read</td>            <td>List MCP file sandbox folders</td>    </tr>    <tr>
             <td><code>ReadFileMetadata</code></td>            <td>Read</td>            <td>Metadata for a file in the sandbox</td>    </tr>    <tr>
             <td><code>UploadFile</code></td>            <td>Write</td>            <td>Upload via base64 into sandbox</td>    </tr>    <tr>
@@ -1853,6 +2016,90 @@ creates a suitable workspace.</p>
     </section>
             <section class="section" id="file-tools">
             <h2>File tools<a class="headerlink" href="#file-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The extension exposes two tiers of file tools:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>FAL-wide, read-only</strong> — <code>ListStorages</code>, <code>BrowseFolder</code>,
+<code>SearchFile</code>. These inspect any TYPO3 file storage the backend user can
+access.</li>
+    <li class="dash"><strong>Sandbox-scoped, read/write</strong> — <code>BrowseFiles</code>, <code>ReadFileMetadata</code>,
+<code>WriteFile</code>, <code>UploadFile</code>, <code>UploadFileFromUrl</code>. These are restricted
+to the configured MCP file sandbox (default <code>1:/mcp/</code>).</li>
+</ul>
+
+            <section class="section" id="liststorages">
+            <h3>ListStorages<a class="headerlink" href="#liststorages" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>List all TYPO3 FAL file storages visible to the current user.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>includeOffline</code> (boolean): include storages that are currently
+offline (default <code>false</code>)</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Returns storage UIDs, names, and capability flags (public, writable,
+default). Use the returned UID to drive <code>BrowseFolder</code> / <code>SearchFile</code>
+with combined identifiers like <code>1:/user_upload/</code>.</p>
+
+    </section>
+            <section class="section" id="browsefolder">
+            <h3>BrowseFolder<a class="headerlink" href="#browsefolder" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Browse folder contents in any file storage the user can access.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>folder</code> (string): combined identifier such as <code>1:/user_upload/</code>;
+omit or use <code>/</code> for the root of the default storage</li>
+    <li class="dash"><code>recursive</code> (boolean): list nested folders</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Useful for auditing where media is stored outside the MCP sandbox. Read-only.</p>
+
+    </section>
+            <section class="section" id="searchfile">
+            <h3>SearchFile<a class="headerlink" href="#searchfile" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Search FAL for existing files across storages.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>name</code> (string): partial, case-insensitive filename match</li>
+    <li class="dash"><code>extensions</code> (string): comma-separated extensions, e.g. <code>png,jpg,svg</code></li>
+    <li class="dash"><code>folder</code> (string): restrict search to a folder</li>
+    <li class="dash"><code>mimeType</code> (string): filter by MIME type prefix, e.g. <code>image/</code></li>
+    <li class="dash"><code>limit</code> (integer): max results</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Returns file UIDs that can be passed to <code>AttachImage</code> or <code>WriteTable</code> when
+wiring records up to existing media.</p>
+
+    </section>
             <section class="section" id="browsefiles">
             <h3>BrowseFiles<a class="headerlink" href="#browsefiles" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
             
@@ -3573,6 +3820,355 @@ the constrained <code>where</code> parser</li>
     </section>
 
         </article>
+<article>
+            
+<section class="section" id="troubleshooting-1" data-rst-anchor="troubleshooting">
+            <a id="troubleshooting"></a>
+            <h1>Troubleshooting<a class="headerlink" href="#troubleshooting-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>This page collects the most common problems when connecting an MCP client to
+a TYPO3 site running this extension, and what to check first.</p>
+
+            
+    <p>If the symptom you see is not listed here, open the backend module under
+<span class="guilabel">User &gt; MCP Server</span>. It performs live health checks against the
+MCP and OAuth discovery endpoints and will surface the underlying issue in
+most cases.</p>
+
+            <div class="contents-wrapper">
+        <ul class="menu-level">
+    <li class="toc-item">
+    <a href="#the-mcp-endpoint-is-not-reachable">The MCP endpoint is not reachable</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#the-oauth-discovery-urls-return-404">The OAuth discovery URLs return 404</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#authorization-header-missing-after-login">&quot;Authorization header missing&quot; after login</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#no-writable-workspace-when-writing-records">&quot;No writable workspace&quot; when writing records</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#tool-calls-return-table-not-allowed">Tool calls return &quot;Table not allowed&quot;</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#cursor-claude-n8n-ask-to-authorize-again-every-time">Cursor / Claude / n8n ask to authorize again every time</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#local-vendor-bin-typo3-mcp-server-connects-but-tools-fail">Local vendor/bin/typo3 mcp:server connects but tools fail</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#file-tools-refuse-my-path">File tools refuse my path</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#publishworkspace-published-nothing">PublishWorkspace published nothing</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#the-backend-module-tabs-do-nothing">The backend module tabs do nothing</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#still-stuck">Still stuck?</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#see-also">See also</a>
+
+
+</li>
+    </ul>
+
+    <button class="toggle-all-sections btn btn-sm btn-light">Collapse all Sections</button>
+</div>
+            <section class="section" id="the-mcp-endpoint-is-not-reachable">
+            <h2>The MCP endpoint is not reachable<a class="headerlink" href="#the-mcp-endpoint-is-not-reachable" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: the backend-module health check for <code>/mcp</code> is red, or the client
+receives a TYPO3 404 page.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">Confirm the correct <strong>site base URL</strong>. The module shows the endpoint URL
+it renders to clients; if that URL is wrong, fix the TYPO3 <strong>site
+configuration</strong> (<code>Site Management &gt; Sites</code>).</li>
+    <li class="dash">Confirm that the TYPO3 <strong>middleware stack</strong> is intact. A custom
+<code>RequestMiddlewares.php</code> override that removes the <code>mcp_server</code> entry
+will disable the endpoint silently.</li>
+    <li class="dash">If you sit behind a reverse proxy / CDN, verify that requests to
+<code>/mcp</code> and <code>/.well-known/oauth-*</code> are forwarded without being
+rewritten or cached.</li>
+</ul>
+
+    </section>
+            <section class="section" id="the-oauth-discovery-urls-return-404">
+            <h2>The OAuth discovery URLs return 404<a class="headerlink" href="#the-oauth-discovery-urls-return-404" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: the health checks next to <code>.well-known/oauth-authorization-server</code>
+or <code>.well-known/oauth-protected-resource</code> are red.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">These paths are served by the same middleware as <code>/mcp</code>. If <code>/mcp</code>
+works but <code>/.well-known/*</code> does not, a reverse proxy rewrite rule is
+usually the cause.</li>
+    <li class="dash">Some hosting stacks block dot-prefixed paths (<code>.well-known</code>) by default;
+explicitly allow that prefix.</li>
+</ul>
+
+    </section>
+            <section class="section" id="authorization-header-missing-after-login">
+            <h2>&quot;Authorization header missing&quot; after login<a class="headerlink" href="#authorization-header-missing-after-login" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: the client completes the OAuth login but every tool call returns
+401, and the backend module shows the <span class="guilabel">Authorization header</span> warning.</p>
+
+            
+    <p>Root cause: the reverse proxy or web server strips the <code>Authorization</code>
+header before TYPO3 sees it.</p>
+
+            
+    <p>Fixes:</p>
+
+            
+
+<ul>
+    <li class="dash">
+    <p><strong>Apache</strong>: add the following rewrite rule so <code>Authorization</code> is mapped
+to <code>HTTP_AUTHORIZATION</code>:</p>
+<div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs apache"><span class="hljs-attribute"><span class="hljs-nomarkup">RewriteEngine</span></span> <span class="hljs-literal">On</span>
+<span class="hljs-attribute"><span class="hljs-nomarkup">RewriteCond</span></span> <span class="hljs-variable">%{HTTP:Authorization}</span> ^(.*)
+<span class="hljs-attribute"><span class="hljs-nomarkup">RewriteRule</span></span> .* -<span class="hljs-meta"> [e=HTTP_AUTHORIZATION:%1]</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div></li>
+    <li class="dash"><strong>Nginx</strong>: ensure <code>fastcgi_pass_header Authorization;</code> is set in the
+PHP location block.</li>
+    <li class="dash"><strong>HTTP Basic Auth in front of TYPO3</strong>: the outer Basic Auth replaces the
+<code>Authorization</code> header. Remove Basic Auth on <code>/mcp</code> and
+<code>/mcp_oauth/*</code> and <code>/.well-known/*</code>, or terminate Basic Auth before
+the MCP endpoint.</li>
+    <li class="dash"><strong>Proxy / CDN</strong>: verify that the proxy forwards the <code>Authorization</code>
+header unchanged.</li>
+</ul>
+
+            
+    <p>As an emergency workaround you can temporarily enable
+<a href="#confval-ext-mcp-server-allowmcptokeninquerystring">allowMcpTokenInQueryString</a>
+and pass <code>?token=…</code> on <code>/mcp</code>. This leaks tokens into logs and should
+not stay enabled in production.</p>
+
+    </section>
+            <section class="section" id="no-writable-workspace-when-writing-records">
+            <h2>&quot;No writable workspace&quot; when writing records<a class="headerlink" href="#no-writable-workspace-when-writing-records" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: record-writing tools return an error about workspaces.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">The authenticated backend user must either be in a workspace already or
+be allowed to create one.</li>
+    <li class="dash">The extension automatically selects the first writable workspace, or
+creates an <code>MCP</code> workspace if permissions allow. If neither is possible,
+assign the user to a workspace via <span class="guilabel">Workspaces</span> in the TYPO3
+backend.</li>
+    <li class="dash">Admin users always have access; non-admins require explicit group
+membership.</li>
+</ul>
+
+    </section>
+            <section class="section" id="tool-calls-return-table-not-allowed">
+            <h2>Tool calls return &quot;Table not allowed&quot;<a class="headerlink" href="#tool-calls-return-table-not-allowed" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: reading or writing a table fails with a
+<code>Table not allowed</code> / <code>Field not allowed</code> error, even though the user
+has access to that table in the TYPO3 backend.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">MCP applies an additional table/field gate on top of TYPO3 permissions
+(<code>TableAccessService</code>). Tables without workspace capability or with
+sensitive fields may be filtered intentionally.</li>
+    <li class="dash">Use <code>ListTables</code> and <code>GetTableSchema</code> to see what the client is
+allowed to touch.</li>
+    <li class="dash">Third-party extensions can extend or filter the MCP-visible field list
+by listening for <code>ModifyAvailableFieldsEvent</code>.</li>
+</ul>
+
+    </section>
+            <section class="section" id="cursor-claude-n8n-ask-to-authorize-again-every-time">
+            <h2>Cursor / Claude / n8n ask to authorize again every time<a class="headerlink" href="#cursor-claude-n8n-ask-to-authorize-again-every-time" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: the client re-runs the OAuth flow on every connection.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">TYPO3 session cookies must be stored by the client. Cursor and the
+<code>mcp-remote</code> proxy do this out of the box; custom clients may need
+additional config.</li>
+    <li class="dash">Verify the site runs over <strong>HTTPS</strong>. Some clients refuse to persist
+tokens issued from <code>http://</code>.</li>
+    <li class="dash">Confirm that the MCP client reuses the existing token; some clients
+default to a fresh token per launch.</li>
+</ul>
+
+    </section>
+            <section class="section" id="local-vendor-bin-typo3-mcp-server-connects-but-tools-fail">
+            <h2>Local <code>vendor/bin/typo3 mcp:server</code> connects but tools fail<a class="headerlink" href="#local-vendor-bin-typo3-mcp-server-connects-but-tools-fail" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: the stdio server starts but every tool returns a permission error.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>mcp:server</code> requires <strong>admin</strong> privileges by design
+(<code>McpServerCommand::ensureAdminRights()</code>). Run it as an admin user.</li>
+    <li class="dash">Use <code>mcp:test</code> to call a single tool with JSON args to isolate the
+problem.</li>
+</ul>
+
+    </section>
+            <section class="section" id="file-tools-refuse-my-path">
+            <h2>File tools refuse my path<a class="headerlink" href="#file-tools-refuse-my-path" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: <code>BrowseFiles</code>, <code>UploadFile</code> or <code>WriteFile</code> returns an error
+about the path being outside the sandbox.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">File tools are restricted to
+<a href="#confval-ext-mcp-server-filesandboxroot">fileSandboxRoot</a> (default
+<code>1:/mcp/</code> → <code>fileadmin/mcp/</code>). That is intentional.</li>
+    <li class="dash">To widen the scope, change the sandbox root in the extension
+configuration. Never point the sandbox at the full <code>fileadmin</code> — MCP
+file writes are <strong>not</strong> workspace-versioned.</li>
+</ul>
+
+    </section>
+            <section class="section" id="publishworkspace-published-nothing">
+            <h2><code>PublishWorkspace</code> published nothing<a class="headerlink" href="#publishworkspace-published-nothing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: <code>PublishWorkspace</code> ran but live content did not change.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">The tool defaults to <strong>dry-run</strong> for safety. Pass <code>&quot;dryRun&quot;: false</code> to
+actually publish.</li>
+    <li class="dash">Verify with <code>WorkspaceReview</code> that the workspace actually contains
+pending changes and that filtering (<code>onlyTables</code>) matches what you
+expect.</li>
+</ul>
+
+    </section>
+            <section class="section" id="the-backend-module-tabs-do-nothing">
+            <h2>The backend module tabs do nothing<a class="headerlink" href="#the-backend-module-tabs-do-nothing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: clicking client-setup tabs in <span class="guilabel">User &gt; MCP Server</span> does
+not switch the content.</p>
+
+            
+    <p>Check:</p>
+
+            
+
+<ul>
+    <li class="dash">Clear the browser cache. The custom tab implementation lives in
+<code>Resources/Public/JavaScript/mcp-module.js</code> and may be cached
+aggressively by a CDN.</li>
+    <li class="dash">Run <span class="guilabel">Maintenance &gt; Flush TYPO3 and PHP Cache</span> — the
+JS module uses a hashed identifier that needs a fresh asset manifest.</li>
+</ul>
+
+    </section>
+            <section class="section" id="still-stuck">
+            <h2>Still stuck?<a class="headerlink" href="#still-stuck" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>If something is reproducibly broken, open an issue on the fork repository
+with:</p>
+
+            
+
+<ul>
+    <li class="dash">the TYPO3 version,</li>
+    <li class="dash">the extension version (<code>composer show hn/typo3-mcp-server</code>),</li>
+    <li class="dash">the MCP client + version,</li>
+    <li class="dash">the exact request/response or tool-call payload,</li>
+    <li class="dash">anything visible in <code>System &gt; Log</code> at the time of the error.</li>
+</ul>
+
+    </section>
+            <section class="section" id="see-also">
+            <h2>See also<a class="headerlink" href="#see-also" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+
+<ul>
+    <li class="dash"><a href="#configuration">Configuration</a> — extension settings and sandbox
+behavior.</li>
+    <li class="dash"><a href="#">Security audit</a> — what the current security posture
+is designed to cover.</li>
+</ul>
+
+    </section>
+    </section>
+
+        </article>
 <!-- content end -->
                                                         </div>
             </div>
@@ -3662,7 +4258,7 @@ the constrained <code>where</code> parser</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 15, 2026 21:20</p>
+                    <p class="text-center">Last rendered: Apr 16, 2026 16:14</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

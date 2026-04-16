@@ -8,4 +8,4 @@
 - In Tests: check all MCP tool call for failure like this: `$this->assertFalse($result->isError, json_encode($result->jsonSerialize()));`
 - Always check if there is some typo3 core api that can be used for TCA related data actions.
 - If the TYPO3 instance has no language support, then hide all aspects of translation like parameters or even database fields. Check the LanguageService.php to check support.
-- Language overlays use TYPO3's PageRepository API while workspace overlays use custom implementation for transparency (see Documentation/Architecture/LanguageOverlays.md)
+- Language overlays use TYPO3's PageRepository API while workspace overlays use custom implementation for transparency (see Documentation/Architecture/LanguageOverlays.rst)
