@@ -189,7 +189,7 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
         ]);
 
         $this->assertSuccessfulToolResult($readResult);
-        $readData = json_decode($readResult->content[0]->text, true);
+        $readData = json_decode((string) $readResult->content[0]->text, true);
 
         // The media field should contain expanded file reference records
         $records = $readData['records'] ?? [];

@@ -164,7 +164,7 @@ class RecordWriteEventTest extends AbstractFunctionalTest
             'uid' => $data['uid'],
             'fields' => ['title'],
         ]);
-        $readData = json_decode($readResult->content[0]->text, true);
+        $readData = json_decode((string) $readResult->content[0]->text, true);
         self::assertEquals('Modified by listener', $readData['records'][0]['title']);
     }
 
