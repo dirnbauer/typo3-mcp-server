@@ -5,64 +5,64 @@
 }
 
 .endpoint-status .status-icon {
+    cursor: help;
     display: inline-block;
-    width: 20px;
     height: 20px;
     line-height: 20px;
     text-align: center;
     vertical-align: middle;
-    cursor: help;
+    width: 20px;
 }
 
 .endpoint-status.checking .status-icon::after {
-    content: '⏳';
+    content: '\23F3';
     font-size: 12px;
 }
 
 .endpoint-status.success .status-icon::after {
-    content: '✅';
+    content: '\2705';
     font-size: 12px;
 }
 
 .endpoint-status.warning .status-icon::after {
-    content: '⚠️';
+    content: '\26A0\FE0F';
     font-size: 12px;
 }
 
 .endpoint-status.error .status-icon::after {
-    content: '❌';
+    content: '\274C';
     font-size: 12px;
 }
 
 .endpoint-status .status-tooltip {
-    display: none;
-    position: absolute;
+    background-color: var(--typo3-surface-container-highest);
+    border: 1px solid var(--typo3-component-border-color);
+    border-radius: var(--typo3-component-border-radius);
     bottom: 100%;
+    box-shadow: var(--typo3-component-box-shadow-tooltip);
+    color: var(--typo3-component-color);
+    display: none;
+    font-size: var(--typo3-font-size);
     left: 0;
-    transform: translateX(0);
-    margin-bottom: 0.5rem;
-    z-index: 1000;
-    background-color: #212529 !important;
-    color: #fff !important;
-    padding: 0.5rem 0.75rem !important;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    white-space: nowrap;
+    margin-bottom: .5rem;
     min-width: 200px;
+    padding: var(--typo3-component-padding-y) var(--typo3-component-padding-x);
+    position: absolute;
     text-align: center;
+    white-space: nowrap;
+    z-index: var(--typo3-zindex-dropdown);
 }
 
 .endpoint-status .status-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 10px;
-    transform: translateX(0);
-    width: 0;
-    height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-top: 6px solid #212529;
+    border-top: 6px solid var(--typo3-surface-container-highest);
+    content: '';
+    height: 0;
+    left: 10px;
+    position: absolute;
+    top: 100%;
+    width: 0;
 }
 
 .endpoint-status:hover .status-tooltip {

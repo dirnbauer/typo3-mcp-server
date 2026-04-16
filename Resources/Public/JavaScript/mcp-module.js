@@ -18,6 +18,8 @@ class McpModule {
     }
 
     initialize() {
+        this.initTabs();
+
         // Copy buttons
         document.querySelectorAll('.copy-button[data-copy-target]').forEach(button => {
             const targetId = button.getAttribute('data-copy-target');
@@ -76,6 +78,55 @@ class McpModule {
 
         // Check endpoint statuses
         this.checkEndpointStatuses();
+    }
+
+    // =========================================================================
+    // Tabs — fully custom, no Bootstrap Tab dependency
+    // =========================================================================
+
+    initTabs() {
+        // Set initial visibility for ALL tab panes in the document
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.style.display = pane.classList.contains('active') ? 'block' : 'none';
+        });
+
+        // Single delegated click handler — no DOM traversal needed
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('.nav-tabs a.nav-link[href^="#"], .nav-pills a.nav-link[href^="#"]');
+            if (!link) return;
+
+            e.preventDefault();
+
+            const targetId = link.getAttribute('href').substring(1);
+            const targetPane = document.getElementById(targetId);
+            if (!targetPane) return;
+
+            // Find parent nav to deactivate sibling links
+            const nav = link.closest('.nav-tabs, .nav-pills');
+            if (nav) {
+                nav.querySelectorAll('a.nav-link').forEach(l => {
+                    l.classList.remove('active');
+                    l.setAttribute('aria-selected', 'false');
+                });
+            }
+
+            // Hide all sibling panes (same parent container as target)
+            const paneContainer = targetPane.parentElement;
+            if (paneContainer) {
+                Array.from(paneContainer.children).forEach(p => {
+                    if (p.classList.contains('tab-pane')) {
+                        p.classList.remove('active', 'show');
+                        p.style.display = 'none';
+                    }
+                });
+            }
+
+            // Activate clicked link and show target pane
+            link.classList.add('active');
+            link.setAttribute('aria-selected', 'true');
+            targetPane.classList.add('active');
+            targetPane.style.display = 'block';
+        });
     }
 
     // =========================================================================
@@ -613,7 +664,7 @@ class McpModule {
                 'Authorization': 'Bearer test-header-check-12345'
             },
             mode: 'cors',
-            credentials: 'same-origin'
+            credentials: 'omit'
         })
             .then(response => {
                 return response.json().then(data => {
@@ -628,7 +679,11 @@ class McpModule {
                     }
                 }).catch(() => {
                     if (response.status === 401) {
-                        this.setEndpointStatus(element, 'warning', 'MCP endpoint is reachable but Authorization header status unknown');
+                        this.setEndpointStatus(element, 'warning', 'MCP endpoint returned 401 - if behind HTTP basic auth, the Authorization header may be blocked');
+                        const warningDiv = document.getElementById('auth-header-warning');
+                        if (warningDiv) {
+                            warningDiv.style.display = 'block';
+                        }
                     } else {
                         this.setEndpointStatus(element, 'error', `MCP endpoint returned ${response.status} ${response.statusText}`);
                     }

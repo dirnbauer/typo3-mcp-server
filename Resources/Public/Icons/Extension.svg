@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <g opacity=".4">
+    <circle fill="currentColor" cx="3" cy="5" r="1.2"/>
+    <circle fill="currentColor" cx="3" cy="11" r="1.2"/>
+    <circle fill="currentColor" cx="13" cy="5" r="1.2"/>
+    <circle fill="currentColor" cx="13" cy="11" r="1.2"/>
+  </g>
+  <path fill="currentColor" d="M8 2C5.79 2 4 3.79 4 6v1H3v2h1v1c0 2.21 1.79 4 4 4s4-1.79 4-4V9h1V7h-1V6c0-2.21-1.79-4-4-4zm3 8c0 1.66-1.34 3-3 3S5 11.66 5 10V9h6v1zm0-3H5V6c0-1.66 1.34-3 3-3s3 1.34 3 3v1z"/>
+  <path fill="var(--icon-color-accent, #ff8700)" d="M4 7H2.5c-.28 0-.5.22-.5.5v1c0 .28.22.5.5.5H4V7zM12 7h1.5c.28 0 .5.22.5.5v1c0 .28-.22.5-.5.5H12V7z"/>
+  <circle fill="var(--icon-color-accent, #ff8700)" cx="8" cy="7" r="1"/>
+</svg>
