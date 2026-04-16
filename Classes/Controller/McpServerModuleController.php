@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Controller;
 
+use TYPO3\CMS\Core\Localization\LanguageService;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -41,7 +42,7 @@ final readonly class McpServerModuleController
 
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
-            return new HtmlResponse('Access denied', 403);
+            return new HtmlResponse($this->translate('accessDenied', fallback: 'Access denied'), 403);
         }
 
         $userId = (int)($backendUser->user['uid'] ?? 0);
@@ -99,7 +100,9 @@ final readonly class McpServerModuleController
         $this->pageRenderer->addCssFile('EXT:mcp_server/Resources/Public/Css/mcp-module.css');
 
         $moduleTemplate->assignMultiple($templateVariables);
-        $moduleTemplate->setTitle('MCP Server Configuration');
+        $moduleTemplate->setTitle($this->translate('title', fallback: 'MCP Server Configuration'));
+
+        $this->pageRenderer->addInlineLanguageLabelFile('EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf');
 
         return $moduleTemplate->renderResponse('McpServerModule');
     }
@@ -111,7 +114,7 @@ final readonly class McpServerModuleController
     {
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
-            return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
 
         $rawBody = $request->getBody()->getContents();
@@ -127,7 +130,7 @@ final readonly class McpServerModuleController
         }
 
         if (!$this->validateCsrfToken($parsedBody)) {
-            return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
         }
 
         $tokenIdValue = $parsedBody['tokenId'] ?? '0';
@@ -135,7 +138,7 @@ final readonly class McpServerModuleController
         $userId = (int)($backendUser->user['uid'] ?? 0);
 
         if ($tokenId <= 0) {
-            return new JsonResponse(['success' => false, 'message' => 'Invalid token ID'], 400);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('tokens.invalidId')], 400);
         }
 
         try {
@@ -144,18 +147,18 @@ final readonly class McpServerModuleController
             if ($success) {
                 return new JsonResponse([
                     'success' => true,
-                    'message' => 'Token revoked successfully',
+                    'message' => $this->translate('tokens.revokedSuccess'),
                 ]);
             }
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Token not found or access denied',
+                'message' => $this->translate('tokens.notFoundOrDenied'),
             ], 404);
 
         } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Unable to revoke the token right now.',
+                'message' => $this->translate('tokens.revokeError'),
             ], 500);
         }
     }
@@ -167,7 +170,7 @@ final readonly class McpServerModuleController
     {
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
-            return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
 
         $rawBody = $request->getBody()->getContents();
@@ -180,7 +183,7 @@ final readonly class McpServerModuleController
             }
         }
         if (!$this->validateCsrfToken($parsedBody)) {
-            return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
         }
 
         $userId = (int)($backendUser->user['uid'] ?? 0);
@@ -191,18 +194,18 @@ final readonly class McpServerModuleController
             if ($revokedCount > 0) {
                 return new JsonResponse([
                     'success' => true,
-                    'message' => sprintf('Successfully revoked %d token%s', $revokedCount, $revokedCount === 1 ? '' : 's'),
+                    'message' => $this->translate('tokens.revokedCount', ['count' => $revokedCount]),
                 ]);
             }
             return new JsonResponse([
                 'success' => false,
-                'message' => 'No tokens found to revoke',
+                'message' => $this->translate('tokens.noTokensToRevoke'),
             ], 404);
 
         } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Unable to revoke tokens right now.',
+                'message' => $this->translate('tokens.revokeAllError'),
             ], 500);
         }
     }
@@ -269,6 +272,21 @@ final readonly class McpServerModuleController
         return $backendUser instanceof BackendUserAuthentication ? $backendUser : null;
     }
 
+    private function getLanguageService(): LanguageService
+    {
+        /** @var LanguageService $languageService */
+        $languageService = $GLOBALS['LANG'];
+        return $languageService;
+    }
+
+    /**
+     * @param array<string, string|int> $arguments
+     */
+    private function translate(string $id, array $arguments = [], string $fallback = ''): string
+    {
+        return (string)($this->getLanguageService()->translate($id, 'mcp_server.mod', $arguments) ?? $fallback);
+    }
+
     /**
      * Get user tokens via AJAX for dynamic updates
      */
@@ -276,8 +294,10 @@ final readonly class McpServerModuleController
     {
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
-            return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
+
+        $neverUsed = $this->translate('tokens.neverUsed', fallback: 'Never');
 
         try {
             $userId = (int)($backendUser->user['uid'] ?? 0);
@@ -289,7 +309,7 @@ final readonly class McpServerModuleController
                 'client_name' => $token['client_name'],
                 'created' => date('Y-m-d H:i:s', $token['crdate']),
                 'expires' => date('Y-m-d H:i:s', $token['expires']),
-                'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : 'Never',
+                'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : $neverUsed,
                 'token_preview' => substr((string)$token['token'], 0, 20) . '...',
             ], $tokens);
 
@@ -300,7 +320,7 @@ final readonly class McpServerModuleController
         } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Unable to load tokens right now.',
+                'message' => $this->translate('tokens.loadError'),
             ], 500);
         }
     }
@@ -318,7 +338,7 @@ final readonly class McpServerModuleController
             'baseUrl' => $endpointUrl,
             'hasTokens' => !empty($mcpRemoteTokens),
             'tokenUrl' => null,
-            'description' => 'Existing tokens are stored as secure hashes and cannot be shown again after creation.',
+            'description' => $this->translate('tokens.secureHashDescription'),
         ];
     }
 
@@ -421,7 +441,7 @@ final readonly class McpServerModuleController
     {
         $backendUser = $this->getBackendUser();
         if (!$backendUser) {
-            return new JsonResponse(['success' => false, 'message' => 'Access denied'], 403);
+            return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
 
         try {
@@ -441,7 +461,7 @@ final readonly class McpServerModuleController
             $requestData = $this->getRequestData($parsedBody);
 
             if (!$this->validateCsrfToken($requestData)) {
-                return new JsonResponse(['success' => false, 'message' => 'CSRF validation failed'], 403);
+                return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
             }
 
             $clientType = $requestData['clientType'] ?? 'mcp-remote token';
@@ -450,7 +470,7 @@ final readonly class McpServerModuleController
             if (!in_array($clientType, $allowedClientTypes, true)) {
                 return new JsonResponse([
                     'success' => false,
-                    'message' => 'Invalid client type',
+                    'message' => $this->translate('tokens.invalidClientType'),
                 ], 400);
             }
 
@@ -459,7 +479,7 @@ final readonly class McpServerModuleController
                 if ($token['client_name'] === $clientType) {
                     return new JsonResponse([
                         'success' => false,
-                        'message' => sprintf('You already have a %s. Please revoke it first if you want to create a new one.', $clientType),
+                        'message' => $this->translate('tokens.alreadyExists', ['clientType' => $clientType]),
                     ], 400);
                 }
             }
@@ -468,13 +488,13 @@ final readonly class McpServerModuleController
 
             return new JsonResponse([
                 'success' => true,
-                'message' => sprintf('%s created successfully', $clientType),
+                'message' => $this->translate('tokens.createdSuccessfully', ['clientType' => $clientType]),
                 'token' => $token,
             ]);
         } catch (\Throwable) {
             return new JsonResponse([
                 'success' => false,
-                'message' => 'Unable to create a token right now.',
+                'message' => $this->translate('tokens.createError'),
             ], 500);
         }
     }
