@@ -234,21 +234,22 @@ final readonly class McpServerModuleController
     }
 
     /**
-     * Cursor "Install in Cursor" deeplink.
+     * Cursor "Install in Cursor" deeplink (Cursor v3+ format).
      *
      * - Config is the single-server object that becomes one entry in mcp.json (HTTP: `url` only).
-     * - Use RFC 4648 URL-safe base64 (`+`/`/` → `-`/`_`) so the value is safe in a query string.
-     * - Do **not** rawurlencode the config: Cursor and the official tooling pass base64 with
-     *   literal `=` padding; `%3D` breaks some builds' decoders.
+     * - Cursor expects **standard** base64 (not URL-safe) with literal `=` padding, exactly as
+     *   shown in the official documentation example.
+     * - The `+`, `/`, `=` characters are valid in a URL query value and must NOT be percent-encoded
+     *   (Cursor's decoder rejects `%2B`/`%2F`/`%3D`).
      *
-     * @see https://docs.cursor.com/deeplinks
+     * @see https://cursor.com/docs/context/mcp/install-links
      */
     private function buildCursorInstallUrl(string $serverName, string $endpointUrl): string
     {
         $config = ['url' => $endpointUrl];
         $json = json_encode($config, JSON_UNESCAPED_SLASHES);
         $json = is_string($json) ? $json : '{}';
-        $configParam = strtr(base64_encode($json), '+/', '-_');
+        $configParam = base64_encode($json);
 
         return 'cursor://anysphere.cursor-deeplink/mcp/install?name='
             . rawurlencode($serverName)
