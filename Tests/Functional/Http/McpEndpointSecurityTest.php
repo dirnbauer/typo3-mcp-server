@@ -209,4 +209,32 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         self::assertIsArray($json);
         self::assertSame('Invalid or expired token', $json['message'] ?? null);
     }
+
+    #[Test]
+    public function testSetupBackendUserContextHydratesMissingUcDefaults(): void
+    {
+        $serializedUc = serialize(['lang' => 'de']);
+        $connectionPool = $this->getContainer()->get(ConnectionPool::class);
+        assert($connectionPool instanceof ConnectionPool);
+        $connectionPool
+            ->getConnectionForTable('be_users')
+            ->update('be_users', ['uc' => $serializedUc], ['uid' => 1]);
+
+        $endpoint = $this->createEndpoint();
+        $method = new \ReflectionMethod($endpoint, 'setupBackendUserContext');
+        $method->setAccessible(true);
+        $method->invoke($endpoint, 1);
+
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+        self::assertSame('de', $backendUser->uc['lang'] ?? null);
+        self::assertSame(50, $backendUser->uc['titleLen'] ?? null);
+        self::assertSame([], $backendUser->uc['moduleData'] ?? null);
+
+        $storedUc = $connectionPool
+            ->getConnectionForTable('be_users')
+            ->select(['uc'], 'be_users', ['uid' => 1])
+            ->fetchOne();
+        self::assertSame($serializedUc, $storedUc);
+    }
 }

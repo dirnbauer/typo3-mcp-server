@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Hn\McpServer\Middleware\McpServerMiddleware;
+use Hn\McpServer\Middleware\BackendUserConfigurationMiddleware;
 
 return [
     'frontend' => [
@@ -17,6 +18,15 @@ return [
         ],
     ],
     'backend' => [
+        'hn-mcp-server/backend-user-configuration' => [
+            'target' => BackendUserConfigurationMiddleware::class,
+            'after' => [
+                'typo3/cms-backend/authentication',
+            ],
+            'before' => [
+                'typo3/cms-backend/backend-module-validator',
+            ],
+        ],
         'hn-mcp-server/routes' => [
             'target' => McpServerMiddleware::class,
             'before' => [

@@ -187,6 +187,8 @@ final class McpTestCommand extends Command
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
             $workspaceService->switchToOptimalWorkspace($beUser);
         }
+
+        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
     }
 
     /**

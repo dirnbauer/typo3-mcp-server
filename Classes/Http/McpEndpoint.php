@@ -297,6 +297,7 @@ final readonly class McpEndpoint
             // This computes tables_select, tables_modify, non_exclude_fields, webmounts, etc.
             // Without this, non-admin users have no permissions computed from their groups
             $beUser->fetchGroupData();
+            $this->hydrateUserConfiguration($beUser, $userData);
 
             $this->initializeLanguageService($beUser);
 
@@ -313,6 +314,50 @@ final readonly class McpEndpoint
         if ($tcaFactory instanceof TcaFactory) {
             $GLOBALS['TCA'] = $tcaFactory->get();
         }
+    }
+
+    /**
+     * Mirror TYPO3's backendSetUC() initialization for synthetic token-authenticated users,
+     * but keep it in-memory so MCP requests do not overwrite persisted backend preferences.
+     *
+     * @param array<string, mixed> $userData
+     */
+    private function hydrateUserConfiguration(BackendUserAuthentication $beUser, array $userData): void
+    {
+        $storedUc = $this->decodeStoredUserConfiguration($userData['uc'] ?? null);
+        $defaultUc = is_array($GLOBALS['TYPO3_CONF_VARS']['BE']['defaultUC'] ?? null)
+            ? $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultUC']
+            : [];
+        $tsConfigDefaults = GeneralUtility::removeDotsFromTS((array)($beUser->getTSConfig()['setup.']['default.'] ?? []));
+
+        $beUser->uc = array_merge(
+            $beUser->uc_default,
+            $defaultUc,
+            $tsConfigDefaults,
+            $storedUc,
+        );
+        $beUser->overrideUC();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeStoredUserConfiguration(mixed $storedUc): array
+    {
+        if (is_array($storedUc)) {
+            return $storedUc;
+        }
+        if (!is_string($storedUc) || $storedUc === '') {
+            return [];
+        }
+
+        try {
+            $decoded = unserialize($storedUc, ['allowed_classes' => false]);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function initializeLanguageService(BackendUserAuthentication $beUser): void

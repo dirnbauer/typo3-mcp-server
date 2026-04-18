@@ -93,5 +93,7 @@ final class McpServerCommand extends Command
             $beUser->user['workspace_id'] = 0; // Set workspace ID to live workspace
             $beUser->workspace = 0; // Set workspace to live workspace
         }
+
+        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
     }
 }
