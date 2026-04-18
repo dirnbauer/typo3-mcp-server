@@ -178,6 +178,10 @@
 				<source>Install in Cursor</source>
 				<target>In Cursor installieren</target>
 			</trans-unit>
+			<trans-unit id="cursor.authReuseNote">
+				<source>Note: The install link only passes the MCP server URL. If Cursor already has a valid token for this server, it may connect without asking you to authenticate again.</source>
+				<target>Hinweis: Der Installationslink uebergibt nur die MCP-Server-URL. Wenn Cursor fuer diesen Server bereits ein gueltiges Token gespeichert hat, kann die Verbindung ohne erneute Authentifizierung hergestellt werden.</target>
+			</trans-unit>
 			<trans-unit id="cursor.manualConfig">
 				<source>Or add to your ~/.cursor/mcp.json manually:</source>
 				<target>Oder manuell in Ihre ~/.cursor/mcp.json einfügen:</target>
