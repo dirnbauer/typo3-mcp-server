@@ -262,6 +262,45 @@ class WriteTableLanguageTest extends FunctionalTestCase
     }
 
     /**
+     * Translate without any translated field values must fail fast —
+     * otherwise DataHandler's localize command just copies the source with
+     * "[Translate to X:]" prefixes, which is not a real translation.
+     */
+    public function testTranslateRejectsMissingTranslatedContent(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $createResult = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'text',
+                'header' => 'Original header',
+                'bodytext' => 'Original body',
+            ],
+        ]);
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        $createData = json_decode((string)$createResult->content[0]->text, true);
+        $uid = (int)$createData['uid'];
+
+        $translateResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => $uid,
+            'data' => [
+                'sys_language_uid' => 'de',
+            ],
+        ]);
+
+        self::assertTrue($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $errorMessage = $translateResult->content[0]->text ?? '';
+        self::assertStringContainsString('Translate requires translated field values', $errorMessage);
+        self::assertStringContainsString('header', $errorMessage);
+        self::assertStringContainsString('bodytext', $errorMessage);
+    }
+
+    /**
      * Test translate action with invalid language
      */
     public function testTranslateWithInvalidLanguage(): void
@@ -325,6 +364,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $originalUid,
             'data' => [
                 'sys_language_uid' => 'de',
+                'header' => 'Deutsch',
             ],
         ]);
 
@@ -338,6 +378,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $germanUid,
             'data' => [
                 'sys_language_uid' => 'fr',
+                'header' => 'Francais',
             ],
         ]);
 
@@ -374,6 +415,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $originalUid,
             'data' => [
                 'sys_language_uid' => 'de',
+                'header' => 'Deutsch',
             ],
         ]);
 
@@ -386,6 +428,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $originalUid,
             'data' => [
                 'sys_language_uid' => 'de',
+                'header' => 'Deutsch',
             ],
         ]);
 
@@ -426,6 +469,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $originalUid,
             'data' => [
                 'sys_language_uid' => 'de',
+                'header' => 'Deutsch',
             ],
         ]);
 

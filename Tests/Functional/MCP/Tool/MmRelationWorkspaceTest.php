@@ -233,7 +233,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
@@ -280,7 +280,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
@@ -345,7 +345,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
@@ -474,7 +474,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $translationUid = json_decode((string)$result->content[0]->text)->translationUid;

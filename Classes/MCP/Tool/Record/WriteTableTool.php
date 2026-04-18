@@ -67,7 +67,11 @@ final class WriteTableTool extends AbstractRecordTool
             'description' => 'Create, update, translate, move, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live. ' .
                 'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). ' .
                 'REQUIRED PARAMETERS PER ACTION: ' .
-                'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). translate: table, uid, data (with sys_language_uid). ' .
+                'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). ' .
+                'translate: table, uid, data. data MUST contain sys_language_uid AND translated values for every text field you want localized ' .
+                '(header, bodytext, title, nav_title, subheader, …). Sending only sys_language_uid leaves TYPO3 placeholders like "[Translate to DE:] Original" ' .
+                'because DataHandler\'s localize command copies source values verbatim; your translated values replace them in a follow-up update. ' .
+                'Run GetTableSchema first to see which fields are translatable for the table. ' .
                 'INLINE RELATIONS (CRITICAL): On update, passing an inline field REPLACES ALL existing children — omitted children are deleted (embedded) or unlinked (independent). ' .
                 'To keep existing children, include their UIDs: [2546, 2547, {"CType": "textmedia", "header": "New"}]. To update an existing child: {"uid": 2546, "header": "Updated"}. Order in the array defines sorting. ' .
                 'Nested inline relations are supported: child record data may itself contain inline arrays. ' .
@@ -247,6 +251,8 @@ final class WriteTableTool extends AbstractRecordTool
                 if (!isset($data['sys_language_uid'])) {
                     throw new ValidationException(['sys_language_uid is required in data for translate action']);
                 }
+
+                $this->assertTranslationIntent($table, $data);
                 break;
 
             default:
@@ -724,6 +730,39 @@ final class WriteTableTool extends AbstractRecordTool
 
         // No previous sibling (or no sorting field) — insert as first on the page
         return [$table => [$recordUid => ['move' => $refPid]]];
+    }
+
+    /**
+     * Reject translate calls that do not carry any translatable content.
+     *
+     * Without this, a caller passing only sys_language_uid (or only non-translatable
+     * fields like hidden/starttime) would silently get DataHandler's "[Translate to X:]"
+     * placeholder copy — indistinguishable from a plain localize and not an actual
+     * translation.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function assertTranslationIntent(string $table, array $data): void
+    {
+        $translatable = $this->tableAccessService->getTranslatableContentFields($table);
+        foreach (array_keys($data) as $field) {
+            if ($field === 'sys_language_uid') {
+                continue;
+            }
+            if (in_array($field, $translatable, true)) {
+                return;
+            }
+        }
+
+        $hint = $translatable === []
+            ? 'No translatable text/FlexForm/inline fields are defined for this table.'
+            : 'Include translated values for at least one of: ' . implode(', ', $translatable) . '.';
+
+        throw new ValidationException([
+            'Translate requires translated field values in "data" (beyond sys_language_uid). '
+            . 'DataHandler\'s localize command copies source values and only prefixes the label with "[Translate to X:]"; '
+            . 'your translated values are applied in a follow-up update. ' . $hint,
+        ]);
     }
 
     /**

@@ -28,7 +28,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => 100,
-            'data' => ['sys_language_uid' => 0],
+            'data' => ['sys_language_uid' => 0, 'header' => 'Willkommen'],
         ]);
 
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -45,7 +45,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => 100,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
         ]);
         self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
 
@@ -53,7 +53,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'action' => 'translate',
             'table' => 'tt_content',
             'uid' => 100,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
         ]);
         self::assertTrue($duplicate->isError, 'Expected error for duplicate translation');
         $text = $duplicate->content[0]->text;

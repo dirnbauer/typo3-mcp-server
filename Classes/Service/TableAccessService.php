@@ -1085,6 +1085,55 @@ final class TableAccessService
     }
 
     /**
+     * Fields that carry translatable content for the given table.
+     *
+     * A translate call must populate at least one of these to produce a meaningful
+     * translation — DataHandler's localize command otherwise copies the source verbatim
+     * and only prefixes the label field with "[Translate to X:]".
+     *
+     * Includes text-like fields (input/text/link/email) plus FlexForm and inline
+     * relations, since those commonly carry translated strings (e.g. plugin settings
+     * in pi_flexform, or sys_file_reference metadata on image/assets). System fields
+     * (sys_language_uid, l10n_parent, …) and fields with l10n_mode=exclude are filtered
+     * out. Fields the current backend user cannot access are also dropped.
+     *
+     * @return list<string>
+     */
+    public function getTranslatableContentFields(string $table): array
+    {
+        $excluded = $this->getExcludedFieldsInTranslation($table);
+        $systemFields = array_filter([
+            $this->getLanguageFieldName($table),
+            $this->getTranslationParentFieldName($table),
+            $this->getTranslationSourceFieldName($table),
+            'l10n_state',
+            'l10n_diffsource',
+            't3_origuid',
+        ]);
+
+        $translatable = [];
+        foreach ($this->getTableColumns($table) as $fieldName => $fieldConfig) {
+            if (in_array($fieldName, $excluded, true) || in_array($fieldName, $systemFields, true)) {
+                continue;
+            }
+
+            $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
+            if (!in_array($fieldType, ['input', 'text', 'link', 'email', 'flex', 'inline'], true)) {
+                continue;
+            }
+
+            if (!$this->canAccessField($table, $fieldName)) {
+                continue;
+            }
+
+            $translatable[] = $fieldName;
+        }
+
+        return $translatable;
+    }
+
+    /**
      * Get the search fields for a table
      *
      * @return list<string>
