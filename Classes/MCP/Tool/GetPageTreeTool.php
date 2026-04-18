@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\SiteInformationService;
@@ -13,10 +14,12 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -35,6 +38,11 @@ final class GetPageTreeTool extends AbstractRecordTool
         private readonly ConnectionPool $connectionPool,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    protected function getCurrentWorkspaceId(): int
+    {
+        return $this->workspaceContextService->getCurrentWorkspace();
     }
 
     /**
@@ -186,9 +194,12 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(new DeletedRestriction());
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($currentWorkspace))
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
 
         $query = $queryBuilder->select('*')
             ->from('pages')
@@ -215,6 +226,16 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         // Group pages by parent and apply per-parent limit
         foreach ($allPages as $page) {
+            if ($currentWorkspace > 0) {
+                BackendUtility::workspaceOL('pages', $page);
+                if (!is_array($page)) {
+                    continue;
+                }
+            }
+
+            $liveUid = isset($page['t3ver_oid']) && (int)$page['t3ver_oid'] > 0
+                ? (int)$page['t3ver_oid']
+                : (int)$page['uid'];
             $pid = (int)$page['pid'];
             if (!isset($grouped[$pid])) {
                 $grouped[$pid] = ['pages' => [], 'total' => 0];
@@ -228,28 +249,20 @@ final class GetPageTreeTool extends AbstractRecordTool
             }
 
             $pageData = [
-                'uid' => (int)$page['uid'],
+                'uid' => $liveUid,
                 'pid' => $pid,
                 'title' => $page['title'],
                 'nav_title' => $page['nav_title'],
                 'hidden' => (bool)$page['hidden'],
                 'doktype' => (int)$page['doktype'],
                 'subpageCount' => 0,
-                'url' => $this->siteInformationService->generatePageUrl((int)$page['uid']),
+                'url' => $this->siteInformationService->generatePageUrl($liveUid, $languageUid ?? 0),
             ];
 
             // Apply language overlay
             if ($languageUid !== null && $languageUid > 0) {
-                $overlaidPage = $pageRepository->getPageOverlay($page, $languageUid);
-
-                if ($overlaidPage !== $page) {
-                    $pageData['title'] = $overlaidPage['title'] ?: $pageData['title'];
-                    $pageData['nav_title'] = $overlaidPage['nav_title'] ?: $pageData['nav_title'];
-                    $pageData['hidden'] = (bool)$overlaidPage['hidden'];
-                    $pageData['_translated'] = true;
-                } else {
-                    $pageData['_translated'] = false;
-                }
+                $page['uid'] = $liveUid;
+                $pageData = $this->applyPageLanguageOverlay($page, $pageData, $languageUid, $pageRepository);
             }
 
             $grouped[$pid]['pages'][] = $pageData;
@@ -273,9 +286,12 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('pages');
 
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(new DeletedRestriction());
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($currentWorkspace))
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
 
         $counts = $queryBuilder
             ->select('pid')
@@ -373,6 +389,99 @@ final class GetPageTreeTool extends AbstractRecordTool
     }
 
     /**
+     * @param array<string, mixed> $page
+     * @param array<string, mixed> $pageData
+     * @return array<string, mixed>
+     */
+    protected function applyPageLanguageOverlay(
+        array $page,
+        array $pageData,
+        int $languageUid,
+        PageRepository $pageRepository
+    ): array {
+        $liveUid = (int)$pageData['uid'];
+        $overlaidPage = $pageRepository->getPageOverlay($page, $languageUid);
+
+        if (is_array($overlaidPage) && $this->isTranslatedPageOverlay($overlaidPage, $liveUid, $languageUid)) {
+            return $this->mergeTranslatedPageData($pageData, $overlaidPage);
+        }
+
+        $workspaceTranslation = $this->findWorkspaceAwarePageTranslation($liveUid, $languageUid);
+        if ($workspaceTranslation !== null) {
+            return $this->mergeTranslatedPageData($pageData, $workspaceTranslation);
+        }
+
+        $pageData['_translated'] = false;
+
+        return $pageData;
+    }
+
+    /**
+     * @param array<string, mixed> $translatedPage
+     */
+    protected function isTranslatedPageOverlay(array $translatedPage, int $liveUid, int $languageUid): bool
+    {
+        return (int)($translatedPage['sys_language_uid'] ?? 0) === $languageUid
+            && (int)($translatedPage['l10n_parent'] ?? 0) === $liveUid;
+    }
+
+    /**
+     * @param array<string, mixed> $pageData
+     * @param array<string, mixed> $translatedPage
+     * @return array<string, mixed>
+     */
+    protected function mergeTranslatedPageData(array $pageData, array $translatedPage): array
+    {
+        $pageData['title'] = $translatedPage['title'] ?: $pageData['title'];
+        $pageData['nav_title'] = $translatedPage['nav_title'] ?: $pageData['nav_title'];
+        $pageData['hidden'] = (bool)$translatedPage['hidden'];
+        $pageData['_translated'] = true;
+
+        return $pageData;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function findWorkspaceAwarePageTranslation(int $pageUid, int $languageUid): ?array
+    {
+        $queryBuilder = $this->connectionPool
+            ->getQueryBuilderForTable('pages');
+
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($currentWorkspace))
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
+
+        $translation = $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('l10n_parent', $queryBuilder->createNamedParameter($pageUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageUid, ParameterType::INTEGER))
+            )
+            ->orderBy('t3ver_wsid', 'DESC')
+            ->addOrderBy('uid', 'DESC')
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!is_array($translation)) {
+            return null;
+        }
+
+        if ($currentWorkspace > 0) {
+            BackendUtility::workspaceOL('pages', $translation);
+            if (!is_array($translation)) {
+                return null;
+            }
+        }
+
+        return $translation;
+    }
+
+    /**
      * Collect all page UIDs from the tree structure
      */
     protected function collectPageUids(array $pageTree): array
@@ -414,9 +523,12 @@ final class GetPageTreeTool extends AbstractRecordTool
                 ->getQueryBuilderForTable($table);
 
             // Only apply DeletedRestriction
+            $currentWorkspace = $this->getCurrentWorkspaceId();
             $queryBuilder->getRestrictions()
                 ->removeAll()
-                ->add(new DeletedRestriction());
+                ->add(new DeletedRestriction())
+                ->add(new WorkspaceRestriction($currentWorkspace))
+                ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
 
             // Count records grouped by pid
             $counts = $queryBuilder
@@ -463,9 +575,12 @@ final class GetPageTreeTool extends AbstractRecordTool
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tt_content');
 
+        $currentWorkspace = $this->getCurrentWorkspaceId();
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(new DeletedRestriction());
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($currentWorkspace))
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
 
         $plugins = $queryBuilder
             ->select('*')

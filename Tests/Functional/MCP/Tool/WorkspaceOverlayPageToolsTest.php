@@ -10,6 +10,7 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -54,6 +55,8 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_workspace.csv');
 
         $this->setUpBackendUser(1);
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
+        $GLOBALS['LANG'] = $languageServiceFactory->create('default');
         $this->createTestSiteConfiguration();
 
         $this->getPageTool = $this->getService(GetPageTool::class);
@@ -83,6 +86,18 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                     'direction' => 'ltr',
                     'flag' => 'us',
                     'navigationTitle' => 'English',
+                ],
+                1 => [
+                    'title' => 'German',
+                    'enabled' => true,
+                    'languageId' => 1,
+                    'base' => '/de/',
+                    'locale' => 'de_DE.UTF-8',
+                    'iso-639-1' => 'de',
+                    'hreflang' => 'de-de',
+                    'direction' => 'ltr',
+                    'flag' => 'de',
+                    'navigationTitle' => 'Deutsch',
                 ],
             ],
             'routes' => [],
@@ -268,6 +283,39 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertStringContainsString('Test Workspace', $content);
     }
 
+    /**
+     * GetPage treats a page translation created in workspace as an overlay of the
+     * live page instead of leaking the workspace translation row as a separate page.
+     */
+    public function testGetPageShowsWorkspaceOnlyPageTranslation(): void
+    {
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
+        $translateResult = $this->writeTool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+
+        $result = $this->getPageTool->execute([
+            'uid' => 2,
+            'language' => 'de',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: Ueber uns', $content);
+        self::assertStringContainsString('Language: DE (ID: 1)', $content);
+        self::assertStringContainsString('Translated: Yes', $content);
+    }
+
     // =========================================================================
     // GetPageTreeTool: Workspace overlay tests
     // =========================================================================
@@ -439,6 +487,40 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertStringContainsString('Brand New WS Page', $content);
         // Existing live pages should still appear
         self::assertStringContainsString('[2]', $content);
+    }
+
+    /**
+     * GetPageTree keeps the live page UID when a translation exists only in the workspace.
+     */
+    public function testGetPageTreePreservesLiveUidForWorkspaceOnlyPageTranslation(): void
+    {
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
+        $translateResult = $this->writeTool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translationData = json_decode((string)$translateResult->content[0]->text, true);
+        $translationUid = $translationData['translationUid'];
+        self::assertIsInt($translationUid);
+
+        $result = $this->getPageTreeTool->execute([
+            'startPage' => 1,
+            'depth' => 1,
+            'language' => 'de',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('[2] Ueberblick [Page] [HIDDEN] [TRANSLATED]', $content);
+        self::assertStringNotContainsString('[' . $translationUid . ']', $content);
     }
 
     /**

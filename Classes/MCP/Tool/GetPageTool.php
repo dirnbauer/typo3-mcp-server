@@ -312,22 +312,7 @@ final class GetPageTool extends AbstractRecordTool
             if (!is_array($page)) {
                 throw new \RuntimeException('Page row invalid after workspace overlay');
             }
-            $overlaidPage = $pageRepository->getPageOverlay($page, $languageId);
-
-            // Add our custom metadata
-            if ($overlaidPage !== $page) {
-                // Page was overlaid
-                $overlaidPage['_translated'] = true;
-                $overlaidPage['_language_uid'] = $languageId;
-                if (isset($page['title']) && isset($overlaidPage['title']) && $page['title'] !== $overlaidPage['title']) {
-                    $overlaidPage['_original_title'] = $page['title'];
-                }
-                $page = $overlaidPage;
-            } else {
-                // No overlay found
-                $page['_translated'] = false;
-                $page['_language_uid'] = $languageId;
-            }
+            $page = $this->applyPageLanguageOverlay($page, $languageId, $pageRepository);
         }
 
         // Convert some values to their proper types
@@ -381,6 +366,103 @@ final class GetPageTool extends AbstractRecordTool
         }
 
         return $result;
+    }
+
+    /**
+     * Apply TYPO3 page language overlay and fall back to an explicit workspace-aware
+     * translation lookup for workspace-new translations that PageRepository does not
+     * surface on its own.
+     *
+     * @param PageRow $page
+     * @return PageRow
+     */
+    protected function applyPageLanguageOverlay(array $page, int $languageId, PageRepository $pageRepository): array
+    {
+        $liveUid = is_numeric($page['uid'] ?? null) ? (int)$page['uid'] : 0;
+        $overlaidPage = $pageRepository->getPageOverlay($page, $languageId);
+
+        if (is_array($overlaidPage) && $this->isTranslatedPageOverlay($overlaidPage, $liveUid, $languageId)) {
+            return $this->mergeTranslatedPageData($page, $overlaidPage, $languageId);
+        }
+
+        $workspaceTranslation = $this->findWorkspaceAwarePageTranslation($liveUid, $languageId);
+        if ($workspaceTranslation !== null) {
+            return $this->mergeTranslatedPageData($page, $workspaceTranslation, $languageId);
+        }
+
+        $page['_translated'] = false;
+        $page['_language_uid'] = $languageId;
+
+        return $page;
+    }
+
+    /**
+     * @param PageRow $translatedPage
+     */
+    protected function isTranslatedPageOverlay(array $translatedPage, int $liveUid, int $languageId): bool
+    {
+        return (int)($translatedPage['sys_language_uid'] ?? 0) === $languageId
+            && (int)($translatedPage['l10n_parent'] ?? 0) === $liveUid;
+    }
+
+    /**
+     * @param PageRow $sourcePage
+     * @param PageRow $translatedPage
+     * @return PageRow
+     */
+    protected function mergeTranslatedPageData(array $sourcePage, array $translatedPage, int $languageId): array
+    {
+        $mergedPage = array_replace($sourcePage, $translatedPage);
+        $mergedPage['uid'] = is_numeric($sourcePage['uid'] ?? null) ? (int)$sourcePage['uid'] : 0;
+        $mergedPage['_translated'] = true;
+        $mergedPage['_language_uid'] = $languageId;
+
+        if (($sourcePage['title'] ?? null) !== ($translatedPage['title'] ?? null) && isset($sourcePage['title'])) {
+            $mergedPage['_original_title'] = $sourcePage['title'];
+        }
+
+        return $mergedPage;
+    }
+
+    /**
+     * @return PageRow|null
+     */
+    protected function findWorkspaceAwarePageTranslation(int $pageUid, int $languageId): ?array
+    {
+        $queryBuilder = $this->connectionPool
+            ->getQueryBuilderForTable('pages');
+
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
+            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+
+        $translation = $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('l10n_parent', $queryBuilder->createNamedParameter($pageUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
+            )
+            ->orderBy('t3ver_wsid', 'DESC')
+            ->addOrderBy('uid', 'DESC')
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!is_array($translation)) {
+            return null;
+        }
+
+        if ($currentWorkspace > 0) {
+            BackendUtility::workspaceOL('pages', $translation);
+            if (!is_array($translation)) {
+                return null;
+            }
+        }
+
+        return $translation;
     }
 
     /**

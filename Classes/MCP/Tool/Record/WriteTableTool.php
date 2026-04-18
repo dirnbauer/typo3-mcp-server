@@ -503,12 +503,12 @@ final class WriteTableTool extends AbstractRecordTool
         // Convert data for storage
         $data = $this->convertDataForStorage($table, $data);
 
-        // For translation records, add l10n_state overrides so DataHandler treats
-        // explicitly updated fields as "custom" (not synced from parent)
-        $data = $this->ensureL10nStateForTranslation($table, $uid, $data);
-
         // Resolve the live UID to workspace UID (once, used throughout)
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+
+        // For translation records, add l10n_state overrides so DataHandler treats
+        // explicitly updated fields as "custom" (not synced from parent)
+        $data = $this->ensureL10nStateForTranslation($table, $workspaceUid, $data);
 
         // Build unified dataMap: parent update + all inline children
         $dataMap = [$table => [$workspaceUid => $data]];
@@ -1616,6 +1616,28 @@ final class WriteTableTool extends AbstractRecordTool
 
         // If we're in live workspace, no resolution needed
         if ($currentWorkspace === 0) {
+            return $liveUid;
+        }
+
+        // If the caller already passed a record that belongs to the current workspace
+        // (for example a freshly localized translation shell with t3ver_state=1),
+        // keep that UID as-is. Re-resolving it as if it were a live UID can create
+        // follow-up writes against the wrong record.
+        $queryBuilder = $this->connectionPool
+            ->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $rawRecord = $queryBuilder
+            ->select('uid', 't3ver_wsid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER))
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (is_array($rawRecord) && (int)($rawRecord['t3ver_wsid'] ?? 0) === $currentWorkspace) {
             return $liveUid;
         }
 

@@ -239,6 +239,56 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
     }
 
     /**
+     * Test translating a page in workspace creates exactly one workspace translation row.
+     */
+    public function testTranslatePageInWorkspaceCreatesSingleTranslationRow(): void
+    {
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+        $workspaceId = $GLOBALS['BE_USER']->workspace;
+        self::assertGreaterThan(0, $workspaceId);
+
+        $translateResult = $this->writeTool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translateData = json_decode((string)$translateResult->content[0]->text, true);
+        self::assertIsInt($translateData['translationUid']);
+
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('pages');
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $translations = $queryBuilder
+            ->select('uid', 'title', 'nav_title', 'sys_language_uid', 'l10n_parent', 't3ver_wsid', 't3ver_state')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->eq('l10n_parent', $queryBuilder->createNamedParameter(2, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_wsid', $queryBuilder->createNamedParameter($workspaceId, ParameterType::INTEGER)),
+            )
+            ->orderBy('uid')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        self::assertCount(1, $translations, 'Page translation should create exactly one workspace row');
+        self::assertSame($translateData['translationUid'], (int)$translations[0]['uid']);
+        self::assertEquals('Ueber uns', $translations[0]['title']);
+        self::assertEquals('Ueberblick', $translations[0]['nav_title']);
+        self::assertEquals(1, $translations[0]['sys_language_uid']);
+        self::assertEquals(2, $translations[0]['l10n_parent']);
+        self::assertEquals($workspaceId, $translations[0]['t3ver_wsid']);
+        self::assertEquals(1, $translations[0]['t3ver_state']);
+    }
+
+    /**
      * Test updating translation in workspace
      */
     public function testUpdateTranslationInWorkspace(): void
