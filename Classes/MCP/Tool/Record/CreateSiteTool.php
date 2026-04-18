@@ -275,7 +275,6 @@ final class CreateSiteTool extends AbstractRecordTool
             throw new ValidationException(['defaultLanguage parameter is required for replaceLanguages action.']);
         }
         /** @var array<string, mixed> $defaultLangParams */
-
         $config = $this->loadExistingSiteConfig($identifier);
         $existingLanguages = is_array($config['languages'] ?? null) ? $config['languages'] : [];
         $config['languages'] = $this->buildLanguageSet(

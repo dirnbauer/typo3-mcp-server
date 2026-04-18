@@ -738,13 +738,13 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'data' => [
                 'CType' => 'textmedia',
                 'header' => 'After Last Element',
-                'colPos' => 0
-            ]
+                'colPos' => 0,
+            ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $newUid = $data['uid'];
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -752,12 +752,15 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $newRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => $newUid])->fetchAssociative();
         $refRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => 103])->fetchAssociative();
 
-        $this->assertIsArray($newRecord);
-        $this->assertIsArray($refRecord);
+        self::assertIsArray($newRecord);
+        self::assertIsArray($refRecord);
 
-        $this->assertEquals(2, (int)$newRecord['pid'],
-            'Record created with after:103 must be on pid 2');
-        $this->assertGreaterThan(
+        self::assertEquals(
+            2,
+            (int)$newRecord['pid'],
+            'Record created with after:103 must be on pid 2'
+        );
+        self::assertGreaterThan(
             (int)$refRecord['sorting'],
             (int)$newRecord['sorting'],
             'Record created with after:103 (last element) must have sorting greater than record 103'
@@ -830,14 +833,14 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'data' => [
                 'CType' => 'textmedia',
                 'header' => 'Before First Element',
-                'colPos' => 0
-            ]
+                'colPos' => 0,
+            ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertIsArray($data);
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertIsArray($data);
         $newUid = $data['uid'];
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -845,14 +848,17 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $newRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => $newUid])->fetchAssociative();
         $refRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => 100])->fetchAssociative();
 
-        $this->assertIsArray($newRecord);
-        $this->assertIsArray($refRecord);
+        self::assertIsArray($newRecord);
+        self::assertIsArray($refRecord);
 
-        $this->assertEquals(1, (int)$newRecord['pid'],
-            'Record created with before:100 must be on pid 1');
+        self::assertEquals(
+            1,
+            (int)$newRecord['pid'],
+            'Record created with before:100 must be on pid 1'
+        );
 
         // The new record must have lower sorting than the first element
-        $this->assertLessThan(
+        self::assertLessThan(
             (int)$refRecord['sorting'],
             (int)$newRecord['sorting'],
             'Record created with before:100 must have lower sorting than record 100'

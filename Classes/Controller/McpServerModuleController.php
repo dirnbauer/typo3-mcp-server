@@ -7,11 +7,8 @@ namespace Hn\McpServer\Controller;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
-use IntlDateFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use DateTimeImmutable;
-use DateTimeZone;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -376,12 +373,12 @@ final readonly class McpServerModuleController
 
     private function formatTimestampForBackend(int $timestamp): string
     {
-        $date = (new DateTimeImmutable('@' . $timestamp))
-            ->setTimezone(new DateTimeZone(date_default_timezone_get()));
+        $date = (new \DateTimeImmutable('@' . $timestamp))
+            ->setTimezone(new \DateTimeZone(date_default_timezone_get()));
         $locale = $this->getBackendLocale();
 
-        if (class_exists(IntlDateFormatter::class)) {
-            $formatter = new IntlDateFormatter($locale, IntlDateFormatter::MEDIUM, IntlDateFormatter::SHORT);
+        if (class_exists(\IntlDateFormatter::class)) {
+            $formatter = new \IntlDateFormatter($locale, \IntlDateFormatter::MEDIUM, \IntlDateFormatter::SHORT);
             $formatter->setTimeZone($date->getTimezone()->getName());
             $formatted = $formatter->format($date);
             if (is_string($formatted) && $formatted !== '') {
