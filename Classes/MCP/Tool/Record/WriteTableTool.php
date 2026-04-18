@@ -143,12 +143,12 @@ final class WriteTableTool extends AbstractRecordTool
     {
 
         // Get parameters
-        $action = $params['action'] ?? '';
-        $table = $params['table'] ?? '';
+        $action = is_string($params['action'] ?? null) ? $params['action'] : '';
+        $table = is_string($params['table'] ?? null) ? $params['table'] : '';
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) ? (int)$params['uid'] : null;
         $data = $params['data'] ?? [];
-        $position = $params['position'] ?? 'bottom';
+        $position = is_string($params['position'] ?? null) ? $params['position'] : 'bottom';
 
         // Validate parameters
         if (empty($action)) {

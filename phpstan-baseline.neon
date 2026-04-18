@@ -1177,12 +1177,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Binary operation "\." between ''Invalid action\: '' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
@@ -1324,12 +1318,6 @@ parameters:
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 6
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1519,66 +1507,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of class Hn\\McpServer\\Event\\BeforeRecordWriteEvent constructor expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:deleteRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:translateRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:updateRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$action of class Hn\\McpServer\\Event\\BeforeRecordWriteEvent constructor expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#2 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1627,12 +1555,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#3 \$action of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1640,18 +1562,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#3 \$offset of function substr_replace expects array\|int, int\<0, max\>\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#3 \$position of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#4 \$position of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
