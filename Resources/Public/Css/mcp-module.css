@@ -78,6 +78,30 @@
 
 
 /* ---------------------------------------------------------------------------
+ * Button icons — inline SVGs that inherit the button text color via
+ * currentColor. This lets every button (primary, outline-secondary,
+ * outline-danger, danger) theme itself correctly in both light and dark mode.
+ * ------------------------------------------------------------------------- */
+
+.mcp-btn-icon {
+    align-items: center;
+    color: currentColor;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 1em;
+    justify-content: center;
+    margin-inline-end: calc(var(--typo3-spacing) * 0.25);
+    vertical-align: -0.125em;
+    width: 1em;
+}
+
+.mcp-btn-icon svg {
+    height: 100%;
+    width: 100%;
+}
+
+
+/* ---------------------------------------------------------------------------
  * Client pills — branded button-style selectors (icon + label)
  * Uses --typo3-nav-link-* tokens for the base states and
  * --typo3-state-primary-* for the active state. Per-client accent borders
