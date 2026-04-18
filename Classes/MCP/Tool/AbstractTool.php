@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
  * Abstract base class for MCP tools
@@ -45,6 +48,7 @@ abstract class AbstractTool implements ToolInterface
     protected function executeInternal(array $params): CallToolResult
     {
         try {
+            $this->enforceAdminOnly();
             $this->initialize();
             return $this->doExecute($params);
         } catch (\Throwable $e) {
@@ -53,6 +57,22 @@ abstract class AbstractTool implements ToolInterface
     }
 
     protected function initialize(): void {}
+
+    /**
+     * Enforce the #[AdminOnly] attribute if present on the concrete tool class.
+     */
+    private function enforceAdminOnly(): void
+    {
+        $reflection = new \ReflectionClass($this);
+        if ($reflection->getAttributes(AdminOnly::class) === []) {
+            return;
+        }
+
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication || !$backendUser->isAdmin()) {
+            throw new ValidationException(['This tool requires admin privileges.']);
+        }
+    }
 
     /**
      * @param array<string, mixed> $params

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Process\Process;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Environment;
 
 /**
@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Core\Environment;
  * - activate: activate an installed TYPO3 extension (extension:activate)
  * - search: search for TYPO3 extensions on Packagist (composer search)
  */
+#[AdminOnly]
 final class InstallExtensionTool extends AbstractTool
 {
     /**
@@ -82,8 +83,6 @@ final class InstallExtensionTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $this->requireAdmin();
-
         $action = is_string($params['action'] ?? null) ? $params['action'] : '';
 
         return match ($action) {
@@ -185,22 +184,6 @@ final class InstallExtensionTool extends AbstractTool
 
         $json = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         return new CallToolResult([new TextContent($json)], $result['exitCode'] !== 0);
-    }
-
-    /**
-     * Ensure the current backend user is an admin.
-     */
-    private function requireAdmin(): void
-    {
-        $backendUser = $GLOBALS['BE_USER'] ?? null;
-
-        if (!$backendUser instanceof BackendUserAuthentication) {
-            throw new ValidationException(['No backend user session available.']);
-        }
-
-        if (!$backendUser->isAdmin()) {
-            throw new ValidationException(['This tool requires admin privileges.']);
-        }
     }
 
     /**

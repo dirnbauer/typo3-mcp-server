@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
 
@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Configuration\SiteWriter;
  * Admin-only: only backend admin users may create or modify site configurations.
  * Site configurations are YAML-based and not workspace-versioned; changes take effect immediately.
  */
+#[AdminOnly]
 final class CreateSiteTool extends AbstractRecordTool
 {
     /**
@@ -163,8 +164,6 @@ final class CreateSiteTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $this->ensureAdmin();
-
         $action = is_string($params['action'] ?? null) ? $params['action'] : '';
         $identifier = is_string($params['identifier'] ?? null) ? $params['identifier'] : '';
 
@@ -503,14 +502,4 @@ final class CreateSiteTool extends AbstractRecordTool
         }
     }
 
-    /**
-     * Ensure the current backend user has admin privileges.
-     */
-    private function ensureAdmin(): void
-    {
-        $backendUser = $GLOBALS['BE_USER'] ?? null;
-        if (!$backendUser instanceof BackendUserAuthentication || !$backendUser->isAdmin()) {
-            throw new ValidationException(['This tool requires admin privileges.']);
-        }
-    }
 }

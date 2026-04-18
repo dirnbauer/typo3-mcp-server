@@ -21,6 +21,22 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         $this->tool = $this->getService(CreateSiteTool::class);
     }
 
+    public function testToolRequiresAdminPrivileges(): void
+    {
+        $GLOBALS['BE_USER']->user['admin'] = 0;
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'some-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://example.com/',
+            'languages' => [],
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('admin privileges', $this->getFirstTextContent($result));
+    }
+
     public function testCreateDerivesDefaultFlagsFromIsoCodes(): void
     {
         $result = $this->tool->execute([
