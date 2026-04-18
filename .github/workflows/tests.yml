@@ -31,9 +31,7 @@ jobs:
           coverage: xdebug
 
       - name: Install Composer dependencies
-        run: |
-          composer require --no-update "typo3/cms-core:^14.0"
-          composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist
 
       - name: Run unit test suite with coverage
         run: |
@@ -67,9 +65,7 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: |
-          composer require --no-update "typo3/cms-core:${{ matrix.typo3-version }}"
-          composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist
 
       - name: Run functional test suite
         run: composer test
@@ -88,9 +84,7 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies
-        run: |
-          composer require --no-update "typo3/cms-core:^14.0"
-          composer install --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist
 
       - name: PHPStan
         run: composer phpstan
