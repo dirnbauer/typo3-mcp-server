@@ -328,8 +328,99 @@ final class WriteTableTool extends AbstractRecordTool
         $newRecordData = $data;
         $newRecordData['pid'] = $pid;
 
-        // Sorting is handled after record creation via DataHandler move commands.
-        // This ensures correct sorting in all cases (live, workspace, colPos).
+        // Use DataHandler's native pid-based positioning:
+        // - Positive pid → record is placed at the TOP of that page (DataHandler default)
+        // - Negative pid (-uid) → record is placed AFTER the record with that uid
+        // This avoids the need for a separate move command after creation.
+        if ($position === 'bottom') {
+            $sortingField = $this->tableAccessService->getSortingFieldName($table);
+            if ($sortingField !== null && !isset($data[$sortingField])) {
+                // Find the last record on this page to insert after it
+                $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+                $queryBuilder->getRestrictions()->removeAll()
+                    ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+
+                $lastRecord = $queryBuilder
+                    ->select('uid')
+                    ->from($table)
+                    ->where(
+                        $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER))
+                    )
+                    ->orderBy($sortingField, 'DESC')
+                    ->addOrderBy('uid', 'DESC')
+                    ->setMaxResults(1)
+                    ->executeQuery()
+                    ->fetchAssociative();
+
+                if ($lastRecord) {
+                    $newRecordData['pid'] = -(int)$lastRecord['uid'];
+                } else {
+                    $newRecordData['pid'] = $pid;
+                }
+            } else {
+                $newRecordData['pid'] = $pid;
+            }
+        } elseif (str_starts_with($position, 'after:')) {
+            $referenceUid = (int)substr($position, strlen('after:'));
+            // Resolve live UID to workspace UID if needed, since DataHandler works with real UIDs
+            $wsUid = $this->resolveToWorkspaceUid($table, $referenceUid);
+            $newRecordData['pid'] = -$wsUid;
+        } elseif (str_starts_with($position, 'before:')) {
+            $referenceUid = (int)substr($position, strlen('before:'));
+            $sortingField = $this->tableAccessService->getSortingFieldName($table);
+
+            if ($sortingField !== null) {
+                // Workspace-aware lookup: resolve to workspace version for correct pid/sorting
+                $refRecord = BackendUtility::getRecord($table, $referenceUid);
+                if ($refRecord) {
+                    BackendUtility::workspaceOL($table, $refRecord);
+                }
+
+                if ($refRecord) {
+                    $refPid = (int)$refRecord['pid'];
+                    $refSorting = (int)$refRecord[$sortingField];
+                    $refUid = (int)$refRecord['uid'];
+
+                    // Find the predecessor: workspace-aware, with UID tiebreak for equal sorting
+                    $qb2 = $this->connectionPool->getQueryBuilderForTable($table);
+                    $qb2->getRestrictions()->removeAll()
+                        ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                        ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+
+                    $predecessorRecord = $qb2
+                        ->select('uid')
+                        ->from($table)
+                        ->where(
+                            $qb2->expr()->eq('pid', $qb2->createNamedParameter($refPid, ParameterType::INTEGER)),
+                            $qb2->expr()->or(
+                                $qb2->expr()->lt($sortingField, $qb2->createNamedParameter($refSorting, ParameterType::INTEGER)),
+                                $qb2->expr()->and(
+                                    $qb2->expr()->eq($sortingField, $qb2->createNamedParameter($refSorting, ParameterType::INTEGER)),
+                                    $qb2->expr()->lt('uid', $qb2->createNamedParameter($refUid, ParameterType::INTEGER))
+                                )
+                            )
+                        )
+                        ->orderBy($sortingField, 'DESC')
+                        ->addOrderBy('uid', 'DESC')
+                        ->setMaxResults(1)
+                        ->executeQuery()
+                        ->fetchAssociative();
+
+                    if ($predecessorRecord) {
+                        // WorkspaceRestriction already returns the correct UID for the context
+                        $newRecordData['pid'] = -(int)$predecessorRecord['uid'];
+                    } else {
+                        // Reference is the first record on its page — insert at top
+                        $newRecordData['pid'] = $refPid;
+                    }
+                } else {
+                    $newRecordData['pid'] = $pid;
+                }
+            } else {
+                $newRecordData['pid'] = $pid;
+            }
+        }
+        // 'top' or default — use the positive pid already assigned above
 
         // Create a unique ID for this new record
         $newId = 'NEW' . bin2hex(random_bytes(8));
@@ -363,18 +454,7 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Error creating record: No UID returned');
         }
 
-        // Handle positioning via DataHandler move command
-        $positionError = $this->applyPosition($table, $parentUid, $pid, $position);
-        if ($positionError !== null) {
-            $liveUid = $this->getLiveUid($table, $parentUid);
-            return $this->createJsonResult([
-                'action' => 'create',
-                'table' => $table,
-                'uid' => $liveUid,
-                'warning' => 'Record created but positioning failed: ' . $positionError,
-            ]);
-        }
-
+        // Positioning is already applied via the negative pid set above before process_datamap().
         // Get the live UID for workspace transparency
         $liveUid = $this->getLiveUid($table, $parentUid);
 

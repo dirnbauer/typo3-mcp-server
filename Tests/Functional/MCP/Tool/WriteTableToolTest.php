@@ -598,7 +598,15 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     /**
-     * Test creating content at bottom position
+     * Test creating content at the bottom of a page.
+     *
+     * Fixture data on page 1:
+     *   uid 100, sorting 256
+     *   uid 101, sorting 512
+     *   uid 104, sorting 768 (hidden=1 — still counts for sorting)
+     *
+     * Inserting with position=bottom must place the record on pid 1 with
+     * sorting greater than every existing record on the page.
      */
     public function testCreateContentAtBottom(): void
     {
@@ -666,7 +674,16 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     /**
-     * Test creating content after a specific element
+     * Test that after:UID positions the record between the reference element
+     * and the next element in sorting order.
+     *
+     * Fixture data on page 1 (colPos 0):
+     *   uid 100, sorting 256 (reference)
+     *   uid 101, sorting 512 (next)
+     *
+     * Inserting after:100 must place the new record:
+     *   - On pid 1
+     *   - With sorting BETWEEN uid 100 (256) and uid 101 (512)
      */
     public function testCreateContentAfterElement(): void
     {
@@ -701,7 +718,65 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     /**
-     * Test creating content before a specific element
+     * Test creating content after the last element on a page.
+     *
+     * Fixture data on page 2 (colPos 0):
+     *   uid 102, sorting 256
+     *   uid 103, sorting 512 (last)
+     *
+     * Inserting after:103 must place the record on pid 2 with sorting > 512.
+     */
+    public function testCreateContentAfterLastElement(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $result = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 2,
+            'position' => 'after:103',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'After Last Element',
+                'colPos' => 0
+            ]
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($result->content[0]->text, true);
+        $newUid = $data['uid'];
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tt_content');
+        $newRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => $newUid])->fetchAssociative();
+        $refRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => 103])->fetchAssociative();
+
+        $this->assertIsArray($newRecord);
+        $this->assertIsArray($refRecord);
+
+        $this->assertEquals(2, (int)$newRecord['pid'],
+            'Record created with after:103 must be on pid 2');
+        $this->assertGreaterThan(
+            (int)$refRecord['sorting'],
+            (int)$newRecord['sorting'],
+            'Record created with after:103 (last element) must have sorting greater than record 103'
+        );
+    }
+
+    /**
+     * Test that before:UID positions the record between the preceding element
+     * and the reference element — not at the top of the page.
+     *
+     * Fixture data on page 1 (colPos 0):
+     *   uid 100, sorting 256 (Welcome Header)
+     *   uid 101, sorting 512 (About Section)
+     *   uid 104, sorting 768 (Hidden Content, hidden=1)
+     *
+     * Inserting before:101 must place the new record:
+     *   - On pid 1 (not pid 0)
+     *   - With sorting BETWEEN uid 100 (256) and uid 101 (512)
+     *     i.e. sorting > 256 AND sorting < 512
      */
     public function testCreateContentBeforeElement(): void
     {
@@ -736,7 +811,62 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     /**
-     * Test creating content at top position
+     * Test creating content before the first element on a page.
+     *
+     * Fixture data on page 1 (colPos 0):
+     *   uid 100, sorting 256 (Welcome Header) — first element
+     *
+     * Inserting before:100 must place the record on pid 1 with sorting < 256.
+     */
+    public function testCreateContentBeforeFirstElement(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $result = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'position' => 'before:100',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Before First Element',
+                'colPos' => 0
+            ]
+        ]);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($result->content[0]->text, true);
+        $this->assertIsArray($data);
+        $newUid = $data['uid'];
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tt_content');
+        $newRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => $newUid])->fetchAssociative();
+        $refRecord = $connection->select(['pid', 'sorting'], 'tt_content', ['uid' => 100])->fetchAssociative();
+
+        $this->assertIsArray($newRecord);
+        $this->assertIsArray($refRecord);
+
+        $this->assertEquals(1, (int)$newRecord['pid'],
+            'Record created with before:100 must be on pid 1');
+
+        // The new record must have lower sorting than the first element
+        $this->assertLessThan(
+            (int)$refRecord['sorting'],
+            (int)$newRecord['sorting'],
+            'Record created with before:100 must have lower sorting than record 100'
+        );
+    }
+
+    /**
+     * Test creating content at the top of a page.
+     *
+     * Fixture data on page 1 (colPos 0):
+     *   uid 100, sorting 256 (first)
+     *
+     * Inserting with position=top must place the record on pid 1 with
+     * sorting lower than every existing record on the page.
      */
     public function testCreateContentAtTop(): void
     {
@@ -825,6 +955,48 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
         self::assertSame($referenceIndex + 1, $newIndex, json_encode($records));
+    }
+
+    /**
+     * Test that before:UID follows the reference record's page when the
+     * user-provided pid points to a different page.
+     *
+     * This is the scenario from upstream issue #50: user provides pid=1 but
+     * references a UID on page 2. The positional reference must win —
+     * the record must NOT land on pid 0 or pid 1.
+     *
+     * Fixture data on page 2 (colPos 0):
+     *   uid 102, sorting 256 (first element on page 2)
+     *   uid 103, sorting 512
+     */
+    public function testCreateContentBeforeElementOnDifferentPage(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $result = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1, // deliberately different from reference's actual page
+            'position' => 'before:102',
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Before element on another page',
+                'colPos' => 0,
+            ],
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertIsArray($data);
+        self::assertSame('create', $data['action']);
+
+        // The new record must land on page 2 (reference's page), not pid 1 or pid 0.
+        $records = $this->readVisibleContentRows(2);
+        $referenceIndex = $this->findRecordIndexByUid($records, 102);
+        $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
+
+        self::assertSame($referenceIndex - 1, $newIndex, json_encode($records));
     }
 
     /**
