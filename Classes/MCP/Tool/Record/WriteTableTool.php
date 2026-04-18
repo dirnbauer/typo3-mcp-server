@@ -455,21 +455,26 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Positioning is already applied via the negative pid set above before process_datamap().
-        // Get the live UID for workspace transparency
+        // Get the live UID for workspace transparency.
         $liveUid = $this->getLiveUid($table, $parentUid);
+
+        $actualPid = $pid;
+        $record = BackendUtility::getRecord($table, $liveUid);
+        if ($record !== null && is_numeric($record['pid'] ?? null)) {
+            $actualPid = (int)$record['pid'];
+        }
 
         // Dispatch AfterRecordWriteEvent
         $eventDispatcher = $this->eventDispatcher;
-        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $pid));
+        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $actualPid));
 
         // Build response with additional useful info
         $result = [
             'action' => 'create',
             'table' => $table,
             'uid' => $liveUid,
-            'pid' => $pid,
+            'pid' => $actualPid,
         ];
-        $record = BackendUtility::getRecord($table, $liveUid);
         if ($record !== null) {
             $sortingField = $GLOBALS['TCA'][$table]['ctrl']['sortby'] ?? null;
             if (is_string($sortingField) && isset($record[$sortingField])) {

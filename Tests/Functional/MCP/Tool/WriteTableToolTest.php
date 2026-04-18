@@ -900,7 +900,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         self::assertLessThan($previousFirstSorting, $data['sorting']);
     }
 
-    public function testCreateContentWithConflictingPositionPidReturnsError(): void
+    public function testCreateContentWithConflictingPositionPidUsesReferencePage(): void
     {
         $tool = $this->getService(WriteTableTool::class);
 
@@ -919,6 +919,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('create', $data['action']);
+        self::assertSame(1, $data['pid']);
     }
 
     public function testCreateContentAfterWorkspaceVersionedReference(): void
@@ -990,6 +991,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($data);
         self::assertSame('create', $data['action']);
+        self::assertSame(2, $data['pid']);
 
         // The new record must land on page 2 (reference's page), not pid 1 or pid 0.
         $records = $this->readVisibleContentRows(2);

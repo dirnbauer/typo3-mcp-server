@@ -103,7 +103,7 @@ GetTableSchema { "table": "tx_news_domain_model_news" }
 // 2. Write into a workspace (workspace is auto-selected/created)
 WriteTable {
   "table": "tx_news_domain_model_news",
-  "operation": "create",
+  "action": "create",
   "pid": 42,
   "data": {
     "title":    "Spring Sale",
@@ -111,7 +111,7 @@ WriteTable {
     "datetime": "2026-04-20"
   }
 }
-// → { "uid": 1234, "workspace": "MCP (auto)", "status": "staged" }
+// → { "action": "create", "table": "tx_news_domain_model_news", "uid": 1234, "pid": 42 }
 
 // 3. Review and publish
 WorkspaceReview   { "workspaceId": 3 }
@@ -173,6 +173,12 @@ Two connection models:
 
 The **User → MCP Server** backend module handles token creation, per-client
 instructions, and endpoint health checks.
+
+Remote MCP requests remain stateless from the editor's point of view. The
+extension creates an anonymous in-memory backend user session for the lifetime
+of the request so TYPO3 internals that expect session state during
+``DataHandler`` writes keep working, without creating a persistent backend
+login.
 
 ## Configuration
 

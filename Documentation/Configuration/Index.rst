@@ -34,6 +34,11 @@ Access tokens are:
 - scoped to the backend user that created them
 - revocable through the backend module
 
+For token-authenticated HTTP requests, the extension also initializes an
+anonymous in-memory TYPO3 backend user session for the lifetime of the request.
+This keeps ``DataHandler`` update paths that touch session state working
+correctly, without creating a persistent backend login.
+
 Workspace behavior
 ==================
 

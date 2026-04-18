@@ -357,8 +357,10 @@ it maps deliberately to TYPO3 behavior:
   the request to a create-after operation; if the target is already first, this
   becomes a top insert
 
-If the requested ``pid`` and the resolved position target belong to different
-parent pages, the tool returns an error.
+For ``after:UID`` and ``before:UID``, the reference record wins. If the caller
+passes a different ``pid`` than the reference record's actual parent page, the
+new record is still created next to the reference record. The returned
+``pid`` reflects the actual parent page after ``DataHandler`` positioning.
 
 AttachImage
 -----------
