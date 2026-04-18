@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use Hn\McpServer\Middleware\McpServerMiddleware;
 use Hn\McpServer\Middleware\BackendUserConfigurationMiddleware;
+use Hn\McpServer\Middleware\McpServerMiddleware;
 
 return [
     'frontend' => [

@@ -325,9 +325,7 @@ final readonly class McpEndpoint
     private function hydrateUserConfiguration(BackendUserAuthentication $beUser, array $userData): void
     {
         $storedUc = $this->decodeStoredUserConfiguration($userData['uc'] ?? null);
-        $defaultUc = is_array($GLOBALS['TYPO3_CONF_VARS']['BE']['defaultUC'] ?? null)
-            ? $GLOBALS['TYPO3_CONF_VARS']['BE']['defaultUC']
-            : [];
+        $defaultUc = $this->getBackendDefaultUserConfiguration();
         $tsConfigDefaults = GeneralUtility::removeDotsFromTS((array)($beUser->getTSConfig()['setup.']['default.'] ?? []));
 
         $beUser->uc = array_merge(
@@ -345,7 +343,7 @@ final readonly class McpEndpoint
     private function decodeStoredUserConfiguration(mixed $storedUc): array
     {
         if (is_array($storedUc)) {
-            return $storedUc;
+            return $this->normalizeStringKeyedArray($storedUc);
         }
         if (!is_string($storedUc) || $storedUc === '') {
             return [];
@@ -357,7 +355,44 @@ final readonly class McpEndpoint
             return [];
         }
 
-        return is_array($decoded) ? $decoded : [];
+        return $this->normalizeStringKeyedArray($decoded);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getBackendDefaultUserConfiguration(): array
+    {
+        $typo3Configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        if (!is_array($typo3Configuration)) {
+            return [];
+        }
+
+        $backendConfiguration = $typo3Configuration['BE'] ?? null;
+        if (!is_array($backendConfiguration)) {
+            return [];
+        }
+
+        return $this->normalizeStringKeyedArray($backendConfiguration['defaultUC'] ?? null);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeStringKeyedArray(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $normalized[$key] = $item;
+            }
+        }
+
+        return $normalized;
     }
 
     private function initializeLanguageService(BackendUserAuthentication $beUser): void

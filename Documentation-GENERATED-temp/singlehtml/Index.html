@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-16T16:14:53+00:00" name="docsearch:modified">
-<meta content="2026-04-16T16:14:53+00:00" name="dc.modified">
-<meta content="2026-04-16T16:14:53+00:00" property="article:modified_time">
+<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
+<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
+<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -147,7 +147,7 @@
 
         <dd class="field-odd">
             
-    <p>Thu, 16 Apr 2026 16:14:53 +0000</p>
+    <p>Sat, 18 Apr 2026 19:18:23 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -1234,6 +1234,12 @@ clients.</p>
     <li class="dash">revocable through the backend module</li>
 </ul>
 
+            
+    <p>For token-authenticated HTTP requests, the extension also initializes an
+anonymous in-memory TYPO3 backend user session for the lifetime of the request.
+This keeps <code>DataHandler</code> update paths that touch session state working
+correctly, without creating a persistent backend login.</p>
+
     </section>
             <section class="section" id="workspace-behavior">
             <h2>Workspace behavior<a class="headerlink" href="#workspace-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1945,8 +1951,10 @@ becomes a top insert</li>
 </ul>
 
             
-    <p>If the requested <code>pid</code> and the resolved position target belong to different
-parent pages, the tool returns an error.</p>
+    <p>For <code>after:UID</code> and <code>before:UID</code>, the reference record wins. If the caller
+passes a different <code>pid</code> than the reference record&#039;s actual parent page, the
+new record is still created next to the reference record. The returned
+<code>pid</code> reflects the actual parent page after <code>DataHandler</code> positioning.</p>
 
     </section>
     </section>
@@ -2721,14 +2729,16 @@ ranges are rejected after DNS resolution.</p>
             
 
 <ul>
-    <li class="dash"><code>action</code> (string, required): <code>create</code> or <code>addLanguage</code></li>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>addLanguage</code>, or <code>replaceLanguages</code></li>
     <li class="dash"><code>identifier</code> (string, required): site identifier (alphanumeric + dash)</li>
     <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
     <li class="dash"><code>base</code> (string): base URL (required for create)</li>
     <li class="dash"><code>defaultLanguage</code> (object): default language config (title, locale,
-iso-639-1, optional <code>flag</code> override)</li>
-    <li class="dash"><code>languages</code> (array): additional languages for create, each with optional
-<code>flag</code> override</li>
+iso-639-1, optional <code>navigationTitle</code> and <code>flag</code> override). Required
+for <code>replaceLanguages</code>.</li>
+    <li class="dash"><code>languages</code> (array): additional languages for <code>create</code> or
+<code>replaceLanguages</code>, each with optional <code>navigationTitle</code> and <code>flag</code>
+override</li>
     <li class="dash"><code>language</code> (object): language to add (required for addLanguage, optional
 <code>flag</code> override)</li>
     <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
@@ -2739,7 +2749,10 @@ iso-639-1, optional <code>flag</code> override)</li>
     <p>Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
 If <code>flag</code> is omitted, CreateSite derives the TYPO3 flag identifier from the
-language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).</p>
+language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).
+<code>replaceLanguages</code> preserves unrelated site configuration keys like
+<code>settings</code>, <code>routeEnhancers</code>, and <code>dependencies</code> while replacing only the
+<code>languages</code> section.</p>
 
     </section>
     </section>
@@ -3045,8 +3058,9 @@ before TYPO3&#039;s site resolver and dispatches to <code class="code-inline cod
           data-details="Dynamic server-side scripting language."
           data-morelink=""          data-bs-html="true"
     >
-        OAuth<wbr>Service</code>, initializes a backend user context, and creates an
-<code>HttpServerRunner</code> from the MCP PHP SDK.</li>
+        OAuth<wbr>Service</code>, initializes a backend user context plus an anonymous
+in-memory backend user session, and creates an <code>HttpServerRunner</code> from the
+MCP PHP SDK.</li>
     <li value="3">The endpoint calls <code>HttpServerRunner::handleRequest()</code> directly (not via
 <code>StandardPhpAdapter</code>) and forwards <strong>all</strong> SDK response headers --
 including the critical <code>Mcp-Session-Id</code> -- into the PSR-7 response that
@@ -3130,7 +3144,9 @@ as documented in <a href="#">Security audit</a>.</p>
 user context setup, and the MCP SDK HTTP transport. The endpoint calls the
 SDK&#039;s <code>HttpServerRunner::handleRequest()</code> directly and maps the SDK
 response (headers, status, body) into TYPO3&#039;s PSR-7 response pipeline.
-Session state is persisted to <code>var/mcp_sessions/</code> via <code>FileSessionStore</code>.</li>
+MCP transport session state is persisted to <code>var/mcp_sessions/</code> via
+<code>FileSessionStore</code>. TYPO3 backend-user session state for token-authenticated
+calls stays in-memory for the current request only.</li>
     <li class="dash">OAuth authorization, token, metadata, and registration endpoints</li>
     <li class="dash">shared CORS helpers</li>
 </ul>
@@ -4258,7 +4274,7 @@ is designed to cover.</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 16, 2026 16:14</p>
+                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

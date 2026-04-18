@@ -1637,7 +1637,8 @@ final class WriteTableTool extends AbstractRecordTool
             ->executeQuery()
             ->fetchAssociative();
 
-        if (is_array($rawRecord) && (int)($rawRecord['t3ver_wsid'] ?? 0) === $currentWorkspace) {
+        $workspaceId = $rawRecord['t3ver_wsid'] ?? null;
+        if (is_array($rawRecord) && is_numeric($workspaceId) && (int)$workspaceId === $currentWorkspace) {
             return $liveUid;
         }
 

@@ -357,8 +357,10 @@ it maps deliberately to TYPO3 behavior:
   the request to a create-after operation; if the target is already first, this
   becomes a top insert
 
-If the requested ``pid`` and the resolved position target belong to different
-parent pages, the tool returns an error.
+For ``after:UID`` and ``before:UID``, the reference record wins. If the caller
+passes a different ``pid`` than the reference record's actual parent page, the
+new record is still created next to the reference record. The returned
+``pid`` reflects the actual parent page after ``DataHandler`` positioning.
 
 AttachImage
 -----------
@@ -864,14 +866,16 @@ CreateSite
 Create or update TYPO3 site configurations.
 
 :Parameters:
-   - ``action`` (string, required): ``create`` or ``addLanguage``
+   - ``action`` (string, required): ``create``, ``addLanguage``, or ``replaceLanguages``
    - ``identifier`` (string, required): site identifier (alphanumeric + dash)
    - ``rootPageId`` (integer): root page UID (required for create)
    - ``base`` (string): base URL (required for create)
    - ``defaultLanguage`` (object): default language config (title, locale,
-     iso-639-1, optional ``flag`` override)
-   - ``languages`` (array): additional languages for create, each with optional
-     ``flag`` override
+     iso-639-1, optional ``navigationTitle`` and ``flag`` override). Required
+     for ``replaceLanguages``.
+   - ``languages`` (array): additional languages for ``create`` or
+     ``replaceLanguages``, each with optional ``navigationTitle`` and ``flag``
+     override
    - ``language`` (object): language to add (required for addLanguage, optional
      ``flag`` override)
    - ``workspace_id`` (integer): optional workspace override
@@ -880,6 +884,9 @@ Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
 If ``flag`` is omitted, CreateSite derives the TYPO3 flag identifier from the
 language ISO code (for example ``en`` -> ``us``, ``de`` -> ``de``).
+``replaceLanguages`` preserves unrelated site configuration keys like
+``settings``, ``routeEnhancers``, and ``dependencies`` while replacing only the
+``languages`` section.
 
 Extension management
 ====================

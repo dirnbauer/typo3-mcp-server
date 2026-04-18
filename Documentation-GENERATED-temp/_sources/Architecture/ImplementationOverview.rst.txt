@@ -20,8 +20,9 @@ Remote MCP requests follow this path:
 1. ``Classes/Middleware/McpServerMiddleware.php`` intercepts the ``/mcp`` path
    before TYPO3's site resolver and dispatches to :php:`McpEndpoint`.
 2. ``Classes/Http/McpEndpoint.php`` authenticates the request with
-   :php:`OAuthService`, initializes a backend user context, and creates an
-   ``HttpServerRunner`` from the MCP PHP SDK.
+   :php:`OAuthService`, initializes a backend user context plus an anonymous
+   in-memory backend user session, and creates an ``HttpServerRunner`` from the
+   MCP PHP SDK.
 3. The endpoint calls ``HttpServerRunner::handleRequest()`` directly (not via
    ``StandardPhpAdapter``) and forwards **all** SDK response headers --
    including the critical ``Mcp-Session-Id`` -- into the PSR-7 response that
@@ -70,7 +71,9 @@ HTTP and backend module layer
   user context setup, and the MCP SDK HTTP transport. The endpoint calls the
   SDK's ``HttpServerRunner::handleRequest()`` directly and maps the SDK
   response (headers, status, body) into TYPO3's PSR-7 response pipeline.
-  Session state is persisted to ``var/mcp_sessions/`` via ``FileSessionStore``.
+  MCP transport session state is persisted to ``var/mcp_sessions/`` via
+  ``FileSessionStore``. TYPO3 backend-user session state for token-authenticated
+  calls stays in-memory for the current request only.
 - OAuth authorization, token, metadata, and registration endpoints
 - shared CORS helpers
 

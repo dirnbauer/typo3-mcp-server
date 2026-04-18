@@ -31,7 +31,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
     #[Test]
     public function processRepairsMissingUcDefaultsAndPersistsThem(): void
     {
-        $backendUser = new class extends BackendUserAuthentication {
+        $backendUser = new class () extends BackendUserAuthentication {
             public int $writeUcCalls = 0;
 
             public function writeUC(): void
@@ -44,7 +44,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         $GLOBALS['BE_USER'] = $backendUser;
 
         $response = $this->createMock(ResponseInterface::class);
-        $handler = new class($response) implements RequestHandlerInterface {
+        $handler = new class ($response) implements RequestHandlerInterface {
             public int $calls = 0;
 
             public function __construct(private readonly ResponseInterface $response) {}
@@ -73,7 +73,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
     #[Test]
     public function processLeavesCompleteUcUntouched(): void
     {
-        $backendUser = new class extends BackendUserAuthentication {
+        $backendUser = new class () extends BackendUserAuthentication {
             public int $writeUcCalls = 0;
 
             public function writeUC(): void
@@ -92,7 +92,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         $GLOBALS['BE_USER'] = $backendUser;
 
         $response = $this->createMock(ResponseInterface::class);
-        $handler = new class($response) implements RequestHandlerInterface {
+        $handler = new class ($response) implements RequestHandlerInterface {
             public function __construct(private readonly ResponseInterface $response) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface

@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-16T16:14:53+00:00" name="docsearch:modified">
-<meta content="2026-04-16T16:14:53+00:00" name="dc.modified">
-<meta content="2026-04-16T16:14:53+00:00" property="article:modified_time">
+<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
+<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
+<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -208,8 +208,9 @@ before TYPO3&#039;s site resolver and dispatches to <code class="code-inline cod
           data-details="Dynamic server-side scripting language."
           data-morelink=""          data-bs-html="true"
     >
-        OAuth<wbr>Service</code>, initializes a backend user context, and creates an
-<code>HttpServerRunner</code> from the MCP PHP SDK.</li>
+        OAuth<wbr>Service</code>, initializes a backend user context plus an anonymous
+in-memory backend user session, and creates an <code>HttpServerRunner</code> from the
+MCP PHP SDK.</li>
     <li value="3">The endpoint calls <code>HttpServerRunner::handleRequest()</code> directly (not via
 <code>StandardPhpAdapter</code>) and forwards <strong>all</strong> SDK response headers --
 including the critical <code>Mcp-Session-Id</code> -- into the PSR-7 response that
@@ -293,7 +294,9 @@ as documented in <a href="SecurityAudit.html">Security audit</a>.</p>
 user context setup, and the MCP SDK HTTP transport. The endpoint calls the
 SDK&#039;s <code>HttpServerRunner::handleRequest()</code> directly and maps the SDK
 response (headers, status, body) into TYPO3&#039;s PSR-7 response pipeline.
-Session state is persisted to <code>var/mcp_sessions/</code> via <code>FileSessionStore</code>.</li>
+MCP transport session state is persisted to <code>var/mcp_sessions/</code> via
+<code>FileSessionStore</code>. TYPO3 backend-user session state for token-authenticated
+calls stays in-memory for the current request only.</li>
     <li class="dash">OAuth authorization, token, metadata, and registration endpoints</li>
     <li class="dash">shared CORS helpers</li>
 </ul>
@@ -598,7 +601,7 @@ changes, the corresponding functional tests are expected to change with it.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 16, 2026 16:14</p>
+                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

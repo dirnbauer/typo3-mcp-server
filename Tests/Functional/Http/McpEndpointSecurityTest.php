@@ -222,7 +222,6 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
 
         $endpoint = $this->createEndpoint();
         $method = new \ReflectionMethod($endpoint, 'setupBackendUserContext');
-        $method->setAccessible(true);
         $method->invoke($endpoint, 1);
 
         $backendUser = $GLOBALS['BE_USER'] ?? null;

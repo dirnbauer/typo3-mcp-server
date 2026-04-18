@@ -400,9 +400,9 @@ final class GetPageTreeTool extends AbstractRecordTool
         PageRepository $pageRepository
     ): array {
         $liveUid = (int)$pageData['uid'];
-        $overlaidPage = $pageRepository->getPageOverlay($page, $languageUid);
+        $overlaidPage = $this->normalizePageRow($pageRepository->getPageOverlay($page, $languageUid));
 
-        if (is_array($overlaidPage) && $this->isTranslatedPageOverlay($overlaidPage, $liveUid, $languageUid)) {
+        if ($overlaidPage !== null && $this->isTranslatedPageOverlay($overlaidPage, $liveUid, $languageUid)) {
             return $this->mergeTranslatedPageData($pageData, $overlaidPage);
         }
 
@@ -421,8 +421,8 @@ final class GetPageTreeTool extends AbstractRecordTool
      */
     protected function isTranslatedPageOverlay(array $translatedPage, int $liveUid, int $languageUid): bool
     {
-        return (int)($translatedPage['sys_language_uid'] ?? 0) === $languageUid
-            && (int)($translatedPage['l10n_parent'] ?? 0) === $liveUid;
+        return $this->pageRowInt($translatedPage, 'sys_language_uid') === $languageUid
+            && $this->pageRowInt($translatedPage, 'l10n_parent') === $liveUid;
     }
 
     /**
@@ -467,18 +467,45 @@ final class GetPageTreeTool extends AbstractRecordTool
             ->executeQuery()
             ->fetchAssociative();
 
-        if (!is_array($translation)) {
+        $translation = $this->normalizePageRow($translation);
+        if ($translation === null) {
             return null;
         }
 
         if ($currentWorkspace > 0) {
             BackendUtility::workspaceOL('pages', $translation);
-            if (!is_array($translation)) {
-                return null;
-            }
+            $translation = $this->normalizePageRow($translation);
         }
 
         return $translation;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function normalizePageRow(mixed $pageRow): ?array
+    {
+        if (!is_array($pageRow)) {
+            return null;
+        }
+
+        $normalizedPage = [];
+        foreach ($pageRow as $key => $value) {
+            if (is_string($key)) {
+                $normalizedPage[$key] = $value;
+            }
+        }
+
+        return $normalizedPage;
+    }
+
+    /**
+     * @param array<string, mixed> $pageRow
+     */
+    protected function pageRowInt(array $pageRow, string $fieldName): int
+    {
+        $value = $pageRow[$fieldName] ?? null;
+        return is_numeric($value) ? (int)$value : 0;
     }
 
     /**

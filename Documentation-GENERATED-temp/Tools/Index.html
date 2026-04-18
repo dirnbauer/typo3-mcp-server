@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-16T16:14:53+00:00" name="docsearch:modified">
-<meta content="2026-04-16T16:14:53+00:00" name="dc.modified">
-<meta content="2026-04-16T16:14:53+00:00" property="article:modified_time">
+<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
+<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
+<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -557,8 +557,10 @@ becomes a top insert</li>
 </ul>
 
             
-    <p>If the requested <code>pid</code> and the resolved position target belong to different
-parent pages, the tool returns an error.</p>
+    <p>For <code>after:UID</code> and <code>before:UID</code>, the reference record wins. If the caller
+passes a different <code>pid</code> than the reference record&#039;s actual parent page, the
+new record is still created next to the reference record. The returned
+<code>pid</code> reflects the actual parent page after <code>DataHandler</code> positioning.</p>
 
     </section>
     </section>
@@ -1333,14 +1335,16 @@ ranges are rejected after DNS resolution.</p>
             
 
 <ul>
-    <li class="dash"><code>action</code> (string, required): <code>create</code> or <code>addLanguage</code></li>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>addLanguage</code>, or <code>replaceLanguages</code></li>
     <li class="dash"><code>identifier</code> (string, required): site identifier (alphanumeric + dash)</li>
     <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
     <li class="dash"><code>base</code> (string): base URL (required for create)</li>
     <li class="dash"><code>defaultLanguage</code> (object): default language config (title, locale,
-iso-639-1, optional <code>flag</code> override)</li>
-    <li class="dash"><code>languages</code> (array): additional languages for create, each with optional
-<code>flag</code> override</li>
+iso-639-1, optional <code>navigationTitle</code> and <code>flag</code> override). Required
+for <code>replaceLanguages</code>.</li>
+    <li class="dash"><code>languages</code> (array): additional languages for <code>create</code> or
+<code>replaceLanguages</code>, each with optional <code>navigationTitle</code> and <code>flag</code>
+override</li>
     <li class="dash"><code>language</code> (object): language to add (required for addLanguage, optional
 <code>flag</code> override)</li>
     <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
@@ -1351,7 +1355,10 @@ iso-639-1, optional <code>flag</code> override)</li>
     <p>Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
 If <code>flag</code> is omitted, CreateSite derives the TYPO3 flag identifier from the
-language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).</p>
+language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).
+<code>replaceLanguages</code> preserves unrelated site configuration keys like
+<code>settings</code>, <code>routeEnhancers</code>, and <code>dependencies</code> while replacing only the
+<code>languages</code> section.</p>
 
     </section>
     </section>
@@ -1583,7 +1590,7 @@ file itself</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 16, 2026 16:14</p>
+                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

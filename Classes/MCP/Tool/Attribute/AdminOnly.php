@@ -12,6 +12,4 @@ namespace Hn\McpServer\MCP\Tool\Attribute;
  * CallToolResult with isError=true if the caller is not an admin.
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
-final class AdminOnly
-{
-}
+final class AdminOnly {}
