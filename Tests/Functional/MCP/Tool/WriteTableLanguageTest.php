@@ -198,6 +198,8 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'uid' => $originalUid,
             'data' => [
                 'sys_language_uid' => 'de',
+                'header' => 'Deutscher Titel',
+                'bodytext' => 'Das ist der uebersetzte Inhalt',
             ],
         ]);
 
@@ -223,7 +225,40 @@ class WriteTableLanguageTest extends FunctionalTestCase
 
         self::assertEquals(1, $translation['sys_language_uid']); // German
         self::assertEquals($originalUid, $translation['l18n_parent']); // TYPO3 uses l18n_parent for tt_content
-        self::assertStringContainsString('Original English Content', $translation['header']); // May have translation prefix
+        self::assertEquals('Deutscher Titel', $translation['header']);
+        self::assertEquals('Das ist der uebersetzte Inhalt', $translation['bodytext']);
+    }
+
+    /**
+     * Test translate action applies provided page fields immediately
+     */
+    public function testTranslatePageAppliesProvidedTitle(): void
+    {
+        $tool = $this->getService(WriteTableTool::class);
+
+        $translateResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translateData = json_decode((string)$translateResult->content[0]->text, true);
+        self::assertIsInt($translateData['translationUid']);
+
+        $translation = BackendUtility::getRecord('pages', $translateData['translationUid']);
+
+        self::assertNotFalse($translation, 'Page translation record not found');
+        self::assertIsArray($translation, 'Page translation should be an array');
+        self::assertEquals(1, $translation['sys_language_uid']);
+        self::assertEquals(2, $translation['l10n_parent']);
+        self::assertEquals('Ueber uns', $translation['title']);
+        self::assertEquals('Ueberblick', $translation['nav_title']);
     }
 
     /**

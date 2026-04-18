@@ -284,7 +284,7 @@ final class WriteTableTool extends AbstractRecordTool
             case 'translate':
                 // The language UID has already been converted from ISO code if needed
                 $targetLanguageUid = (int)$data['sys_language_uid'];
-                return $this->translateRecord($table, $uid, $targetLanguageUid);
+                return $this->translateRecord($table, $uid, $targetLanguageUid, $data);
 
             default:
                 // This should never happen due to earlier validation
@@ -728,7 +728,7 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Translate a record to another language
      */
-    protected function translateRecord(string $table, int $uid, int $targetLanguageUid): CallToolResult
+    protected function translateRecord(string $table, int $uid, int $targetLanguageUid, array $translationData = []): CallToolResult
     {
         // Check if table supports translations
         $languageField = $this->tableAccessService->getLanguageFieldName($table);
@@ -747,6 +747,12 @@ final class WriteTableTool extends AbstractRecordTool
         if (!$record) {
             return $this->createErrorResult('Record not found');
         }
+
+        // DataHandler's localize command creates the translation shell record, but it
+        // does not apply translated field values passed by the MCP caller. Those values
+        // need a follow-up update, otherwise TYPO3 keeps placeholder labels like
+        // "[Translate to English:] Original title" in the workspace tree.
+        unset($translationData['sys_language_uid']);
 
         // Check if this is already a translation
         if (!empty($record[$translationParentField]) && $record[$translationParentField] > 0) {
@@ -771,6 +777,13 @@ final class WriteTableTool extends AbstractRecordTool
         if ($existingTranslation) {
             $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
             return $this->createErrorResult('Translation already exists for language "' . $targetIsoCode . '" (UID: ' . $existingTranslation . ')');
+        }
+
+        if ($translationData !== []) {
+            $validationResult = $this->validateRecordData($table, $translationData, 'update', $uid);
+            if ($validationResult !== true) {
+                return $this->createErrorResult('Validation error: ' . $validationResult);
+            }
         }
 
         // Use DataHandler to create the translation
@@ -816,6 +829,15 @@ final class WriteTableTool extends AbstractRecordTool
                 ->setMaxResults(1)
                 ->executeQuery()
                 ->fetchOne();
+        }
+
+        if ($newTranslationUid && $translationData !== []) {
+            $updateResult = $this->updateRecord($table, (int)$newTranslationUid, $translationData);
+            if ($updateResult->isError) {
+                $updateError = $updateResult->error ?? ($updateResult->content[0]->text ?? 'Unknown error');
+
+                return $this->createErrorResult('Translation created, but applying translated fields failed: ' . $updateError);
+            }
         }
 
         $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
@@ -1175,7 +1197,11 @@ final class WriteTableTool extends AbstractRecordTool
             $isEmbeddedTable = !empty($foreignTableTCA['ctrl']['hideTable']);
 
             foreach ($existingChildren as $existingChild) {
-                $childLiveUid = (int)$existingChild['uid'];
+                $childUid = $existingChild['uid'] ?? null;
+                if (!is_numeric($childUid)) {
+                    continue;
+                }
+                $childLiveUid = (int)$childUid;
                 if (!in_array($childLiveUid, $newChildUids, true)) {
                     if ($isEmbeddedTable) {
                         // Embedded (hideTable) children: delete via DataHandler cmdMap.
@@ -1561,8 +1587,9 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // If this is a workspace record with an original, return the original UID
-        if ($record['t3ver_oid'] > 0) {
-            return (int)$record['t3ver_oid'];
+        $originalUid = $record['t3ver_oid'] ?? null;
+        if (is_numeric($originalUid) && (int)$originalUid > 0) {
+            return (int)$originalUid;
         }
 
         // For new records (t3ver_state = 1), the workspace UID IS the UID we should use
@@ -1581,7 +1608,7 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function resolveToWorkspaceUid(string $table, int $liveUid): int
     {
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+        $currentWorkspace = $this->getBackendUser()->workspace;
 
         // If we're in live workspace, no resolution needed
         if ($currentWorkspace === 0) {

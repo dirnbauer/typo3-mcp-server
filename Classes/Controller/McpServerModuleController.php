@@ -7,8 +7,11 @@ namespace Hn\McpServer\Controller;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
+use IntlDateFormatter;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use DateTimeImmutable;
+use DateTimeZone;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -48,6 +51,7 @@ final readonly class McpServerModuleController
         $userId = (int)($backendUser->user['uid'] ?? 0);
         /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
         $tokens = $this->oauthService->getUserTokens($userId);
+        $neverUsed = $this->translate('tokens.neverUsed', fallback: 'Never');
 
         $baseUrl = $this->getBaseUrl($request);
         $endpointUrl = $baseUrl . '/mcp';
@@ -76,7 +80,7 @@ final readonly class McpServerModuleController
         ]);
 
         $templateVariables = [
-            'tokens' => $tokens,
+            'tokens' => $this->formatTokensForView($tokens, $neverUsed),
             'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
             'endpointUrl' => $endpointUrl,
@@ -305,18 +309,9 @@ final readonly class McpServerModuleController
             /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
             $tokens = $this->oauthService->getUserTokens($userId);
 
-            $formattedTokens = array_map(fn(array $token): array => [
-                'uid' => $token['uid'],
-                'client_name' => $token['client_name'],
-                'created' => date('Y-m-d H:i:s', $token['crdate']),
-                'expires' => date('Y-m-d H:i:s', $token['expires']),
-                'last_used' => $token['last_used'] > 0 ? date('Y-m-d H:i:s', $token['last_used']) : $neverUsed,
-                'token_preview' => substr((string)$token['token'], 0, 20) . '...',
-            ], $tokens);
-
             return new JsonResponse([
                 'success' => true,
-                'tokens' => $formattedTokens,
+                'tokens' => $this->formatTokensForView($tokens, $neverUsed),
             ]);
         } catch (\Throwable) {
             return new JsonResponse([
@@ -361,6 +356,50 @@ final readonly class McpServerModuleController
             'expires' => $token['expires'] ?? null,
             'clientName' => $clientName,
         ];
+    }
+
+    /**
+     * @param list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens
+     * @return list<array{uid: int, client_name: string, created: string, expires: string, last_used: string, token_preview: string}>
+     */
+    private function formatTokensForView(array $tokens, string $neverUsed): array
+    {
+        return array_map(fn(array $token): array => [
+            'uid' => $token['uid'],
+            'client_name' => $token['client_name'],
+            'created' => $this->formatTimestampForBackend($token['crdate']),
+            'expires' => $this->formatTimestampForBackend($token['expires']),
+            'last_used' => $token['last_used'] > 0 ? $this->formatTimestampForBackend($token['last_used']) : $neverUsed,
+            'token_preview' => substr((string)$token['token'], 0, 20) . '...',
+        ], $tokens);
+    }
+
+    private function formatTimestampForBackend(int $timestamp): string
+    {
+        $date = (new DateTimeImmutable('@' . $timestamp))
+            ->setTimezone(new DateTimeZone(date_default_timezone_get()));
+        $locale = $this->getBackendLocale();
+
+        if (class_exists(IntlDateFormatter::class)) {
+            $formatter = new IntlDateFormatter($locale, IntlDateFormatter::MEDIUM, IntlDateFormatter::SHORT);
+            $formatter->setTimeZone($date->getTimezone()->getName());
+            $formatted = $formatter->format($date);
+            if (is_string($formatted) && $formatted !== '') {
+                return $formatted;
+            }
+        }
+
+        return str_starts_with($locale, 'de')
+            ? $date->format('d.m.Y H:i')
+            : $date->format('M j, Y g:i A');
+    }
+
+    private function getBackendLocale(): string
+    {
+        $backendUser = $this->getBackendUser();
+        $languageKey = is_string($backendUser?->uc['lang'] ?? null) ? strtolower((string)$backendUser->uc['lang']) : '';
+
+        return str_starts_with($languageKey, 'de') ? 'de' : 'en';
     }
 
     private function hasAnyWorkspace(): bool

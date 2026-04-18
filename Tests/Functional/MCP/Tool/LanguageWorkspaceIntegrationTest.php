@@ -233,9 +233,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->fetchAssociative();
 
         self::assertIsArray($translation, 'Translation should exist');
-        // The translation might have been created with a placeholder
-        // or the actual translation depending on TYPO3 configuration
-        self::assertNotEmpty($translation['header']);
+        self::assertEquals('Übersetzung Deutsch', $translation['header']);
         self::assertEquals(1, $translation['sys_language_uid']);
         self::assertEquals($originalId, $translation['l18n_parent']);
     }
@@ -398,9 +396,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
 
             self::assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize()));
             $germanData = json_decode((string)$germanRead->content[0]->text, true);
-            // The translation might have a placeholder text initially
-            self::assertNotEmpty($germanData['records'][0]['header']);
-            // Just verify we can read the German translation
+            self::assertEquals('Workspace Deutsch', $germanData['records'][0]['header']);
         }
     }
 }

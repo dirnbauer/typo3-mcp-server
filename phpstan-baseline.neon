@@ -1441,12 +1441,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getBackendUser\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:isSearchReplaceArray\(\) has parameter \$value with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
