@@ -397,7 +397,10 @@ final readonly class McpServerModuleController
     private function getBackendLocale(): string
     {
         $backendUser = $this->getBackendUser();
-        $languageKey = is_string($backendUser?->uc['lang'] ?? null) ? strtolower((string)$backendUser->uc['lang']) : '';
+        $languageKey = '';
+        if ($backendUser instanceof BackendUserAuthentication && is_string($backendUser->uc['lang'] ?? null)) {
+            $languageKey = strtolower($backendUser->uc['lang']);
+        }
 
         return str_starts_with($languageKey, 'de') ? 'de' : 'en';
     }

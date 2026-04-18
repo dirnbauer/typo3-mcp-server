@@ -12,6 +12,7 @@ use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use Mcp\Types\TextContent;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -727,6 +728,8 @@ final class WriteTableTool extends AbstractRecordTool
 
     /**
      * Translate a record to another language
+     *
+     * @param array<string, mixed> $translationData
      */
     protected function translateRecord(string $table, int $uid, int $targetLanguageUid, array $translationData = []): CallToolResult
     {
@@ -834,7 +837,8 @@ final class WriteTableTool extends AbstractRecordTool
         if ($newTranslationUid && $translationData !== []) {
             $updateResult = $this->updateRecord($table, (int)$newTranslationUid, $translationData);
             if ($updateResult->isError) {
-                $updateError = $updateResult->error ?? ($updateResult->content[0]->text ?? 'Unknown error');
+                $firstContent = $updateResult->content[0] ?? null;
+                $updateError = $firstContent instanceof TextContent ? $firstContent->text : 'Unknown error';
 
                 return $this->createErrorResult('Translation created, but applying translated fields failed: ' . $updateError);
             }

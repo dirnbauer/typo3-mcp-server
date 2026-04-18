@@ -274,6 +274,7 @@ final class CreateSiteTool extends AbstractRecordTool
         if ($defaultLangParams === null) {
             throw new ValidationException(['defaultLanguage parameter is required for replaceLanguages action.']);
         }
+        /** @var array<string, mixed> $defaultLangParams */
 
         $config = $this->loadExistingSiteConfig($identifier);
         $existingLanguages = is_array($config['languages'] ?? null) ? $config['languages'] : [];
@@ -330,8 +331,8 @@ final class CreateSiteTool extends AbstractRecordTool
 
             $this->assertUniqueLanguageInSet($normalizedLanguage, $usedIsoCodes, $usedBases);
             $languages[] = $normalizedLanguage;
-            $usedIsoCodes[] = (string)$normalizedLanguage['iso-639-1'];
-            $usedBases[] = (string)$normalizedLanguage['base'];
+            $usedIsoCodes[] = is_string($normalizedLanguage['iso-639-1'] ?? null) ? $normalizedLanguage['iso-639-1'] : $isoCode;
+            $usedBases[] = is_string($normalizedLanguage['base'] ?? null) ? $normalizedLanguage['base'] : '';
             $languageId++;
         }
 
