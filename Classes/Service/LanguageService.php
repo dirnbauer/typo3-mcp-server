@@ -36,6 +36,13 @@ final class LanguageService
      */
     private bool $initialized = false;
 
+    /**
+     * ISO codes that exist in at least one site (union — used for tool enums).
+     *
+     * @var array<string, true>
+     */
+    private array $isoCodeUnion = [];
+
     public function __construct(
         private readonly SiteFinder $siteFinder,
     ) {}
@@ -59,6 +66,7 @@ final class LanguageService
                 $isoCode = $this->extractIsoCode($language);
 
                 if ($isoCode !== null) {
+                    $this->isoCodeUnion[$isoCode] = true;
                     // Store the mapping (first occurrence wins if there are conflicts)
                     if (!isset($this->isoToUidMap[$isoCode])) {
                         $this->isoToUidMap[$isoCode] = $uid;
@@ -159,7 +167,34 @@ final class LanguageService
     {
         $this->initialize();
 
-        return array_keys($this->isoToUidMap);
+        $codes = array_keys($this->isoCodeUnion);
+        sort($codes);
+
+        return $codes;
+    }
+
+    /**
+     * Resolve a language ID for an ISO code using only the site that owns $pageId.
+     * Use this for translate/create/update when the global ISO→ID map would pick the wrong site.
+     */
+    public function getUidFromIsoCodeForPage(int $pageId, string $isoCode): ?int
+    {
+        $isoCode = strtolower($isoCode);
+
+        try {
+            $site = $this->siteFinder->getSiteByPageId($pageId);
+        } catch (SiteNotFoundException) {
+            return $this->getUidFromIsoCode($isoCode);
+        }
+
+        foreach ($site->getAllLanguages() as $language) {
+            $extracted = $this->extractIsoCode($language);
+            if ($extracted === $isoCode) {
+                return $language->getLanguageId();
+            }
+        }
+
+        return null;
     }
 
     /**

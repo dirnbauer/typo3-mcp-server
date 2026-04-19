@@ -116,7 +116,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
         self::assertStringContainsString('sys_language_uid', $output);
 
         // Check that it shows ISO codes
-        self::assertStringContainsString('[ISO codes accepted: en, de, fr]', $output);
+        self::assertStringContainsString('[ISO codes accepted: de, en, fr]', $output);
 
         // Check that it includes the hint about WriteTable tool
         self::assertStringContainsString("Use ISO codes like 'de' instead of numeric IDs in WriteTable tool", $output);

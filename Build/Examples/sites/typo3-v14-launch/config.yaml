@@ -1,0 +1,48 @@
+# Example TYPO3 site configuration: TYPO3 v14 LTS launch event (EN / DE / HU).
+# Copy to: config/sites/typo3-v14-launch/config.yaml
+# Then set rootPageId to your site root page UID and adjust base if needed.
+#
+# After copying: ddev restart   (if you added the hostname in .ddev/config.yaml)
+
+base: 'https://typo3-v14-launch.ddev.site/'
+rootPageId: 1
+websiteTitle: 'TYPO3 v14 LTS Launch'
+
+languages:
+  - title: English
+    enabled: true
+    locale: en_US.UTF-8
+    hreflang: en-US
+    base: /
+    websiteTitle: ''
+    navigationTitle: English
+    flag: us
+    languageId: 0
+    iso-639-1: en
+    fallbackType: strict
+  - title: Deutsch
+    enabled: true
+    locale: de_DE.UTF-8
+    hreflang: de-DE
+    base: /de/
+    websiteTitle: ''
+    navigationTitle: Deutsch
+    flag: de
+    languageId: 1
+    iso-639-1: de
+    fallbackType: fallback
+    fallbacks:
+      - 0
+  - title: Magyar
+    enabled: true
+    locale: hu_HU.UTF-8
+    hreflang: hu-HU
+    base: /hu/
+    websiteTitle: ''
+    navigationTitle: Magyar
+    flag: hu
+    languageId: 2
+    iso-639-1: hu
+    fallbackType: fallback
+    fallbacks:
+      - 0

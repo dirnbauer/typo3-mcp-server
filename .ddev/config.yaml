@@ -4,7 +4,10 @@ docroot: public
 php_version: "8.4"
 webserver_type: nginx-fpm
 xdebug_enabled: false
-additional_hostnames: []
+# Extra hostnames for multisite / demo TYPO3 site configs (same docroot).
+additional_hostnames:
+  - typo3-v14-launch
+  - mcp-news-demo
 additional_fqdns: []
 database:
     type: mariadb

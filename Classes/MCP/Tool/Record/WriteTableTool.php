@@ -188,14 +188,8 @@ final class WriteTableTool extends AbstractRecordTool
          * This conversion happens automatically for any table that has a sys_language_uid field.
          * The available ISO codes depend on the site configuration.
          */
-        // Convert sys_language_uid from ISO code to UID if present
-        if (!empty($data) && isset($data['sys_language_uid']) && is_string($data['sys_language_uid'])) {
-            $languageUid = $this->languageService->getUidFromIsoCode($data['sys_language_uid']);
-            if ($languageUid === null) {
-                throw new ValidationException(['Unknown language code: ' . $data['sys_language_uid']]);
-            }
-            $data['sys_language_uid'] = $languageUid;
-        }
+        // Convert sys_language_uid from ISO code to UID if present (per-site when page context is known)
+        $data = $this->convertSysLanguageUidFromIsoIfNeeded($action, $table, $uid, $pid, $data);
 
         // Validate table access using TableAccessService
         $this->ensureTableAccess($table, $action === 'delete' ? 'delete' : 'write');
@@ -1912,5 +1906,56 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         return implode(' | ', $errors);
+    }
+
+    /**
+     * @param RecordData $data
+     * @return RecordData
+     */
+    private function convertSysLanguageUidFromIsoIfNeeded(string $action, string $table, ?int $uid, ?int $pid, array $data): array
+    {
+        if (empty($data) || !isset($data['sys_language_uid']) || !is_string($data['sys_language_uid'])) {
+            return $data;
+        }
+
+        $isoCode = $data['sys_language_uid'];
+        $pageId = null;
+
+        if ($action === 'translate' && $uid !== null && $uid > 0) {
+            $pageId = $table === 'pages' ? $uid : $this->getPageIdForLanguageResolution($table, $uid);
+        } elseif ($action === 'create' && $pid !== null && $pid > 0) {
+            $pageId = $pid;
+        } elseif ($action === 'update' && $uid !== null && $uid > 0) {
+            $pageId = $this->getPageIdForLanguageResolution($table, $uid);
+        }
+
+        $languageUid = null;
+        if ($pageId !== null && $pageId > 0) {
+            $languageUid = $this->languageService->getUidFromIsoCodeForPage($pageId, $isoCode);
+        }
+        if ($languageUid === null) {
+            $languageUid = $this->languageService->getUidFromIsoCode($isoCode);
+        }
+        if ($languageUid === null) {
+            throw new ValidationException(['Unknown language code: ' . $isoCode]);
+        }
+
+        $data['sys_language_uid'] = $languageUid;
+
+        return $data;
+    }
+
+    private function getPageIdForLanguageResolution(string $table, int $uid): ?int
+    {
+        if ($table === 'pages') {
+            return $uid;
+        }
+
+        $row = BackendUtility::getRecord($table, $uid, 'pid');
+        if (!is_array($row) || !array_key_exists('pid', $row)) {
+            return null;
+        }
+
+        return is_numeric($row['pid']) ? (int)$row['pid'] : null;
     }
 }
