@@ -206,7 +206,12 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         self::assertArrayHasKey('content_elements', $news);
         self::assertIsArray($news['content_elements']);
-        self::assertCount(0, $news['content_elements']);
+        self::assertCount(3, $news['content_elements']);
+
+        sort($contentUids);
+        $actualUids = array_map('intval', $news['content_elements']);
+        sort($actualUids);
+        self::assertSame($contentUids, $actualUids);
     }
 
     /**
@@ -449,11 +454,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        // Verify only the specified UIDs remain
+        // Verify only the specified UIDs remain linked and the others are unlinked.
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
 
-        // After parent-side update, all foreign fields are cleared
-        foreach ([0, 1, 2, 3] as $index) {
+        $expectedRelations = [
+            0 => 0,           // dropped
+            1 => $newsUid,    // kept
+            2 => 0,           // dropped
+            3 => $newsUid,    // kept
+        ];
+
+        foreach ($expectedRelations as $index => $expectedRelation) {
             $result = $readTool->execute([
                 'table' => 'tt_content',
                 'uid' => $allContentUids[$index],
@@ -476,11 +487,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
             } else {
                 $relatedNews = $content['tx_news_related_news'];
             }
-            self::assertEquals(
-                0,
-                (int)$relatedNews,
-                "Content element {$allContentUids[$index]} foreign field should be cleared after parent-side update",
-            );
+            $message = $expectedRelation === 0
+                ? "Content element {$allContentUids[$index]} foreign field should be cleared after parent-side update"
+                : "Content element {$allContentUids[$index]} foreign field should still reference news {$newsUid}";
+            self::assertSame($expectedRelation, (int)$relatedNews, $message);
         }
     }
 
