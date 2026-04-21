@@ -209,7 +209,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
         self::assertCount(3, $news['content_elements']);
 
         sort($contentUids);
-        $actualUids = array_map('intval', $news['content_elements']);
+        $actualUids = array_map(intval(...), $news['content_elements']);
         sort($actualUids);
         self::assertSame($contentUids, $actualUids);
     }
