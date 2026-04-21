@@ -1109,7 +1109,64 @@ final class WriteTableTool extends AbstractRecordTool
             // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
             $childIdentifiers = [];
 
+            // Allowed sys_file_reference metadata fields that callers may set per attachment.
+            $allowedFileRefMetaFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
+
             foreach ($value as $index => $item) {
+                if ($isFileReference) {
+                    // File field accepts:
+                    //  1) plain sys_file UID (shorthand): 5
+                    //  2) object with uid_local + optional metadata: {"uid_local": 5, "title": "...", "alternative": "..."}
+                    //  3) reference to existing sys_file_reference UID with optional updates: {"uid": 12, "title": "..."}
+                    if (is_numeric($item) && (int)$item > 0) {
+                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
+                        $dataMap[$foreignTable][$childNewId] = [
+                            'uid_local' => (int)$item,
+                            'pid' => $pid,
+                            'tablenames' => $parentTable,
+                            'fieldname' => $fieldName,
+                            'table_local' => 'sys_file',
+                        ];
+                        $childIdentifiers[] = $childNewId;
+                        continue;
+                    }
+
+                    if (is_array($item) && isset($item['uid_local']) && is_numeric($item['uid_local']) && (int)$item['uid_local'] > 0) {
+                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
+                        $refData = [
+                            'uid_local' => (int)$item['uid_local'],
+                            'pid' => $pid,
+                            'tablenames' => $parentTable,
+                            'fieldname' => $fieldName,
+                            'table_local' => 'sys_file',
+                        ];
+                        foreach ($allowedFileRefMetaFields as $metaField) {
+                            if (!array_key_exists($metaField, $item)) {
+                                continue;
+                            }
+                            $metaValue = $item[$metaField];
+                            if (is_string($metaValue) || is_numeric($metaValue) || is_bool($metaValue) || $metaValue === null) {
+                                $refData[$metaField] = is_bool($metaValue) ? (int)$metaValue : $metaValue;
+                            }
+                        }
+                        $dataMap[$foreignTable][$childNewId] = $refData;
+                        $childIdentifiers[] = $childNewId;
+                        continue;
+                    }
+
+                    if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
+                        $existingUid = (int)$item['uid'];
+                        unset($item['uid'], $item[$foreignField]);
+                        if (!empty($item)) {
+                            $dataMap[$foreignTable][$existingUid] = $item;
+                        }
+                        $childIdentifiers[] = $existingUid;
+                        continue;
+                    }
+                    // Invalid items were already caught by validateInlineRelationData
+                    continue;
+                }
+
                 if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
                     // Existing record reference via {"uid": N, ...} — keep or update
                     $existingUid = (int)$item['uid'];
@@ -1129,21 +1186,11 @@ final class WriteTableTool extends AbstractRecordTool
                     unset($item[$foreignField]);
                     $item['pid'] = $pid;
 
-                    if ($isFileReference) {
-                        // File reference shorthand: plain UID means uid_local (sys_file UID)
-                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
-                        $dataMap[$foreignTable][$childNewId] = [
-                            'uid_local' => (int)$item,
-                            'pid' => $pid,
-                            'tablenames' => $parentTable,
-                            'fieldname' => $fieldName,
-                            'table_local' => 'sys_file',
-                        ];
-                        $childIdentifiers[] = $childNewId;
-                    } else {
-                        // Existing UID — reference it directly
-                        $childIdentifiers[] = (int)$item;
-                    }
+                    $dataMap[$foreignTable][$childNewId] = $item;
+                    $childIdentifiers[] = $childNewId;
+                } elseif (is_numeric($item) && (int)$item > 0) {
+                    // Plain UID — reference an existing independent inline child directly
+                    $childIdentifiers[] = (int)$item;
                 }
                 // Invalid items were already caught by validateInlineRelationData
             }
