@@ -164,18 +164,33 @@ final class ReadTableTool extends AbstractRecordTool
             throw new ValidationException(['Table name is required']);
         }
 
+        // Reject the legacy `where` payload with a clear error instead of silently dropping it.
+        if (isset($params['where'])) {
+            throw new ValidationException([
+                'The legacy "where" parameter is not supported. Use "filters" instead: an array of '
+                . '{field, operator, value} objects combined with AND. Supported operators: '
+                . implode(', ', self::ALLOWED_OPERATORS) . '.',
+            ]);
+        }
+
         $this->ensureTableAccess($table, 'read');
+        $tableName = (string)$table;
 
         // Execute main logic
         // Extract and validate parameters
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) ? (int)$params['uid'] : null;
-        $filters = $params['filters'] ?? [];
+        $filtersParam = $params['filters'] ?? [];
         $limit = isset($params['limit']) ? (int)$params['limit'] : 20;
         $offset = isset($params['offset']) ? (int)$params['offset'] : 0;
         $language = $params['language'] ?? null;
         $includeTranslationSource = $params['includeTranslationSource'] ?? false;
-        $requestedFields = $this->normalizeFieldNames($table, $params['fields'] ?? []);
+        $requestedFields = $this->normalizeFieldNames($tableName, $params['fields'] ?? []);
+
+        // Normalize system field filters so callers can use friendly values:
+        //   - sys_language_uid accepts ISO codes ("de") in addition to UIDs
+        //   - hidden accepts booleans
+        $filters = $this->normalizeSystemFieldFilters($tableName, $filtersParam, $pid);
 
         // Ensure translation parent field is included when translation source is requested
         if ($includeTranslationSource && !empty($requestedFields)) {
@@ -533,7 +548,7 @@ final class ReadTableTool extends AbstractRecordTool
 
                             if ($itemValue !== null && $itemValue !== '--div--') {
                                 $hasItems = true;
-                                if (!is_int($itemValue) && !ctype_digit((string)$itemValue)) {
+                                if (!is_int($itemValue) && (!is_scalar($itemValue) || !ctype_digit((string)$itemValue))) {
                                     $allIntegers = false;
                                     break;
                                 }
@@ -608,6 +623,87 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         return $value;
+    }
+
+    /**
+     * Normalize filter values for well-known system fields so callers can use ergonomic inputs.
+     *
+     * - sys_language_uid: accept ISO codes ("de", "hu") and convert to UIDs (per-site when $pid is known).
+     * - hidden: accept booleans (true/false) and convert to 1/0.
+     *
+     * If the caller accidentally sends `filters` as an associative {field: value} object
+     * instead of a list of filter objects, rewrite it into the canonical shape so the
+     * request does not silently drop the filters.
+     *
+     * @return list<mixed>
+     */
+    protected function normalizeSystemFieldFilters(string $table, mixed $filters, ?int $pid): array
+    {
+        if ($filters === null || $filters === []) {
+            return [];
+        }
+
+        if (!is_array($filters)) {
+            throw new ValidationException([
+                'filters must be an array of {field, operator, value} objects.',
+            ]);
+        }
+
+        // If $filters is an associative object like {hidden: 0, sys_language_uid: "hu"},
+        // convert each entry to a proper filter with operator "eq".
+        /** @var list<mixed> $normalized */
+        $normalized = [];
+        $isList = array_is_list($filters);
+        foreach ($filters as $key => $value) {
+            if (!$isList && is_string($key)) {
+                $normalized[] = ['field' => $key, 'operator' => 'eq', 'value' => $value];
+            } else {
+                $normalized[] = $value;
+            }
+        }
+
+        $languageField = $this->tableAccessService->getLanguageFieldName($table) ?? '';
+
+        /** @var list<mixed> $result */
+        $result = [];
+        foreach ($normalized as $filter) {
+            if (!is_array($filter)) {
+                $result[] = $filter;
+                continue;
+            }
+            $field = is_string($filter['field'] ?? null) ? $filter['field'] : '';
+            if ($field === '') {
+                $result[] = $filter;
+                continue;
+            }
+
+            // sys_language_uid — accept ISO codes
+            if ($languageField !== '' && $field === $languageField
+                && isset($filter['value']) && is_string($filter['value']) && !ctype_digit($filter['value'])
+            ) {
+                $iso = $filter['value'];
+                $resolved = null;
+                if ($pid !== null && $pid > 0) {
+                    $resolved = $this->languageService->getUidFromIsoCodeForPage($pid, $iso);
+                }
+                if ($resolved === null) {
+                    $resolved = $this->languageService->getUidFromIsoCode($iso);
+                }
+                if ($resolved === null) {
+                    throw new ValidationException(['Unknown language code in filter: ' . $iso]);
+                }
+                $filter['value'] = $resolved;
+            }
+
+            // hidden — accept booleans
+            if ($field === 'hidden' && isset($filter['value']) && is_bool($filter['value'])) {
+                $filter['value'] = $filter['value'] ? 1 : 0;
+            }
+
+            $result[] = $filter;
+        }
+
+        return $result;
     }
 
     /**

@@ -38,8 +38,10 @@ final class BulkWriteTool extends AbstractRecordTool
             'description' => 'Execute multiple write operations (create, update, delete) in a single transaction. '
                 . 'More efficient than calling WriteTable multiple times. '
                 . 'All operations run in workspace context. Maximum 50 operations per call. '
-                . 'Operations are executed atomically — use WriteTable for complex single-record operations '
-                . 'that need positioning, translation, or search-and-replace.',
+                . 'LIMITATION: BulkWrite does NOT support inline child records in "data" (no nested arrays of child records, no sys_file_reference objects). '
+                . 'For any operation that needs inline children (image/assets on tt_content, nested container elements, etc.), use WriteTable. '
+                . 'Other limitations: no positioning, no translate action, no search-and-replace — use WriteTable for those. ' .
+                'BulkWrite is best for flat field updates and bulk create/delete.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -68,7 +70,7 @@ final class BulkWriteTool extends AbstractRecordTool
                                 ],
                                 'data' => [
                                     'type' => 'object',
-                                    'description' => 'Field values for create or update',
+                                    'description' => 'Flat field values for create or update. NOTE: Inline children (nested arrays of child records) are not supported here — use WriteTable instead.',
                                     'additionalProperties' => true,
                                 ],
                             ],
@@ -231,6 +233,57 @@ final class BulkWriteTool extends AbstractRecordTool
     }
 
     /**
+     * Detect whether $data contains inline-child payloads on fields of type "inline" or "file".
+     *
+     * Nested objects/arrays of child records cannot be resolved through DataHandler's flat
+     * dataMap and would either silently drop the children or cause an "unexpected error".
+     * Return a structured message pointing the caller to WriteTable, or null if $data is safe.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function detectInlineChildData(string $table, array $data): ?string
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($tca)) {
+            return null;
+        }
+        $tableConfig = $tca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return null;
+        }
+        $columns = $tableConfig['columns'] ?? null;
+        if (!is_array($columns)) {
+            return null;
+        }
+
+        foreach ($data as $fieldName => $value) {
+            if (!is_string($fieldName) || !isset($columns[$fieldName])) {
+                continue;
+            }
+            $fieldConfig = $columns[$fieldName];
+            if (!is_array($fieldConfig)) {
+                continue;
+            }
+            $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $type = is_string($config['type'] ?? null) ? $config['type'] : '';
+            if (!in_array($type, ['inline', 'file'], true)) {
+                continue;
+            }
+            if (!is_array($value) || $value === []) {
+                continue;
+            }
+            foreach ($value as $item) {
+                if (is_array($item)) {
+                    return 'Field "' . $fieldName . '" contains inline child records, which BulkWrite does not support. '
+                        . 'Use the WriteTable tool for operations with inline children (image/assets on tt_content, container elements, nested records, etc.).';
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Validate all operations and return normalized operation arrays.
      *
      * @param list<mixed> $operations
@@ -284,6 +337,11 @@ final class BulkWriteTool extends AbstractRecordTool
                         $errors[] = 'Operation #' . $index . ': data is required for create';
                         continue 2;
                     }
+                    $inlineError = $this->detectInlineChildData($table, $data);
+                    if ($inlineError !== null) {
+                        $errors[] = 'Operation #' . $index . ': ' . $inlineError;
+                        continue 2;
+                    }
                     $normalizedData = [];
                     foreach ($data as $key => $value) {
                         if (is_string($key)) {
@@ -303,6 +361,11 @@ final class BulkWriteTool extends AbstractRecordTool
                     $data = is_array($op['data'] ?? null) ? $op['data'] : [];
                     if ($data === []) {
                         $errors[] = 'Operation #' . $index . ': data is required for update';
+                        continue 2;
+                    }
+                    $inlineError = $this->detectInlineChildData($table, $data);
+                    if ($inlineError !== null) {
+                        $errors[] = 'Operation #' . $index . ': ' . $inlineError;
                         continue 2;
                     }
                     $normalizedData = [];

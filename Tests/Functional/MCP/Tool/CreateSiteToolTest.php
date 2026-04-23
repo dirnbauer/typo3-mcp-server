@@ -250,6 +250,126 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         self::assertSame('cn', $config['languages'][2]['flag']);
     }
 
+    public function testCreateAcceptsDependenciesAndReturnsNoWarning(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'themed-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://example.com/',
+            'dependencies' => ['vendor/site-package'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+        self::assertSame(['vendor/site-package'], $data['config']['dependencies']);
+        self::assertArrayNotHasKey('warning', $data);
+    }
+
+    public function testCreateMergesSetsAndDependencies(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'sets-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://example.com/',
+            'dependencies' => ['vendor/a'],
+            'sets' => ['vendor/b', 'vendor/a'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame(['vendor/a', 'vendor/b'], $data['config']['dependencies']);
+    }
+
+    public function testCreateWithoutRenderingEmitsWarning(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'no-render',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://example.com/',
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertArrayHasKey('warning', $data);
+        self::assertStringContainsString('No site configuration or TypoScript template record found', $data['warning']);
+    }
+
+    public function testUpdateMergesDependenciesWhilePreservingOtherKeys(): void
+    {
+        $this->createExistingSiteConfiguration('update-site', [
+            [
+                'title' => 'German',
+                'locale' => 'de_DE.UTF-8',
+                'iso-639-1' => 'de',
+                'base' => '/de/',
+            ],
+        ]);
+        $this->mergeSiteConfiguration('update-site', [
+            'websiteTitle' => 'Existing Site',
+            'routeEnhancers' => ['PageTypeSuffix' => ['type' => 'PageType']],
+        ]);
+
+        $result = $this->tool->execute([
+            'action' => 'update',
+            'identifier' => 'update-site',
+            'dependencies' => ['vendor/theme'],
+            'settings' => ['theme' => 'dark'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('updated', $data['status']);
+        self::assertContains('dependencies', $data['appliedKeys']);
+        self::assertContains('settings', $data['appliedKeys']);
+
+        $config = $this->readSiteConfiguration('update-site');
+        self::assertSame(['vendor/theme'], $config['dependencies']);
+        self::assertSame('dark', $config['settings']['theme']);
+        // Unrelated keys are preserved.
+        self::assertSame('Existing Site', $config['websiteTitle']);
+        self::assertSame('PageType', $config['routeEnhancers']['PageTypeSuffix']['type']);
+    }
+
+    public function testUpdateRejectsEmptyRequest(): void
+    {
+        $this->createExistingSiteConfiguration('empty-update-site', []);
+
+        $result = $this->tool->execute([
+            'action' => 'update',
+            'identifier' => 'empty-update-site',
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('dependencies, sets, settings, or config', $this->getFirstTextContent($result));
+    }
+
+    public function testUpdateAcceptsGenericConfigAndProtectsStructuralKeys(): void
+    {
+        $this->createExistingSiteConfiguration('protect-site', []);
+        $before = $this->readSiteConfiguration('protect-site');
+
+        $result = $this->tool->execute([
+            'action' => 'update',
+            'identifier' => 'protect-site',
+            'config' => [
+                'errorHandling' => [['errorCode' => 404]],
+                'rootPageId' => 9999,
+                'base' => 'https://malicious.example/',
+                'languages' => [],
+            ],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('updated', $data['status']);
+        self::assertContains('errorHandling', $data['appliedKeys']);
+
+        $after = $this->readSiteConfiguration('protect-site');
+        self::assertSame($before['rootPageId'], $after['rootPageId']);
+        self::assertSame($before['base'], $after['base']);
+        self::assertCount(count($before['languages']), $after['languages']);
+        self::assertSame([['errorCode' => 404]], $after['errorHandling']);
+    }
+
     /**
      * @param array<int, array<string, mixed>> $languages
      */

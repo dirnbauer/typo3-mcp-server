@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -40,6 +41,7 @@ final class WriteTableTool extends AbstractRecordTool
         protected readonly LanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly SiteFinder $siteFinder,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -125,6 +127,19 @@ final class WriteTableTool extends AbstractRecordTool
                             . 'For "move", position is required unless moving to bottom of same page. '
                             . 'To create elements in order, chain "after:UID" with the UID from the previous response.',
                         'default' => 'bottom',
+                    ],
+                    'translateChildren' => [
+                        'type' => 'boolean',
+                        'description' => 'translate action only. When true (default), TYPO3 auto-localizes inline children with source-language content (DataHandler localize). '
+                            . 'Set to false if you plan to translate child records yourself in follow-up calls — avoids "already been localized" errors when inline child fields are included in data.',
+                        'default' => true,
+                    ],
+                    'hidden' => [
+                        'type' => 'boolean',
+                        'description' => 'translate action only. Whether the newly created translation should be hidden. '
+                            . 'Defaults to false so translations are visible immediately (matches editor expectation). '
+                            . 'Set to true to keep translations hidden for review.',
+                        'default' => false,
                     ],
                 ],
                 'required' => ['action', 'table'],
@@ -285,7 +300,9 @@ final class WriteTableTool extends AbstractRecordTool
             case 'translate':
                 // The language UID has already been converted from ISO code if needed
                 $targetLanguageUid = (int)$data['sys_language_uid'];
-                return $this->translateRecord($table, $uid, $targetLanguageUid, $data);
+                $translateChildren = !isset($params['translateChildren']) || $params['translateChildren'] !== false;
+                $hiddenFlag = isset($params['hidden']) ? (bool)$params['hidden'] : false;
+                return $this->translateRecord($table, $uid, $targetLanguageUid, $data, $translateChildren, $hiddenFlag);
 
             default:
                 // This should never happen due to earlier validation
@@ -763,9 +780,18 @@ final class WriteTableTool extends AbstractRecordTool
      * Translate a record to another language
      *
      * @param array<string, mixed> $translationData
+     * @param bool $translateChildren If true, DataHandler auto-localizes inline children with source-language content.
+     *                                If false, inline children are not copied so the caller can translate them manually.
+     * @param bool $hiddenFlag If true, the new translation is created hidden. Default false so translations are visible immediately.
      */
-    protected function translateRecord(string $table, int $uid, int $targetLanguageUid, array $translationData = []): CallToolResult
-    {
+    protected function translateRecord(
+        string $table,
+        int $uid,
+        int $targetLanguageUid,
+        array $translationData = [],
+        bool $translateChildren = true,
+        bool $hiddenFlag = false,
+    ): CallToolResult {
         // Check if table supports translations
         $languageField = $this->tableAccessService->getLanguageFieldName($table);
         if (!$languageField) {
@@ -811,7 +837,7 @@ final class WriteTableTool extends AbstractRecordTool
             ->fetchOne();
 
         if ($existingTranslation) {
-            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
+            $targetIsoCode = $this->resolveIsoCodeForTranslation($table, $uid, $targetLanguageUid);
             return $this->createErrorResult('Translation already exists for language "' . $targetIsoCode . '" (UID: ' . $existingTranslation . ')');
         }
 
@@ -820,6 +846,15 @@ final class WriteTableTool extends AbstractRecordTool
             if ($validationResult !== true) {
                 return $this->createErrorResult('Validation error: ' . $validationResult);
             }
+        }
+
+        // If the caller opted out of auto-localizing inline children, temporarily null out
+        // child field UIDs on the parent row. DataHandler localize only copies children
+        // referenced by the parent — restoring the UIDs afterwards leaves the original
+        // record untouched.
+        $skippedInlineBackup = [];
+        if (!$translateChildren) {
+            $skippedInlineBackup = $this->stripInlineChildReferences($table, $uid);
         }
 
         // Use DataHandler to create the translation
@@ -836,9 +871,15 @@ final class WriteTableTool extends AbstractRecordTool
         ];
 
         $dataHandler->start([], $cmdMap);
-        $dataHandler->process_cmdmap();
+        try {
+            $dataHandler->process_cmdmap();
+        } finally {
+            if ($skippedInlineBackup !== []) {
+                $this->restoreInlineChildReferences($table, $uid, $skippedInlineBackup);
+            }
+        }
 
-        // Check for errors
+        // Check for errors — no translation row was created yet, so nothing to roll back.
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating translation: ' . implode(', ', $dataHandler->errorLog));
         }
@@ -867,25 +908,231 @@ final class WriteTableTool extends AbstractRecordTool
                 ->fetchOne();
         }
 
-        if ($newTranslationUid && $translationData !== []) {
-            $updateResult = $this->updateRecord($table, (int)$newTranslationUid, $translationData);
+        // Apply hidden flag + translated fields in a single follow-up update.
+        // Default is hidden=false so translations are visible immediately. The
+        // TYPO3 core localize command sets hidden=1 on translations by default,
+        // which means every translation starts invisible — surprising for MCP
+        // callers who just asked to "translate" a record.
+        $followUpData = $translationData;
+        $hiddenFieldName = $this->getHiddenFieldName($table);
+        if ($hiddenFieldName !== null && !array_key_exists($hiddenFieldName, $followUpData)) {
+            $followUpData[$hiddenFieldName] = $hiddenFlag ? 1 : 0;
+        }
+
+        $translationWorkspaceUid = null;
+        if ($newTranslationUid && $followUpData !== []) {
+            $updateResult = $this->updateRecord($table, (int)$newTranslationUid, $followUpData);
             if ($updateResult->isError) {
                 $firstContent = $updateResult->content[0] ?? null;
                 $updateError = $firstContent instanceof TextContent ? $firstContent->text : 'Unknown error';
 
-                return $this->createErrorResult('Translation created, but applying translated fields failed: ' . $updateError);
+                // Roll back the parent translation so the caller doesn't end up with an
+                // orphan record in the source language. We keep the UID in the error to
+                // help callers clean up if rollback itself fails.
+                $rollbackMessage = $this->rollbackTranslation($table, (int)$newTranslationUid);
+
+                return $this->createErrorResult(
+                    'Translation created (UID: ' . $newTranslationUid . ') but applying translated fields failed: '
+                    . $updateError
+                    . ($rollbackMessage !== null ? ' — Rolled back: ' . $rollbackMessage : ' — Automatic rollback failed; delete this record manually.'),
+                );
             }
+            $translationWorkspaceUid = $this->resolveToWorkspaceUid($table, (int)$newTranslationUid);
         }
 
-        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
-
-        return $this->createJsonResult([
+        $targetIsoCode = $this->resolveIsoCodeForTranslation($table, $uid, $targetLanguageUid);
+        $response = [
             'action' => 'translate',
             'table' => $table,
             'sourceUid' => $uid,
             'translationUid' => $newTranslationUid ?: 'Translation created but UID not found',
             'targetLanguage' => $targetIsoCode,
-        ]);
+            'hidden' => $hiddenFlag,
+        ];
+
+        $siteIdentifier = $this->resolveSiteIdentifierForTranslation($table, $uid);
+        if ($siteIdentifier !== null) {
+            $response['siteIdentifier'] = $siteIdentifier;
+        }
+
+        if ($translationWorkspaceUid !== null && $newTranslationUid) {
+            $slugFieldName = $this->tableAccessService->getFieldConfig($table, 'slug') !== null ? 'slug' : null;
+            if ($slugFieldName !== null) {
+                $slugRow = BackendUtility::getRecord($table, $translationWorkspaceUid, $slugFieldName);
+                if (is_array($slugRow) && isset($slugRow[$slugFieldName])) {
+                    $response['slug'] = (string)$slugRow[$slugFieldName];
+                }
+            }
+        }
+
+        return $this->createJsonResult($response);
+    }
+
+    /**
+     * Return the hidden-field name from TCA (usually "hidden") or null if the table has none.
+     */
+    private function getHiddenFieldName(string $table): ?string
+    {
+        $ctrl = $this->getTableCtrlArray($table);
+        $enablecolumns = isset($ctrl['enablecolumns']) && is_array($ctrl['enablecolumns']) ? $ctrl['enablecolumns'] : [];
+        $fieldName = $enablecolumns['disabled'] ?? null;
+        return is_string($fieldName) && $fieldName !== '' ? $fieldName : null;
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table]['ctrl'] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableCtrlArray(string $table): array
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($tca) || !isset($tca[$table]) || !is_array($tca[$table])) {
+            return [];
+        }
+        $ctrl = $tca[$table]['ctrl'] ?? null;
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table]['columns'] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableColumnsArray(string $table): array
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($tca) || !isset($tca[$table]) || !is_array($tca[$table])) {
+            return [];
+        }
+        $columns = $tca[$table]['columns'] ?? null;
+        return is_array($columns) ? $columns : [];
+    }
+
+    /**
+     * Temporarily blank inline child references on the parent row so DataHandler localize
+     * does not clone child records. Returns the original values so they can be restored.
+     *
+     * @return array<string, mixed>
+     */
+    private function stripInlineChildReferences(string $table, int $uid): array
+    {
+        $columns = $this->getTableColumnsArray($table);
+
+        $inlineFields = [];
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (!is_string($fieldName) || !is_array($fieldConfig)) {
+                continue;
+            }
+            $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $type = is_string($config['type'] ?? null) ? $config['type'] : '';
+            if (in_array($type, ['inline', 'file'], true)) {
+                $inlineFields[] = $fieldName;
+            }
+        }
+        if ($inlineFields === []) {
+            return [];
+        }
+
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $record = BackendUtility::getRecord($table, $workspaceUid, implode(',', $inlineFields));
+        if (!is_array($record)) {
+            return [];
+        }
+
+        $backup = [];
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        foreach ($inlineFields as $fieldName) {
+            if (!array_key_exists($fieldName, $record)) {
+                continue;
+            }
+            $backup[$fieldName] = $record[$fieldName];
+            $connection->update(
+                $table,
+                [$fieldName => 0],
+                ['uid' => $workspaceUid],
+            );
+        }
+
+        return $backup;
+    }
+
+    /**
+     * Restore inline child reference values that were blanked by stripInlineChildReferences().
+     *
+     * @param array<string, mixed> $backup
+     */
+    private function restoreInlineChildReferences(string $table, int $uid, array $backup): void
+    {
+        if ($backup === []) {
+            return;
+        }
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        foreach ($backup as $fieldName => $value) {
+            if (!is_string($fieldName)) {
+                continue;
+            }
+            $connection->update($table, [$fieldName => $value], ['uid' => $workspaceUid]);
+        }
+    }
+
+    /**
+     * Delete a translation record that was created but subsequently failed to receive
+     * translated field values. Keeps the parent record intact. Returns a message
+     * describing the rollback or null when rollback itself failed.
+     */
+    private function rollbackTranslation(string $table, int $translationUid): ?string
+    {
+        try {
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->BE_USER = $this->getBackendUser();
+            $dataHandler->start([], [
+                $table => [
+                    $translationUid => ['delete' => 1],
+                ],
+            ]);
+            $dataHandler->process_cmdmap();
+            if ($dataHandler->errorLog !== []) {
+                return null;
+            }
+            return 'translation record UID ' . $translationUid . ' deleted.';
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve the site identifier that owns the given source record, if any.
+     */
+    private function resolveSiteIdentifierForTranslation(string $table, int $sourceUid): ?string
+    {
+        $pageId = $table === 'pages' ? $sourceUid : $this->getPageIdForLanguageResolution($table, $sourceUid);
+        if ($pageId === null || $pageId <= 0) {
+            return null;
+        }
+        try {
+            $site = $this->siteFinder->getSiteByPageId($pageId);
+            return $site->getIdentifier();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Reverse-map a language UID to its ISO code using the site that owns the source record.
+     * Falls back to the global (first-wins) map if no site context is available.
+     */
+    private function resolveIsoCodeForTranslation(string $table, int $sourceUid, int $languageUid): string
+    {
+        $pageId = $table === 'pages' ? $sourceUid : $this->getPageIdForLanguageResolution($table, $sourceUid);
+        if ($pageId !== null && $pageId > 0) {
+            $iso = $this->languageService->getIsoCodeFromUidForPage($pageId, $languageUid);
+            if (is_string($iso) && $iso !== '') {
+                return $iso;
+            }
+        }
+        return $this->languageService->getIsoCodeFromUid($languageUid) ?? (string)$languageUid;
     }
 
     /**

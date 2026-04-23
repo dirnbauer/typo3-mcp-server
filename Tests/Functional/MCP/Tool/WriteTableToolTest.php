@@ -15,7 +15,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class WriteTableToolTest extends AbstractFunctionalTest
@@ -234,9 +233,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
 
     public function testCreatePageWithRegistryOnlyDoktype(): void
     {
-        $pageDoktypeRegistry = $this->getContainer()->get(PageDoktypeRegistry::class);
-        assert($pageDoktypeRegistry instanceof PageDoktypeRegistry);
-        $pageDoktypeRegistry->add(137, ['allowedTables' => '*']);
+        $this->registerCustomDoktype(137);
 
         $pageResult = $this->tool->execute([
             'action' => 'create',
@@ -2106,5 +2103,18 @@ XML;
             "Record {$uid} in table {$table} must not exist in live workspace (t3ver_wsid = 0). "
             . 'MCP operations should only create records in workspace context.',
         );
+    }
+
+    /**
+     * Register a custom page doktype via TCA (TYPO3 v14-compatible replacement for
+     * PageDoktypeRegistry->add(), which is deprecated in v14 and removed in v15).
+     */
+    private function registerCustomDoktype(int $doktype): void
+    {
+        $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'][] = [
+            'label' => 'Custom doktype ' . $doktype,
+            'value' => $doktype,
+        ];
+        $GLOBALS['TCA']['pages']['types'][(string)$doktype]['allowedRecordTypes'] = '*';
     }
 }

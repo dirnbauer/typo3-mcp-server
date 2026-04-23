@@ -127,13 +127,17 @@ final class GetPageTool extends AbstractRecordTool
         $domainsText = $this->siteInformationService->getAvailableDomainsText();
 
         $schema = [
-            'description' => 'Get detailed information about a TYPO3 page including its records. Can fetch by page ID or URL. Shows content in the specified language when available.',
+            'description' => 'Get detailed information about a TYPO3 page including its records. Can fetch by page ID (uid or pageId) or URL. Shows content in the specified language when available.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'uid' => [
                         'type' => 'integer',
-                        'description' => 'The page ID to retrieve information for. Provide uid or url.',
+                        'description' => 'The page ID to retrieve information for. Provide uid (or pageId alias) or url.',
+                    ],
+                    'pageId' => [
+                        'type' => 'integer',
+                        'description' => 'Alias for uid. Provided for ergonomics — either uid, pageId, or url.',
                     ],
                     'url' => [
                         'type' => 'string',
@@ -142,6 +146,7 @@ final class GetPageTool extends AbstractRecordTool
                 ],
                 'oneOf' => [
                     ['required' => ['uid']],
+                    ['required' => ['pageId']],
                     ['required' => ['url']],
                 ],
             ],
@@ -197,10 +202,12 @@ final class GetPageTool extends AbstractRecordTool
             $languageId = (int)$params['languageId'];
         }
 
-        // Determine page UID from either uid parameter or url parameter
+        // Determine page UID from uid, pageId alias, or url parameter
         $uid = 0;
         if (isset($params['uid']) && is_numeric($params['uid'])) {
             $uid = (int)$params['uid'];
+        } elseif (isset($params['pageId']) && is_numeric($params['pageId'])) {
+            $uid = (int)$params['pageId'];
         } elseif (isset($params['url']) && is_string($params['url'])) {
             try {
                 $uid = $this->resolveUrlToPageUid($params['url'], $languageId);

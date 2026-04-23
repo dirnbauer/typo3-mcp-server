@@ -591,6 +591,7 @@ final class TableAccessService
                 'sys_domain', // Domain configuration
                 'sys_category', // Category system - safe for read operations
                 'sys_redirect', // Redirect records are intentionally exposed via ManageRedirects
+                'sys_template', // TypoScript template records — needed for basic rendering setup
             ];
 
             if (!in_array($table, $allowedRootTables)) {
@@ -625,10 +626,13 @@ final class TableAccessService
         $groupName = is_string($ctrl['groupName'] ?? null) ? $ctrl['groupName'] : '';
         $isWorkspaceCapable = !empty($ctrl['versioningWS']);
         if ($groupName === 'system' && $isWorkspaceCapable) {
-            // System tables with workspace support are suspicious
-            // Examples: backend_layout, sys_template, sys_file_storage, sys_workspace
-            // These are configuration tables that shouldn't be edited in workspaces
-            return true;
+            // System tables with workspace support are usually misconfigured configuration tables
+            // Examples: backend_layout, sys_file_storage, sys_workspace
+            // sys_template is explicitly exempt because MCP callers need to attach TypoScript
+            // templates to freshly-created sites when no Site Set is used.
+            if ($table !== 'sys_template') {
+                return true;
+            }
         }
 
         return false;
@@ -1119,7 +1123,7 @@ final class TableAccessService
 
             $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
             $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
-            if (!in_array($fieldType, ['input', 'text', 'link', 'email', 'flex', 'inline'], true)) {
+            if (!in_array($fieldType, ['input', 'text', 'link', 'email', 'slug', 'flex', 'inline'], true)) {
                 continue;
             }
 

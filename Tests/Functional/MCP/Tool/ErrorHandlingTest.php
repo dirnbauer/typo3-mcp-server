@@ -29,7 +29,7 @@ final class ErrorHandlingTest extends AbstractFunctionalTest
 
         // Test missing terms
         $result = $tool->execute([]);
-        $this->assertToolError($result, 'Parameter "terms" must be an array of strings');
+        $this->assertToolError($result, 'Provide either "query" (string or array of strings) or "terms" (array of strings).');
 
         // Test empty terms array
         $result = $tool->execute(['terms' => []]);

@@ -162,9 +162,14 @@ WriteTable {
   "data": {
     "sys_language_uid": "de",
     "header":   "Über uns",
-    "bodytext": "[translated content]"
+    "bodytext": "[translated content]",
+    "slug":     "/ueber-uns"
   }
 }
+// Response includes translationUid (live), targetLanguage ("de" — resolved
+// per-site, not first-wins across all sites), siteIdentifier, slug, and
+// hidden=false. Translations are visible by default — pass hidden: true to
+// keep them in review.
 ```
 
 ### "Create a news article from this draft"
@@ -230,6 +235,35 @@ ListWorkspaces    {}
 WorkspaceReview   { "workspaceId": 3 }
 PublishWorkspace  { "workspaceId": 3, "dryRun": true  }  // preview
 PublishWorkspace  { "workspaceId": 3, "dryRun": false }  // execute
+```
+
+### Workflow: translations-only rollout
+
+```jsonc
+// Ship only the translation rows, leaving source-language drafts in place.
+PublishWorkspace  { "workspaceId": 3, "onlyTranslations": true, "dryRun": true }
+PublishWorkspace  { "workspaceId": 3, "onlyTranslations": true, "dryRun": false }
+```
+
+### Workflow: build a site from scratch
+
+```jsonc
+// 1. Create a root page and the site config with a rendering definition.
+WriteTable { "table": "pages", "action": "create", "pid": 0,
+             "data": { "title": "Launch 2026", "slug": "/" } }
+// → uid: 474
+
+CreateSite { "action": "create",
+             "identifier": "launch-2026",
+             "rootPageId": 474,
+             "base": "https://example.com/",
+             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
+// No warning — the Site Set is attached, so the frontend will render.
+
+// 2. Already created a site without a theme? Attach one in place.
+CreateSite { "action": "update",
+             "identifier": "launch-2026",
+             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
 ```
 
 ## Implementation architecture

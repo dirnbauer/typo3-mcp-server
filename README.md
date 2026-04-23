@@ -127,21 +127,75 @@ The extension ships **35 MCP tools** across six groups. For the authoritative
 list with parameters, see
 [`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst).
 
-- **Navigation & search** — `GetPageTree`, `GetPage`, `ListTables`, `Search`,
-  `SearchMedia`
+- **Navigation & search** — `GetPageTree`, `GetPage` (accepts `uid`, `pageId`,
+  or `url`), `ListTables`, `Search` (accepts `query` or `terms`), `SearchMedia`
 - **Schema introspection** — `GetTableSchema`, `GetFlexFormSchema`
-- **Read & write records** — `ReadTable`, `WriteTable`, `BulkWrite`,
-  `CopyContent`, `AttachImage`
+- **Read & write records** — `ReadTable` (structured `filters` with
+  `sys_language_uid` ISO codes and boolean `hidden`), `WriteTable`,
+  `BulkWrite`, `CopyContent`, `AttachImage`
 - **Content import** — `ImportContent`, `ImportFromUrl`
 - **Workspace workflow** — `ListWorkspaces`, `WorkspaceReview`,
-  `PublishWorkspace`, `RollbackWorkspace`
+  `PublishWorkspace` (supports `tables` list and `onlyTranslations`),
+  `RollbackWorkspace`
 - **Files (sandboxed)** — `BrowseFolder`, `BrowseFiles`, `WriteFile`,
   `UploadFile`, `UploadFileFromUrl`, `ReadFileMetadata`, `SearchFile`,
   `ListStorages`
 - **Diagnostics** — `ContentAudit`, `GetSystemLog`, `ManageRedirects`
-- **Admin / operations** — `CreateSite`, `InstallExtension`, `SafeCli`
+- **Admin / operations** — `CreateSite` (supports `create`/`update` with
+  `dependencies`, `sets`, `settings`, and arbitrary `config` merging; warns
+  when no Site Set or TypoScript template is attached), `InstallExtension`,
+  `SafeCli`
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats` (when `typo3-x402-paywall` is installed)
+
+### Building a site from scratch
+
+`CreateSite` takes a rendering definition so the frontend renders out of the box:
+
+```jsonc
+CreateSite {
+  "action": "create",
+  "identifier": "launch-2026",
+  "rootPageId": 474,
+  "base": "https://example.com/",
+  "dependencies": ["webconsulting/desiderio-preset-corporate"],
+  "settings": { "theme": { "accent": "violet" } }
+}
+```
+
+Missed the theme on creation? `action: "update"` merges top-level keys into an
+existing site config without touching unrelated entries:
+
+```jsonc
+CreateSite {
+  "action": "update",
+  "identifier": "launch-2026",
+  "dependencies": ["webconsulting/desiderio-preset-corporate"]
+}
+```
+
+### Translating a page in one call
+
+Translations are created **visible by default** (`hidden=0`). Pass
+`hidden: true` to keep them in review. Inline children are auto-localized by
+TYPO3 unless you opt out with `translateChildren: false` — useful when you
+plan to translate child records yourself. Slug, siteIdentifier, and the target
+ISO code are returned in the response.
+
+```jsonc
+WriteTable {
+  "action": "translate",
+  "table": "pages",
+  "uid": 474,
+  "hidden": false,
+  "data": { "sys_language_uid": "hu", "title": "Esemény", "slug": "/esemeny" }
+}
+// → { "translationUid": 1234, "targetLanguage": "hu",
+//     "siteIdentifier": "launch-2026", "slug": "/esemeny", "hidden": false }
+```
+
+If the follow-up field update fails, the tool rolls back the freshly created
+translation row so you are never left with an orphan source-language record.
 
 ### Core guarantees
 

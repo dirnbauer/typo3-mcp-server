@@ -6,18 +6,21 @@ namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * Tool for creating and updating TYPO3 site configurations.
  *
- * Supports three actions:
+ * Supports four actions:
  * - create: Create a new site configuration with root page, base URL, and languages.
+ * - update: Merge arbitrary top-level keys (dependencies, sets, settings, routes, ...) into an existing site config.
  * - addLanguage: Add a language to an existing site configuration.
  * - replaceLanguages: Replace the full language list of an existing site while preserving
  *   unrelated site configuration keys such as route enhancers and settings.
@@ -68,6 +71,8 @@ final class CreateSiteTool extends AbstractRecordTool
         WorkspaceContextService $workspaceContextService,
         private readonly SiteConfiguration $siteConfiguration,
         private readonly SiteWriter $siteWriter,
+        private readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -79,18 +84,21 @@ final class CreateSiteTool extends AbstractRecordTool
     {
         return [
             'description' => 'Create or update a TYPO3 site configuration. '
-                . 'Action "create" builds a new site config with root page, base URL, and optional languages. '
+                . 'Action "create" builds a new site config with root page, base URL, optional languages, and optional rendering definitions (dependencies/sets). '
+                . 'Action "update" merges arbitrary top-level keys (dependencies, sets, settings, routes, routeEnhancers, ...) into an existing site config while preserving unrelated keys. Use this to attach a Site Set theme (e.g. "webconsulting/desiderio-preset-corporate") to an existing site. '
                 . 'Action "addLanguage" adds a language to an existing site. '
                 . 'Action "replaceLanguages" replaces the full language list of an existing site while preserving other site settings. '
                 . 'Site configurations are YAML-based and take effect immediately (not workspace-versioned). '
+                . 'IMPORTANT: A site without a Site Set or TypoScript template record will throw "No site configuration or TypoScript template record found" in the frontend. '
+                . 'Pass `dependencies` (array of Site Set names) when creating a site to attach a theme, or use action "update" afterwards. '
                 . 'Requires admin privileges.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'action' => [
                         'type' => 'string',
-                        'description' => 'Action to perform: "create" for a new site, "addLanguage" to append one language to an existing site, or "replaceLanguages" to replace the full language list of an existing site.',
-                        'enum' => ['create', 'addLanguage', 'replaceLanguages'],
+                        'description' => 'Action to perform: "create" for a new site, "update" to merge top-level keys into an existing site, "addLanguage" to append one language, or "replaceLanguages" to replace the full language list.',
+                        'enum' => ['create', 'update', 'addLanguage', 'replaceLanguages'],
                     ],
                     'identifier' => [
                         'type' => 'string',
@@ -103,6 +111,28 @@ final class CreateSiteTool extends AbstractRecordTool
                     'base' => [
                         'type' => 'string',
                         'description' => 'Base URL of the site, e.g. "https://example.com/" (create action only).',
+                    ],
+                    'dependencies' => [
+                        'type' => 'array',
+                        'description' => 'Optional: Site Set names to attach (create + update). '
+                            . 'Example: ["webconsulting/desiderio-preset-corporate"]. '
+                            . 'Without at least one Site Set (or a sys_template) the frontend will not render.',
+                        'items' => ['type' => 'string'],
+                    ],
+                    'sets' => [
+                        'type' => 'array',
+                        'description' => 'Optional: Alias for dependencies (some templates expect "sets"). Merged with dependencies. Items must be strings.',
+                        'items' => ['type' => 'string'],
+                    ],
+                    'settings' => [
+                        'type' => 'object',
+                        'description' => 'Optional: top-level "settings" dictionary merged into site config (create + update).',
+                        'additionalProperties' => true,
+                    ],
+                    'config' => [
+                        'type' => 'object',
+                        'description' => 'Optional (update action only): arbitrary top-level keys to merge into the site YAML (e.g. routeEnhancers, errorHandling). Existing keys are replaced, unknown keys are preserved.',
+                        'additionalProperties' => true,
                     ],
                     'defaultLanguage' => [
                         'type' => 'object',
@@ -171,9 +201,10 @@ final class CreateSiteTool extends AbstractRecordTool
 
         return match ($action) {
             'create' => $this->handleCreate($identifier, $params),
+            'update' => $this->handleUpdate($identifier, $params),
             'addLanguage' => $this->handleAddLanguage($identifier, $params),
             'replaceLanguages' => $this->handleReplaceLanguages($identifier, $params),
-            default => throw new ValidationException(['Unknown action "' . $action . '". Use "create", "addLanguage", or "replaceLanguages".']),
+            default => throw new ValidationException(['Unknown action "' . $action . '". Use "create", "update", "addLanguage", or "replaceLanguages".']),
         };
     }
 
@@ -216,13 +247,169 @@ final class CreateSiteTool extends AbstractRecordTool
             ),
         ];
 
-        $this->siteWriter->write($identifier, $config);
+        $this->applyRenderingAndSettings($config, $params);
 
-        return $this->createJsonResult([
+        $this->siteWriter->write($identifier, $config);
+        $this->languageService->reset();
+
+        $response = [
             'status' => 'created',
             'identifier' => $identifier,
             'config' => $config,
-        ]);
+        ];
+
+        $warning = $this->renderingWarningFor($config, $identifier);
+        if ($warning !== null) {
+            $response['warning'] = $warning;
+        }
+
+        return $this->createJsonResult($response);
+    }
+
+    /**
+     * Merge arbitrary top-level keys into an existing site configuration.
+     *
+     * Preserves unrelated keys. Accepts dependencies/sets/settings shortcuts and a
+     * generic `config` object for anything else (routeEnhancers, errorHandling, ...).
+     *
+     * @param array<string, mixed> $params
+     */
+    private function handleUpdate(string $identifier, array $params): CallToolResult
+    {
+        $config = $this->loadExistingSiteConfig($identifier);
+
+        $applied = $this->applyRenderingAndSettings($config, $params);
+
+        if (isset($params['config']) && is_array($params['config'])) {
+            foreach ($params['config'] as $key => $value) {
+                if (!is_string($key) || $key === '') {
+                    continue;
+                }
+                // Protect structural keys — changing rootPageId/base/languages must go through create/addLanguage/replaceLanguages
+                if (in_array($key, ['rootPageId', 'base', 'languages'], true)) {
+                    continue;
+                }
+                $config[$key] = $value;
+                $applied[] = $key;
+            }
+        }
+
+        if ($applied === []) {
+            throw new ValidationException([
+                'update action requires at least one of: dependencies, sets, settings, or config.',
+            ]);
+        }
+
+        $this->siteWriter->write($identifier, $config);
+        $this->languageService->reset();
+
+        $response = [
+            'status' => 'updated',
+            'identifier' => $identifier,
+            'appliedKeys' => array_values(array_unique($applied)),
+            'config' => $config,
+        ];
+
+        $warning = $this->renderingWarningFor($config, $identifier);
+        if ($warning !== null) {
+            $response['warning'] = $warning;
+        }
+
+        return $this->createJsonResult($response);
+    }
+
+    /**
+     * Apply the dependencies / sets / settings shortcuts into a site config in place.
+     *
+     * @param array<string, mixed> $config
+     * @param array<string, mixed> $params
+     * @return list<string> list of config keys that were touched
+     */
+    private function applyRenderingAndSettings(array &$config, array $params): array
+    {
+        $applied = [];
+
+        $dependencies = $this->normalizeStringList($params['dependencies'] ?? null);
+        $sets = $this->normalizeStringList($params['sets'] ?? null);
+        $combined = array_values(array_unique(array_merge($dependencies, $sets)));
+
+        if ($combined !== []) {
+            $existing = isset($config['dependencies']) && is_array($config['dependencies'])
+                ? $this->normalizeStringList($config['dependencies'])
+                : [];
+            $config['dependencies'] = array_values(array_unique(array_merge($existing, $combined)));
+            $applied[] = 'dependencies';
+        }
+
+        if (isset($params['settings']) && is_array($params['settings'])) {
+            $existingSettings = isset($config['settings']) && is_array($config['settings']) ? $config['settings'] : [];
+            $config['settings'] = array_replace_recursive($existingSettings, $params['settings']);
+            $applied[] = 'settings';
+        }
+
+        return $applied;
+    }
+
+    /**
+     * @param mixed $value
+     * @return list<string>
+     */
+    private function normalizeStringList(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+        $out = [];
+        foreach ($value as $item) {
+            if (is_string($item) && trim($item) !== '') {
+                $out[] = trim($item);
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Check whether a site has any rendering definition attached.
+     *
+     * Returns a warning string when neither Site Sets nor a sys_template record
+     * exists for the root page, otherwise null.
+     *
+     * @param array<string, mixed> $config
+     */
+    private function renderingWarningFor(array $config, string $identifier): ?string
+    {
+        $dependencies = isset($config['dependencies']) && is_array($config['dependencies'])
+            ? $this->normalizeStringList($config['dependencies'])
+            : [];
+        if ($dependencies !== []) {
+            return null;
+        }
+
+        $rootPageId = is_numeric($config['rootPageId'] ?? null) ? (int)$config['rootPageId'] : 0;
+        if ($rootPageId > 0 && $this->hasTypoScriptTemplate($rootPageId)) {
+            return null;
+        }
+
+        return 'Site "' . $identifier . '" has no Site Set (dependencies) and no sys_template record on the root page. '
+            . 'The frontend will throw "No site configuration or TypoScript template record found". '
+            . 'Use action "update" with `dependencies: ["vendor/theme"]` to attach a Site Set.';
+    }
+
+    private function hasTypoScriptTemplate(int $rootPageId): bool
+    {
+        $count = $this->connectionPool
+            ->getConnectionForTable('sys_template')
+            ->count(
+                'uid',
+                'sys_template',
+                [
+                    'pid' => $rootPageId,
+                    'deleted' => 0,
+                    'hidden' => 0,
+                ],
+            );
+
+        return $count > 0;
     }
 
     /**
@@ -255,6 +442,7 @@ final class CreateSiteTool extends AbstractRecordTool
         $config['languages'] = $existingLanguages;
 
         $this->siteWriter->write($identifier, $config);
+        $this->languageService->reset();
 
         return $this->createJsonResult([
             'status' => 'languageAdded',
@@ -283,6 +471,7 @@ final class CreateSiteTool extends AbstractRecordTool
         );
 
         $this->siteWriter->write($identifier, $config);
+        $this->languageService->reset();
 
         return $this->createJsonResult([
             'status' => 'languagesReplaced',

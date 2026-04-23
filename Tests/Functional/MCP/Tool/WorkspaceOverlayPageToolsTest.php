@@ -519,7 +519,8 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        self::assertStringContainsString('[2] Ueberblick [Page] [HIDDEN] [TRANSLATED]', $content);
+        // Translations are created visible by default now (hidden=0), so no [HIDDEN] marker.
+        self::assertStringContainsString('[2] Ueberblick [Page] [TRANSLATED]', $content);
         self::assertStringNotContainsString('[' . $translationUid . ']', $content);
     }
 

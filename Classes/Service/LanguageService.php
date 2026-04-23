@@ -48,6 +48,22 @@ final class LanguageService
     ) {}
 
     /**
+     * Drop all cached ISO⇄UID mappings.
+     *
+     * Call this after site configuration changes (CreateSite, addLanguage, replaceLanguages) so
+     * subsequent schema calls or translation lookups see the new language layout instead of
+     * the first-seen configuration from an earlier tool call in the same MCP session.
+     */
+    public function reset(): void
+    {
+        $this->initialized = false;
+        $this->isoToUidMap = [];
+        $this->uidToIsoMap = [];
+        $this->isoCodeUnion = [];
+        $this->defaultIsoCode = null;
+    }
+
+    /**
      * Initialize language mappings from all sites
      */
     private function initialize(): void
@@ -195,6 +211,60 @@ final class LanguageService
         }
 
         return null;
+    }
+
+    /**
+     * Resolve the ISO code for a language UID using only the site that owns $pageId.
+     *
+     * The global uidToIsoMap is first-wins across all sites, which produces wrong
+     * answers in multi-site installations where different sites assign different
+     * ISO codes to the same language UID (e.g. site A has hu=2 while site B has
+     * zh=2 — looking up UID 2 without site context returns whichever was indexed
+     * first). Callers operating on a specific page should prefer this method.
+     */
+    public function getIsoCodeFromUidForPage(int $pageId, int $uid): ?string
+    {
+        try {
+            $site = $this->siteFinder->getSiteByPageId($pageId);
+        } catch (SiteNotFoundException) {
+            return $this->getIsoCodeFromUid($uid);
+        }
+
+        foreach ($site->getAllLanguages() as $language) {
+            if ($language->getLanguageId() === $uid) {
+                return $this->extractIsoCode($language);
+            }
+        }
+
+        return $this->getIsoCodeFromUid($uid);
+    }
+
+    /**
+     * ISO codes configured on the site that owns $pageId (ordered, deduplicated).
+     *
+     * Returns an empty list if the page has no site or if the site has no languages
+     * with resolvable ISO codes. Use this to build dynamic enums that match the
+     * caller's site instead of the union of all sites.
+     *
+     * @return list<string>
+     */
+    public function getAvailableIsoCodesForPage(int $pageId): array
+    {
+        try {
+            $site = $this->siteFinder->getSiteByPageId($pageId);
+        } catch (SiteNotFoundException) {
+            return [];
+        }
+
+        $codes = [];
+        foreach ($site->getAllLanguages() as $language) {
+            $isoCode = $this->extractIsoCode($language);
+            if ($isoCode !== null && !in_array($isoCode, $codes, true)) {
+                $codes[] = $isoCode;
+            }
+        }
+
+        return $codes;
     }
 
     /**

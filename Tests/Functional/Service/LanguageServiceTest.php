@@ -279,4 +279,79 @@ class LanguageServiceTest extends FunctionalTestCase
         self::assertEquals(11, $newLanguageService->getUidFromIsoCode('ja'));
         self::assertEquals(12, $newLanguageService->getUidFromIsoCode('zh'));
     }
+
+    /**
+     * Reverse-map a language UID to the ISO code that the owning site assigns to it.
+     *
+     * Global first-wins mapping can return the wrong ISO code when two sites use the
+     * same language UID for different languages (e.g. site A: hu=1, site B: es=1).
+     * Per-site reverse lookup resolves this correctly.
+     */
+    public function testGetIsoCodeFromUidForPageRespectsSiteAssignment(): void
+    {
+        $rootPage2 = 1001;
+        $siteConfiguration = [
+            'rootPageId' => $rootPage2,
+            'base' => 'https://second.example/',
+            'websiteTitle' => 'Second Site',
+            'languages' => [
+                0 => [
+                    'title' => 'English',
+                    'enabled' => true,
+                    'languageId' => 0,
+                    'base' => '/',
+                    'locale' => 'en_US.UTF-8',
+                    'iso-639-1' => 'en',
+                    'flag' => 'us',
+                    'navigationTitle' => 'English',
+                ],
+                1 => [
+                    'title' => 'Hungarian',
+                    'enabled' => true,
+                    'languageId' => 1,
+                    'base' => '/hu/',
+                    'locale' => 'hu_HU.UTF-8',
+                    'iso-639-1' => 'hu',
+                    'flag' => 'hu',
+                    'navigationTitle' => 'Magyar',
+                ],
+            ],
+        ];
+
+        // Use a name that sorts AFTER "test-site" so the global first-wins map
+        // keeps language UID 1 = "de" from the primary site.
+        $configPath = $this->instancePath . '/typo3conf/sites/z-second-site';
+        GeneralUtility::mkdir_deep($configPath);
+        GeneralUtility::writeFile($configPath . '/config.yaml', Yaml::dump($siteConfiguration, 99, 2), true);
+
+        $connection = $this->getConnectionPool()->getConnectionForTable('pages');
+        $connection->insert('pages', [
+            'uid' => $rootPage2,
+            'pid' => 0,
+            'title' => 'Second Site Root',
+            'slug' => '/',
+            'doktype' => 1,
+        ]);
+
+        $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+        $service = new LanguageService($siteFinder);
+
+        // Global map (first-wins across all sites): language UID 1 first seen as 'de' in the primary site.
+        self::assertSame('de', $service->getIsoCodeFromUid(1));
+
+        // Per-site lookup: on the Hungarian site, language UID 1 is 'hu'.
+        self::assertSame('hu', $service->getIsoCodeFromUidForPage($rootPage2, 1));
+    }
+
+    public function testResetAllowsReinitialization(): void
+    {
+        // Prime the internal cache.
+        self::assertContains('de', $this->languageService->getAvailableIsoCodes());
+        self::assertSame(1, $this->languageService->getUidFromIsoCode('de'));
+
+        // After reset, the next query still works (re-initializes lazily).
+        $this->languageService->reset();
+        self::assertContains('de', $this->languageService->getAvailableIsoCodes());
+        self::assertSame(1, $this->languageService->getUidFromIsoCode('de'));
+    }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Service;
 
 use Hn\McpServer\Service\TableAccessService;
-use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 final class TableAccessServiceTest extends FunctionalTestCase
@@ -19,7 +18,6 @@ final class TableAccessServiceTest extends FunctionalTestCase
     ];
 
     private TableAccessService $service;
-    private PageDoktypeRegistry $pageDoktypeRegistry;
 
     protected function setUp(): void
     {
@@ -31,10 +29,6 @@ final class TableAccessServiceTest extends FunctionalTestCase
         $service = $this->getContainer()->get(TableAccessService::class);
         assert($service instanceof TableAccessService);
         $this->service = $service;
-
-        $pageDoktypeRegistry = $this->getContainer()->get(PageDoktypeRegistry::class);
-        assert($pageDoktypeRegistry instanceof PageDoktypeRegistry);
-        $this->pageDoktypeRegistry = $pageDoktypeRegistry;
     }
 
     public function testTranslateLabelReturnsPlainStringUnchanged(): void
@@ -244,7 +238,7 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
     public function testGetSelectFieldAllowedValuesIncludesRegistryDoktypesForPages(): void
     {
-        $this->pageDoktypeRegistry->add(137, ['allowedTables' => '*']);
+        $this->registerCustomDoktype(137);
 
         $allowed = $this->service->getSelectFieldAllowedValues('pages', 'doktype');
 
@@ -254,10 +248,23 @@ final class TableAccessServiceTest extends FunctionalTestCase
 
     public function testValidateFieldValueAcceptsRegistryDoktypeForPages(): void
     {
-        $this->pageDoktypeRegistry->add(137, ['allowedTables' => '*']);
+        $this->registerCustomDoktype(137);
 
         $result = $this->service->validateFieldValue('pages', 'doktype', 137);
 
         self::assertNull($result);
+    }
+
+    /**
+     * Register a custom page doktype via TCA (TYPO3 v14-compatible replacement for
+     * PageDoktypeRegistry->add(), which is deprecated in v14 and removed in v15).
+     */
+    private function registerCustomDoktype(int $doktype): void
+    {
+        $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'][] = [
+            'label' => 'Custom doktype ' . $doktype,
+            'value' => $doktype,
+        ];
+        $GLOBALS['TCA']['pages']['types'][(string)$doktype]['allowedRecordTypes'] = '*';
     }
 }

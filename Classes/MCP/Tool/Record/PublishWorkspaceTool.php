@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -44,6 +45,16 @@ final class PublishWorkspaceTool extends AbstractRecordTool
                     'table' => [
                         'type' => 'string',
                         'description' => 'Optional: only publish changes for this specific table',
+                    ],
+                    'tables' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => 'Optional: publish changes for multiple tables (more flexible than "table").',
+                    ],
+                    'onlyTranslations' => [
+                        'type' => 'boolean',
+                        'description' => 'Optional: when true, only publish translation records (records where sys_language_uid > 0). Useful to roll out translations separately from source-language edits.',
+                        'default' => false,
                     ],
                     'dryRun' => [
                         'type' => 'boolean',
@@ -101,23 +112,47 @@ final class PublishWorkspaceTool extends AbstractRecordTool
         }
 
         $filterTable = is_string($params['table'] ?? null) ? trim($params['table']) : '';
+        $filterTables = [];
+        if (is_array($params['tables'] ?? null)) {
+            foreach ($params['tables'] as $entry) {
+                if (is_string($entry) && trim($entry) !== '') {
+                    $filterTables[] = trim($entry);
+                }
+            }
+        }
+        if ($filterTable !== '') {
+            $filterTables[] = $filterTable;
+        }
+        $filterTables = array_values(array_unique($filterTables));
+
+        $onlyTranslations = !empty($params['onlyTranslations']);
         $dryRun = !isset($params['dryRun']) || $params['dryRun'] !== false;
 
         // Get the publish command map from TYPO3 core
         $cmdMap = $this->workspaceService->getCmdArrayForPublishWS($workspaceId);
 
-        // Filter by table if requested
-        if ($filterTable !== '' && $cmdMap !== []) {
-            if (!isset($cmdMap[$filterTable])) {
+        // Filter by table(s) if requested
+        if ($filterTables !== [] && $cmdMap !== []) {
+            $filteredMap = [];
+            foreach ($filterTables as $tableName) {
+                if (isset($cmdMap[$tableName])) {
+                    $filteredMap[$tableName] = $cmdMap[$tableName];
+                }
+            }
+            if ($filteredMap === []) {
                 return $this->createJsonResult([
                     'workspaceId' => $workspaceId,
                     'dryRun' => $dryRun,
-                    'message' => 'No pending changes found for table "' . $filterTable . '".',
+                    'message' => 'No pending changes found for table(s): ' . implode(', ', $filterTables) . '.',
                     'tables' => [],
                     'totalRecords' => 0,
                 ]);
             }
-            $cmdMap = [$filterTable => $cmdMap[$filterTable]];
+            $cmdMap = $filteredMap;
+        }
+
+        if ($onlyTranslations) {
+            $cmdMap = $this->filterCmdMapToTranslations($cmdMap);
         }
 
         // Build summary
@@ -185,5 +220,56 @@ final class PublishWorkspaceTool extends AbstractRecordTool
         }
 
         return $this->createJsonResult($result);
+    }
+
+    /**
+     * Reduce a publish cmdMap to entries whose record is a translation (sys_language_uid > 0).
+     *
+     * Tables without a languageField are dropped entirely. Within a table, only record UIDs
+     * whose stored sys_language_uid is greater than zero survive the filter.
+     *
+     * @param array<string, mixed> $cmdMap
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function filterCmdMapToTranslations(array $cmdMap): array
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+
+        $filtered = [];
+        foreach ($cmdMap as $tableName => $records) {
+            if (!is_string($tableName) || !is_array($records)) {
+                continue;
+            }
+            $languageField = '';
+            if (is_array($tca) && isset($tca[$tableName]) && is_array($tca[$tableName])) {
+                $ctrl = $tca[$tableName]['ctrl'] ?? null;
+                if (is_array($ctrl) && is_string($ctrl['languageField'] ?? null)) {
+                    $languageField = (string)$ctrl['languageField'];
+                }
+            }
+            if ($languageField === '') {
+                continue;
+            }
+
+            $keep = [];
+            foreach ($records as $recordUid => $cmd) {
+                if (!is_numeric($recordUid) || !is_array($cmd)) {
+                    continue;
+                }
+                $row = BackendUtility::getRecord($tableName, (int)$recordUid, $languageField);
+                if (!is_array($row)) {
+                    continue;
+                }
+                if (isset($row[$languageField]) && (int)$row[$languageField] > 0) {
+                    /** @var array<string, mixed> $cmd */
+                    $keep[(int)$recordUid] = $cmd;
+                }
+            }
+
+            if ($keep !== []) {
+                $filtered[$tableName] = $keep;
+            }
+        }
+        return $filtered;
     }
 }

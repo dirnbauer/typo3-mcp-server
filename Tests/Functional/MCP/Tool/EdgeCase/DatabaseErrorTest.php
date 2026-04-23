@@ -68,7 +68,9 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         // Try a complex search that might be slow
         $result = $this->readTool->execute([
             'table' => 'pages',
-            'where' => "title LIKE '%Timeout%'",
+            'filters' => [
+                ['field' => 'title', 'operator' => 'like', 'value' => '%Timeout%'],
+            ],
         ]);
 
         // Should handle even complex queries

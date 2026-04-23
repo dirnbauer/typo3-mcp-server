@@ -44,14 +44,22 @@ final class SearchTool extends AbstractRecordTool
         $schema = [
             'description' => 'Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. ' .
                 'Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, ' .
-                'or for thorough duplicate checking after initial exploration.',
+                'or for thorough duplicate checking after initial exploration. ' .
+                'Pass either "query" (single string or array of strings) or "terms" (array of strings) — both are accepted.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
+                    'query' => [
+                        'oneOf' => [
+                            ['type' => 'string'],
+                            ['type' => 'array', 'items' => ['type' => 'string']],
+                        ],
+                        'description' => 'Search query. Either a single term or an array of terms (synonyms, variants). Equivalent to "terms".',
+                    ],
                     'terms' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],
-                        'description' => 'Search terms to find in record content. Use multiple search terms with synonyms for best results.',
+                        'description' => 'Alias for "query". Kept for backwards compatibility. Use multiple search terms with synonyms for best results.',
                     ],
                     'termLogic' => [
                         'type' => 'string',
@@ -72,7 +80,6 @@ final class SearchTool extends AbstractRecordTool
                         'description' => 'Maximum number of records to return per table (default: 50)',
                     ],
                 ],
-                'required' => ['terms'],
             ],
         ];
 
@@ -199,6 +206,16 @@ final class SearchTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        // Accept "query" as an alias for "terms". A string query is wrapped in a list.
+        if (!isset($params['terms']) && isset($params['query'])) {
+            $query = $params['query'];
+            if (is_string($query)) {
+                $params['terms'] = [$query];
+            } elseif (is_array($query)) {
+                $params['terms'] = $query;
+            }
+        }
+
         // Validate all parameters first
         $this->validateParameters($params);
 
@@ -237,11 +254,11 @@ final class SearchTool extends AbstractRecordTool
     {
         $errors = [];
 
-        // Validate terms
+        // Validate terms — accept a list of strings. The "query" alias is normalized into "terms" earlier.
         if (!isset($params['terms']) || !is_array($params['terms'])) {
-            $errors[] = 'Parameter "terms" must be an array of strings';
+            $errors[] = 'Provide either "query" (string or array of strings) or "terms" (array of strings).';
         } elseif (empty($params['terms'])) {
-            $errors[] = 'At least one search term is required in the "terms" array';
+            $errors[] = 'At least one search term is required.';
         }
 
         // Validate term logic

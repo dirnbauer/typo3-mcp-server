@@ -7,7 +7,6 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class GetTableSchemaToolTest extends FunctionalTestCase
@@ -111,11 +110,9 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         self::assertStringContainsString('doktype', $content);
     }
 
-    public function testGetPagesTableSchemaIncludesRegistryOnlyDoktype(): void
+    public function testGetPagesTableSchemaIncludesCustomDoktype(): void
     {
-        $pageDoktypeRegistry = $this->getContainer()->get(PageDoktypeRegistry::class);
-        assert($pageDoktypeRegistry instanceof PageDoktypeRegistry);
-        $pageDoktypeRegistry->add(137, ['allowedTables' => '*']);
+        $this->registerCustomDoktype(137);
 
         $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
@@ -127,15 +124,13 @@ class GetTableSchemaToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        self::assertStringContainsString('137 (Registered custom page type)', $content);
-        self::assertMatchesRegularExpression('/doktype.*\[Options:.*137 \(Registered custom page type\)/s', $content);
+        self::assertStringContainsString('137 (Custom doktype 137)', $content);
+        self::assertMatchesRegularExpression('/doktype.*\[Options:.*137 \(Custom doktype 137\)/s', $content);
     }
 
-    public function testGetPagesTableSchemaForRegistryOnlyDoktypeUsesDefaultLayout(): void
+    public function testGetPagesTableSchemaForCustomDoktypeUsesDefaultLayout(): void
     {
-        $pageDoktypeRegistry = $this->getContainer()->get(PageDoktypeRegistry::class);
-        assert($pageDoktypeRegistry instanceof PageDoktypeRegistry);
-        $pageDoktypeRegistry->add(137, ['allowedTables' => '*']);
+        $this->registerCustomDoktype(137);
 
         $tool = $this->getService(GetTableSchemaTool::class);
         $result = $tool->execute([
@@ -148,7 +143,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        self::assertStringContainsString('Type: 137 (Registered custom page type)', $content);
+        self::assertStringContainsString('Type: 137 (Custom doktype 137)', $content);
         self::assertStringContainsString('FIELDS:', $content);
     }
 
@@ -342,5 +337,18 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         $backendUser = $this->setUpBackendUser($uid);
         $backendUser->workspace = 1; // Set to test workspace
         $GLOBALS['BE_USER'] = $backendUser;
+    }
+
+    /**
+     * Register a custom page doktype via TCA (TYPO3 v14-compatible replacement for
+     * PageDoktypeRegistry->add(), which is deprecated in v14 and removed in v15).
+     */
+    private function registerCustomDoktype(int $doktype): void
+    {
+        $GLOBALS['TCA']['pages']['columns']['doktype']['config']['items'][] = [
+            'label' => 'Custom doktype ' . $doktype,
+            'value' => $doktype,
+        ];
+        $GLOBALS['TCA']['pages']['types'][(string)$doktype]['allowedRecordTypes'] = '*';
     }
 }

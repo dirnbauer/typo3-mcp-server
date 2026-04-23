@@ -61,7 +61,7 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
         // Test reading with no limit
         $result = $this->readTool->execute([
             'table' => 'tt_content',
-            'where' => 'pid = 1',
+            'pid' => 1,
         ]);
 
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -86,7 +86,9 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
         // Try to read with huge IN clause
         $result = $this->readTool->execute([
             'table' => 'pages',
-            'where' => 'uid IN (' . implode(',', array_slice($uids, 0, 1000)) . ')', // Limit to 1000 to avoid SQL issues
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'in', 'value' => array_slice($uids, 0, 1000)],
+            ],
         ]);
 
         // Should handle this gracefully (maybe by batching)
@@ -123,7 +125,9 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
         // Try to read pages with complex conditions
         $result = $this->readTool->execute([
             'table' => 'pages',
-            'where' => "title LIKE '%Level%'",
+            'filters' => [
+                ['field' => 'title', 'operator' => 'like', 'value' => '%Level%'],
+            ],
         ]);
 
         // Should handle deep structures without stack overflow
@@ -313,19 +317,46 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
             ];
         }
 
-        // Build SQL where clause from the complex structure
-        $whereClause = $this->buildWhereClause($complexWhere);
+        // Build a structured filter list instead of a raw SQL where clause.
+        $filters = $this->buildFiltersFromStructure($complexWhere);
 
         $result = $this->readTool->execute([
             'table' => 'pages',
-            'where' => $whereClause,
+            'filters' => $filters,
         ]);
 
-        // Should handle complex queries or fail gracefully
+        // Should handle complex queries or fail gracefully — the tool enforces AND
+        // across all filters, so even 100+ LIKE conditions execute without error.
         if ($result->isError) {
-            self::assertStringContainsString('complex', $result->content[0]->text);
+            self::assertStringContainsString('filter', $result->content[0]->text);
         } else {
             self::assertIsArray(json_decode((string)$result->content[0]->text, true));
         }
+    }
+
+    /**
+     * Flatten the nested AND/OR test structure into the ReadTable filters format.
+     *
+     * @param array{type: string, conditions: array<mixed>} $structure
+     * @return list<array{field: string, operator: string, value?: mixed}>
+     */
+    private function buildFiltersFromStructure(array $structure): array
+    {
+        $filters = [];
+        foreach ($structure['conditions'] as $condition) {
+            if (!is_array($condition)) {
+                continue;
+            }
+            if (isset($condition['conditions'])) {
+                foreach ($this->buildFiltersFromStructure($condition) as $inner) {
+                    $filters[] = $inner;
+                }
+                continue;
+            }
+            if (isset($condition['field'], $condition['operator'])) {
+                $filters[] = $condition;
+            }
+        }
+        return $filters;
     }
 }

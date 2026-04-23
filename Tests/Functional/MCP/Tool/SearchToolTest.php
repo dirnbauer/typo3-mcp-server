@@ -585,6 +585,7 @@ class SearchToolTest extends FunctionalTestCase
 
         // Check parameters
         $properties = $schema['inputSchema']['properties'];
+        self::assertArrayHasKey('query', $properties);
         self::assertArrayHasKey('terms', $properties);
         self::assertArrayHasKey('termLogic', $properties);
         self::assertArrayHasKey('table', $properties);
@@ -593,9 +594,8 @@ class SearchToolTest extends FunctionalTestCase
         self::assertArrayNotHasKey('includeHidden', $properties);
         self::assertArrayHasKey('limit', $properties);
 
-        // Check required fields
-        self::assertArrayHasKey('required', $schema['inputSchema']);
-        self::assertContains('terms', $schema['inputSchema']['required']);
+        // SearchTool now accepts either "query" or "terms" — no hard-required key in schema.
+        self::assertArrayNotHasKey('required', $schema['inputSchema']);
     }
 
     /**

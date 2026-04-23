@@ -1081,12 +1081,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:getTranslationParentFieldName\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1136,12 +1130,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#4 \$filters of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php

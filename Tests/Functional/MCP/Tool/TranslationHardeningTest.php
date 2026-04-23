@@ -57,7 +57,60 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         ]);
         self::assertTrue($duplicate->isError, 'Expected error for duplicate translation');
         $text = $duplicate->content[0]->text;
-        self::assertStringContainsString('already been localized', $text);
+        self::assertStringContainsString('Translation already exists', $text);
+    }
+
+    #[Test]
+    public function translatedRecordIsVisibleByDefault(): void
+    {
+        $this->createAndSwitchToWorkspace('Translation WS');
+
+        $tool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $result = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => 100,
+            'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $payload = json_decode($result->content[0]->text ?? '', true);
+        self::assertIsArray($payload);
+        self::assertFalse($payload['hidden']);
+        self::assertSame('de', $payload['targetLanguage']);
+        self::assertSame('testing', $payload['siteIdentifier']);
+
+        $translationUid = (int)$payload['translationUid'];
+        self::assertGreaterThan(0, $translationUid);
+
+        $row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
+        self::assertIsArray($row);
+        self::assertSame(0, (int)$row['hidden']);
+    }
+
+    #[Test]
+    public function translateRespectsExplicitHiddenFlag(): void
+    {
+        $this->createAndSwitchToWorkspace('Translation WS');
+
+        $tool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $result = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => 100,
+            'hidden' => true,
+            'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $payload = json_decode($result->content[0]->text ?? '', true);
+        self::assertIsArray($payload);
+        self::assertTrue($payload['hidden']);
+
+        $translationUid = (int)$payload['translationUid'];
+        $row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
+        self::assertIsArray($row);
+        self::assertSame(1, (int)$row['hidden']);
     }
 
     protected function createMultiLanguageSiteConfiguration(): void
