@@ -44,31 +44,31 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
         // assets field should contain embedded file references
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertIsArray($record['assets']);
-        $this->assertCount(2, $record['assets'], 'Should have 2 asset references');
+        self::assertArrayHasKey('assets', $record);
+        self::assertIsArray($record['assets']);
+        self::assertCount(2, $record['assets'], 'Should have 2 asset references');
 
         // Verify first file reference has expected fields
         $firstRef = $record['assets'][0];
-        $this->assertArrayHasKey('uid', $firstRef);
-        $this->assertArrayHasKey('uid_local', $firstRef);
-        $this->assertEquals('Hero Image', $firstRef['title']);
-        $this->assertEquals('The main hero image', $firstRef['description']);
-        $this->assertEquals('Homepage hero banner', $firstRef['alternative']);
+        self::assertArrayHasKey('uid', $firstRef);
+        self::assertArrayHasKey('uid_local', $firstRef);
+        self::assertEquals('Hero Image', $firstRef['title']);
+        self::assertEquals('The main hero image', $firstRef['description']);
+        self::assertEquals('Homepage hero banner', $firstRef['alternative']);
 
         // Verify file metadata enrichment
-        $this->assertArrayHasKey('file_name', $firstRef);
-        $this->assertEquals('test.jpg', $firstRef['file_name']);
-        $this->assertArrayHasKey('file_identifier', $firstRef);
-        $this->assertEquals('/user_upload/test.jpg', $firstRef['file_identifier']);
-        $this->assertArrayHasKey('file_mime_type', $firstRef);
-        $this->assertEquals('image/jpeg', $firstRef['file_mime_type']);
+        self::assertArrayHasKey('file_name', $firstRef);
+        self::assertEquals('test.jpg', $firstRef['file_name']);
+        self::assertArrayHasKey('file_identifier', $firstRef);
+        self::assertEquals('/user_upload/test.jpg', $firstRef['file_identifier']);
+        self::assertArrayHasKey('file_mime_type', $firstRef);
+        self::assertEquals('image/jpeg', $firstRef['file_mime_type']);
     }
 
     /**
@@ -82,22 +82,22 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
         // assets field should have exactly 2 references
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertCount(2, $record['assets'], 'assets field should have 2 references');
+        self::assertArrayHasKey('assets', $record);
+        self::assertCount(2, $record['assets'], 'assets field should have 2 references');
 
         // media field should have exactly 1 reference
-        $this->assertArrayHasKey('media', $record);
-        $this->assertCount(1, $record['media'], 'media field should have 1 reference');
+        self::assertArrayHasKey('media', $record);
+        self::assertCount(1, $record['media'], 'media field should have 1 reference');
 
         // Verify the media reference is the correct one
         $mediaRef = $record['media'][0];
-        $this->assertEquals('Media File', $mediaRef['title']);
+        self::assertEquals('Media File', $mediaRef['title']);
     }
 
     /**
@@ -120,9 +120,9 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $responseData = json_decode($result->content[0]->text, true);
+        $responseData = json_decode((string)$result->content[0]->text, true);
         $contentUid = $responseData['uid'];
 
         // Read back and verify
@@ -131,21 +131,21 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertCount(1, $record['assets']);
+        self::assertArrayHasKey('assets', $record);
+        self::assertCount(1, $record['assets']);
 
         $ref = $record['assets'][0];
-        $this->assertEquals('Created Image', $ref['title']);
-        $this->assertEquals('Created alt text', $ref['alternative']);
-        $this->assertEquals(1, $ref['uid_local']);
+        self::assertEquals('Created Image', $ref['title']);
+        self::assertEquals('Created alt text', $ref['alternative']);
+        self::assertEquals(1, $ref['uid_local']);
 
         // Verify file enrichment on the created reference
-        $this->assertEquals('test.jpg', $ref['file_name']);
+        self::assertEquals('test.jpg', $ref['file_name']);
     }
 
     /**
@@ -168,9 +168,9 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read it back - should show the file reference
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -178,14 +178,14 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertNotEmpty($record['assets'], 'File references should be visible in workspace');
-        $this->assertEquals('Workspace Image', $record['assets'][0]['title']);
+        self::assertArrayHasKey('assets', $record);
+        self::assertNotEmpty($record['assets'], 'File references should be visible in workspace');
+        self::assertEquals('Workspace Image', $record['assets'][0]['title']);
     }
 
     /**
@@ -208,8 +208,8 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with new file references (replaces all)
         $result = $writeTool->execute([
@@ -222,7 +222,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -230,14 +230,14 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
-        $this->assertCount(1, $record['assets']);
-        $this->assertEquals('Updated Title', $record['assets'][0]['title']);
-        $this->assertEquals('Updated Alt', $record['assets'][0]['alternative']);
+        self::assertCount(1, $record['assets']);
+        self::assertEquals('Updated Title', $record['assets'][0]['title']);
+        self::assertEquals('Updated Alt', $record['assets'][0]['alternative']);
     }
 
     /**
@@ -250,15 +250,15 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertNotEmpty($data['records']);
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertNotEmpty($data['records']);
 
         $file = $data['records'][0];
-        $this->assertEquals(1, $file['uid']);
-        $this->assertEquals('test.jpg', $file['name']);
-        $this->assertEquals('/user_upload/test.jpg', $file['identifier']);
+        self::assertEquals(1, $file['uid']);
+        self::assertEquals('test.jpg', $file['name']);
+        self::assertEquals('/user_upload/test.jpg', $file['identifier']);
     }
 
     /**
@@ -275,7 +275,7 @@ class FileReferenceTest extends FunctionalTestCase
                 'name' => 'hacked.jpg',
             ],
         ]);
-        $this->assertTrue($result->isError, 'Writing to sys_file should fail');
+        self::assertTrue($result->isError, 'Writing to sys_file should fail');
     }
 
     /**
@@ -298,8 +298,8 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with empty assets array to remove all references
         $result = $writeTool->execute([
@@ -310,7 +310,7 @@ class FileReferenceTest extends FunctionalTestCase
                 'assets' => [],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back - should have no assets
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -318,12 +318,12 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertEmpty($record['assets'], 'Asset references should be removed');
+        self::assertArrayHasKey('assets', $record);
+        self::assertEmpty($record['assets'], 'Asset references should be removed');
     }
 }

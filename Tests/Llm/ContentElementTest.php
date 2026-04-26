@@ -301,8 +301,10 @@ class ContentElementTest extends LlmTestCase
             self::markTestIncomplete("LLM described the change but didn't execute it");
         }
 
-        $this->assertTrue($hasOrderingChange,
-            "Expected update with position or sorting field. "
-            . "WriteTable calls: " . json_encode(array_map(fn($c) => $c['arguments'], $writeCalls), JSON_PRETTY_PRINT));
+        self::assertTrue(
+            $hasOrderingChange,
+            'Expected update with position or sorting field. '
+            . 'WriteTable calls: ' . json_encode(array_map(fn($c) => $c['arguments'], $writeCalls), JSON_PRETTY_PRINT)
+        );
     }
 }

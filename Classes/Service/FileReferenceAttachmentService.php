@@ -13,10 +13,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Creates sys_file_reference rows and updates parent TCA file fields via DataHandler (workspace-safe).
  */
-final class FileReferenceAttachmentService
+final readonly class FileReferenceAttachmentService
 {
     public function __construct(
-        private readonly ConnectionPool $connectionPool,
+        private ConnectionPool $connectionPool,
     ) {}
 
     /**

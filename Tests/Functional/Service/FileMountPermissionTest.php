@@ -96,17 +96,17 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->setUpBackendUser(1); // admin
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals(5, $data['total'], 'Admin should see all 5 seeded files');
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals(5, $data['total'], 'Admin should see all 5 seeded files');
 
         $names = array_column($data['records'], 'name');
-        $this->assertContains('test.jpg', $names);
-        $this->assertContains('person.jpg', $names);
-        $this->assertContains('team-photo.jpg', $names);
-        $this->assertContains('document.pdf', $names);
-        $this->assertContains('logo.png', $names);
+        self::assertContains('test.jpg', $names);
+        self::assertContains('person.jpg', $names);
+        self::assertContains('team-photo.jpg', $names);
+        self::assertContains('document.pdf', $names);
+        self::assertContains('logo.png', $names);
     }
 
     /**
@@ -118,11 +118,11 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals(0, $data['total'], 'User without mounts should see zero files');
-        $this->assertEmpty($data['records']);
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals(0, $data['total'], 'User without mounts should see zero files');
+        self::assertEmpty($data['records']);
     }
 
     /**
@@ -134,21 +134,21 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
+        $data = json_decode((string)$result->content[0]->text, true);
 
         $names = array_column($data['records'], 'name');
-        $this->assertContains('test.jpg', $names, 'File in /user_upload/ should be visible');
-        $this->assertContains('person.jpg', $names, 'File in /user_upload/ should be visible');
-        $this->assertContains('document.pdf', $names, 'File in /user_upload/ should be visible');
-        $this->assertContains('logo.png', $names, 'File in /user_upload/ should be visible');
+        self::assertContains('test.jpg', $names, 'File in /user_upload/ should be visible');
+        self::assertContains('person.jpg', $names, 'File in /user_upload/ should be visible');
+        self::assertContains('document.pdf', $names, 'File in /user_upload/ should be visible');
+        self::assertContains('logo.png', $names, 'File in /user_upload/ should be visible');
         // team-photo.jpg is in /user_upload/team/ which is a subfolder of the mount and should be visible
-        $this->assertContains('team-photo.jpg', $names, 'Subfolder files within the mount are visible');
+        self::assertContains('team-photo.jpg', $names, 'Subfolder files within the mount are visible');
 
         // For this fixture, all 5 files are in /user_upload/, so they're all visible.
         // The test remains valid: adding a file outside would not be visible.
-        $this->assertEquals(5, $data['total']);
+        self::assertEquals(5, $data['total']);
     }
 
     /**
@@ -160,18 +160,21 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals(1, $data['total'],
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals(
+            1,
+            $data['total'],
             'Only team-photo.jpg should be accessible via /user_upload/team/ mount. Got: ' .
-            json_encode(array_column($data['records'], 'name')));
+            json_encode(array_column($data['records'], 'name'))
+        );
 
         $names = array_column($data['records'], 'name');
-        $this->assertContains('team-photo.jpg', $names);
-        $this->assertNotContains('test.jpg', $names);
-        $this->assertNotContains('person.jpg', $names);
-        $this->assertNotContains('document.pdf', $names);
+        self::assertContains('team-photo.jpg', $names);
+        self::assertNotContains('test.jpg', $names);
+        self::assertNotContains('person.jpg', $names);
+        self::assertNotContains('document.pdf', $names);
     }
 
     /**
@@ -183,11 +186,14 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals(0, $data['total'],
-            'No files live under /secret/, so the user should see zero files');
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals(
+            0,
+            $data['total'],
+            'No files live under /secret/, so the user should see zero files'
+        );
     }
 
     /**
@@ -200,12 +206,18 @@ class FileMountPermissionTest extends FunctionalTestCase
 
         $service = GeneralUtility::makeInstance(TableAccessService::class);
 
-        $this->assertTrue($service->canAccessFileUid(5),
-            'sys_file uid=5 (team-photo.jpg) is within /user_upload/team/');
-        $this->assertFalse($service->canAccessFileUid(1),
-            'sys_file uid=1 (test.jpg) is NOT within /user_upload/team/');
-        $this->assertFalse($service->canAccessFileUid(3),
-            'sys_file uid=3 (person.jpg) is NOT within /user_upload/team/');
+        self::assertTrue(
+            $service->canAccessFileUid(5),
+            'sys_file uid=5 (team-photo.jpg) is within /user_upload/team/'
+        );
+        self::assertFalse(
+            $service->canAccessFileUid(1),
+            'sys_file uid=1 (test.jpg) is NOT within /user_upload/team/'
+        );
+        self::assertFalse(
+            $service->canAccessFileUid(3),
+            'sys_file uid=3 (person.jpg) is NOT within /user_upload/team/'
+        );
     }
 
     /**
@@ -216,9 +228,9 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->setUpBackendUser(1); // admin
 
         $service = GeneralUtility::makeInstance(TableAccessService::class);
-        $this->assertTrue($service->canAccessFileUid(1));
-        $this->assertTrue($service->canAccessFileUid(3));
-        $this->assertTrue($service->canAccessFileUid(5));
+        self::assertTrue($service->canAccessFileUid(1));
+        self::assertTrue($service->canAccessFileUid(3));
+        self::assertTrue($service->canAccessFileUid(5));
     }
 
     /**
@@ -231,10 +243,13 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file', 'uid' => 1]); // test.jpg
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertEquals(0, $data['total'],
-            'Direct uid lookup of a file outside the user\'s mount must return nothing');
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertEquals(
+            0,
+            $data['total'],
+            'Direct uid lookup of a file outside the user\'s mount must return nothing'
+        );
     }
 }

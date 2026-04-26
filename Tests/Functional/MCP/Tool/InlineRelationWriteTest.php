@@ -139,7 +139,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'sys_file_reference is a workspace FAL table; errors should be validation/DataHandler, not a blanket "restricted" deny.',
             );
         } else {
-            self::assertIsArray($json = json_decode($result->content[0]->text, true) ?? null);
+            self::assertIsArray($json = json_decode((string)$result->content[0]->text, true) ?? null);
         }
     }
 

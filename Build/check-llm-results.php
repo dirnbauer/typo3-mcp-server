@@ -10,7 +10,6 @@
  *
  * Usage: php Build/check-llm-results.php [--min-pass=3] [--xml=.Build/llm-results.xml]
  */
-
 $minPass = 3;
 $xmlPath = __DIR__ . '/../.Build/llm-results.xml';
 
@@ -121,7 +120,7 @@ foreach ($testCases as $name => $result) {
 
     $statusIcon = $ok ? "\033[32m✓\033[0m" : "\033[31m✗\033[0m";
     echo "$statusIcon $shortName ($passCount/$totalCount)\n";
-    echo "  " . implode('  ', $modelDetails) . "\n";
+    echo '  ' . implode('  ', $modelDetails) . "\n";
 
     if (!$ok) {
         $degraded[] = ['name' => $shortName, 'passed' => $passCount, 'total' => $totalCount, 'models' => $result['models']];

@@ -1476,7 +1476,7 @@ XML;
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('data', strtolower($result->content[0]->text));
+        self::assertStringContainsString('data', strtolower((string)$result->content[0]->text));
     }
 
     /**
@@ -2017,7 +2017,7 @@ XML;
             'pid' => $this->getRootPageUid(),
             'data' => ['title' => 'Position Bottom Test', 'slug' => '/pos-bottom', 'doktype' => 1],
         ]);
-        $this->assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
         $pageUid = $this->extractJsonFromResult($pageResult)['uid'];
 
         $uids = [];
@@ -2029,7 +2029,7 @@ XML;
                 'position' => 'bottom',
                 'data' => ['CType' => 'textmedia', 'header' => $header, 'colPos' => 0],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $uids[$header] = $this->extractJsonFromResult($result)['uid'];
         }
 
@@ -2040,17 +2040,17 @@ XML;
             'uid' => $uids['A'],
             'position' => 'bottom',
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back and verify order is now B, C, A
         $readResult = $readTool->execute([
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = $this->extractJsonFromResult($readResult);
         $headers = array_map(fn(array $r) => $r['header'], $readData['records']);
-        $this->assertSame(['B', 'C', 'A'], $headers, 'position=bottom should move A after C');
+        self::assertSame(['B', 'C', 'A'], $headers, 'position=bottom should move A after C');
     }
 
     /**
@@ -2067,7 +2067,7 @@ XML;
             'pid' => $this->getRootPageUid(),
             'data' => ['title' => 'No Position Test', 'slug' => '/no-pos', 'doktype' => 1],
         ]);
-        $this->assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
         $pageUid = $this->extractJsonFromResult($pageResult)['uid'];
 
         $resultA = $this->tool->execute([
@@ -2077,7 +2077,7 @@ XML;
             'position' => 'bottom',
             'data' => ['CType' => 'textmedia', 'header' => 'A', 'colPos' => 0],
         ]);
-        $this->assertFalse($resultA->isError, json_encode($resultA->jsonSerialize()));
+        self::assertFalse($resultA->isError, json_encode($resultA->jsonSerialize()));
         $uidA = $this->extractJsonFromResult($resultA)['uid'];
 
         $resultB = $this->tool->execute([
@@ -2087,7 +2087,7 @@ XML;
             'position' => 'bottom',
             'data' => ['CType' => 'textmedia', 'header' => 'B', 'colPos' => 0],
         ]);
-        $this->assertFalse($resultB->isError, json_encode($resultB->jsonSerialize()));
+        self::assertFalse($resultB->isError, json_encode($resultB->jsonSerialize()));
 
         // Update A's header without specifying position — order must stay A, B
         $result = $this->tool->execute([
@@ -2096,16 +2096,16 @@ XML;
             'uid' => $uidA,
             'data' => ['header' => 'A modified'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $readResult = $readTool->execute([
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = $this->extractJsonFromResult($readResult);
         $headers = array_map(fn(array $r) => $r['header'], $readData['records']);
-        $this->assertSame(['A modified', 'B'], $headers, 'Omitting position should not change order');
+        self::assertSame(['A modified', 'B'], $headers, 'Omitting position should not change order');
     }
 
     /**

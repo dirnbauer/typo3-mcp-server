@@ -1513,21 +1513,9 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$haystack of function str_starts_with expects string, string\|null given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$label of method Hn\\McpServer\\Service\\TableAccessService\:\:translateLabel\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$string of function substr expects string, string\|null given\.$#'
-			identifier: argument.type
-			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -2027,45 +2015,3 @@ parameters:
 			identifier: cast.string
 			count: 2
 			path: Classes/Service/TableAccessService.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Cannot access offset ''columns'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Cannot access offset ''config'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Cannot access offset ''type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: offsetAccess.invalidOffset
-			count: 3
-			path: Classes/Utility/TcaFormattingUtility.php

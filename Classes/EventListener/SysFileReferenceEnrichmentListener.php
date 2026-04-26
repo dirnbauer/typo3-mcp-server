@@ -73,7 +73,7 @@ final class SysFileReferenceEnrichmentListener
 
                 try {
                     $record['public_url'] = $resourceFactory->getFileObject($fileUid)->getPublicUrl();
-                } catch (\Exception $e) {
+                } catch (\Exception) {
                     $record['public_url'] = null;
                 }
             }

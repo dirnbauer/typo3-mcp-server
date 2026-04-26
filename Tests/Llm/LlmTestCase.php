@@ -9,6 +9,9 @@ use Hn\McpServer\Tests\Llm\Client\LlmClientInterface;
 use Hn\McpServer\Tests\Llm\Client\LlmResponse;
 use Hn\McpServer\Tests\Llm\Client\OpenRouterClient;
 use Mcp\Types\TextContent;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\IncompleteTestError;
+use PHPUnit\Framework\SkippedWithMessageException;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -88,9 +91,9 @@ abstract class LlmTestCase extends FunctionalTestCase
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
                 return parent::runTest();
-            } catch (\PHPUnit\Framework\SkippedWithMessageException | \PHPUnit\Framework\IncompleteTestError $e) {
+            } catch (SkippedWithMessageException | IncompleteTestError $e) {
                 throw $e;
-            } catch (\PHPUnit\Framework\AssertionFailedError $e) {
+            } catch (AssertionFailedError $e) {
                 $lastException = $e;
                 if ($attempt < $maxRetries) {
                     try {
@@ -215,14 +218,14 @@ abstract class LlmTestCase extends FunctionalTestCase
     /**
      * Build a context string for failure messages, including model and prompt.
      */
-    protected function getFailureContext(LlmResponse $response = null): string
+    protected function getFailureContext(?LlmResponse $response = null): string
     {
         $context = "[Model: {$this->llmModel}]\n";
         $context .= "Prompt: {$this->lastPrompt}\n";
         if ($response !== null) {
             $textResponse = $response->getContent();
             if (!empty($textResponse)) {
-                $context .= "LLM text response: " . mb_substr($textResponse, 0, 500) . "\n";
+                $context .= 'LLM text response: ' . mb_substr($textResponse, 0, 500) . "\n";
             }
             $context .= "\n" . $this->getToolCallsDebugString($response);
         }

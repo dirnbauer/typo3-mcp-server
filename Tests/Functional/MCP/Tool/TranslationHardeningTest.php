@@ -8,6 +8,7 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Yaml\Yaml;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class TranslationHardeningTest extends AbstractFunctionalTest
@@ -83,7 +84,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         $translationUid = (int)$payload['translationUid'];
         self::assertGreaterThan(0, $translationUid);
 
-        $row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
+        $row = BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
         self::assertIsArray($row);
         self::assertSame(0, (int)$row['hidden']);
     }
@@ -108,7 +109,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
         self::assertTrue($payload['hidden']);
 
         $translationUid = (int)$payload['translationUid'];
-        $row = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
+        $row = BackendUtility::getRecord('tt_content', $translationUid, 'hidden');
         self::assertIsArray($row);
         self::assertSame(1, (int)$row['hidden']);
     }

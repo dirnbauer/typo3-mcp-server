@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  * checks, child lookups during save), since those must see all rows to
  * prevent corrupt writes.
  */
-final class BeforeRecordReadEvent
+final readonly class BeforeRecordReadEvent
 {
     /**
      * @param string $table The table being queried
@@ -31,9 +31,9 @@ final class BeforeRecordReadEvent
      * @param string $queryType 'select' for the result query, 'count' for the total-count query
      */
     public function __construct(
-        private readonly string $table,
-        private readonly QueryBuilder $queryBuilder,
-        private readonly string $queryType,
+        private string $table,
+        private QueryBuilder $queryBuilder,
+        private string $queryType,
     ) {}
 
     public function getTable(): string

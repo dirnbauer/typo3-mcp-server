@@ -192,7 +192,7 @@ final class WriteTableTool extends AbstractRecordTool
             if (empty($data) && !($action === 'update' && $positionExplicit)) {
                 throw new ValidationException([
                     "The data parameter must contain record fields for {$action} actions. " .
-                    "Provide field names as keys, e.g. {\"title\": \"Page Title\", \"bodytext\": \"Content\"}."
+                    'Provide field names as keys, e.g. {"title": "Page Title", "bodytext": "Content"}.',
                 ]);
             }
         }
@@ -410,13 +410,13 @@ final class WriteTableTool extends AbstractRecordTool
             } else {
                 $newRecordData['pid'] = $pid;
             }
-        } elseif (str_starts_with($position, 'after:')) {
-            $referenceUid = (int)substr($position, strlen('after:'));
+        } elseif (str_starts_with((string)$position, 'after:')) {
+            $referenceUid = (int)substr((string)$position, strlen('after:'));
             // Resolve live UID to workspace UID if needed, since DataHandler works with real UIDs
             $wsUid = $this->resolveToWorkspaceUid($table, $referenceUid);
             $newRecordData['pid'] = -$wsUid;
-        } elseif (str_starts_with($position, 'before:')) {
-            $referenceUid = (int)substr($position, strlen('before:'));
+        } elseif (str_starts_with((string)$position, 'before:')) {
+            $referenceUid = (int)substr((string)$position, strlen('before:'));
             $sortingField = $this->tableAccessService->getSortingFieldName($table);
 
             if ($sortingField !== null) {

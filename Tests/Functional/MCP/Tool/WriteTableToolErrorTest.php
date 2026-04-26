@@ -118,7 +118,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'uid' => 1,
         ]);
         self::assertTrue($result->isError);
-        $msg = strtolower($result->content[0]->text);
+        $msg = strtolower((string)$result->content[0]->text);
         self::assertStringContainsString('data', $msg);
     }
 
