@@ -407,6 +407,12 @@ sandbox file and ``sys_file_reference``. ``mode`` is ``append`` (keep existing
 references) or ``replace`` (only new references). ``reference`` sets metadata
 (title, alternative, crop, …) on every new reference.
 
+In a non-live workspace, the tool resolves the *version* row primary key for the
+``uid`` you pass (live id), including inline parents such as gallery ``items``,
+and keeps ``sys_file_reference`` rows attached to that row after DataHandler
+processing. See :doc:`../Architecture/InlineRelations` (File references) for
+why this matters when images appear missing on staging or after publish.
+
 :Parameters:
    - ``table`` (string, required)
    - ``uid`` (integer, required): live record UID

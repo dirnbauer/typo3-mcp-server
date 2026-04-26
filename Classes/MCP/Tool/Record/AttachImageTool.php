@@ -229,7 +229,6 @@ final class AttachImageTool extends AbstractRecordTool
 
         $this->fileReferenceAttachmentService->attachFilesToField(
             $table,
-            $uid,
             $workspaceUid,
             $pid,
             $field,
@@ -436,13 +435,18 @@ final class AttachImageTool extends AbstractRecordTool
             return $liveUid;
         }
 
+        $versionUid = $this->workspaceContextService->findWorkspaceVersionRowUid($table, $liveUid, $currentWorkspace);
+        if ($versionUid !== null) {
+            return $versionUid;
+        }
+
         $record = BackendUtility::getRecord($table, $liveUid);
         if (!$record) {
             return $liveUid;
         }
 
         BackendUtility::workspaceOL($table, $record);
-        if (isset($record['_ORIG_uid']) && (int)$record['_ORIG_uid'] !== $liveUid) {
+        if (isset($record['uid']) && (int)$record['uid'] !== $liveUid) {
             return (int)$record['uid'];
         }
 

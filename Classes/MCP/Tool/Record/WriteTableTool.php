@@ -1969,6 +1969,11 @@ final class WriteTableTool extends AbstractRecordTool
             return $liveUid;
         }
 
+        $versionUid = $this->workspaceContextService->findWorkspaceVersionRowUid($table, $liveUid, $currentWorkspace);
+        if ($versionUid !== null) {
+            return $versionUid;
+        }
+
         // Use BackendUtility to get the workspace version
         $record = BackendUtility::getRecord($table, $liveUid);
         if (!$record) {
@@ -1978,8 +1983,8 @@ final class WriteTableTool extends AbstractRecordTool
         // Let BackendUtility handle the workspace overlay
         BackendUtility::workspaceOL($table, $record);
 
-        // If we got a different UID, that's the workspace version
-        if (isset($record['_ORIG_uid']) && $record['_ORIG_uid'] != $liveUid) {
+        // If the overlaid record has a different primary key, that is the row DataHandler will update
+        if (isset($record['uid']) && (int)$record['uid'] !== $liveUid) {
             return (int)$record['uid'];
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -115,6 +116,43 @@ final readonly class WorkspaceContextService
         }
 
         return $result;
+    }
+
+    /**
+     * If a **live** record (uid) has a draft/version row in the given workspace, return that row's uid.
+     * Necessary when {@see \TYPO3\CMS\Backend\Utility\BackendUtility::workspaceOL()} does not rewrite `uid` on
+     * the overlay array, so callers would otherwise attach `sys_file_reference` to the live id while
+     * DataHandler updates the version row (empty file fields in workspace / frontend).
+     */
+    public function findWorkspaceVersionRowUid(string $table, int $liveUid, int $workspaceId): ?int
+    {
+        if ($workspaceId <= 0 || $liveUid <= 0) {
+            return null;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $row = $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_wsid', $queryBuilder->createNamedParameter($workspaceId, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!is_array($row) || !is_numeric($row['uid'] ?? null)) {
+            return null;
+        }
+        $uid = (int)$row['uid'];
+        if ($uid <= 0) {
+            return null;
+        }
+
+        return $uid === $liveUid ? null : $uid;
     }
 
     private function getFirstWritableWorkspace(BackendUserAuthentication $beUser): int

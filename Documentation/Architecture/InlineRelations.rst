@@ -56,6 +56,22 @@ tool. When a file field (TCA type ``file``) receives an array of
 ``sys_file_reference`` records and wires them to the parent record through
 ``DataHandler``. File references are workspace-versioned like other records.
 
+.. note::
+
+   **Workspace version rows and ``AttachImage``**. In a draft workspace, a live
+   parent record (for example ``tt_content`` or an inline child such as
+   ``items``) is often represented by a separate *version* row
+   (``t3ver_oid`` = live uid, own ``uid`` in the current workspace). The MCP
+   server resolves the *data-handler* target uid (``findWorkspaceVersionRowUid()``
+   plus overlay checks in ``WriteTable`` / ``AttachImage``). The file attachment
+   service then ensures ``sys_file_reference.uid_foreign`` matches that version
+   row: TYPO3's ``DataHandler`` may first normalize new references to the live
+   ``uid``; a follow-up direct update (after the parent field is written) keeps
+   ``uid_foreign`` aligned with the version row so FAL and the frontend can
+   resolve images on the row that actually stores the file field. Without that
+   step, file fields (including gallery slides on child records) can look empty
+   in the backend and on the site even though tools report success.
+
 Automatic workspace handling
 ============================
 
