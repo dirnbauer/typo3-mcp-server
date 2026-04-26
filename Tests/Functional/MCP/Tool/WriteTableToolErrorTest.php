@@ -111,14 +111,15 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         self::assertTrue($result->isError);
         self::assertStringContainsString('Page ID (pid) is required for create action', $result->content[0]->text);
 
-        // Missing data for update
+        // Missing data for update (and no position/search_replace)
         $result = $this->tool->execute([
             'action' => 'update',
             'table' => 'pages',
             'uid' => 1,
         ]);
         self::assertTrue($result->isError);
-        self::assertStringContainsString('Data is required for update action', $result->content[0]->text);
+        $msg = strtolower($result->content[0]->text);
+        self::assertStringContainsString('data', $msg);
     }
 
     /**

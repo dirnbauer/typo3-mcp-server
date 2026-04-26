@@ -199,4 +199,78 @@ final class TcaFormattingUtility
             $result .= ' [Default: ' . $defaultValue . ']';
         }
     }
+
+    /**
+     * Generate a mini example object from a table's accessible fields.
+     * Shows a few key user-editable fields to give the LLM a sense of the record structure.
+     */
+    protected static function generateMiniExample(string $foreignTable): string
+    {
+        $foreignTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
+        $columns = $foreignTCA['columns'] ?? [];
+
+        // System/auto-managed fields to skip in the example
+        $skipFields = [
+            'pid', 'tstamp', 'crdate', 'deleted', 'hidden', 'sorting', 'sorting_foreign',
+            'uid_foreign', 'tablenames', 'fieldname',
+            'sys_language_uid', 'l10n_parent', 'l10n_diffsource', 'l10n_state',
+            't3ver_oid', 't3ver_wsid', 't3ver_state', 't3_origuid',
+        ];
+
+        $exampleFields = [];
+        $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
+
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (in_array($fieldName, $skipFields, true)) {
+                continue;
+            }
+
+            if (!$tableAccessService->canAccessField($foreignTable, $fieldName)) {
+                continue;
+            }
+
+            $fieldType = $fieldConfig['config']['type'] ?? '';
+
+            // Generate a placeholder value based on field type
+            switch ($fieldType) {
+                case 'input':
+                case 'text':
+                case 'link':
+                case 'email':
+                case 'slug':
+                    $exampleFields[$fieldName] = '...';
+                    break;
+                case 'number':
+                case 'group':
+                    $exampleFields[$fieldName] = '0';
+                    break;
+                case 'check':
+                    $exampleFields[$fieldName] = '0';
+                    break;
+                default:
+                    // Skip complex types (imageManipulation, flex, etc.) in the mini example
+                    continue 2;
+            }
+
+            // Limit to a few fields to keep it concise
+            if (count($exampleFields) >= 4) {
+                break;
+            }
+        }
+
+        if (empty($exampleFields)) {
+            return '{}';
+        }
+
+        $parts = [];
+        foreach ($exampleFields as $name => $placeholder) {
+            if ($placeholder === '0') {
+                $parts[] = '"' . $name . '": ' . $placeholder;
+            } else {
+                $parts[] = '"' . $name . '": "' . $placeholder . '"';
+            }
+        }
+
+        return '{' . implode(', ', $parts) . '}';
+    }
 }

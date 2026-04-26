@@ -6,12 +6,15 @@ namespace Hn\McpServer\MCP\Tool\Record;
 
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Event\AfterRecordReadEvent;
+use Hn\McpServer\Event\BeforeRecordReadEvent;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -76,7 +79,7 @@ final class ReadTableTool extends AbstractRecordTool
             ],
             'pid' => [
                 'type' => 'integer',
-                'description' => 'Filter by page ID (recommended - use this instead of individual record lookups)',
+                'description' => 'Filter by page ID (recommended for content tables). Omit for root-level tables like sys_file that store records at pid=0.',
             ],
             'uid' => [
                 'type' => 'integer',
@@ -270,8 +273,11 @@ final class ReadTableTool extends AbstractRecordTool
         $queryBuilder->select('*')
             ->from($table);
 
-        // Filter by pid if specified
-        if ($pid !== null && $this->tableHasPidField($table)) {
+        // Filter by pid if specified, but skip for root-level-only tables (rootLevel=1)
+        // Root-level tables like sys_file store all records at pid=0
+        $rootLevel = $GLOBALS['TCA'][$table]['ctrl']['rootLevel'] ?? 0;
+        $isRootLevelOnly = ($rootLevel === 1 || $rootLevel === true);
+        if ($pid !== null && $this->tableHasPidField($table) && !$isRootLevelOnly) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER))
             );
@@ -340,7 +346,7 @@ final class ReadTableTool extends AbstractRecordTool
         $countQueryBuilder->count('uid')->from($table);
 
         // Apply the same WHERE conditions as the main query
-        if ($pid !== null && $this->tableHasPidField($table)) {
+        if ($pid !== null && $this->tableHasPidField($table) && !$isRootLevelOnly) {
             $countQueryBuilder->andWhere(
                 $countQueryBuilder->expr()->eq('pid', $countQueryBuilder->createNamedParameter($pid, ParameterType::INTEGER))
             );
@@ -380,6 +386,11 @@ final class ReadTableTool extends AbstractRecordTool
             $this->applyFilters($countQueryBuilder, $filters, $table);
         }
 
+        // Allow listeners to add restrictions (e.g. file mounts, tenant scopes)
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $countQueryBuilder, 'count'));
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select'));
+
         try {
             $totalCount = $countQueryBuilder->executeQuery()->fetchOne();
         } catch (\Doctrine\DBAL\Exception $e) {
@@ -392,6 +403,11 @@ final class ReadTableTool extends AbstractRecordTool
         } catch (\Doctrine\DBAL\Exception $e) {
             throw new DatabaseException('select', $table, $e);
         }
+
+        // Allow listeners to enrich or redact rows before post-processing
+        $afterEvent = new AfterRecordReadEvent($table, $records, 'top');
+        $eventDispatcher->dispatch($afterEvent);
+        $records = $afterEvent->getRecords();
 
         // Process records to handle binary data, convert types, and filter default values
         $processedRecords = [];
@@ -1061,9 +1077,19 @@ final class ReadTableTool extends AbstractRecordTool
         $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
         $isHiddenTable = !empty($foreignTableTCA['ctrl']['hideTable']);
 
-        // Get all related records
+        // Get all related records, filtering by foreign_match_fields if present
+        // (e.g., sys_file_reference uses tablenames/fieldname to distinguish which field owns each reference)
         $foreignSortBy = $fieldConfig['config']['foreign_sortby'] ?? '';
-        $relatedRecords = $this->getInlineRelatedRecords($foreignTable, $foreignField, $recordUids, $foreignSortBy);
+        $foreignMatchFields = $fieldConfig['config']['foreign_match_fields'] ?? [];
+        $relatedRecords = $this->getInlineRelatedRecords($foreignTable, $foreignField, $recordUids, $foreignSortBy, $foreignMatchFields);
+
+        // Allow listeners to enrich or redact inline children (e.g. attach file metadata)
+        if (!empty($relatedRecords)) {
+            $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+            $afterEvent = new AfterRecordReadEvent($foreignTable, $relatedRecords, 'inline');
+            $eventDispatcher->dispatch($afterEvent);
+            $relatedRecords = $afterEvent->getRecords();
+        }
 
         // Group related records by parent record
         $groupedRecords = [];
@@ -1102,7 +1128,7 @@ final class ReadTableTool extends AbstractRecordTool
     /**
      * Get inline related records
      */
-    protected function getInlineRelatedRecords(string $table, string $foreignField, array $parentUids, string $foreignSortBy = ''): array
+    protected function getInlineRelatedRecords(string $table, string $foreignField, array $parentUids, string $foreignSortBy = '', array $foreignMatchFields = []): array
     {
         if (empty($parentUids)) {
             return [];
@@ -1112,8 +1138,7 @@ final class ReadTableTool extends AbstractRecordTool
 
         $queryBuilder = $connectionPool->getQueryBuilderForTable($table);
 
-        // Apply restrictions
-        // For inline relations, we need proper workspace handling
+        // Apply restrictions including workspace delete placeholders
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
@@ -1126,18 +1151,32 @@ final class ReadTableTool extends AbstractRecordTool
             $this->applyDefaultSorting($queryBuilder, $table);
         } else {
             $queryBuilder->orderBy($foreignSortBy, 'ASC')
-                ->addOrderBy('uid', 'ASC');  // Secondary sort by UID for consistency;
+                ->addOrderBy('uid', 'ASC');
         }
 
-        // Ensure we have the sort field in our select
-        $records = $queryBuilder->select('*')
+        $queryBuilder
+            ->select('*')
             ->from($table)
             ->where(
                 $queryBuilder->expr()->in(
                     $foreignField,
                     $queryBuilder->createNamedParameter($parentUids, Connection::PARAM_INT_ARRAY)
                 )
-            )
+            );
+
+        foreach ($foreignMatchFields as $field => $value) {
+            if (!is_string($field) || $field === '') {
+                continue;
+            }
+            $queryBuilder->andWhere(
+                $queryBuilder->expr()->eq(
+                    (string)$field,
+                    $queryBuilder->createNamedParameter($value)
+                )
+            );
+        }
+
+        $records = $queryBuilder
             ->executeQuery()
             ->fetchAllAssociative();
 

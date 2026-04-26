@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   documentation:
     runs-on: ubuntu-latest
@@ -97,3 +100,55 @@ jobs:
 
       - name: Fractor
         run: composer fractor
+
+  llm-trigger:
+    runs-on: ubuntu-latest
+    name: Check LLM trigger
+    if: github.event_name == 'pull_request'
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - name: Check if tool-related files changed
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')
+          if echo "$FILES" | grep -qE '^(Classes/MCP/Tool/|Classes/Service/|Tests/Llm/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  llm-tests:
+    needs: [llm-trigger]
+    if: always() && (github.event_name == 'push' || needs.llm-trigger.outputs.run == 'true')
+    runs-on: ubuntu-latest
+    name: LLM Tests
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.4'
+          extensions: sqlite3, pdo_sqlite, intl
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Create web entry point
+        run: touch index.php
+
+      - name: Run LLM test suite
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: vendor/bin/paratest -c Tests/Llm/phpunit-llm.xml --testdox --no-progress -p 5 --log-junit .Build/llm-results.xml
+        continue-on-error: true
+
+      - name: Check majority pass rule
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: php Build/check-llm-results.php --min-pass=3

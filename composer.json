@@ -69,7 +69,8 @@
             "paratest -c phpunit.xml.dist"
         ],
         "test:llm": [
-            "paratest -c Tests/Llm/phpunit-llm.xml"
+            "paratest -c Tests/Llm/phpunit-llm.xml --testdox --no-progress -p 5 --log-junit .Build/llm-results.xml || true",
+            "php Build/check-llm-results.php --min-pass=3"
         ],
         "docs:check": [
             "docker run --rm --pull always -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log"

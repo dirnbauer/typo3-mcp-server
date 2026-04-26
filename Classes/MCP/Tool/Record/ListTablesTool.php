@@ -79,7 +79,6 @@ final class ListTablesTool extends AbstractRecordTool
                 'workspace_info' => $accessInfo['workspace_capable']
                     ? 'Workspace-capable'
                     : 'Not workspace-capable',
-                'restrictions' => $accessInfo['restrictions'],
             ];
         }
 

@@ -24,14 +24,19 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 abstract class LlmTestCase extends FunctionalTestCase
 {
     /**
-     * Models available via OpenRouter for multi-model tests
+     * Models available via OpenRouter for multi-model tests.
+     * Keys are used as labels in TestDox output and must include model version.
      */
     protected const MODELS = [
-        'haiku' => 'anthropic/claude-3-5-haiku',
-        'gpt-5.2' => 'openai/gpt-5.2',
-        'gpt-oss' => 'openai/gpt-oss-120b',
-        'kimi-k2' => 'moonshotai/kimi-k2',
-        'mistral-medium' => 'mistralai/mistral-medium-3',
+        'haiku-4.5' => 'anthropic/claude-haiku-4.5',
+        'gpt-5.4' => 'openai/gpt-5.4',
+        'gpt-oss-120b' => 'openai/gpt-oss-120b',
+        'mistral-large-2512' => 'mistralai/mistral-large-2512',
+        'gemini-3-flash' => 'google/gemini-3-flash-preview',
+    ];
+
+    protected const MODEL_OPTIONS = [
+        'gpt-5.4' => ['reasoning' => ['effort' => 'high']],
     ];
 
     protected array $coreExtensionsToLoad = [
@@ -71,6 +76,36 @@ abstract class LlmTestCase extends FunctionalTestCase
     }
 
     /**
+     * Retry flaky LLM tests up to 3 times on assertion failure.
+     * LLM responses are inherently non-deterministic, so a single
+     * failure does not necessarily indicate a broken test.
+     */
+    protected function runTest(): mixed
+    {
+        $maxRetries = 3;
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                return parent::runTest();
+            } catch (\PHPUnit\Framework\SkippedWithMessageException | \PHPUnit\Framework\IncompleteTestError $e) {
+                throw $e;
+            } catch (\PHPUnit\Framework\AssertionFailedError $e) {
+                $lastException = $e;
+                if ($attempt < $maxRetries) {
+                    try {
+                        $this->tearDown();
+                    } catch (\Throwable) {
+                    }
+                    $this->setUp();
+                }
+            }
+        }
+
+        throw $lastException;
+    }
+
+    /**
      * Initialize the LLM client based on available API keys.
      */
     protected function initializeLlmClient(): void
@@ -81,7 +116,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $this->llmClient = new OpenRouterClient($openRouterKey);
             $this->llmProvider = 'openrouter';
             if (empty($this->llmModel)) {
-                $this->llmModel = self::MODELS['haiku'];
+                $this->llmModel = self::MODELS['haiku-4.5'];
             }
             return;
         }
@@ -105,13 +140,10 @@ abstract class LlmTestCase extends FunctionalTestCase
      */
     public static function modelProvider(): array
     {
-        return [
-            'Haiku' => ['haiku'],
-            'GPT-5.2' => ['gpt-5.2'],
-            'GPT-OSS' => ['gpt-oss'],
-            'Kimi K2' => ['kimi-k2'],
-            'Mistral Medium' => ['mistral-medium'],
-        ];
+        return array_map(
+            fn(string $key) => [$key],
+            array_combine(array_keys(static::MODELS), array_keys(static::MODELS))
+        );
     }
 
     /**
@@ -169,6 +201,32 @@ abstract class LlmTestCase extends FunctionalTestCase
         );
 
         return $this->lastResponse;
+    }
+
+    protected function getModelOptions(): array
+    {
+        $modelKey = array_search($this->llmModel, static::MODELS, true);
+        if ($modelKey !== false && isset(static::MODEL_OPTIONS[$modelKey])) {
+            return static::MODEL_OPTIONS[$modelKey];
+        }
+        return [];
+    }
+
+    /**
+     * Build a context string for failure messages, including model and prompt.
+     */
+    protected function getFailureContext(LlmResponse $response = null): string
+    {
+        $context = "[Model: {$this->llmModel}]\n";
+        $context .= "Prompt: {$this->lastPrompt}\n";
+        if ($response !== null) {
+            $textResponse = $response->getContent();
+            if (!empty($textResponse)) {
+                $context .= "LLM text response: " . mb_substr($textResponse, 0, 500) . "\n";
+            }
+            $context .= "\n" . $this->getToolCallsDebugString($response);
+        }
+        return $context;
     }
 
     /**
@@ -273,6 +331,21 @@ abstract class LlmTestCase extends FunctionalTestCase
         }
 
         return $debug;
+    }
+
+    /**
+     * Extract the record data from a WriteTable tool call's arguments.
+     * Some models (e.g. OpenAI GPT) place record fields at the top level
+     * instead of nesting them inside the 'data' parameter.
+     */
+    protected function extractWriteData(array $arguments): array
+    {
+        if (isset($arguments['data']) && is_array($arguments['data'])) {
+            return $arguments['data'];
+        }
+
+        $knownKeys = ['action', 'table', 'pid', 'uid', 'data', 'position', 'where'];
+        return array_diff_key($arguments, array_flip($knownKeys));
     }
 
     /**
@@ -456,7 +529,6 @@ abstract class LlmTestCase extends FunctionalTestCase
         $this->toolCallHistory = [];
 
         for ($i = 0; $i < $maxIterations && $currentResponse->hasToolCalls(); $i++) {
-            // Track all tool calls for history
             foreach ($currentResponse->getToolCalls() as $toolCall) {
                 $this->toolCallHistory[] = $toolCall['name'];
             }

@@ -187,10 +187,10 @@ class ListTablesToolTest extends FunctionalTestCase
 
         $content = $result->content[0]->text;
 
-        // ⚠️ POTENTIAL ISSUE: The tool shows internal TCA display conditions
-        // instead of user-friendly descriptions. This might not be ideal for LLM usage.
-        self::assertStringContainsString('Field \'', $content);
-        self::assertStringContainsString('has display conditions', $content);
+        // List should surface readable labels, not internal TCA “display conditions” phrasing
+        self::assertStringNotContainsString('Field \'', $content);
+        self::assertStringNotContainsString('has display conditions', $content);
+        self::assertStringContainsString('Tables accessible by the current user', $content);
 
         // Verify table names contain descriptive labels
         self::assertStringContainsString('pages (Page)', $content);

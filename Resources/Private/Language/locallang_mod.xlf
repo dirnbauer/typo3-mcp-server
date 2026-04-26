@@ -18,6 +18,9 @@
 			</trans-unit>
 
 			<!-- Extension configuration labels -->
+			<trans-unit id="extconf.additionalReadOnlyTables">
+				<source>Additional read-only tables: comma-separated list of non-workspace-capable tables to expose for reads via MCP (e.g. sys_file). These cannot be written through workspace tools.</source>
+			</trans-unit>
 			<trans-unit id="extconf.fileSandboxRoot">
 				<source>MCP file sandbox root folder. Use a combined identifier such as "1:/mcp/". This defaults to fileadmin/mcp/ in the default storage.</source>
 			</trans-unit>

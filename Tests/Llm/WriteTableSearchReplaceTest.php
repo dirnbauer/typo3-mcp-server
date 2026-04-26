@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Llm;
 
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
 
 /**
  * Test how different LLMs use the WriteTable data parameter to correct spelling errors.
@@ -26,27 +27,12 @@ class WriteTableSearchReplaceTest extends LlmTestCase
     }
 
     /**
-     * Data provider that returns the models to test.
-     */
-    public static function modelProvider(): array
-    {
-        return [
-            'Haiku' => ['haiku'],
-            'GPT-5.2' => ['gpt-5.2'],
-            'GPT-OSS' => ['gpt-oss'],
-            'Kimi K2' => ['kimi-k2'],
-            'Mistral Medium' => ['mistral-medium'],
-        ];
-    }
-
-    /**
-     * Test that LLM fixes spelling errors in a content element header.
-     *
      * Content element 200 has header "Welcom to Our Compnay" (two typos).
      * The LLM should read the content, identify the errors, and use WriteTable
      * with either search-and-replace arrays or full string values to fix them.
      */
     #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "fix spelling in header about welcome/company" → explores, then WriteTable(update) fixing "Welcom"→"Welcome" and "Compnay"→"Company"')]
     public function testLlmFixesHeaderSpellingErrors(string $modelKey): void
     {
         $this->setModel($modelKey);
@@ -154,11 +140,10 @@ class WriteTableSearchReplaceTest extends LlmTestCase
     }
 
     /**
-     * Test that LLM fixes spelling errors in bodytext using search-and-replace or full values.
-     *
      * Content element 201 has bodytext with many typos.
      */
     #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "fix spelling in Our Servces content element" → explores, then WriteTable(update) fixing header to "Services" and bodytext typos')]
     public function testLlmFixesBodytextSpellingErrors(string $modelKey): void
     {
         $this->setModel($modelKey);
@@ -196,7 +181,7 @@ class WriteTableSearchReplaceTest extends LlmTestCase
             "[$modelKey] WriteTable failed: " . $writeResult['content'],
         );
 
-        $data = $writeCall['data'] ?? [];
+        $data = $this->extractWriteData($writeCall);
 
         // Verify header was addressed (either as string or search/replace)
         if (isset($data['header'])) {
@@ -244,10 +229,10 @@ class WriteTableSearchReplaceTest extends LlmTestCase
     }
 
     /**
-     * Test a natural-language prompt for fixing typos without specifying UIDs.
      * The LLM should discover the content, identify errors, and fix them.
      */
     #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "there are spelling mistakes on the home page, find and fix them" → explores page content via GetPage/ReadTable, then WriteTable(update) to fix errors')]
     public function testLlmFindsAndFixesTyposNaturally(string $modelKey): void
     {
         $this->setModel($modelKey);

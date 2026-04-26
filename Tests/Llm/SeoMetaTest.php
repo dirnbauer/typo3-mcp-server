@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
+
 /**
  * Test LLM's ability to manage SEO and meta tags using MCP tools
  *
@@ -19,11 +22,11 @@ class SeoMetaTest extends LlmTestCase
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
     }
 
-    /**
-     * Test that LLM adds missing meta descriptions
-     */
-    public function testLlmAddsMissingMetaDescriptions(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Add meta descriptions to pages that don\'t have them" → explores pages, then WriteTable(update, pages) with non-empty description field')]
+    public function testLlmAddsMissingMetaDescriptions(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Add meta descriptions to pages that don't have them";
 
         $response1 = $this->callLlm($prompt);
@@ -51,7 +54,6 @@ class SeoMetaTest extends LlmTestCase
         $writeCalls = $response->getToolCallsByName('WriteTable');
 
         if (count($writeCalls) === 0) {
-            // If no WriteTable, check if LLM determined all pages already have descriptions
             $finalContent = $response->getContent();
 
             // This is a reasonable response - if all pages already have descriptions,
@@ -63,13 +65,11 @@ class SeoMetaTest extends LlmTestCase
 
                 // If the LLM mentions that pages already have descriptions, that's ideal
                 if (preg_match('/already|have|description|complete|found|none|all/i', $finalContent)) {
-                    // Perfect - LLM correctly identified no work needed
                     return;
                 }
 
                 // If the LLM encountered an error and is retrying, that's also acceptable
                 if (preg_match('/error|apologize|sorry|try|again/i', $finalContent)) {
-                    // LLM is handling errors gracefully
                     return;
                 }
 
@@ -93,10 +93,9 @@ class SeoMetaTest extends LlmTestCase
         self::assertNotEmpty($writeCall['data']['description']);
     }
 
-    /**
-     * Test that LLM optimizes page titles
-     */
-    public function testLlmOptimizesPageTitles(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Update the contact page title to be more SEO-friendly" → explores page context, then WriteTable(update, pages) with title or seo_title')]
+    public function testLlmOptimizesPageTitles(string $modelKey): void
     {
         $prompt = 'Update the page title of the contact page to be more SEO-friendly';
 
@@ -130,10 +129,9 @@ class SeoMetaTest extends LlmTestCase
         self::assertTrue($hasTitle, 'Expected title or seo_title to be updated');
     }
 
-    /**
-     * Test that LLM adds Open Graph tags
-     */
-    public function testLlmAddsOpenGraphTags(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Update the home page to add a meta description for social media sharing" → explores, then WriteTable(update, pages) with og_* fields or description')]
+    public function testLlmAddsOpenGraphTags(string $modelKey): void
     {
         $prompt = 'Update the home page to add a meta description for social media sharing';
 
@@ -188,10 +186,9 @@ class SeoMetaTest extends LlmTestCase
         }
     }
 
-    /**
-     * Test that LLM improves page slugs
-     */
-    public function testLlmImprovesPageSlugs(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Make the URL slug for the team page more SEO-friendly" → explores page context, then WriteTable(update, pages) with new slug different from /about/team')]
+    public function testLlmImprovesPageSlugs(string $modelKey): void
     {
         $prompt = 'Make the URL slug for the team page more SEO-friendly';
 

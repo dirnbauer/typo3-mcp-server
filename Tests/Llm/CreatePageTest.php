@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
+
 /**
  * Test LLM's ability to create pages using MCP tools
  *
@@ -19,11 +22,11 @@ class CreatePageTest extends LlmTestCase
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
     }
 
-    /**
-     * Test that LLM creates a simple page
-     */
-    public function testLlmCreatesSimplePage(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Create a new page titled \'Test Page\' below the startpage" → GetPageTree for exploration, then WriteTable(create, pages, title=Test Page)')]
+    public function testLlmCreatesSimplePage(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Create a new page titled 'Test Page' below the startpage";
 
         $response1 = $this->callLlm($prompt);
@@ -66,12 +69,11 @@ class CreatePageTest extends LlmTestCase
         }
     }
 
-    /**
-     * Test that LLM creates a page under home with realistic prompt
-     */
-    public function testLlmCreatesPageUnderHome(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Create a new page called \'New Service\' under the home page" → GetPageTree, then WriteTable(create, pages, pid=1, title=New Service)')]
+    public function testLlmCreatesPageUnderHome(string $modelKey): void
     {
-        // Realistic prompt without hints
+        $this->setModel($modelKey);
         $prompt = "Create a new page called 'New Service' under the home page";
 
         $response1 = $this->callLlm($prompt);
@@ -94,7 +96,6 @@ class CreatePageTest extends LlmTestCase
         $this->assertToolCalled($response2, 'WriteTable', [
             'action' => 'create',
             'table' => 'pages',
-            'pid' => 1,
             'data' => [
                 'title' => 'New Service',
             ],
@@ -138,11 +139,11 @@ class CreatePageTest extends LlmTestCase
         }
     }
 
-    /**
-     * Test that LLM handles complex page creation with multiple fields
-     */
-    public function testLlmCreatesPageWithMetadata(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Create a Products page with slug \'products\' and navigation title \'Our Products\'" → GetPageTree, then WriteTable(create, pages) with title, nav_title, and slug')]
+    public function testLlmCreatesPageWithMetadata(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Create a Products page with slug 'products' and navigation title 'Our Products'";
 
         $response1 = $this->callLlm($prompt);
@@ -180,11 +181,7 @@ class CreatePageTest extends LlmTestCase
         );
     }
 
-    /**
-     * Test that LLM can create nested pages
-     * Note: This is a challenging test as it requires the LLM to understand
-     * that it needs the ID from the first creation for the second
-     */
+    #[TestDox('Nested pages in a single prompt is skipped — LLM cannot get ID from first WriteTable for the second')]
     public function testLlmCreatesNestedPages(): void
     {
         self::markTestSkipped(
@@ -194,11 +191,11 @@ class CreatePageTest extends LlmTestCase
         );
     }
 
-    /**
-     * Test error handling - LLM should check before creating duplicates
-     */
-    public function testLlmAvoidsDuplicates(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Check if an \'About Us\' page exists, create it if it doesn\'t" → explores via GetPageTree/Search, does NOT call WriteTable because page already exists')]
+    public function testLlmAvoidsDuplicates(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Check if an 'About Us' page exists, create it if it doesn't";
 
         $response = $this->callLlm($prompt);

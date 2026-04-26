@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestDox;
+
 /**
  * Test LLM's ability to create and manage content elements using MCP tools
  *
@@ -20,11 +23,11 @@ class ContentElementTest extends LlmTestCase
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/tt_content.csv');
     }
 
-    /**
-     * Test that LLM creates simple text content
-     */
-    public function testLlmCreatesSimpleTextContent(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Add a welcome message to the contact page (Monday-Friday 9-5)" → explores page context, then WriteTable(tt_content, CType=text/textmedia) with business hours in bodytext')]
+    public function testLlmCreatesSimpleTextContent(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Add a welcome message to the contact page that says we're available Monday to Friday, 9 AM to 5 PM";
 
         // Execute until WriteTable is found
@@ -94,10 +97,9 @@ class ContentElementTest extends LlmTestCase
         self::assertMatchesRegularExpression('/5|five/i', $bodytext, 'Should mention 5 PM');
     }
 
-    /**
-     * Test that LLM creates content in specific column
-     */
-    public function testLlmCreatesContentInRightColumn(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Add business hours to the right column of the contact page" → explores page context, then WriteTable(tt_content) with colPos=1 or 2 for right column')]
+    public function testLlmCreatesContentInRightColumn(string $modelKey): void
     {
         $prompt = 'Add our business hours (weekdays 8:30 AM to 6:00 PM, closed weekends) to the right column of the contact page';
 
@@ -168,11 +170,11 @@ class ContentElementTest extends LlmTestCase
         }
     }
 
-    /**
-     * Test that LLM creates header element
-     */
-    public function testLlmCreatesHeaderElement(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Add a section header \'Our Services\' to the home page" → explores page context, then WriteTable(tt_content, header=Our Services)')]
+    public function testLlmCreatesHeaderElement(string $modelKey): void
     {
+        $this->setModel($modelKey);
         $prompt = "Add a section header 'Our Services' to the home page";
 
         // Execute until WriteTable is found
@@ -209,15 +211,13 @@ class ContentElementTest extends LlmTestCase
             'Expected create or update action',
         );
 
-        // Execute and verify
         $writeResult = $this->executeToolCall($response->getToolCalls()[0]);
         self::assertFalse($writeResult['isError'] ?? false);
     }
 
-    /**
-     * Test that LLM updates existing content
-     */
-    public function testLlmUpdatesExistingContent(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "Make the welcome header on the home page sound more friendly" → explores, reads existing content, then WriteTable(update, tt_content) with changed header')]
+    public function testLlmUpdatesExistingContent(string $modelKey): void
     {
         $prompt = 'Make the welcome header on the home page sound more friendly';
 
@@ -251,10 +251,9 @@ class ContentElementTest extends LlmTestCase
         self::assertNotEmpty($newHeader);
     }
 
-    /**
-     * Test that LLM reorders content elements
-     */
-    public function testLlmReordersContent(): void
+    #[DataProvider('modelProvider')]
+    #[TestDox('[$modelKey] Prompt "On the team page, the team members appear before the introduction — reorder them" → explores, then WriteTable(update) with position or sorting to fix order')]
+    public function testLlmReordersContent(string $modelKey): void
     {
         $prompt = 'On the team page, change the order of content elements so the team introduction appears before the team members';
 
@@ -301,5 +300,9 @@ class ContentElementTest extends LlmTestCase
             // Skip the strict assertion if LLM chose to just describe the change
             self::markTestIncomplete("LLM described the change but didn't execute it");
         }
+
+        $this->assertTrue($hasOrderingChange,
+            "Expected update with position or sorting field. "
+            . "WriteTable calls: " . json_encode(array_map(fn($c) => $c['arguments'], $writeCalls), JSON_PRETTY_PRINT));
     }
 }

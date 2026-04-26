@@ -8,6 +8,7 @@ use Hn\McpServer\Event\ModifyAvailableFieldsEvent;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -47,11 +48,34 @@ final class TableAccessService
 
     private ?BackendUserAuthentication $backendUser = null;
 
+    /** @var list<string>|null */
+    private ?array $additionalReadOnlyTables = null;
+
     public function __construct(
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly PageDoktypeRegistry $pageDoktypeRegistry,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {}
+
+    /**
+     * Non-workspace tables that may be exposed as read-only (e.g. sys_file), from extension config.
+     *
+     * @return list<string>
+     */
+    public function getAdditionalReadOnlyTables(): array
+    {
+        if ($this->additionalReadOnlyTables === null) {
+            try {
+                $config = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+                    ->get('mcp_server', 'additionalReadOnlyTables');
+            } catch (\Exception) {
+                $config = 'sys_file';
+            }
+            $this->additionalReadOnlyTables = GeneralUtility::trimExplode(',', (string)$config, true);
+        }
+
+        return $this->additionalReadOnlyTables;
+    }
 
     /**
      * @return array<string, array<string, mixed>>
@@ -266,12 +290,21 @@ final class TableAccessService
             return $info;
         }
 
-        // Check workspace capability (required for write operations)
+        // Workspace is required for the default (write) path; allow configured read-only
+        // non-workspace tables (e.g. sys_file) as read-only in that path.
         $workspaceCapability = $this->getTableCtrl($table)['versioningWS'] ?? false;
         $info['workspace_capable'] = $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
-        if ($requireWorkspaceCapability && !$info['workspace_capable']) {
-            $info['reasons'][] = 'Table is not workspace-capable (required for write operations)';
-            return $info;
+        $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
+        if ($requireWorkspaceCapability) {
+            if (!$info['workspace_capable'] && !$isAdditionalReadOnly) {
+                $info['reasons'][] = 'Table is not workspace-capable (required for write operations)';
+                return $info;
+            }
+            if ($isAdditionalReadOnly) {
+                $info['read_only'] = true;
+            }
+        } elseif ($isAdditionalReadOnly) {
+            $info['read_only'] = true;
         }
 
         // Check user permissions
@@ -573,28 +606,108 @@ final class TableAccessService
     }
 
     /**
+     * File mount paths the current user may use for sys_file (storage uid + path prefix).
+     * For admins, returns an empty list and sets $isAdmin to true (no SQL restriction).
+     *
+     * @return list<array{storage: int, path: string}>
+     */
+    public function getAccessibleFileMounts(bool &$isAdmin = false): array
+    {
+        $user = $this->getBackendUser();
+        $isAdmin = $user->isAdmin();
+        if ($isAdmin) {
+            return [];
+        }
+
+        $mounts = [];
+        foreach ($user->getFileMountRecords() as $row) {
+            $identifier = (string)($row['identifier'] ?? '');
+            if (!str_contains($identifier, ':')) {
+                continue;
+            }
+            [$storage, $path] = GeneralUtility::trimExplode(':', $identifier, true);
+            $storageUid = (int)$storage;
+            if ($storageUid <= 0) {
+                continue;
+            }
+            $mounts[] = ['storage' => $storageUid, 'path' => $path];
+        }
+
+        return $mounts;
+    }
+
+    public function canAccessFileUid(int $fileUid): bool
+    {
+        if ($fileUid <= 0) {
+            return false;
+        }
+        $user = $this->getBackendUser();
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $isAdmin = false;
+        $mounts = $this->getAccessibleFileMounts($isAdmin);
+        if ($mounts === []) {
+            return false;
+        }
+
+        $connection = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+            ->getConnectionForTable('sys_file');
+        $row = $connection->select(
+            ['storage', 'identifier'],
+            'sys_file',
+            ['uid' => $fileUid]
+        )->fetchAssociative();
+        if (!is_array($row)) {
+            return false;
+        }
+
+        foreach ($mounts as $mount) {
+            if ((int)$row['storage'] !== (int)$mount['storage']) {
+                continue;
+            }
+            $mountPath = rtrim($mount['path'], '/') . '/';
+            if (str_starts_with((string)$row['identifier'], $mountPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Check if a table is truly restricted and should not be accessible via MCP
      */
     private function isRestrictedSystemTable(string $table): bool
     {
+        if (in_array($table, $this->getAdditionalReadOnlyTables(), true)) {
+            return false;
+        }
+
         // Admin-only tables (only restrict if user is not admin)
         $ctrl = $this->getTableCtrl($table);
         if (!empty($ctrl['adminOnly']) && !$this->getBackendUser()->isAdmin()) {
             return true;
         }
 
-        // Root-level tables that are dangerous to modify
-        if (!empty($ctrl['rootLevel'])) {
-            // Allow some safe root-level tables
+        // True root (pid=0) only: restrict unless workspace-versioned or explicitly whitelisted for read.
+        // Note: do not use !empty(rootLevel) — sys_file and similar use -1, which is not the same as root records.
+        $rootLevel = $ctrl['rootLevel'] ?? 0;
+        if ($rootLevel === 1 || $rootLevel === true) {
             $allowedRootTables = [
-                'sys_file_storage', // File storage configuration
-                'sys_domain', // Domain configuration
-                'sys_category', // Category system - safe for read operations
-                'sys_redirect', // Redirect records are intentionally exposed via ManageRedirects
-                'sys_template', // TypoScript template records — needed for basic rendering setup
+                'sys_file_storage',
+                'sys_domain',
+                'sys_category',
+                'sys_redirect',
+                'sys_template',
             ];
-
-            if (!in_array($table, $allowedRootTables)) {
+            if (in_array($table, $allowedRootTables, true)) {
+                return false;
+            }
+            $isWorkspaceCapable = !empty($ctrl['versioningWS']);
+            $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
+            if (!$isWorkspaceCapable && !$isAdditionalReadOnly) {
                 return true;
             }
         }
@@ -643,6 +756,10 @@ final class TableAccessService
      */
     private function isTableReadOnly(string $table): bool
     {
+        if (in_array($table, $this->getAdditionalReadOnlyTables(), true)) {
+            return true;
+        }
+
         // Check TCA configuration
         $ctrl = $this->getTableCtrl($table);
         if (!empty($ctrl['readOnly'])) {
@@ -776,12 +893,9 @@ final class TableAccessService
         $fieldOptions = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         $fieldType = is_string($fieldOptions['type'] ?? null) ? $fieldOptions['type'] : '';
 
-        // Block inline relations where foreign table isn't writable
-        // This automatically filters out relations to:
-        // - Tables without workspace support
-        // - Read-only tables (sys_file, sys_file_metadata, etc.)
-        // - Tables with no user access
-        if ($fieldType === 'inline') {
+        // Block inline / file field relations when the foreign table isn't accessible.
+        // type=file maps to sys_file via sys_file_reference (TcaPreparation).
+        if ($fieldType === 'inline' || $fieldType === 'file') {
             $foreignTable = is_string($fieldOptions['foreign_table'] ?? null) ? $fieldOptions['foreign_table'] : '';
             if ($foreignTable && !$this->canAccessTable($foreignTable)) {
                 return false;

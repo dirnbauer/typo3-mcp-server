@@ -125,20 +125,18 @@ class NewsSchemaTest extends FunctionalTestCase
     }
 
     /**
-     * Test that News uses sys_file_reference for media (but it's restricted)
+     * Test that get schema works for sys_file_reference (FAL, workspace-versioned)
      */
-    public function testNewsUsesSysFileReferenceForMedia(): void
+    public function testSysFileReferenceSchemaIsAccessible(): void
     {
         $tool = $this->getService(GetTableSchemaTool::class);
 
-        // News extends sys_file_reference, but this table is restricted
         $result = $tool->execute([
             'table' => 'sys_file_reference',
         ]);
 
-        // sys_file_reference is restricted for security reasons
-        self::assertTrue($result->isError);
-        self::assertStringContainsString('restricted', $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_UNESCAPED_SLASHES));
+        self::assertStringContainsString('sys_file_reference', $result->content[0]->text);
     }
 
     /**

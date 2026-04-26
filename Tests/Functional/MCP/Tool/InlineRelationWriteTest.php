@@ -131,8 +131,16 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, 'sys_file_reference writes should be rejected');
-        self::assertStringContainsString('restricted', strtolower((string)$result->content[0]->text));
+        if ($result->isError) {
+            $text = strtolower((string)$result->content[0]->text);
+            self::assertStringNotContainsString(
+                'table is restricted for security or system integrity',
+                $text,
+                'sys_file_reference is a workspace FAL table; errors should be validation/DataHandler, not a blanket "restricted" deny.',
+            );
+        } else {
+            self::assertIsArray($json = json_decode($result->content[0]->text, true) ?? null);
+        }
     }
 
     /**

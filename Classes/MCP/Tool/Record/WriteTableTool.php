@@ -163,7 +163,12 @@ final class WriteTableTool extends AbstractRecordTool
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) ? (int)$params['uid'] : null;
         $data = $params['data'] ?? [];
-        $position = is_string($params['position'] ?? null) ? $params['position'] : 'bottom';
+        $rawPosition = $params['position'] ?? null;
+        $position = is_string($rawPosition) ? $rawPosition : null;
+        if ($action === 'create' && $position === null) {
+            $position = 'bottom';
+        }
+        $positionExplicit = array_key_exists('position', $params) && is_string($params['position']) && $params['position'] !== '';
 
         // Validate parameters
         if (empty($action)) {
@@ -174,14 +179,20 @@ final class WriteTableTool extends AbstractRecordTool
             throw new ValidationException(['Table name is required']);
         }
 
-        // Validate data parameter type
-        if (in_array($action, ['create', 'update', 'translate'], true) && isset($params['data'])) {
-            if (!is_array($params['data'])) {
+        // Validate data parameter for create/update/translate
+        if (in_array($action, ['create', 'update', 'translate'], true)) {
+            if (isset($params['data']) && !is_array($params['data'])) {
                 $dataType = gettype($params['data']);
                 throw new ValidationException([
                     "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. " .
                     'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, ' .
                     'not a plain string. Each field name should be a key with its corresponding value.',
+                ]);
+            }
+            if (empty($data) && !($action === 'update' && $positionExplicit)) {
+                throw new ValidationException([
+                    "The data parameter must contain record fields for {$action} actions. " .
+                    "Provide field names as keys, e.g. {\"title\": \"Page Title\", \"bodytext\": \"Content\"}."
                 ]);
             }
         }
@@ -226,7 +237,7 @@ final class WriteTableTool extends AbstractRecordTool
                     throw new ValidationException(['Record UID is required for update action']);
                 }
 
-                if (empty($data) && empty($searchReplace)) {
+                if (empty($data) && empty($searchReplace) && !$positionExplicit) {
                     throw new ValidationException(['Data is required for update action']);
                 }
                 break;
@@ -289,7 +300,28 @@ final class WriteTableTool extends AbstractRecordTool
                     $resolvedFields = $this->resolveSearchReplace($table, $uid, $searchReplace);
                     $data = array_merge($data, $resolvedFields);
                 }
-                return $this->updateRecord($table, $uid, $data);
+                $updateResult = null;
+                if (!empty($data) || !empty($searchReplace)) {
+                    $updateResult = $this->updateRecord($table, $uid, $data);
+                    if ($updateResult->isError) {
+                        return $updateResult;
+                    }
+                }
+                if ($positionExplicit) {
+                    if ($uid === null) {
+                        throw new \LogicException('update with position requires uid (validated in switch case update)');
+                    }
+                    if (!is_string($position) || $position === '') {
+                        throw new \LogicException('positionExplicit is true but position is not a non-empty string');
+                    }
+
+                    return $this->moveRecord($table, $uid, $position, $pid);
+                }
+                if ($updateResult === null) {
+                    throw new \LogicException('WriteTable update without data/search_replace/position should have been rejected by validation');
+                }
+
+                return $updateResult;
 
             case 'move':
                 return $this->moveRecord($table, $uid, $position, $pid);
@@ -313,7 +345,7 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Create a new record
      */
-    protected function createRecord(string $table, int $pid, array $data, string $position): CallToolResult
+    protected function createRecord(string $table, int $pid, array $data, ?string $position): CallToolResult
     {
         // Pre-validate page access for non-admin users
         $pageAccessError = $this->validatePageAccess($pid);
@@ -506,7 +538,7 @@ final class WriteTableTool extends AbstractRecordTool
     /**
      * Update an existing record
      */
-    protected function updateRecord(string $table, int $uid, array $data): CallToolResult
+    protected function updateRecord(string $table, int $uid, array $data, ?string $position = null): CallToolResult
     {
         // Validate the data
         $validationResult = $this->validateRecordData($table, $data, 'update', $uid);
