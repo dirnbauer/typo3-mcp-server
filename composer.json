@@ -103,6 +103,9 @@
             "a9f/fractor-extension-installer": true,
             "typo3/class-alias-loader": true,
             "typo3/cms-composer-installers": true
+        },
+        "platform": {
+            "php": "8.2.0"
         }
     }
 }
