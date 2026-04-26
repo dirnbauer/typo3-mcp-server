@@ -949,7 +949,7 @@ language ISO code (for example ``en`` -> ``us``, ``de`` -> ``de``).
 preserving everything else. Use it to attach a Site Set to a site that was
 created without one:
 
-.. code-block:: jsonc
+.. code-block:: json
 
    {
      "action": "update",

@@ -206,11 +206,14 @@ Resolve a page by URL or UID and return page details plus page content context.
 
 :Parameters:
    - ``uid`` (integer): page UID
+   - ``pageId`` (integer): alias for ``uid`` (ergonomic alternative)
    - ``url`` (string): full URL, path, or slug
    - ``language`` (string): ISO language code for translated page and content
      output when language support is available
    - ``languageId`` (integer): deprecated numeric language ID
    - ``workspace_id`` (integer): optional workspace override
+
+Exactly one of ``uid``, ``pageId``, or ``url`` is required.
 
 The result includes page metadata, generated URL, visible records, and
 available page translations.
@@ -231,7 +234,10 @@ Search
 Search across TYPO3 tables using TCA-derived searchable fields.
 
 :Parameters:
-   - ``terms`` (array, required): search terms
+   - ``query`` (string or array): single search string or array of strings.
+     Equivalent to ``terms``.
+   - ``terms`` (array): alias for ``query``, kept for backwards compatibility.
+     At least one of ``query`` / ``terms`` must be provided.
    - ``termLogic`` (string): ``AND`` or ``OR``, default ``OR``
    - ``table`` (string): restrict search to a specific table
    - ``pageId`` (integer): restrict search to one page
@@ -293,7 +299,12 @@ Read records from any accessible TYPO3 table.
    - ``table`` (string, required): table name
    - ``pid`` (integer): page filter, recommended for page content
    - ``uid`` (integer): single record UID lookup
-   - ``where`` (string): restricted filter expression
+   - ``filters`` (array): list of ``{field, operator, value}`` objects combined
+     with ``AND``. Supported operators: ``eq``, ``neq``, ``lt``, ``lte``,
+     ``gt``, ``gte``, ``like``, ``notLike``, ``in``, ``notIn``, ``isNull``,
+     ``isNotNull``. Filter values for ``sys_language_uid`` accept ISO codes
+     (``"de"``); filters on ``hidden`` accept booleans. System fields
+     (``uid``, ``pid``, ``sys_language_uid``, ``hidden``) are always allowed.
    - ``limit`` (integer): maximum number of records, default ``20``
    - ``offset`` (integer): pagination offset
    - ``fields`` (array): explicit field selection
@@ -308,34 +319,52 @@ matching TYPO3 list-module behavior more closely than a frontend-style overlay.
 Pagination metadata includes ``total``, ``count``, ``limit``, ``offset``,
 ``nextOffset``, and ``hasMore``.
 
+The legacy ``where`` parameter (a raw SQL string) is intentionally rejected —
+callers that still send it get a clear error pointing to ``filters``.
+
 WriteTable
 ----------
 
-Create, update, translate, or delete TYPO3 records.
+Create, update, translate, move, or delete TYPO3 records.
 
 :Parameters:
-   - ``action`` (string, required): ``create``, ``update``, ``translate``, or
-     ``delete``
+   - ``action`` (string, required): ``create``, ``update``, ``move``,
+     ``translate``, or ``delete``
    - ``table`` (string, required): table name
    - ``pid`` (integer): parent page for ``create``
-   - ``uid`` (integer): record UID for ``update``, ``translate``, or
+   - ``uid`` (integer): record UID for ``update``, ``translate``, ``move``, or
      ``delete``
    - ``data`` (object): field payload for ``create``, ``update``, or
      ``translate``
-   - ``position`` (string): create position, one of ``top``, ``bottom``,
+   - ``position`` (string): create/move position, one of ``top``, ``bottom``,
      ``after:UID``, or ``before:UID``
+   - ``translateChildren`` (boolean, ``translate`` action): default ``true``.
+     When ``false``, inline children are not auto-localized — useful if you
+     plan to translate child records yourself in follow-up calls.
+   - ``hidden`` (boolean, ``translate`` action): default ``false``. By default
+     translations are created visible; set ``true`` to keep them hidden for
+     review.
    - ``workspace_id`` (integer): optional workspace override
 
 Important behavior:
 
 - writes always happen in workspace context
 - language-aware tables accept ISO codes such as ``de`` for
-  ``sys_language_uid``
+  ``sys_language_uid`` (resolved per-site — e.g. ``hu`` maps to the language
+  UID that the owning site assigns to Hungarian, even when another site uses
+  the same UID for a different language)
 - file fields can receive ``sys_file`` UIDs or objects with UID and metadata,
   which creates ``sys_file_reference`` rows
 - update payloads can use structured search-and-replace operations for text
   fields
 - translation creates language overlays from default-language source records
+- the ``translate`` response includes ``translationUid`` (live UID),
+  ``targetLanguage`` (ISO code from the owning site, not a first-wins guess),
+  ``siteIdentifier``, ``slug`` (if a slug field exists on the table), and
+  ``hidden`` (reflecting the effective value on the new translation)
+- if the follow-up field update fails, the freshly created translation row is
+  rolled back so callers are never left with an orphaned source-language
+  record
 
 Positioning semantics for ``action=create``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -377,6 +406,12 @@ processing (``maxWidth``, ``maxHeight``, ``minWidth``, ``minHeight``, ``width``,
 sandbox file and ``sys_file_reference``. ``mode`` is ``append`` (keep existing
 references) or ``replace`` (only new references). ``reference`` sets metadata
 (title, alternative, crop, …) on every new reference.
+
+In a non-live workspace, the tool resolves the *version* row primary key for the
+``uid`` you pass (live id), including inline parents such as gallery ``items``,
+and keeps ``sys_file_reference`` rows attached to that row after DataHandler
+processing. See :doc:`../Architecture/InlineRelations` (File references) for
+why this matters when images appear missing on staging or after publish.
 
 :Parameters:
    - ``table`` (string, required)
@@ -694,8 +729,12 @@ PublishWorkspace
 Publish pending workspace changes to live.
 
 :Parameters:
-   - ``table`` (string): optional table filter — only publish changes for this
-     table
+   - ``table`` (string): optional single-table filter
+   - ``tables`` (array): optional list of tables to publish (combined with
+     ``table`` if both are set)
+   - ``onlyTranslations`` (boolean): when ``true``, only publish records whose
+     ``sys_language_uid`` is greater than zero — useful to ship translations
+     separately from source-language edits
    - ``dryRun`` (boolean): if true (default), preview what would be published
      without executing. Set to false to actually publish.
    - ``workspace_id`` (integer): optional workspace override
@@ -724,7 +763,8 @@ Execute multiple write operations in a single DataHandler transaction.
      - ``table`` (string, required): table name
      - ``uid`` (integer): record UID (required for update and delete)
      - ``pid`` (integer): page ID (required for create)
-     - ``data`` (object): field values for create or update
+     - ``data`` (object): flat field values for create or update (no inline
+       children)
 
    - ``workspace_id`` (integer): optional workspace override
 
@@ -732,8 +772,13 @@ Maximum 50 operations per call. All operations execute atomically in a single
 DataHandler invocation. The result includes per-operation success/failure
 status and new UIDs for creates.
 
-For complex single-record operations (positioning, translation,
-search-and-replace), use ``WriteTable`` instead.
+BulkWrite explicitly **does not** support inline child records inside ``data``
+(nested child arrays, ``sys_file_reference`` objects, nested containers).
+Passing such payloads returns a structured validation error pointing to
+``WriteTable``, which preprocesses inline relations correctly. Use BulkWrite
+for flat field updates (unhiding translations, bulk SEO edits, bulk delete);
+use ``WriteTable`` for anything that needs positioning, translation,
+search-and-replace, or nested children.
 
 Content import
 ==============
@@ -866,10 +911,24 @@ CreateSite
 Create or update TYPO3 site configurations.
 
 :Parameters:
-   - ``action`` (string, required): ``create``, ``addLanguage``, or ``replaceLanguages``
+   - ``action`` (string, required): ``create``, ``update``, ``addLanguage``, or
+     ``replaceLanguages``
    - ``identifier`` (string, required): site identifier (alphanumeric + dash)
    - ``rootPageId`` (integer): root page UID (required for create)
    - ``base`` (string): base URL (required for create)
+   - ``dependencies`` (array): Site Set names to attach, e.g.
+     ``["vendor/site-package"]``. Without at least one Site Set (or a
+     ``sys_template`` record), the frontend will throw "No site configuration
+     or TypoScript template record found". Supported on ``create`` and
+     ``update``.
+   - ``sets`` (array): alias for ``dependencies`` (some templates expect this
+     name). Merged with ``dependencies``.
+   - ``settings`` (object): top-level ``settings`` dictionary merged into the
+     site config. Supported on ``create`` and ``update``.
+   - ``config`` (object, ``update`` only): arbitrary top-level keys to merge
+     into the site YAML (``routeEnhancers``, ``errorHandling``, ...).
+     Structural keys (``rootPageId``, ``base``, ``languages``) are protected
+     and cannot be changed via ``update``.
    - ``defaultLanguage`` (object): default language config (title, locale,
      iso-639-1, optional ``navigationTitle`` and ``flag`` override). Required
      for ``replaceLanguages``.
@@ -882,11 +941,34 @@ Create or update TYPO3 site configurations.
 
 Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
+
 If ``flag`` is omitted, CreateSite derives the TYPO3 flag identifier from the
 language ISO code (for example ``en`` -> ``us``, ``de`` -> ``de``).
+
+``update`` merges arbitrary top-level keys into an existing site config while
+preserving everything else. Use it to attach a Site Set to a site that was
+created without one:
+
+.. code-block:: json
+
+   {
+     "action": "update",
+     "identifier": "launch-2026",
+     "dependencies": ["webconsulting/desiderio-preset-corporate"],
+     "settings": { "theme": "dark" }
+   }
+
 ``replaceLanguages`` preserves unrelated site configuration keys like
 ``settings``, ``routeEnhancers``, and ``dependencies`` while replacing only the
 ``languages`` section.
+
+If the resulting configuration has no rendering definition (neither a
+``dependencies`` entry nor a ``sys_template`` record on the root page), the
+response includes a ``warning`` pointing to ``action=update`` with a Site Set.
+
+``create``, ``update``, ``addLanguage``, and ``replaceLanguages`` all reset
+the internal ISO⇄UID mapping cache so subsequent translate calls see the new
+language layout without restarting the MCP session.
 
 Extension management
 ====================

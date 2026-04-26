@@ -143,7 +143,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             ->fetchAssociative();
 
         if (!is_array($versionRow) || (int)($versionRow['uid'] ?? 0) <= 0) {
-            $this->markTestSkipped('No workspace version row created for live tt_content:100; cannot assert uid_foreign fix.');
+            self::markTestSkipped('No workspace version row created for live tt_content:100; cannot assert uid_foreign fix.');
         }
 
         $versionUid = (int)$versionRow['uid'];

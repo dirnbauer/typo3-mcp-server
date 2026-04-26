@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
-<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
-<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
+<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
+<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
+<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -147,7 +147,7 @@
 
         <dd class="field-odd">
             
-    <p>Sat, 18 Apr 2026 19:18:23 +0000</p>
+    <p>Sun, 26 Apr 2026 10:05:45 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -1728,6 +1728,7 @@ hints. Workspace-only pages and draft page edits are included transparently.</p>
 
 <ul>
     <li class="dash"><code>uid</code> (integer): page UID</li>
+    <li class="dash"><code>pageId</code> (integer): alias for <code>uid</code> (ergonomic alternative)</li>
     <li class="dash"><code>url</code> (string): full URL, path, or slug</li>
     <li class="dash"><code>language</code> (string): ISO language code for translated page and content
 output when language support is available</li>
@@ -1736,6 +1737,9 @@ output when language support is available</li>
 </ul>
         </dd>
     </dl>
+            
+    <p>Exactly one of <code>uid</code>, <code>pageId</code>, or <code>url</code> is required.</p>
+
             
     <p>The result includes page metadata, generated URL, visible records, and
 available page translations.</p>
@@ -1773,7 +1777,10 @@ available page translations.</p>
             
 
 <ul>
-    <li class="dash"><code>terms</code> (array, required): search terms</li>
+    <li class="dash"><code>query</code> (string or array): single search string or array of strings.
+Equivalent to <code>terms</code>.</li>
+    <li class="dash"><code>terms</code> (array): alias for <code>query</code>, kept for backwards compatibility.
+At least one of <code>query</code> / <code>terms</code> must be provided.</li>
     <li class="dash"><code>termLogic</code> (string): <code>AND</code> or <code>OR</code>, default <code>OR</code></li>
     <li class="dash"><code>table</code> (string): restrict search to a specific table</li>
     <li class="dash"><code>pageId</code> (integer): restrict search to one page</li>
@@ -1865,7 +1872,12 @@ references and formats the result as a readable schema summary.</p>
     <li class="dash"><code>table</code> (string, required): table name</li>
     <li class="dash"><code>pid</code> (integer): page filter, recommended for page content</li>
     <li class="dash"><code>uid</code> (integer): single record UID lookup</li>
-    <li class="dash"><code>where</code> (string): restricted filter expression</li>
+    <li class="dash"><code>filters</code> (array): list of <code>{field, operator, value}</code> objects combined
+with <code>AND</code>. Supported operators: <code>eq</code>, <code>neq</code>, <code>lt</code>, <code>lte</code>,
+<code>gt</code>, <code>gte</code>, <code>like</code>, <code>notLike</code>, <code>in</code>, <code>notIn</code>, <code>isNull</code>,
+<code>isNotNull</code>. Filter values for <code>sys_language_uid</code> accept ISO codes
+(<code>&quot;de&quot;</code>); filters on <code>hidden</code> accept booleans. System fields
+(<code>uid</code>, <code>pid</code>, <code>sys_language_uid</code>, <code>hidden</code>) are always allowed.</li>
     <li class="dash"><code>limit</code> (integer): maximum number of records, default <code>20</code></li>
     <li class="dash"><code>offset</code> (integer): pagination offset</li>
     <li class="dash"><code>fields</code> (array): explicit field selection</li>
@@ -1883,11 +1895,15 @@ matching TYPO3 list-module behavior more closely than a frontend-style overlay.
 Pagination metadata includes <code>total</code>, <code>count</code>, <code>limit</code>, <code>offset</code>,
 <code>nextOffset</code>, and <code>hasMore</code>.</p>
 
+            
+    <p>The legacy <code>where</code> parameter (a raw SQL string) is intentionally rejected —
+callers that still send it get a clear error pointing to <code>filters</code>.</p>
+
     </section>
             <section class="section" id="writetable">
             <h3>WriteTable<a class="headerlink" href="#writetable" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
             
-    <p>Create, update, translate, or delete TYPO3 records.</p>
+    <p>Create, update, translate, move, or delete TYPO3 records.</p>
 
             <dl class="field-list simple ">
             <dt class="field-odd">Parameters</dt>
@@ -1896,16 +1912,22 @@ Pagination metadata includes <code>total</code>, <code>count</code>, <code>limit
             
 
 <ul>
-    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>update</code>, <code>translate</code>, or
-<code>delete</code></li>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>update</code>, <code>move</code>,
+<code>translate</code>, or <code>delete</code></li>
     <li class="dash"><code>table</code> (string, required): table name</li>
     <li class="dash"><code>pid</code> (integer): parent page for <code>create</code></li>
-    <li class="dash"><code>uid</code> (integer): record UID for <code>update</code>, <code>translate</code>, or
+    <li class="dash"><code>uid</code> (integer): record UID for <code>update</code>, <code>translate</code>, <code>move</code>, or
 <code>delete</code></li>
     <li class="dash"><code>data</code> (object): field payload for <code>create</code>, <code>update</code>, or
 <code>translate</code></li>
-    <li class="dash"><code>position</code> (string): create position, one of <code>top</code>, <code>bottom</code>,
+    <li class="dash"><code>position</code> (string): create/move position, one of <code>top</code>, <code>bottom</code>,
 <code>after:UID</code>, or <code>before:UID</code></li>
+    <li class="dash"><code>translateChildren</code> (boolean, <code>translate</code> action): default <code>true</code>.
+When <code>false</code>, inline children are not auto-localized — useful if you
+plan to translate child records yourself in follow-up calls.</li>
+    <li class="dash"><code>hidden</code> (boolean, <code>translate</code> action): default <code>false</code>. By default
+translations are created visible; set <code>true</code> to keep them hidden for
+review.</li>
     <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
 </ul>
         </dd>
@@ -1918,12 +1940,21 @@ Pagination metadata includes <code>total</code>, <code>count</code>, <code>limit
 <ul>
     <li class="dash">writes always happen in workspace context</li>
     <li class="dash">language-aware tables accept ISO codes such as <code>de</code> for
-<code>sys_language_uid</code></li>
+<code>sys_language_uid</code> (resolved per-site — e.g. <code>hu</code> maps to the language
+UID that the owning site assigns to Hungarian, even when another site uses
+the same UID for a different language)</li>
     <li class="dash">file fields can receive <code>sys_file</code> UIDs or objects with UID and metadata,
 which creates <code>sys_file_reference</code> rows</li>
     <li class="dash">update payloads can use structured search-and-replace operations for text
 fields</li>
     <li class="dash">translation creates language overlays from default-language source records</li>
+    <li class="dash">the <code>translate</code> response includes <code>translationUid</code> (live UID),
+<code>targetLanguage</code> (ISO code from the owning site, not a first-wins guess),
+<code>siteIdentifier</code>, <code>slug</code> (if a slug field exists on the table), and
+<code>hidden</code> (reflecting the effective value on the new translation)</li>
+    <li class="dash">if the follow-up field update fails, the freshly created translation row is
+rolled back so callers are never left with an orphaned source-language
+record</li>
 </ul>
 
             <section class="section" id="positioning-semantics-for-action-create">
@@ -1974,6 +2005,13 @@ processing (<code>maxWidth</code>, <code>maxHeight</code>, <code>minWidth</code>
 sandbox file and <code>sys_file_reference</code>. <code>mode</code> is <code>append</code> (keep existing
 references) or <code>replace</code> (only new references). <code>reference</code> sets metadata
 (title, alternative, crop, …) on every new reference.</p>
+
+            
+    <p>In a non-live workspace, the tool resolves the <em>version</em> row primary key for the
+<code>uid</code> you pass (live id), including inline parents such as gallery <code>items</code>,
+and keeps <code>sys_file_reference</code> rows attached to that row after DataHandler
+processing. See <a href="#">Inline relations</a> (File references) for
+why this matters when images appear missing on staging or after publish.</p>
 
             <dl class="field-list simple ">
             <dt class="field-odd">Parameters</dt>
@@ -2481,8 +2519,12 @@ includes stdout, stderr, exit code, and execution time.</p>
             
 
 <ul>
-    <li class="dash"><code>table</code> (string): optional table filter — only publish changes for this
-table</li>
+    <li class="dash"><code>table</code> (string): optional single-table filter</li>
+    <li class="dash"><code>tables</code> (array): optional list of tables to publish (combined with
+<code>table</code> if both are set)</li>
+    <li class="dash"><code>onlyTranslations</code> (boolean): when <code>true</code>, only publish records whose
+<code>sys_language_uid</code> is greater than zero — useful to ship translations
+separately from source-language edits</li>
     <li class="dash"><code>dryRun</code> (boolean): if true (default), preview what would be published
 without executing. Set to false to actually publish.</li>
     <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
@@ -2525,7 +2567,8 @@ immediately.</p>
     <li class="dash"><code>table</code> (string, required): table name</li>
     <li class="dash"><code>uid</code> (integer): record UID (required for update and delete)</li>
     <li class="dash"><code>pid</code> (integer): page ID (required for create)</li>
-    <li class="dash"><code>data</code> (object): field values for create or update</li>
+    <li class="dash"><code>data</code> (object): flat field values for create or update (no inline
+children)</li>
 </ul>
 </li>
     <li class="dash"><code>workspace_id</code> (integer): optional workspace override</li>
@@ -2538,8 +2581,13 @@ DataHandler invocation. The result includes per-operation success/failure
 status and new UIDs for creates.</p>
 
             
-    <p>For complex single-record operations (positioning, translation,
-search-and-replace), use <code>WriteTable</code> instead.</p>
+    <p>BulkWrite explicitly <strong>does not</strong> support inline child records inside <code>data</code>
+(nested child arrays, <code>sys_file_reference</code> objects, nested containers).
+Passing such payloads returns a structured validation error pointing to
+<code>WriteTable</code>, which preprocesses inline relations correctly. Use BulkWrite
+for flat field updates (unhiding translations, bulk SEO edits, bulk delete);
+use <code>WriteTable</code> for anything that needs positioning, translation,
+search-and-replace, or nested children.</p>
 
     </section>
     </section>
@@ -2729,10 +2777,24 @@ ranges are rejected after DNS resolution.</p>
             
 
 <ul>
-    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>addLanguage</code>, or <code>replaceLanguages</code></li>
+    <li class="dash"><code>action</code> (string, required): <code>create</code>, <code>update</code>, <code>addLanguage</code>, or
+<code>replaceLanguages</code></li>
     <li class="dash"><code>identifier</code> (string, required): site identifier (alphanumeric + dash)</li>
     <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
     <li class="dash"><code>base</code> (string): base URL (required for create)</li>
+    <li class="dash"><code>dependencies</code> (array): Site Set names to attach, e.g.
+<code>[&quot;vendor/site-package&quot;]</code>. Without at least one Site Set (or a
+<code>sys_template</code> record), the frontend will throw &quot;No site configuration
+or TypoScript template record found&quot;. Supported on <code>create</code> and
+<code>update</code>.</li>
+    <li class="dash"><code>sets</code> (array): alias for <code>dependencies</code> (some templates expect this
+name). Merged with <code>dependencies</code>.</li>
+    <li class="dash"><code>settings</code> (object): top-level <code>settings</code> dictionary merged into the
+site config. Supported on <code>create</code> and <code>update</code>.</li>
+    <li class="dash"><code>config</code> (object, <code>update</code> only): arbitrary top-level keys to merge
+into the site YAML (<code>routeEnhancers</code>, <code>errorHandling</code>, ...).
+Structural keys (<code>rootPageId</code>, <code>base</code>, <code>languages</code>) are protected
+and cannot be changed via <code>update</code>.</li>
     <li class="dash"><code>defaultLanguage</code> (object): default language config (title, locale,
 iso-639-1, optional <code>navigationTitle</code> and <code>flag</code> override). Required
 for <code>replaceLanguages</code>.</li>
@@ -2747,12 +2809,46 @@ override</li>
     </dl>
             
     <p>Admin-only. Site configurations are YAML files, not workspace-versioned.
-Changes take effect immediately.
-If <code>flag</code> is omitted, CreateSite derives the TYPO3 flag identifier from the
-language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).
-<code>replaceLanguages</code> preserves unrelated site configuration keys like
+Changes take effect immediately.</p>
+
+            
+    <p>If <code>flag</code> is omitted, CreateSite derives the TYPO3 flag identifier from the
+language ISO code (for example <code>en</code> -&gt; <code>us</code>, <code>de</code> -&gt; <code>de</code>).</p>
+
+            
+    <p><code>update</code> merges arbitrary top-level keys into an existing site config while
+preserving everything else. Use it to attach a Site Set to a site that was
+created without one:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs json">{
+  <span class="hljs-attr">"action"</span>: <span class="hljs-string">"update"</span>,
+  <span class="hljs-attr">"identifier"</span>: <span class="hljs-string">"launch-2026"</span>,
+  <span class="hljs-attr">"dependencies"</span>: [<span class="hljs-string">"webconsulting/desiderio-preset-corporate"</span>],
+  <span class="hljs-attr">"settings"</span>: { <span class="hljs-attr">"theme"</span>: <span class="hljs-string">"dark"</span> }
+}</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p><code>replaceLanguages</code> preserves unrelated site configuration keys like
 <code>settings</code>, <code>routeEnhancers</code>, and <code>dependencies</code> while replacing only the
 <code>languages</code> section.</p>
+
+            
+    <p>If the resulting configuration has no rendering definition (neither a
+<code>dependencies</code> entry nor a <code>sys_template</code> record on the root page), the
+response includes a <code>warning</code> pointing to <code>action=update</code> with a Site Set.</p>
+
+            
+    <p><code>create</code>, <code>update</code>, <code>addLanguage</code>, and <code>replaceLanguages</code> all reset
+the internal ISO⇄UID mapping cache so subsequent translate calls see the new
+language layout without restarting the MCP session.</p>
 
     </section>
     </section>
@@ -3568,14 +3664,79 @@ fallback and translation behavior itself.</p>
 </ul>
 
     </section>
+            <section class="section" id="per-site-iso-uid-resolution">
+            <h2>Per-site ISO ⇄ UID resolution<a class="headerlink" href="#per-site-iso-uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Language UIDs are site-local: two sites in the same installation can legitimately
+assign the same UID to different languages (site A has <code>hu=1</code>, site B has
+<code>es=1</code>). The extension therefore keeps two layers of mapping in
+<code>LanguageService</code>:</p>
+
+            
+
+<ul>
+    <li class="dash">A global union (first-wins) used to build schema enums across all sites.</li>
+    <li class="dash">A per-site lookup (<code>getUidFromIsoCodeForPage</code>, <code>getIsoCodeFromUidForPage</code>,
+<code>getAvailableIsoCodesForPage</code>) used when a record, page, or translate
+request has site context.</li>
+</ul>
+
+            
+    <p>The write tools resolve <code>sys_language_uid</code> per-site whenever a pid or uid is
+known, and reverse-map UIDs back to ISO codes through the owning site when
+building translate responses. Without this split, multi-site installations saw
+<code>targetLanguage: &quot;zh&quot;</code> for a record that was actually translated to Hungarian.</p>
+
+            
+    <p>When a <code>CreateSite</code> call creates, updates, or changes the languages on a site,
+the language cache is reset so the next <code>tools/list</code> or write call sees the
+new layout without restarting the MCP session.</p>
+
+    </section>
+            <section class="section" id="translation-ergonomics-writetable-translate">
+            <h2>Translation ergonomics (WriteTable <code>translate</code>)<a class="headerlink" href="#translation-ergonomics-writetable-translate" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>DataHandler&#039;s <code>localize</code> command creates a translation shell record that
+mirrors source-language content with placeholder labels. The <code>translate</code>
+action layers several ergonomic defaults on top:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>Visible by default.</strong> Translations are created with <code>hidden=0</code> unless the
+caller explicitly passes <code>hidden: true</code>. TYPO3 core&#039;s localize command sets
+hidden=1 on every translation, which historically surprised MCP callers by
+producing empty-looking pages.</li>
+    <li class="dash"><strong>Follow-up update for translated values.</strong> Because localize copies source
+strings verbatim, the MCP tool runs a follow-up <code>update</code> with the values
+provided in <code>data</code> (including any <code>slug</code>). This yields a single-call
+translate-and-fill experience.</li>
+    <li class="dash"><strong>Rollback on partial failure.</strong> If the follow-up update fails, the
+freshly-created translation row is deleted so the caller never ends up with
+an orphan source-language record.</li>
+    <li class="dash"><strong>Opt-out of auto-localizing inline children.</strong> Passing
+<code>translateChildren: false</code> temporarily blanks inline child field references
+on the parent so DataHandler does not copy children. Useful when translating
+inline relations manually in follow-up calls — it avoids the &quot;already been
+localized&quot; error path.</li>
+    <li class="dash"><strong>Rich response.</strong> The tool returns <code>translationUid</code> (live UID),
+<code>targetLanguage</code> (site-aware ISO code), <code>siteIdentifier</code>, <code>slug</code> when
+the table has one, and <code>hidden</code> reflecting the effective value on the new
+row.</li>
+</ul>
+
+    </section>
             <section class="section" id="related-code">
             <h2>Related code<a class="headerlink" href="#related-code" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             
 
 <ul>
+    <li class="dash"><code>Classes/Service/LanguageService.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/GetPageTool.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/GetPageTreeTool.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/Record/AbstractRecordTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/Record/WriteTableTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/Record/CreateSiteTool.php</code></li>
 </ul>
 
     </section>
@@ -3659,6 +3820,25 @@ tool. When a file field (TCA type <code>file</code>) receives an array of
 <code>sys_file_reference</code> records and wires them to the parent record through
 <code>DataHandler</code>. File references are workspace-versioned like other records.</p>
 
+                
+<div class="admonition note" role="alert">
+    <p class="admonition-title">Note</p>
+        
+    <p><strong>Workspace version rows and ``AttachImage``</strong>. In a draft workspace, a live
+parent record (for example <code>tt_content</code> or an inline child such as
+<code>items</code>) is often represented by a separate <em>version</em> row
+(<code>t3ver_oid</code> = live uid, own <code>uid</code> in the current workspace). The MCP
+server resolves the <em>data-handler</em> target uid (<code>findWorkspaceVersionRowUid()</code>
+plus overlay checks in <code>WriteTable</code> / <code>AttachImage</code>). The file attachment
+service then ensures <code>sys_file_reference.uid_foreign</code> matches that version
+row: TYPO3&#039;s <code>DataHandler</code> may first normalize new references to the live
+<code>uid</code>; a follow-up direct update (after the parent field is written) keeps
+<code>uid_foreign</code> aligned with the version row so FAL and the frontend can
+resolve images on the row that actually stores the file field. Without that
+step, file fields (including gallery slides on child records) can look empty
+in the backend and on the site even though tools report success.</p>
+
+</div>
     </section>
             <section class="section" id="automatic-workspace-handling">
             <h2>Automatic workspace handling<a class="headerlink" href="#automatic-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -4274,7 +4454,7 @@ is designed to cover.</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
+                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

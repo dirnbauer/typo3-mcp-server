@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
-<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
-<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
+<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
+<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
+<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -244,14 +244,79 @@ fallback and translation behavior itself.</p>
 </ul>
 
     </section>
+            <section class="section" id="per-site-iso-uid-resolution">
+            <h2>Per-site ISO ⇄ UID resolution<a class="headerlink" href="#per-site-iso-uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Language UIDs are site-local: two sites in the same installation can legitimately
+assign the same UID to different languages (site A has <code>hu=1</code>, site B has
+<code>es=1</code>). The extension therefore keeps two layers of mapping in
+<code>LanguageService</code>:</p>
+
+            
+
+<ul>
+    <li class="dash">A global union (first-wins) used to build schema enums across all sites.</li>
+    <li class="dash">A per-site lookup (<code>getUidFromIsoCodeForPage</code>, <code>getIsoCodeFromUidForPage</code>,
+<code>getAvailableIsoCodesForPage</code>) used when a record, page, or translate
+request has site context.</li>
+</ul>
+
+            
+    <p>The write tools resolve <code>sys_language_uid</code> per-site whenever a pid or uid is
+known, and reverse-map UIDs back to ISO codes through the owning site when
+building translate responses. Without this split, multi-site installations saw
+<code>targetLanguage: &quot;zh&quot;</code> for a record that was actually translated to Hungarian.</p>
+
+            
+    <p>When a <code>CreateSite</code> call creates, updates, or changes the languages on a site,
+the language cache is reset so the next <code>tools/list</code> or write call sees the
+new layout without restarting the MCP session.</p>
+
+    </section>
+            <section class="section" id="translation-ergonomics-writetable-translate">
+            <h2>Translation ergonomics (WriteTable <code>translate</code>)<a class="headerlink" href="#translation-ergonomics-writetable-translate" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>DataHandler&#039;s <code>localize</code> command creates a translation shell record that
+mirrors source-language content with placeholder labels. The <code>translate</code>
+action layers several ergonomic defaults on top:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>Visible by default.</strong> Translations are created with <code>hidden=0</code> unless the
+caller explicitly passes <code>hidden: true</code>. TYPO3 core&#039;s localize command sets
+hidden=1 on every translation, which historically surprised MCP callers by
+producing empty-looking pages.</li>
+    <li class="dash"><strong>Follow-up update for translated values.</strong> Because localize copies source
+strings verbatim, the MCP tool runs a follow-up <code>update</code> with the values
+provided in <code>data</code> (including any <code>slug</code>). This yields a single-call
+translate-and-fill experience.</li>
+    <li class="dash"><strong>Rollback on partial failure.</strong> If the follow-up update fails, the
+freshly-created translation row is deleted so the caller never ends up with
+an orphan source-language record.</li>
+    <li class="dash"><strong>Opt-out of auto-localizing inline children.</strong> Passing
+<code>translateChildren: false</code> temporarily blanks inline child field references
+on the parent so DataHandler does not copy children. Useful when translating
+inline relations manually in follow-up calls — it avoids the &quot;already been
+localized&quot; error path.</li>
+    <li class="dash"><strong>Rich response.</strong> The tool returns <code>translationUid</code> (live UID),
+<code>targetLanguage</code> (site-aware ISO code), <code>siteIdentifier</code>, <code>slug</code> when
+the table has one, and <code>hidden</code> reflecting the effective value on the new
+row.</li>
+</ul>
+
+    </section>
             <section class="section" id="related-code">
             <h2>Related code<a class="headerlink" href="#related-code" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             
 
 <ul>
+    <li class="dash"><code>Classes/Service/LanguageService.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/GetPageTool.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/GetPageTreeTool.php</code></li>
     <li class="dash"><code>Classes/MCP/Tool/Record/AbstractRecordTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/Record/WriteTableTool.php</code></li>
+    <li class="dash"><code>Classes/MCP/Tool/Record/CreateSiteTool.php</code></li>
 </ul>
 
     </section>
@@ -371,7 +436,7 @@ an entire custom overlay system.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
+                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

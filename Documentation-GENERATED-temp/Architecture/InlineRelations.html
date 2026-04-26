@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-18T19:18:23+00:00" name="docsearch:modified">
-<meta content="2026-04-18T19:18:23+00:00" name="dc.modified">
-<meta content="2026-04-18T19:18:23+00:00" property="article:modified_time">
+<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
+<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
+<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -235,6 +235,25 @@ tool. When a file field (TCA type <code>file</code>) receives an array of
 <code>sys_file_reference</code> records and wires them to the parent record through
 <code>DataHandler</code>. File references are workspace-versioned like other records.</p>
 
+                
+<div class="admonition note" role="alert">
+    <p class="admonition-title">Note</p>
+        
+    <p><strong>Workspace version rows and ``AttachImage``</strong>. In a draft workspace, a live
+parent record (for example <code>tt_content</code> or an inline child such as
+<code>items</code>) is often represented by a separate <em>version</em> row
+(<code>t3ver_oid</code> = live uid, own <code>uid</code> in the current workspace). The MCP
+server resolves the <em>data-handler</em> target uid (<code>findWorkspaceVersionRowUid()</code>
+plus overlay checks in <code>WriteTable</code> / <code>AttachImage</code>). The file attachment
+service then ensures <code>sys_file_reference.uid_foreign</code> matches that version
+row: TYPO3&#039;s <code>DataHandler</code> may first normalize new references to the live
+<code>uid</code>; a follow-up direct update (after the parent field is written) keeps
+<code>uid_foreign</code> aligned with the version row so FAL and the frontend can
+resolve images on the row that actually stores the file field. Without that
+step, file fields (including gallery slides on child records) can look empty
+in the backend and on the site even though tools report success.</p>
+
+</div>
     </section>
             <section class="section" id="automatic-workspace-handling">
             <h2>Automatic workspace handling<a class="headerlink" href="#automatic-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -385,7 +404,7 @@ embedded</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 18, 2026 19:18</p>
+                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

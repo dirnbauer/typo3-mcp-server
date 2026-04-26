@@ -394,6 +394,18 @@
             "Architecture\/WorkspaceTransparency.html#benefits",
             "Benefits"
         ],
+        "per-site-iso-uid-resolution": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#per-site-iso-uid-resolution",
+            "Per-site ISO \u21c4 UID resolution"
+        ],
+        "translation-ergonomics-writetable-translate": [
+            "-",
+            "-",
+            "Architecture\/LanguageOverlays.html#translation-ergonomics-writetable-translate",
+            "Translation ergonomics (WriteTable translate)"
+        ],
         "related-code": [
             "-",
             "-",
