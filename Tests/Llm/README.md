@@ -15,14 +15,14 @@ without hidden hints:
 3. models explore responsibly before writing
 4. workspace-first TYPO3 behavior remains usable in multi-step flows
 5. schema or error-message regressions are caught as user-behavior problems,
-   not only as low-level PHP failures
+  not only as low-level PHP failures
 
 They complement, but do not replace:
 
 - unit tests for focused PHP logic
 - functional TYPO3 integration tests
 - targeted security tests such as `McpEndpointSecurityTest`,
-  `UploadFileFromUrlToolTest`, and `McpHttpLogRedactorTest`
+`UploadFileFromUrlToolTest`, and `McpHttpLogRedactorTest`
 
 ## Current suite
 
@@ -41,46 +41,36 @@ The common harness lives in `LlmTestCase.php`.
 ### Prerequisites
 
 1. Use PHP 8.2+ for this repository:
-
-   ```bash
+  ```bash
    composer test:llm
-   ```
-
+  ```
 2. Set `OPENROUTER_API_KEY` so `LlmTestCase` can initialize `OpenRouterClient`:
-
-   ```bash
+  ```bash
    export OPENROUTER_API_KEY="sk-or-v1-..."
-   ```
-
+  ```
    or in `.env.local`:
-
-   ```bash
-   OPENROUTER_API_KEY="sk-or-v1-..."
-   ```
-
 3. Run the full LLM suite:
-
-   ```bash
+  ```bash
    composer test:llm
-   ```
-
+  ```
 4. Run a targeted test while iterating:
-
-   ```bash
+  ```bash
    composer test:llm -- --filter testLlmFixesHeaderSpellingErrors
-   ```
+  ```
 
 ## Supported models
 
 `LlmTestCase::MODELS` currently exposes these OpenRouter model keys:
 
-| Key | OpenRouter model ID |
-| --- | --- |
-| `haiku` | `anthropic/claude-3-5-haiku` |
-| `gpt-5.2` | `openai/gpt-5.2` |
-| `gpt-oss` | `openai/gpt-oss-120b` |
-| `kimi-k2` | `moonshotai/kimi-k2` |
+
+| Key              | OpenRouter model ID          |
+| ---------------- | ---------------------------- |
+| `haiku`          | `anthropic/claude-3-5-haiku` |
+| `gpt-5.2`        | `openai/gpt-5.2`             |
+| `gpt-oss`        | `openai/gpt-oss-120b`        |
+| `kimi-k2`        | `moonshotai/kimi-k2`         |
 | `mistral-medium` | `mistralai/mistral-medium-3` |
+
 
 Tests that use `#[DataProvider('modelProvider')]` run once per configured model.
 
@@ -101,7 +91,7 @@ over time.
 These tests make real API calls and can incur noticeable cost.
 
 - each test can involve multiple round-trips because the model explores,
-  calls tools, reads results, and then acts
+calls tools, reads results, and then acts
 - multi-model tests multiply the total cost
 - the suite is intentionally excluded from the default `composer test` run
 - use `--filter` while developing to keep iteration cheap
@@ -153,7 +143,7 @@ When you write or update LLM tests:
 - fail on MCP tool errors unless the scenario is explicitly negative
 - keep assertions tolerant where multiple valid strategies exist
 - prefer checking tool choice, key arguments, and successful outcome over exact
-  final prose from the model
+final prose from the model
 
 For successful MCP calls in PHP-side integration tests, the project convention is:
 
@@ -167,7 +157,7 @@ $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
 - use `getToolCallsDebugString()` when a model took an unexpected path
 - verify fixtures and loaded extensions in `setUp()`
 - remember that the TYPO3 v14 tool surface may evolve; update assertions when
-  the contract improves rather than forcing old behavior
+the contract improves rather than forcing old behavior
 
 ## Future evolution
 
