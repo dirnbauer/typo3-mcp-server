@@ -298,6 +298,49 @@ HTML;
         }
     }
 
+    public function testExecuteModePreservesCreatedElementOrder(): void
+    {
+        $content = <<<'MD'
+# Ordered Import
+
+## Act I
+
+First imported section.
+
+## Act II
+
+Second imported section.
+
+## Act III
+
+Third imported section.
+MD;
+
+        $result = $this->tool->execute([
+            'content' => $content,
+            'targetPid' => 1,
+            'mode' => 'execute',
+            'format' => 'markdown',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+        self::assertGreaterThan(2, $data['totalCreated']);
+
+        $createdUids = array_map(
+            static fn(array $created): int => (int)$created['uid'],
+            $data['created'],
+        );
+        $orderedUids = $this->fetchCreatedContentUidsInBackendOrder($createdUids);
+
+        self::assertSame(
+            $createdUids,
+            $orderedUids,
+            'Backend sorting must match the element order returned by ImportContent.',
+        );
+    }
+
     public function testAnalyzeModeDoesNotCreateRecords(): void
     {
         $result = $this->tool->execute([
@@ -325,5 +368,26 @@ HTML;
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
         self::assertEquals('analyze', $data['mode']);
+    }
+
+    /**
+     * @param list<int> $uids
+     * @return list<int>
+     */
+    private function fetchCreatedContentUidsInBackendOrder(array $uids): array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $rows = $queryBuilder
+            ->select('uid')
+            ->from('tt_content')
+            ->where($queryBuilder->expr()->in('uid', $uids))
+            ->orderBy('sorting', 'ASC')
+            ->addOrderBy('uid', 'ASC')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        return array_map(static fn(array $row): int => (int)$row['uid'], $rows);
     }
 }

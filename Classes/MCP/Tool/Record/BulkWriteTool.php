@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\BatchedRecordPositioningService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -25,6 +26,7 @@ final class BulkWriteTool extends AbstractRecordTool
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
+        private readonly BatchedRecordPositioningService $batchedRecordPositioningService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -41,7 +43,8 @@ final class BulkWriteTool extends AbstractRecordTool
                 . 'LIMITATION: BulkWrite does NOT support inline child records in "data" (no nested arrays of child records, no sys_file_reference objects). '
                 . 'For any operation that needs inline children (image/assets on tt_content, nested container elements, etc.), use WriteTable. '
                 . 'Other limitations: no positioning, no translate action, no search-and-replace — use WriteTable for those. ' .
-                'BulkWrite is best for flat field updates and bulk create/delete.',
+                'BulkWrite is best for flat field updates and bulk create/delete. '
+                . 'Multiple sortable create operations for the same pid are appended in operation order.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -148,6 +151,8 @@ final class BulkWriteTool extends AbstractRecordTool
                     break;
             }
         }
+
+        $dataMap = $this->batchedRecordPositioningService->assignAppendPositions($dataMap);
 
         // Execute
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);

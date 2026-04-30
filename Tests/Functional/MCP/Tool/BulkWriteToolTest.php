@@ -50,6 +50,47 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
         }
     }
 
+    public function testCreateMultipleContentElementsPreservesOperationOrder(): void
+    {
+        $expectedHeaders = [
+            'Bulk ordered first',
+            'Bulk ordered second',
+            'Bulk ordered third',
+        ];
+
+        $operations = [];
+        foreach ($expectedHeaders as $header) {
+            $operations[] = [
+                'action' => 'create',
+                'table' => 'tt_content',
+                'pid' => 1,
+                'data' => [
+                    'header' => $header,
+                    'CType' => 'text',
+                    'colPos' => 0,
+                ],
+            ];
+        }
+
+        $result = $this->tool->execute(['operations' => $operations]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($data);
+
+        $createdUids = [];
+        foreach ($data['results'] as $opResult) {
+            self::assertTrue($opResult['success']);
+            self::assertArrayHasKey('newUid', $opResult);
+            $createdUids[] = (int)$opResult['newUid'];
+        }
+
+        $rows = $this->fetchCreatedContentRowsInBackendOrder($createdUids);
+
+        self::assertSame($expectedHeaders, array_column($rows, 'header'));
+        self::assertSame($createdUids, array_map(static fn(array $row): int => (int)$row['uid'], $rows));
+    }
+
     public function testMixedOperations(): void
     {
         $wsId = $this->createAndSwitchToWorkspace('Bulk Mixed Test');
@@ -198,5 +239,24 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
         $deleteData = json_decode($this->getFirstTextContent($deleteResult), true);
         self::assertIsArray($deleteData);
         self::assertEquals(1, $deleteData['successCount']);
+    }
+
+    /**
+     * @param list<int> $uids
+     * @return list<array<string, mixed>>
+     */
+    private function fetchCreatedContentRowsInBackendOrder(array $uids): array
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()->removeAll();
+
+        return $queryBuilder
+            ->select('uid', 'header', 'sorting')
+            ->from('tt_content')
+            ->where($queryBuilder->expr()->in('uid', $uids))
+            ->orderBy('sorting', 'ASC')
+            ->addOrderBy('uid', 'ASC')
+            ->executeQuery()
+            ->fetchAllAssociative();
     }
 }

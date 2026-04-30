@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\BatchedRecordPositioningService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -51,6 +52,7 @@ final class ImportContentTool extends AbstractRecordTool
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
+        private readonly BatchedRecordPositioningService $batchedRecordPositioningService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -229,6 +231,8 @@ final class ImportContentTool extends AbstractRecordTool
 
             $dataMap['tt_content'][$newId] = $record;
         }
+
+        $dataMap = $this->batchedRecordPositioningService->assignAppendPositions($dataMap);
 
         // Execute
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
