@@ -1,7 +1,7 @@
 "sys_file_metadata"
-,"uid","pid","file","title","description","alternative","width","height","crdate","tstamp"
-,1,0,1,"Team Photo","Our amazing team","Team members at company retreat",1920,1080,1700000000,1700000000
-,2,0,2,"Company Logo","Official company logo","Company logo on white background",500,500,1700100000,1700100000
-,3,0,3,"Annual Report 2024","Annual financial report","",0,0,1700200000,1700200000
-,4,0,4,"Product Demo","Product demonstration video","Demo of main product features",1280,720,1700300000,1700300000
-,5,0,5,"Icon Set","UI icon collection","",64,64,1700400000,1700400000
+,"uid","pid","tstamp","crdate","sys_language_uid","l10n_parent","l10n_diffsource","title","alternative","description","categories","file","width","height"
+,1,0,1700000000,1700000000,0,0,,"Team Photo","Alt text for test","Description text",0,1,1868,1261
+,2,0,1700100000,1700100000,0,0,,"Company Logo","Company logo on white background","Official company logo",0,2,500,500
+,3,0,1700200000,1700200000,0,0,,"Annual Report 2024","","Annual financial report",0,3,0,0
+,4,0,1700300000,1700300000,0,0,,"Product Demo","Demo of main product features","Product demonstration video",0,4,1280,720
+,5,0,1700400000,1700400000,0,0,,"Icon Set","","UI icon collection",0,5,64,64

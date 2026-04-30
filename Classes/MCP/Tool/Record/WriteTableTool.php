@@ -105,7 +105,7 @@ final class WriteTableTool extends AbstractRecordTool
                         'type' => 'object',
                         'description' => 'Record data as field-value pairs. ' .
                             'INLINE RELATIONS: For embedded tables, pass record data arrays to create new children or {"uid": N} to reference existing ones (optionally with fields to update). ' .
-                            'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. ' .
+                            'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. Array order drives display order. ' .
                             'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. ' .
                             'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. ' .
                             'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. ' .
@@ -526,7 +526,7 @@ final class WriteTableTool extends AbstractRecordTool
             'pid' => $actualPid,
         ];
         if ($record !== null) {
-            $sortingField = $GLOBALS['TCA'][$table]['ctrl']['sortby'] ?? null;
+            $sortingField = $this->getTableCtrlArray($table)['sortby'] ?? null;
             if (is_string($sortingField) && isset($record[$sortingField])) {
                 $result['sorting'] = (int)$record[$sortingField];
             }
@@ -1018,12 +1018,29 @@ final class WriteTableTool extends AbstractRecordTool
      */
     private function getTableCtrlArray(string $table): array
     {
+        $tableTca = $this->getTableTcaArray($table);
+        $ctrl = $tableTca['ctrl'] ?? null;
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableTcaArray(string $table): array
+    {
         $tca = $GLOBALS['TCA'] ?? null;
         if (!is_array($tca) || !isset($tca[$table]) || !is_array($tca[$table])) {
             return [];
         }
-        $ctrl = $tca[$table]['ctrl'] ?? null;
-        return is_array($ctrl) ? $ctrl : [];
+        $tableTca = [];
+        foreach ($tca[$table] as $key => $value) {
+            if (is_string($key)) {
+                $tableTca[$key] = $value;
+            }
+        }
+        return $tableTca;
     }
 
     /**
@@ -1229,7 +1246,9 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             // Validate inline and file field types (file fields are inline to sys_file_reference)
-            if (in_array($fieldConfig['config']['type'], ['inline', 'file'], true)) {
+            $fieldConfigSettings = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $fieldType = $fieldConfigSettings['type'] ?? '';
+            if (in_array($fieldType, ['inline', 'file'], true)) {
                 // Validate inline relation data
                 $validationError = $this->validateInlineRelationData($fieldConfig, $value);
                 if ($validationError !== null) {
@@ -1328,7 +1347,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         foreach ($data as $fieldName => $value) {
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            $fieldType = $fieldConfig['config']['type'] ?? '';
+            $fieldType = is_array($fieldConfig) ? ($fieldConfig['config']['type'] ?? '') : '';
             // Handle both inline and file fields (file is inline to sys_file_reference)
             if ($fieldConfig && in_array($fieldType, ['inline', 'file'], true)) {
                 $config = $fieldConfig['config'];
@@ -1384,6 +1403,9 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             $isFileReference = ($foreignTable === 'sys_file_reference');
+            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
+            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
+            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
 
             // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
             $childIdentifiers = [];
@@ -1392,6 +1414,18 @@ final class WriteTableTool extends AbstractRecordTool
             $allowedFileRefMetaFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
 
             foreach ($value as $index => $item) {
+                if (is_string($parentId) && $isEmbeddedTable && is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
+                    throw new ValidationException([
+                        sprintf(
+                            'Inline relation %s.%s at index %d references uid %d which does not belong to the current parent record. Embedded relations cannot be moved between parents.',
+                            $foreignTable,
+                            $foreignField,
+                            $index,
+                            (int)$item['uid']
+                        ),
+                    ]);
+                }
+
                 if ($isFileReference) {
                     // File field accepts:
                     //  1) plain sys_file UID (shorthand): 5
@@ -1399,13 +1433,17 @@ final class WriteTableTool extends AbstractRecordTool
                     //  3) reference to existing sys_file_reference UID with optional updates: {"uid": 12, "title": "..."}
                     if (is_numeric($item) && (int)$item > 0) {
                         $childNewId = 'NEW' . bin2hex(random_bytes(8));
-                        $dataMap[$foreignTable][$childNewId] = [
+                        $refData = [
                             'uid_local' => (int)$item,
                             'pid' => $pid,
                             'tablenames' => $parentTable,
                             'fieldname' => $fieldName,
                             'table_local' => 'sys_file',
                         ];
+                        if (isset($config['foreign_sortby'])) {
+                            $refData[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $dataMap[$foreignTable][$childNewId] = $refData;
                         $childIdentifiers[] = $childNewId;
                         continue;
                     }
@@ -1424,10 +1462,19 @@ final class WriteTableTool extends AbstractRecordTool
                                 continue;
                             }
                             $metaValue = $item[$metaField];
+                            $metaFieldConfig = $this->tableAccessService->getFieldConfig($foreignTable, $metaField);
+                            if (($metaFieldConfig['config']['type'] ?? '') === 'imageManipulation' && is_array($metaValue)) {
+                                $refData[$metaField] = $metaValue;
+                                continue;
+                            }
                             if (is_string($metaValue) || is_numeric($metaValue) || is_bool($metaValue) || $metaValue === null) {
                                 $refData[$metaField] = is_bool($metaValue) ? (int)$metaValue : $metaValue;
                             }
                         }
+                        if (isset($config['foreign_sortby'])) {
+                            $refData[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $refData = $this->convertDataForStorage($foreignTable, $refData);
                         $dataMap[$foreignTable][$childNewId] = $refData;
                         $childIdentifiers[] = $childNewId;
                         continue;
@@ -1436,6 +1483,10 @@ final class WriteTableTool extends AbstractRecordTool
                     if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
                         $existingUid = (int)$item['uid'];
                         unset($item['uid'], $item[$foreignField]);
+                        if (isset($config['foreign_sortby'])) {
+                            $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $item = $this->convertDataForStorage($foreignTable, $item);
                         if (!empty($item)) {
                             $dataMap[$foreignTable][$existingUid] = $item;
                         }
@@ -1450,6 +1501,10 @@ final class WriteTableTool extends AbstractRecordTool
                     // Existing record reference via {"uid": N, ...} — keep or update
                     $existingUid = (int)$item['uid'];
                     unset($item['uid'], $item[$foreignField]);
+                    if (isset($config['foreign_sortby'])) {
+                        $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                    }
+                    $item = $this->convertDataForStorage($foreignTable, $item);
 
                     // If additional fields provided, add as update to dataMap
                     if (!empty($item)) {
@@ -1464,6 +1519,10 @@ final class WriteTableTool extends AbstractRecordTool
                     // Remove foreign field — DataHandler sets it via inline parent context
                     unset($item[$foreignField]);
                     $item['pid'] = $pid;
+                    if (isset($config['foreign_sortby'])) {
+                        $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                    }
+                    $item = $this->convertDataForStorage($foreignTable, $item);
 
                     $dataMap[$foreignTable][$childNewId] = $item;
                     $childIdentifiers[] = $childNewId;
@@ -1506,6 +1565,7 @@ final class WriteTableTool extends AbstractRecordTool
     ): void {
         foreach ($inlineRelations as $fieldName => $relationData) {
             $config = $relationData['config'];
+            $value = is_array($relationData['value'] ?? null) ? $relationData['value'] : [];
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
 
@@ -1513,28 +1573,24 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            // Determine which existing UIDs are in the new list
             $newChildUids = [];
-            // Read the parent's inline field CSV from the dataMap
             foreach ($dataMap[$parentTable] as $parentData) {
-                if (isset($parentData[$fieldName])) {
-                    $csv = (string)$parentData[$fieldName];
-                    if ($csv !== '') {
-                        foreach (explode(',', $csv) as $identifier) {
-                            // Only collect numeric UIDs (skip NEW keys — those are new records)
-                            if (is_numeric($identifier)) {
-                                $newChildUids[] = (int)$identifier;
-                            }
-                        }
+                if (!isset($parentData[$fieldName])) {
+                    continue;
+                }
+                $csv = (string)$parentData[$fieldName];
+                if ($csv === '') {
+                    continue;
+                }
+                foreach (explode(',', $csv) as $identifier) {
+                    if (is_numeric($identifier)) {
+                        $newChildUids[] = (int)$identifier;
                     }
                 }
             }
+            $newChildUids = array_values(array_unique($newChildUids));
 
-            // Query existing children from database.
-            // Use DeletedRestriction only (not WorkspaceRestriction) so we get
-            // live records with their live UIDs. This avoids the mismatch where
-            // WorkspaceRestriction returns workspace overlay UIDs that don't match
-            // the live UIDs in $newChildUids.
+            $foreignMatchFields = $config['foreign_match_fields'] ?? [];
             $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($foreignTable);
             $queryBuilder->getRestrictions()
@@ -1551,13 +1607,53 @@ final class WriteTableTool extends AbstractRecordTool
                     ),
                     // Only live records (not workspace overlays which have t3ver_oid > 0)
                     $queryBuilder->expr()->eq('t3ver_oid', 0)
-                )
-                ->executeQuery()
-                ->fetchAllAssociative();
+                );
 
-            // Find children that should be removed (exist in DB but not in new list)
-            $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-            $isEmbeddedTable = !empty($foreignTableTCA['ctrl']['hideTable']);
+            foreach ($foreignMatchFields as $matchField => $matchValue) {
+                if (!is_string($matchField) || $matchField === '') {
+                    continue;
+                }
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq(
+                        $matchField,
+                        $queryBuilder->createNamedParameter($matchValue)
+                    )
+                );
+            }
+
+            $existingChildren = $queryBuilder->executeQuery()->fetchAllAssociative();
+
+            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
+            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
+            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
+            $existingChildUids = [];
+
+            foreach ($existingChildren as $existingChild) {
+                $childUid = $existingChild['uid'] ?? null;
+                if (is_numeric($childUid)) {
+                    $existingChildUids[] = (int)$childUid;
+                }
+            }
+
+            if ($isEmbeddedTable) {
+                foreach ($value as $index => $item) {
+                    if (!is_array($item) || !isset($item['uid']) || !is_numeric($item['uid']) || (int)$item['uid'] <= 0) {
+                        continue;
+                    }
+                    $childUid = (int)$item['uid'];
+                    if (!in_array($childUid, $existingChildUids, true)) {
+                        throw new ValidationException([
+                            sprintf(
+                                'Inline relation %s.%s at index %d references uid %d which does not belong to the current parent record. Embedded relations cannot be moved between parents.',
+                                $foreignTable,
+                                $foreignField,
+                                $index,
+                                $childUid
+                            ),
+                        ]);
+                    }
+                }
+            }
 
             foreach ($existingChildren as $existingChild) {
                 $childUid = $existingChild['uid'] ?? null;
@@ -1601,17 +1697,20 @@ final class WriteTableTool extends AbstractRecordTool
         // Validate each item - accept both record data arrays and UIDs
         foreach ($value as $index => $item) {
             if ($isFileReference) {
-                // File references accept either plain UIDs (shorthand) or record data arrays
+                // File references accept plain sys_file UIDs, new reference data,
+                // or an existing sys_file_reference UID to patch/keep.
                 if (is_numeric($item) && (int)$item > 0) {
                     continue;
                 }
                 if (is_array($item)) {
-                    if (empty($item['uid_local']) || !is_numeric($item['uid_local'])) {
-                        return 'File reference at index ' . $index . ' must contain uid_local (sys_file UID)';
+                    $hasExistingReferenceUid = isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0;
+                    $hasFileUid = isset($item['uid_local']) && is_numeric($item['uid_local']) && (int)$item['uid_local'] > 0;
+                    if (!$hasExistingReferenceUid && !$hasFileUid) {
+                        return 'File reference at index ' . $index . ' must contain uid_local (sys_file UID) or uid (existing sys_file_reference UID)';
                     }
                     continue;
                 }
-                return 'File reference at index ' . $index . ' must be a sys_file UID or an object with uid_local';
+                return 'File reference at index ' . $index . ' must be a sys_file UID or an object with uid_local/uid';
             }
             if (is_array($item)) {
                 // Record data arrays for embedded inline relations
@@ -1821,8 +1920,20 @@ final class WriteTableTool extends AbstractRecordTool
             // with trailing slashes or missing leading slashes, so we normalize here.
             // The root page slug "/" is handled correctly: trim('/', '/') = '' → '/' + '' = '/'.
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'slug' && is_string($value)) {
+            $fieldConfigSettings = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
+            if (($fieldConfigSettings['type'] ?? '') === 'slug' && is_string($value)) {
                 $data[$fieldName] = '/' . trim($value, '/');
+            }
+
+            // imageManipulation (e.g. sys_file_reference.crop) is stored as a JSON
+            // string. DataHandler treats the type as passthrough, so an array value
+            // gets cast to the literal string "Array" on the way to the DB. Encode
+            // here so the round trip with ReadTableTool (which json_decodes the value
+            // back into an array) is symmetric.
+            $fieldType = $fieldConfigSettings['type'] ?? '';
+            if ($fieldType === 'imageManipulation' && is_array($value)) {
+                $data[$fieldName] = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                continue;
             }
 
             // Handle FlexForm fields

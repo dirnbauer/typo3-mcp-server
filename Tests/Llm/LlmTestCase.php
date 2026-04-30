@@ -32,14 +32,14 @@ abstract class LlmTestCase extends FunctionalTestCase
      */
     protected const MODELS = [
         'haiku-4.5' => 'anthropic/claude-haiku-4.5',
-        'gpt-5.4' => 'openai/gpt-5.4',
+        'gpt-5.4-mini' => 'openai/gpt-5.4-mini',
         'gpt-oss-120b' => 'openai/gpt-oss-120b',
         'mistral-large-2512' => 'mistralai/mistral-large-2512',
         'gemini-3-flash' => 'google/gemini-3-flash-preview',
     ];
 
     protected const MODEL_OPTIONS = [
-        'gpt-5.4' => ['reasoning' => ['effort' => 'high']],
+        'gpt-5.4-mini' => ['reasoning' => ['effort' => 'high']],
     ];
 
     protected array $coreExtensionsToLoad = [
@@ -62,9 +62,18 @@ abstract class LlmTestCase extends FunctionalTestCase
     /** @var string The provider being used */
     protected string $llmProvider = '';
 
+    /** Counters tracked per test attempt and written to .Build/llm-stats. */
+    protected int $llmCallCount = 0;
+    protected int $toolCallCount = 0;
+    protected int $toolErrorCount = 0;
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->llmCallCount = 0;
+        $this->toolCallCount = 0;
+        $this->toolErrorCount = 0;
 
         $this->initializeLlmClient();
 
@@ -76,6 +85,30 @@ abstract class LlmTestCase extends FunctionalTestCase
 
         // Initialize language service
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('en');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->writeTestStats();
+        parent::tearDown();
+    }
+
+    private function writeTestStats(): void
+    {
+        $dir = __DIR__ . '/../../.Build/llm-stats';
+        if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
+            return;
+        }
+        $model = $this->dataName() !== null ? (string)$this->dataName() : '';
+        $key = sha1(static::class . '::' . $this->name() . '::' . $model);
+        file_put_contents($dir . '/' . $key . '.json', json_encode([
+            'class' => static::class,
+            'test' => $this->name(),
+            'model' => $model,
+            'llm_calls' => $this->llmCallCount,
+            'tool_calls' => $this->toolCallCount,
+            'tool_errors' => $this->toolErrorCount,
+        ]));
     }
 
     /**
@@ -197,6 +230,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $defaults['model'] = $this->llmModel;
         }
 
+        $this->llmCallCount++;
         $this->lastResponse = $this->llmClient->complete(
             $prompt,
             $tools,
@@ -403,10 +437,12 @@ abstract class LlmTestCase extends FunctionalTestCase
      */
     protected function executeToolCall(array $toolCall): array
     {
+        $this->toolCallCount++;
         $toolRegistry = GeneralUtility::makeInstance(ToolRegistry::class);
         $tool = $toolRegistry->getTool($toolCall['name']);
 
         if (!$tool) {
+            $this->toolErrorCount++;
             return [
                 'error' => "Tool '{$toolCall['name']}' not found",
                 'content' => 'Error: Tool not found',
@@ -426,16 +462,21 @@ abstract class LlmTestCase extends FunctionalTestCase
                 }
             }
 
-            // Check if content indicates an error even if isError is false
-            $hasErrorContent = str_starts_with($content, 'Error:')
-                              || str_contains((string)$content, 'authentication')
-                              || str_contains((string)$content, 'not properly initialized');
+            $hasErrorContent = str_starts_with($content, 'Error:') ||
+                              str_contains($content, 'authentication') ||
+                              str_contains($content, 'not properly initialized');
+
+            $isError = $result->isError || $hasErrorContent;
+            if ($isError) {
+                $this->toolErrorCount++;
+            }
 
             return [
                 'content' => $content,
-                'isError' => $result->isError || $hasErrorContent,
+                'isError' => $isError,
             ];
         } catch (\Exception $e) {
+            $this->toolErrorCount++;
             return [
                 'error' => $e->getMessage(),
                 'content' => 'Error: ' . $e->getMessage(),
@@ -471,6 +512,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $defaults['model'] = $this->llmModel;
         }
 
+        $this->llmCallCount++;
         $this->lastResponse = $this->llmClient->completeWithHistory(
             $this->lastPrompt,
             $previousResponse,
@@ -536,8 +578,28 @@ abstract class LlmTestCase extends FunctionalTestCase
                 $this->toolCallHistory[] = $toolCall['name'];
             }
 
-            // Check if target tool is found
-            if ($currentResponse->getToolCallsByName($targetToolName)) {
+            $targetCalls = $currentResponse->getToolCallsByName($targetToolName);
+            if ($targetCalls) {
+                // Validate that WriteTable calls include record data.
+                // Some models (e.g. GPT) omit the data parameter; execute all
+                // tools so the LLM gets the validation error and can retry.
+                if ($targetToolName === 'WriteTable') {
+                    $args = $targetCalls[0]['arguments'] ?? [];
+                    $action = $args['action'] ?? '';
+                    $data = $this->extractWriteData($args);
+                    $hasPosition = !empty($args['position']);
+                    // Mirrors WriteTableTool validation: create/translate always
+                    // require data; update accepts position-only (reorder).
+                    $needsData = match ($action) {
+                        'create', 'translate' => empty($data),
+                        'update' => empty($data) && !$hasPosition,
+                        default => false,
+                    };
+                    if ($needsData) {
+                        $currentResponse = $this->executeAndContinue($currentResponse);
+                        continue;
+                    }
+                }
                 return $currentResponse;
             }
 

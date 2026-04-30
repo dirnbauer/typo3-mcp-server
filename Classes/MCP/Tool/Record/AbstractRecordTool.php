@@ -116,14 +116,25 @@ abstract class AbstractRecordTool extends AbstractTool
     }
 
     /**
-     * Create a successful result with JSON content
+     * Create a successful result with JSON content.
+     *
+     * Workspace overlays can surface raw column values that DataHandler chose
+     * not to sanitize (binary garbage smuggled into a string field, broken
+     * UTF-8 sequences, etc.). Substitute invalid bytes so the response remains
+     * valid JSON instead of failing with a TextContent type error.
      *
      * @param array<string, mixed> $data
      */
     protected function createJsonResult(array $data): CallToolResult
     {
-        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
-        return new CallToolResult([new TextContent($json)]);
+        $encoded = json_encode(
+            $data,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+        );
+        if ($encoded === false) {
+            $encoded = '{}';
+        }
+        return new CallToolResult([new TextContent($encoded)]);
     }
 
     /**

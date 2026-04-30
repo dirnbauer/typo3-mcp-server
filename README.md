@@ -174,6 +174,26 @@ CreateSite {
 }
 ```
 
+### Running Tests
+
+```bash
+# Functional tests (PHPUnit)
+composer test
+
+# E2E tests — spins up MySQL, TYPO3, and Playwright in Docker
+Build/runTests.sh -s e2e
+
+# E2E without Docker (host PHP + SQLite + local Playwright).
+# Auto-selected when Docker is unavailable.
+Build/runTests.sh -s e2e --no-docker
+
+# E2E against an existing TYPO3 instance
+TYPO3_BASE_URL=https://my.ddev.site Build/runTests.sh -s e2e
+
+# See all options
+Build/runTests.sh -h
+```
+
 ### Translating a page in one call
 
 Translations are created **visible by default** (`hidden=0`). Pass

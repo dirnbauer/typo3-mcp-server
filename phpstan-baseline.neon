@@ -31,34 +31,28 @@ parameters:
 			path: Classes/Event/BeforeRecordWriteEvent.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:__construct\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:__construct\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Event/ModifyAvailableFieldsEvent.php
+			path: Classes/Event/AfterSchemaLoadEvent.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:addField\(\) has parameter \$configuration with no value type specified in iterable type array\.$#'
+			message: '#^Method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:addField\(\) has parameter \$configuration with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Event/ModifyAvailableFieldsEvent.php
+			path: Classes/Event/AfterSchemaLoadEvent.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:getFields\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:getFields\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Event/ModifyAvailableFieldsEvent.php
+			path: Classes/Event/AfterSchemaLoadEvent.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Event\\ModifyAvailableFieldsEvent\:\:setFields\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
+			message: '#^Method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:setFields\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Event/ModifyAvailableFieldsEvent.php
-
-		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 4
-			path: Classes/EventListener/SysFileReferenceEnrichmentListener.php
+			path: Classes/Event/AfterSchemaLoadEvent.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
@@ -529,66 +523,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 3
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''descriptionColumn''\|''label''\|''label_alt''\|''languageField''\|''searchFields''\|''title''\|''translationSource''\|''transOrigPointerField''\|''type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''palettes'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''showitem'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''types'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 3
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:addFieldDetailsInline\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -603,24 +537,6 @@ parameters:
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:getRemovedTypesByTSconfig\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:generateTableSchema\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Parameter \#2 \$filterType of method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:generateTableSchema\(\) expects string, mixed given\.$#'
-			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
 
@@ -681,7 +597,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -710,12 +626,6 @@ parameters:
 
 		-
 			message: '#^Cannot access offset ''pi_flexform'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''rootLevel'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -759,19 +669,13 @@ parameters:
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 3
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 6
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -1087,24 +991,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:getTranslationParentFieldName\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1124,18 +1010,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#2 \$requestedFields of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -1225,12 +1099,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Cannot access offset ''eval'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -1246,12 +1114,6 @@ parameters:
 			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1273,12 +1135,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset ''sortby'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 6
@@ -1291,15 +1147,9 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset mixed on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 3
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-

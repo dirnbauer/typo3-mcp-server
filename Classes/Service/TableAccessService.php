@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use Hn\McpServer\Event\ModifyAvailableFieldsEvent;
+use Hn\McpServer\Event\AfterSchemaLoadEvent;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -431,8 +431,28 @@ final class TableAccessService
         $fields = [];
         $subtypeFieldName = null;
 
-        // If a specific type is provided and the schema supports sub-schemas
-        if (!empty($type) && $schema->hasSubSchema($type)) {
+        // Two cases bypass sub-schema filtering and use the full main schema:
+        //
+        // 1) Foreign type notation (e.g. "uid_local:type" on sys_file_reference): the
+        //    record type is derived from a related record at runtime, so there is no
+        //    local type column the LLM can choose. Each "type" maps to a different
+        //    palette (basicoverlayPalette vs imageoverlayPalette etc.), and picking
+        //    one would hide fields like `alternative` or `crop` even though they are
+        //    writable for any type.
+        //
+        // 2) Read-only tables (e.g. sys_file): showitem describes a backend form
+        //    layout, which is irrelevant when the LLM can only read. The user expects
+        //    the schema to advertise every column they can filter on (mime_type, sha1,
+        //    size, identifier, ...). sys_file's TCA only defines a showitem for type
+        //    "1" listing 3 fields, so a sub-schema view drops the rest.
+        $rawTypeField = $this->getTableCtrl($table)['type'] ?? null;
+        $usesForeignTypeNotation = is_string($rawTypeField) && str_contains($rawTypeField, ':');
+        $isReadOnly = $this->isTableReadOnly($table);
+        if ($usesForeignTypeNotation || $isReadOnly) {
+            foreach ($schema->getFields() as $field) {
+                $fields[$field->getName()] = $field->getConfiguration();
+            }
+        } elseif (!empty($type) && $schema->hasSubSchema($type)) {
             $subSchema = $schema->getSubSchema($type);
 
             // TYPO3 v14 no longer exposes subtype handling via TcaSchema.
@@ -492,8 +512,9 @@ final class TableAccessService
             }
         }
 
-        /** @var ModifyAvailableFieldsEvent $event */
-        $event = $this->eventDispatcher->dispatch(new ModifyAvailableFieldsEvent($table, $type, $fields));
+        // Allow extensions to add, remove, or reconfigure fields
+        $event = new AfterSchemaLoadEvent($table, $type, $fields);
+        $this->eventDispatcher->dispatch($event);
         return $event->getFields();
     }
 
@@ -1282,6 +1303,61 @@ final class TableAccessService
         }
 
         return array_values(array_unique($fallbackFields));
+    }
+
+    /**
+     * Default field whitelist for inline children of hidden tables.
+     *
+     * Returned in the same shape as the user-facing `fields` parameter, so the
+     * caller can pass it straight through to the existing requestedFields filter
+     * in ReadTableTool::processRecord().
+     *
+     * The parent record already provides language/workspace/timestamp context;
+     * surfacing those fields, plus the foreign reference back to the parent and
+     * TCA columns that are virtual or DB-only, is noise for the LLM. So we
+     * advertise every available field except:
+     *  - pid (always plumbing for embedded children)
+     *  - ctrl-registered tracking fields (tstamp, crdate, languageField,
+     *    transOrigPointerField, transOrigDiffSourceField, translationSource)
+     *  - the foreign_field that links back to the parent
+     *  - TCA columns of type passthrough / category / none (virtual or
+     *    rendering-only — no useful value for the LLM)
+     *
+     * Computed read-only fields registered via AfterSchemaLoadEvent
+     * (file_name, public_url, ...) are not in TCA columns and therefore stay.
+     *
+     * The caller passes each child's own type so sub-schema-specific columns
+     * are not silently dropped on a mixed-type child set.
+     *
+     * @return list<string>
+     */
+    public function getEmbeddedRecordFields(string $table, string $foreignField = '', string $recordType = ''): array
+    {
+        $availableFields = $this->getAvailableFields($table, $recordType);
+
+        $ctrl = $this->getTableCtrl($table);
+        $exclude = ['pid'];
+
+        foreach (['tstamp', 'crdate', 'languageField', 'transOrigPointerField', 'transOrigDiffSourceField', 'translationSource'] as $ctrlKey) {
+            $ctrlField = $ctrl[$ctrlKey] ?? null;
+            if (is_string($ctrlField) && $ctrlField !== '') {
+                $exclude[] = $ctrlField;
+            }
+        }
+
+        if ($foreignField !== '') {
+            $exclude[] = $foreignField;
+        }
+
+        foreach ($this->getTableColumns($table) as $name => $config) {
+            $fieldConfig = isset($config['config']) && is_array($config['config']) ? $config['config'] : [];
+            $type = $fieldConfig['type'] ?? '';
+            if (in_array($type, ['passthrough', 'category', 'none'], true)) {
+                $exclude[] = $name;
+            }
+        }
+
+        return array_values(array_diff(array_keys($availableFields), $exclude));
     }
 
     /**

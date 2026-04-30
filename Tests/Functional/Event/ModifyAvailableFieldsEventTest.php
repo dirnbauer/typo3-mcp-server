@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Event;
 
-use Hn\McpServer\Event\ModifyAvailableFieldsEvent;
+use Hn\McpServer\Event\AfterSchemaLoadEvent;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Stateful test listener for ModifyAvailableFieldsEvent
+ * Stateful test listener for AfterSchemaLoadEvent
  */
 class ModifyAvailableFieldsTestListener
 {
@@ -32,7 +32,7 @@ class ModifyAvailableFieldsTestListener
         self::$replaceFields = null;
     }
 
-    public function __invoke(ModifyAvailableFieldsEvent $event): void
+    public function __invoke(AfterSchemaLoadEvent $event): void
     {
         self::$dispatched = true;
         self::$table = $event->getTable();
@@ -53,7 +53,7 @@ class ModifyAvailableFieldsTestListener
 }
 
 /**
- * Tests for ModifyAvailableFieldsEvent
+ * Tests for AfterSchemaLoadEvent
  */
 class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
 {
@@ -70,7 +70,7 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
         $container->set(ModifyAvailableFieldsTestListener::class, new ModifyAvailableFieldsTestListener());
 
         $listenerProvider = $container->get(ListenerProvider::class);
-        $listenerProvider->addListener(ModifyAvailableFieldsEvent::class, ModifyAvailableFieldsTestListener::class);
+        $listenerProvider->addListener(AfterSchemaLoadEvent::class, ModifyAvailableFieldsTestListener::class);
     }
 
     /**
