@@ -280,7 +280,7 @@ class FileReferenceTest extends FunctionalTestCase
             'uid' => 1,
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $defaultFile = json_decode($result->content[0]->text, true)['records'][0];
+        $defaultFile = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('public_url', $defaultFile, 'public_url should be in the default response');
 
         // Whitelist that omits public_url drops it like any other column
@@ -290,7 +290,7 @@ class FileReferenceTest extends FunctionalTestCase
             'fields' => ['name'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $narrowed = json_decode($result->content[0]->text, true)['records'][0];
+        $narrowed = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayNotHasKey('public_url', $narrowed, 'public_url should drop when whitelist excludes it');
         self::assertEquals('test.jpg', $narrowed['name']);
     }
@@ -371,7 +371,7 @@ class FileReferenceTest extends FunctionalTestCase
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $file = json_decode($result->content[0]->text, true)['records'][0];
+        $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('public_url', $file);
         self::assertStringStartsWith('https://typo3.example.com/', $file['public_url']);
     }
@@ -392,7 +392,7 @@ class FileReferenceTest extends FunctionalTestCase
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $ref = json_decode($result->content[0]->text, true)['records'][0]['assets'][0];
+        $ref = json_decode((string)$result->content[0]->text, true)['records'][0]['assets'][0];
         foreach (['t3ver_oid', 't3ver_wsid', 't3ver_state', 't3ver_stage', 'l10n_state', 'deleted'] as $leaked) {
             self::assertArrayNotHasKey($leaked, $ref, "embedded ref should not expose '$leaked'");
         }
@@ -418,7 +418,7 @@ class FileReferenceTest extends FunctionalTestCase
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $file = json_decode($result->content[0]->text, true)['records'][0];
+        $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('metadata', $file);
         self::assertCount(1, $file['metadata']);
         $meta = $file['metadata'][0];
@@ -509,12 +509,12 @@ class FileReferenceTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read after create — crop must come back as the same array
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $afterCreate = json_decode($result->content[0]->text, true)['records'][0];
+        $afterCreate = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $afterCreate['assets']);
         self::assertIsArray(
             $afterCreate['assets'][0]['crop'] ?? null,
@@ -549,7 +549,7 @@ class FileReferenceTest extends FunctionalTestCase
         // Read after update — crop must still be the (updated) array, not "Array"
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $afterUpdate = json_decode($result->content[0]->text, true)['records'][0];
+        $afterUpdate = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $afterUpdate['assets']);
 
         $cropAfterUpdate = $afterUpdate['assets'][0]['crop'] ?? null;
@@ -598,10 +598,10 @@ class FileReferenceTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $afterCreate = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0];
         $referenceUid = (int)$afterCreate['assets'][0]['uid'];
@@ -620,7 +620,7 @@ class FileReferenceTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $afterUpdate = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0];
 

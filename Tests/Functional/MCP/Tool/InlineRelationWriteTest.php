@@ -602,7 +602,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for ref-update', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -617,11 +617,11 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read back to capture the sys_file_reference uid
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $record = json_decode($result->content[0]->text, true)['records'][0];
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $record['assets']);
         $originalRefUid = (int)$record['assets'][0]['uid'];
         self::assertSame(1, (int)$record['assets'][0]['uid_local']);
@@ -642,7 +642,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         // Verify: same reference uid, title patched, uid_local preserved (not reset to 0)
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $record = json_decode($result->content[0]->text, true)['records'][0];
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $record['assets'], 'No duplicate reference should be created');
         self::assertSame($originalRefUid, (int)$record['assets'][0]['uid'], 'Same sys_file_reference uid expected');
         self::assertSame('patched', $record['assets'][0]['title']);
@@ -668,7 +668,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for steal-test', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Parent A with its own asset
         $result = $writeTool->execute([
@@ -682,7 +682,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $parentAUid = json_decode($result->content[0]->text, true)['uid'];
+        $parentAUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Parent B with its own asset
         $result = $writeTool->execute([
@@ -696,14 +696,14 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $parentBUid = json_decode($result->content[0]->text, true)['uid'];
+        $parentBUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $aRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
         $bRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
         self::assertNotSame($aRef, $bRef);
@@ -722,7 +722,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         // Parent A keeps its original reference unchanged
         $aAfter = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
             true
         )['records'][0]['assets'];
         self::assertCount(1, $aAfter, 'Parent A must keep its original reference');
@@ -731,7 +731,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         // Parent B is untouched as well
         $bAfter = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'];
         self::assertCount(1, $bAfter, 'Parent B must keep its reference');
@@ -753,7 +753,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for create-steal-test', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -766,9 +766,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $existingParentUid = json_decode($result->content[0]->text, true)['uid'];
+        $existingParentUid = json_decode((string)$result->content[0]->text, true)['uid'];
         $existingRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
 
@@ -788,7 +788,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
 
         // Original parent is untouched
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
         self::assertCount(1, $assets);
@@ -813,7 +813,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for reorder', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Three references in order A, B, C
         $result = $writeTool->execute([
@@ -831,10 +831,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
             ],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
         self::assertSame(['A', 'B', 'C'], array_column($assets, 'title'));
@@ -859,7 +859,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
         self::assertCount(3, $assets, 'No references should be lost during reorder');

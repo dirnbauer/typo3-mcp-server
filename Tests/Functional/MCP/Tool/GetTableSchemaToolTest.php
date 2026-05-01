@@ -351,7 +351,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         self::assertStringNotContainsString('(Extended):', $content);
 
         // No tab header should be left without at least one field/palette below it.
-        $lines = explode("\n", $content);
+        $lines = explode("\n", (string)$content);
         $tabHeader = '/^  \([^)]+\):$/';
         $childLine = '/^    [\s\S]/';
         foreach ($lines as $index => $line) {

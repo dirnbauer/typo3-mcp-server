@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -254,8 +255,8 @@ class EmbeddedRelationTest extends LlmTestCase
                 $qb->expr()->eq('tablenames', $qb->createNamedParameter('tt_content')),
                 $qb->expr()->eq('fieldname', $qb->createNamedParameter('assets')),
                 $qb->expr()->or(
-                    $qb->expr()->eq('uid_foreign', $qb->createNamedParameter($parentUid, \Doctrine\DBAL\ParameterType::INTEGER)),
-                    $qb->expr()->eq('t3ver_oid', $qb->createNamedParameter($parentUid, \Doctrine\DBAL\ParameterType::INTEGER))
+                    $qb->expr()->eq('uid_foreign', $qb->createNamedParameter($parentUid, ParameterType::INTEGER)),
+                    $qb->expr()->eq('t3ver_oid', $qb->createNamedParameter($parentUid, ParameterType::INTEGER))
                 ),
                 $qb->expr()->eq('deleted', 0)
             )

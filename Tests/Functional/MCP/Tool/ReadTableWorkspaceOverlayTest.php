@@ -86,7 +86,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'fields' => ['uid', 'header'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        $payload = json_decode((string)$result->content[0]->text, true);
 
         $rowsForLive = array_values(array_filter(
             $payload['records'],
@@ -131,7 +131,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'fields' => ['uid', 'header'],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        $payload = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame(
             [],
@@ -151,7 +151,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'fields' => $fields,
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        $payload = json_decode((string)$result->content[0]->text, true);
         self::assertCount(1, $payload['records'], 'Expected exactly one record for uid ' . $uid);
         return $payload['records'][0];
     }
