@@ -343,12 +343,12 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'sys_file_metadata',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // The "Extended" tab in sys_file_metadata's TCA contains no fields,
         // so it should not appear in the output at all.
-        $this->assertStringNotContainsString('(Extended):', $content);
+        self::assertStringNotContainsString('(Extended):', $content);
 
         // No tab header should be left without at least one field/palette below it.
         $lines = explode("\n", $content);
@@ -359,7 +359,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
                 continue;
             }
             $next = $lines[$index + 1] ?? '';
-            $this->assertMatchesRegularExpression(
+            self::assertMatchesRegularExpression(
                 $childLine,
                 $next,
                 "Tab header '{$line}' has no field below it (next line: '{$next}')"

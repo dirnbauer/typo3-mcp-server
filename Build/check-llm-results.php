@@ -108,7 +108,7 @@ function formatStats(?array $stats): string
     $toolCalls = (int)($stats['tool_calls'] ?? 0);
     $errors = (int)($stats['tool_errors'] ?? 0);
     $errColor = $errors > 0 ? "\033[31m" : "\033[2m";
-    return " \033[2m[" . $calls . " calls, " . $toolCalls . " tools, "
+    return " \033[2m[" . $calls . ' calls, ' . $toolCalls . ' tools, '
         . $errColor . $errors . " err\033[2m]\033[0m";
 }
 

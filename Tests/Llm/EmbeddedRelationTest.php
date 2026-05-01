@@ -47,8 +47,10 @@ class EmbeddedRelationTest extends LlmTestCase
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertNotEmpty($writeCalls,
-            'Expected WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $writeCalls,
+            'Expected WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         $currentResponse = $response;
         for ($attempt = 0; $attempt < 6 && $currentResponse->hasToolCalls(); $attempt++) {
@@ -56,33 +58,51 @@ class EmbeddedRelationTest extends LlmTestCase
         }
 
         $refs = $this->queryAssetReferences(100);
-        $this->assertCount(2, $refs,
+        self::assertCount(
+            2,
+            $refs,
             'Patching one image must not create a duplicate row or drop the other reference. ' .
-            'Got ' . count($refs) . ' references. ' . $this->getFailureContext($currentResponse));
+            'Got ' . count($refs) . ' references. ' . $this->getFailureContext($currentResponse)
+        );
 
         $refByUid = [];
         foreach ($refs as $row) {
             $refByUid[(int)$row['uid']] = $row;
         }
-        $this->assertArrayHasKey(1, $refByUid,
+        self::assertArrayHasKey(
+            1,
+            $refByUid,
             'Original sys_file_reference uid=1 must be reused, not replaced. ' .
             'Existing uids: ' . implode(',', array_keys($refByUid)) . '. ' .
-            $this->getFailureContext($currentResponse));
-        $this->assertArrayHasKey(2, $refByUid,
+            $this->getFailureContext($currentResponse)
+        );
+        self::assertArrayHasKey(
+            2,
+            $refByUid,
             'Untouched sys_file_reference uid=2 must remain. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $hero = $refByUid[1];
-        $this->assertSame(1, (int)$hero['uid_local'],
+        self::assertSame(
+            1,
+            (int)$hero['uid_local'],
             'uid_local must be preserved (no broken reference with uid_local=0). ' .
-            $this->getFailureContext($currentResponse));
-        $this->assertSame('Updated alt text', (string)$hero['alternative'],
+            $this->getFailureContext($currentResponse)
+        );
+        self::assertSame(
+            'Updated alt text',
+            (string)$hero['alternative'],
             'alternative on the Hero Image reference should be updated. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $other = $refByUid[2];
-        $this->assertSame('Second photo', (string)$other['alternative'],
-            'The other reference must keep its original alternative text.');
+        self::assertSame(
+            'Second photo',
+            (string)$other['alternative'],
+            'The other reference must keep its original alternative text.'
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -102,8 +122,10 @@ class EmbeddedRelationTest extends LlmTestCase
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertNotEmpty($writeCalls,
-            'Expected WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $writeCalls,
+            'Expected WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         $currentResponse = $response;
         for ($attempt = 0; $attempt < 6 && $currentResponse->hasToolCalls(); $attempt++) {
@@ -111,22 +133,31 @@ class EmbeddedRelationTest extends LlmTestCase
         }
 
         $refs = $this->queryAssetReferences(100);
-        $this->assertCount(2, $refs,
+        self::assertCount(
+            2,
+            $refs,
             'Both references must remain after reordering. Got ' . count($refs) . '. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         usort($refs, fn($a, $b) => (int)$a['sorting_foreign'] <=> (int)$b['sorting_foreign']);
         $titles = array_column($refs, 'title');
 
-        $this->assertSame(['Second Image', 'Hero Image'], $titles,
+        self::assertSame(
+            ['Second Image', 'Hero Image'],
+            $titles,
             'Reorder must change the sort order of existing references. ' .
             'Got titles in order: ' . implode(' → ', $titles) . '. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $uidLocals = array_unique(array_map(fn($r) => (int)$r['uid_local'], $refs));
-        $this->assertSame([1], array_values($uidLocals),
+        self::assertSame(
+            [1],
+            array_values($uidLocals),
             'No reference should have been recreated with uid_local=0. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -145,8 +176,10 @@ class EmbeddedRelationTest extends LlmTestCase
             12
         );
 
-        $this->assertNotEmpty($response->getToolCallsByName('WriteTable'),
-            'Expected WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $response->getToolCallsByName('WriteTable'),
+            'Expected WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         $currentResponse = $response;
         for ($attempt = 0; $attempt < 6 && $currentResponse->hasToolCalls(); $attempt++) {
@@ -154,25 +187,37 @@ class EmbeddedRelationTest extends LlmTestCase
         }
 
         $refs = $this->queryAssetReferences(100);
-        $this->assertCount(3, $refs,
+        self::assertCount(
+            3,
+            $refs,
             'Expected three asset references after adding a third image. Got ' . count($refs) . '. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $fileUids = array_map(fn($r) => (int)$r['uid_local'], $refs);
         sort($fileUids);
-        $this->assertContains(3, $fileUids,
+        self::assertContains(
+            3,
+            $fileUids,
             'New reference must point to person.jpg (sys_file uid=3). ' .
             'Got uid_local values: ' . implode(',', $fileUids) . '. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         // Both original references (uid=1, uid=2 — both pointing at sys_file uid=1) must still be there.
         $existingRefUids = array_map(fn($r) => (int)$r['uid'], $refs);
-        $this->assertContains(1, $existingRefUids,
+        self::assertContains(
+            1,
+            $existingRefUids,
             'Original Hero Image reference (uid=1) was dropped. ' .
-            $this->getFailureContext($currentResponse));
-        $this->assertContains(2, $existingRefUids,
+            $this->getFailureContext($currentResponse)
+        );
+        self::assertContains(
+            2,
+            $existingRefUids,
             'Original Second Image reference (uid=2) was dropped. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
     }
 
     /**

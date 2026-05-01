@@ -87,39 +87,39 @@ class NewsLinkInlineTest extends FunctionalTestCase
         $news = $response['records'][0];
 
         // Verify related_links contains full embedded records
-        $this->assertArrayHasKey('related_links', $news, 'News should have related_links field');
-        $this->assertIsArray($news['related_links']);
-        $this->assertCount(3, $news['related_links']);
+        self::assertArrayHasKey('related_links', $news, 'News should have related_links field');
+        self::assertIsArray($news['related_links']);
+        self::assertCount(3, $news['related_links']);
 
         // Create a map of links by title for order-independent testing
         $linksByTitle = [];
         foreach ($news['related_links'] as $link) {
-            $this->assertIsArray($link);
-            $this->assertArrayHasKey('title', $link);
+            self::assertIsArray($link);
+            self::assertArrayHasKey('title', $link);
             $linksByTitle[$link['title']] = $link;
         }
 
         // Verify External link. The foreign field 'parent' is intentionally
         // dropped from embedded children — the parent is implied by the embedding.
-        $this->assertArrayHasKey('External link', $linksByTitle);
+        self::assertArrayHasKey('External link', $linksByTitle);
         $externalLink = $linksByTitle['External link'];
-        $this->assertArrayHasKey('uid', $externalLink);
-        $this->assertArrayHasKey('uri', $externalLink);
-        $this->assertArrayHasKey('description', $externalLink);
-        $this->assertArrayNotHasKey('parent', $externalLink);
-        $this->assertEquals('https://example.com', $externalLink['uri']);
-        $this->assertEquals('Link to external website', $externalLink['description']);
+        self::assertArrayHasKey('uid', $externalLink);
+        self::assertArrayHasKey('uri', $externalLink);
+        self::assertArrayHasKey('description', $externalLink);
+        self::assertArrayNotHasKey('parent', $externalLink);
+        self::assertEquals('https://example.com', $externalLink['uri']);
+        self::assertEquals('Link to external website', $externalLink['description']);
 
         // Verify Internal page link
-        $this->assertArrayHasKey('Internal page', $linksByTitle);
+        self::assertArrayHasKey('Internal page', $linksByTitle);
         $internalLink = $linksByTitle['Internal page'];
-        $this->assertEquals('t3://page?uid=42', $internalLink['uri']);
-        $this->assertEquals('Link to internal page', $internalLink['description']);
+        self::assertEquals('t3://page?uid=42', $internalLink['uri']);
+        self::assertEquals('Link to internal page', $internalLink['description']);
 
         // Verify Email link (no description)
-        $this->assertArrayHasKey('Email link', $linksByTitle);
+        self::assertArrayHasKey('Email link', $linksByTitle);
         $emailLink = $linksByTitle['Email link'];
-        $this->assertEquals('mailto:info@example.com', $emailLink['uri']);
+        self::assertEquals('mailto:info@example.com', $emailLink['uri']);
     }
 
     /**

@@ -279,9 +279,9 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $defaultFile = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('public_url', $defaultFile, 'public_url should be in the default response');
+        self::assertArrayHasKey('public_url', $defaultFile, 'public_url should be in the default response');
 
         // Whitelist that omits public_url drops it like any other column
         $result = $readTool->execute([
@@ -289,10 +289,10 @@ class FileReferenceTest extends FunctionalTestCase
             'uid' => 1,
             'fields' => ['name'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $narrowed = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayNotHasKey('public_url', $narrowed, 'public_url should drop when whitelist excludes it');
-        $this->assertEquals('test.jpg', $narrowed['name']);
+        self::assertArrayNotHasKey('public_url', $narrowed, 'public_url should drop when whitelist excludes it');
+        self::assertEquals('test.jpg', $narrowed['name']);
     }
 
     /**
@@ -305,12 +305,12 @@ class FileReferenceTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
         $result = $tool->execute(['table' => 'sys_file']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringNotContainsString('No field layout defined', $content);
+        self::assertStringNotContainsString('No field layout defined', $content);
         foreach (['name', 'identifier', 'mime_type', 'sha1', 'size', 'type'] as $column) {
-            $this->assertStringContainsString($column, $content, "sys_file schema should mention '$column'");
+            self::assertStringContainsString($column, $content, "sys_file schema should mention '$column'");
         }
     }
 
@@ -324,11 +324,11 @@ class FileReferenceTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
         $result = $tool->execute(['table' => 'sys_file_reference']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         foreach (['title', 'description', 'alternative', 'link', 'crop', 'autoplay'] as $column) {
-            $this->assertStringContainsString($column, $content, "sys_file_reference schema should mention '$column'");
+            self::assertStringContainsString($column, $content, "sys_file_reference schema should mention '$column'");
         }
     }
 
@@ -341,16 +341,16 @@ class FileReferenceTest extends FunctionalTestCase
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
 
         $sysFile = $tool->execute(['table' => 'sys_file']);
-        $this->assertFalse($sysFile->isError, json_encode($sysFile->jsonSerialize()));
-        $this->assertStringContainsString('Computed read-only — included by default', $sysFile->content[0]->text);
-        $this->assertStringContainsString('public_url', $sysFile->content[0]->text);
+        self::assertFalse($sysFile->isError, json_encode($sysFile->jsonSerialize()));
+        self::assertStringContainsString('Computed read-only — included by default', $sysFile->content[0]->text);
+        self::assertStringContainsString('public_url', $sysFile->content[0]->text);
 
         $sysFileReference = $tool->execute(['table' => 'sys_file_reference']);
-        $this->assertFalse($sysFileReference->isError, json_encode($sysFileReference->jsonSerialize()));
+        self::assertFalse($sysFileReference->isError, json_encode($sysFileReference->jsonSerialize()));
         $content = $sysFileReference->content[0]->text;
-        $this->assertStringContainsString('Computed read-only — included by default', $content);
+        self::assertStringContainsString('Computed read-only — included by default', $content);
         foreach (['file_name', 'file_identifier', 'file_mime_type', 'file_size', 'public_url'] as $field) {
-            $this->assertStringContainsString($field, $content, "computed field '$field' should appear");
+            self::assertStringContainsString($field, $content, "computed field '$field' should appear");
         }
     }
 
@@ -369,11 +369,11 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $file = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('public_url', $file);
-        $this->assertStringStartsWith('https://typo3.example.com/', $file['public_url']);
+        self::assertArrayHasKey('public_url', $file);
+        self::assertStringStartsWith('https://typo3.example.com/', $file['public_url']);
     }
 
     /**
@@ -390,16 +390,16 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $ref = json_decode($result->content[0]->text, true)['records'][0]['assets'][0];
         foreach (['t3ver_oid', 't3ver_wsid', 't3ver_state', 't3ver_stage', 'l10n_state', 'deleted'] as $leaked) {
-            $this->assertArrayNotHasKey($leaked, $ref, "embedded ref should not expose '$leaked'");
+            self::assertArrayNotHasKey($leaked, $ref, "embedded ref should not expose '$leaked'");
         }
 
         // Option a: inline children always include enrichment regardless of fields.
-        $this->assertArrayHasKey('public_url', $ref);
-        $this->assertArrayHasKey('file_name', $ref);
+        self::assertArrayHasKey('public_url', $ref);
+        self::assertArrayHasKey('file_name', $ref);
     }
 
     /**
@@ -416,11 +416,11 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $file = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('metadata', $file);
-        $this->assertCount(1, $file['metadata']);
+        self::assertArrayHasKey('metadata', $file);
+        self::assertCount(1, $file['metadata']);
         $meta = $file['metadata'][0];
 
         // Plumbing and virtual columns must be gone.
@@ -435,16 +435,16 @@ class FileReferenceTest extends FunctionalTestCase
             'file',
             'fileinfo',
         ] as $leaked) {
-            $this->assertArrayNotHasKey($leaked, $meta, "embedded metadata should not expose '$leaked'");
+            self::assertArrayNotHasKey($leaked, $meta, "embedded metadata should not expose '$leaked'");
         }
 
         // The data fields the LLM actually cares about must remain.
-        $this->assertSame(1, $meta['uid']);
-        $this->assertSame('Team Photo', $meta['title']);
-        $this->assertSame('Alt text for test', $meta['alternative']);
-        $this->assertSame('Description text', $meta['description']);
-        $this->assertSame(1868, $meta['width']);
-        $this->assertSame(1261, $meta['height']);
+        self::assertSame(1, $meta['uid']);
+        self::assertSame('Team Photo', $meta['title']);
+        self::assertSame('Alt text for test', $meta['alternative']);
+        self::assertSame('Description text', $meta['description']);
+        self::assertSame(1868, $meta['width']);
+        self::assertSame(1261, $meta['height']);
     }
 
     /**
@@ -508,20 +508,20 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read after create — crop must come back as the same array
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $afterCreate = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $afterCreate['assets']);
-        $this->assertIsArray(
+        self::assertCount(1, $afterCreate['assets']);
+        self::assertIsArray(
             $afterCreate['assets'][0]['crop'] ?? null,
             'crop must be returned as an array after create, got: '
             . var_export($afterCreate['assets'][0]['crop'] ?? null, true)
         );
-        $this->assertEquals($cropPayload, $afterCreate['assets'][0]['crop']);
+        self::assertEquals($cropPayload, $afterCreate['assets'][0]['crop']);
 
         // Get the existing reference uid so update patches the same row
         $referenceUid = (int)$afterCreate['assets'][0]['uid'];
@@ -544,25 +544,25 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read after update — crop must still be the (updated) array, not "Array"
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $afterUpdate = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $afterUpdate['assets']);
+        self::assertCount(1, $afterUpdate['assets']);
 
         $cropAfterUpdate = $afterUpdate['assets'][0]['crop'] ?? null;
-        $this->assertNotSame(
+        self::assertNotSame(
             'Array',
             $cropAfterUpdate,
             'crop got cast to the string "Array" — array value reached the DB without being JSON-encoded'
         );
-        $this->assertIsArray(
+        self::assertIsArray(
             $cropAfterUpdate,
             'crop must be returned as an array after update, got: ' . var_export($cropAfterUpdate, true)
         );
-        $this->assertEquals($newCrop, $cropAfterUpdate);
+        self::assertEquals($newCrop, $cropAfterUpdate);
     }
 
     /**
@@ -597,7 +597,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         $afterCreate = json_decode(
@@ -617,19 +617,19 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $afterUpdate = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0];
 
-        $this->assertSame('Just retitled', $afterUpdate['assets'][0]['title']);
-        $this->assertIsArray(
+        self::assertSame('Just retitled', $afterUpdate['assets'][0]['title']);
+        self::assertIsArray(
             $afterUpdate['assets'][0]['crop'] ?? null,
             'pre-existing crop must survive an update that does not touch it'
         );
-        $this->assertEquals($cropPayload, $afterUpdate['assets'][0]['crop']);
+        self::assertEquals($cropPayload, $afterUpdate['assets'][0]['crop']);
     }
 
     /**

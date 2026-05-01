@@ -65,7 +65,7 @@ final class SiteInformationService
      * Returns "<scheme>://<host>" from the active request, or the first site
      * whose base has a host, or TYPO3_REQUEST_HOST as a last resort.
      */
-    protected function resolveRequestOrSiteBase(): ?string
+    private function resolveRequestOrSiteBase(): ?string
     {
         if ($this->currentRequest !== null) {
             $uri = $this->currentRequest->getUri();

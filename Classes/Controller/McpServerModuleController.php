@@ -504,31 +504,35 @@ final readonly class McpServerModuleController
                 return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
             }
 
+            $clientName = trim($requestData['clientName'] ?? '');
             $clientType = $requestData['clientType'] ?? 'mcp-remote token';
 
-            $allowedClientTypes = ['mcp-remote token', 'n8n token', 'manus token'];
-            if (!in_array($clientType, $allowedClientTypes, true)) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => $this->translate('tokens.invalidClientType'),
-                ], 400);
+            if ($clientName === '') {
+                $allowedClientTypes = ['mcp-remote token', 'n8n token', 'manus token'];
+                if (!in_array($clientType, $allowedClientTypes, true)) {
+                    return new JsonResponse([
+                        'success' => false,
+                        'message' => $this->translate('tokens.invalidClientType'),
+                    ], 400);
+                }
+                $clientName = $clientType;
             }
 
             $existingTokens = $this->oauthService->getUserTokens($userId);
             foreach ($existingTokens as $token) {
-                if ($token['client_name'] === $clientType) {
+                if ($token['client_name'] === $clientName) {
                     return new JsonResponse([
                         'success' => false,
-                        'message' => $this->translate('tokens.alreadyExists', ['clientType' => $clientType]),
+                        'message' => $this->translate('tokens.alreadyExists', ['clientType' => $clientName]),
                     ], 400);
                 }
             }
 
-            $token = $this->oauthService->createDirectAccessToken($userId, $clientType, $request);
+            $token = $this->oauthService->createDirectAccessToken($userId, $clientName, $request);
 
             return new JsonResponse([
                 'success' => true,
-                'message' => $this->translate('tokens.createdSuccessfully', ['clientType' => $clientType]),
+                'message' => $this->translate('tokens.createdSuccessfully', ['clientType' => $clientName]),
                 'token' => $token,
             ]);
         } catch (\Throwable) {

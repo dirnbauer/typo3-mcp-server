@@ -616,16 +616,16 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read back to capture the sys_file_reference uid
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
         $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $record['assets']);
+        self::assertCount(1, $record['assets']);
         $originalRefUid = (int)$record['assets'][0]['uid'];
-        $this->assertSame(1, (int)$record['assets'][0]['uid_local']);
-        $this->assertSame('original', $record['assets'][0]['title']);
+        self::assertSame(1, (int)$record['assets'][0]['uid_local']);
+        self::assertSame('original', $record['assets'][0]['title']);
 
         // Patch the existing reference by passing uid + new field value
         $result = $writeTool->execute([
@@ -638,15 +638,15 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify: same reference uid, title patched, uid_local preserved (not reset to 0)
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
         $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $record['assets'], 'No duplicate reference should be created');
-        $this->assertSame($originalRefUid, (int)$record['assets'][0]['uid'], 'Same sys_file_reference uid expected');
-        $this->assertSame('patched', $record['assets'][0]['title']);
-        $this->assertSame(1, (int)$record['assets'][0]['uid_local'], 'uid_local must not be wiped to 0');
+        self::assertCount(1, $record['assets'], 'No duplicate reference should be created');
+        self::assertSame($originalRefUid, (int)$record['assets'][0]['uid'], 'Same sys_file_reference uid expected');
+        self::assertSame('patched', $record['assets'][0]['title']);
+        self::assertSame(1, (int)$record['assets'][0]['uid_local'], 'uid_local must not be wiped to 0');
     }
 
     /**
@@ -681,7 +681,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'A-original']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $parentAUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Parent B with its own asset
@@ -695,7 +695,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'B-original']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $parentBUid = json_decode($result->content[0]->text, true)['uid'];
 
         $aRef = (int)json_decode(
@@ -706,7 +706,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
-        $this->assertNotSame($aRef, $bRef);
+        self::assertNotSame($aRef, $bRef);
 
         // Attempt to "steal" parent B's reference by patching it under parent A
         $result = $writeTool->execute([
@@ -717,26 +717,26 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid' => $bRef, 'title' => 'stolen']],
             ],
         ]);
-        $this->assertTrue($result->isError, 'Stealing a child uid from another parent must be rejected');
-        $this->assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError, 'Stealing a child uid from another parent must be rejected');
+        self::assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
 
         // Parent A keeps its original reference unchanged
         $aAfter = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $aAfter, 'Parent A must keep its original reference');
-        $this->assertSame($aRef, (int)$aAfter[0]['uid']);
-        $this->assertSame('A-original', $aAfter[0]['title']);
+        self::assertCount(1, $aAfter, 'Parent A must keep its original reference');
+        self::assertSame($aRef, (int)$aAfter[0]['uid']);
+        self::assertSame('A-original', $aAfter[0]['title']);
 
         // Parent B is untouched as well
         $bAfter = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $bAfter, 'Parent B must keep its reference');
-        $this->assertSame($bRef, (int)$bAfter[0]['uid']);
-        $this->assertSame('B-original', $bAfter[0]['title']);
+        self::assertCount(1, $bAfter, 'Parent B must keep its reference');
+        self::assertSame($bRef, (int)$bAfter[0]['uid']);
+        self::assertSame('B-original', $bAfter[0]['title']);
     }
 
     /**
@@ -765,7 +765,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'existing']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $existingParentUid = json_decode($result->content[0]->text, true)['uid'];
         $existingRef = (int)json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
@@ -783,17 +783,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid' => $existingRef, 'title' => 'hijacked']],
             ],
         ]);
-        $this->assertTrue($result->isError, 'Create must reject embedded children that reference an existing uid');
-        $this->assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError, 'Create must reject embedded children that reference an existing uid');
+        self::assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
 
         // Original parent is untouched
         $assets = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $assets);
-        $this->assertSame($existingRef, (int)$assets[0]['uid']);
-        $this->assertSame('existing', $assets[0]['title']);
+        self::assertCount(1, $assets);
+        self::assertSame($existingRef, (int)$assets[0]['uid']);
+        self::assertSame('existing', $assets[0]['title']);
     }
 
     /**
@@ -830,14 +830,14 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         $assets = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertSame(['A', 'B', 'C'], array_column($assets, 'title'));
+        self::assertSame(['A', 'B', 'C'], array_column($assets, 'title'));
         $byTitle = [];
         foreach ($assets as $asset) {
             $byTitle[$asset['title']] = (int)$asset['uid'];
@@ -856,14 +856,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $assets = json_decode(
             $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(3, $assets, 'No references should be lost during reorder');
-        $this->assertSame(['C', 'A', 'B'], array_column($assets, 'title'),
-            'Embedded references must follow the order supplied in the update payload');
+        self::assertCount(3, $assets, 'No references should be lost during reorder');
+        self::assertSame(
+            ['C', 'A', 'B'],
+            array_column($assets, 'title'),
+            'Embedded references must follow the order supplied in the update payload'
+        );
     }
 }

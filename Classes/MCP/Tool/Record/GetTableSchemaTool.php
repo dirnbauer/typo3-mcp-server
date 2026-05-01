@@ -276,7 +276,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                             continue;
                         }
 
-                        $tabContent .= "    ┌─ (" . $paletteLabel . ")\n";
+                        $tabContent .= '    ┌─ (' . $paletteLabel . ")\n";
 
                         $lastPaletteField = end($accessiblePaletteItems);
                         reset($accessiblePaletteItems);
@@ -290,11 +290,11 @@ final class GetTableSchemaTool extends AbstractRecordTool
                             $processedFields[$paletteFieldName] = true;
 
                             // Add the field to the result with proper indentation
-                            $prefix = ($paletteItem === $lastPaletteField) ? "└─ " : "├─ ";
+                            $prefix = ($paletteItem === $lastPaletteField) ? '└─ ' : '├─ ';
                             $fieldLabel = $this->getFieldLabel($fieldConfig, $paletteFieldName);
                             // TcaSchemaFactory returns flattened config where type is at top level
                             $fieldType = $this->getFieldType($fieldConfig);
-                            $tabContent .= "    " . $prefix . $paletteFieldName . " (" . $fieldLabel . "): " . $fieldType;
+                            $tabContent .= '    ' . $prefix . $paletteFieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                             // Add field details inline
                             $this->addFieldDetailsInline($tabContent, $fieldConfig, $paletteFieldName, $table, $filterType);
@@ -313,7 +313,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                         $fieldLabel = $this->getFieldLabel($fieldConfig, $fieldName);
                         // TcaSchemaFactory returns flattened config where type is at top level
                         $fieldType = $this->getFieldType($fieldConfig);
-                        $tabContent .= "    - " . $fieldName . " (" . $fieldLabel . "): " . $fieldType;
+                        $tabContent .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                         // Add field details inline
                         $this->addFieldDetailsInline($tabContent, $fieldConfig, $fieldName, $table, $filterType);
@@ -328,7 +328,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
             }
 
             $translatedTabName = TableAccessService::translateLabel($tabName);
-            $result .= "  (" . $translatedTabName . "):\n";
+            $result .= '  (' . $translatedTabName . "):\n";
             $result .= $tabContent;
         }
 
@@ -360,7 +360,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
             foreach ($additionalFields as $fieldName => $fieldConfig) {
                 $fieldLabel = $this->getFieldLabel($fieldConfig, $fieldName);
                 $fieldType = $this->getFieldType($fieldConfig);
-                $result .= "    - " . $fieldName . " (" . $fieldLabel . "): " . $fieldType;
+                $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                 // Add field details inline
                 $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType);
@@ -373,10 +373,10 @@ final class GetTableSchemaTool extends AbstractRecordTool
             foreach ($computedFields as $fieldName => $fieldConfig) {
                 $fieldLabel = $this->getFieldLabel($fieldConfig, $fieldName);
                 $fieldType = $this->getFieldType($fieldConfig);
-                $result .= "    - " . $fieldName . " (" . $fieldLabel . "): " . $fieldType;
+                $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
                 $description = $fieldConfig['description'] ?? null;
                 if (is_string($description) && $description !== '') {
-                    $result .= " — " . TableAccessService::translateLabel($description);
+                    $result .= ' — ' . TableAccessService::translateLabel($description);
                 }
                 $result .= "\n";
             }

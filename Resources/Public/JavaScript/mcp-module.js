@@ -242,6 +242,11 @@ class McpModule {
     // Token CRUD
     // =========================================================================
 
+    getCsrfToken() {
+        const container = document.getElementById('tokens-container');
+        return container ? container.dataset.csrfToken || '' : '';
+    }
+
     refreshTokens() {
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_get_tokens)
             .post({})
@@ -267,7 +272,7 @@ class McpModule {
         }
 
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_revoke_token)
-            .post({ tokenId: tokenIdInt })
+            .post({ tokenId: String(tokenIdInt), csrfToken: this.getCsrfToken() })
             .then(async (response) => {
                 const data = await response.resolve();
                 if (data.success) {
@@ -299,7 +304,7 @@ class McpModule {
                     trigger: () => {
                         Modal.dismiss();
                         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_revoke_all_tokens)
-                            .post({})
+                            .post({ csrfToken: this.getCsrfToken() })
                             .then(async (response) => {
                                 const data = await response.resolve();
                                 if (data.success) {
@@ -395,7 +400,7 @@ class McpModule {
      */
     createToken(clientName) {
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_create_token)
-            .post({ clientName })
+            .post({ clientName, csrfToken: this.getCsrfToken() })
             .then(async (response) => {
                 const data = await response.resolve();
                 if (data.success && data.token) {

@@ -189,13 +189,13 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         // textmedia keeps the file relation (assets) and bodytext.
         $textmedia = $this->service->getEmbeddedRecordFields('tt_content', '', 'textmedia');
-        $this->assertContains('assets', $textmedia, 'textmedia children must keep assets');
-        $this->assertContains('bodytext', $textmedia, 'textmedia children must keep bodytext');
+        self::assertContains('assets', $textmedia, 'textmedia children must keep assets');
+        self::assertContains('bodytext', $textmedia, 'textmedia children must keep bodytext');
 
         // header has neither assets nor bodytext in its showitem.
         $header = $this->service->getEmbeddedRecordFields('tt_content', '', 'header');
-        $this->assertNotContains('assets', $header, 'header children must not list assets');
-        $this->assertNotContains('bodytext', $header, 'header children must not list bodytext');
+        self::assertNotContains('assets', $header, 'header children must not list assets');
+        self::assertNotContains('bodytext', $header, 'header children must not list bodytext');
     }
 
     /**
