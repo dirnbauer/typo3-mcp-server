@@ -17,6 +17,8 @@ final readonly class OAuthService
     private const CLIENT_ID = 'typo3-mcp-server';
     private const CODE_EXPIRY_SECONDS = 600; // 10 minutes
     private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
+    private const SUPPORTED_GRANT_TYPES = ['authorization_code'];
+    private const SUPPORTED_RESPONSE_TYPES = ['code'];
 
     public function __construct(
         private ConnectionPool $connectionPool,
@@ -364,8 +366,8 @@ final readonly class OAuthService
         return [
             'client_id' => self::CLIENT_ID,
             'client_name' => $clientName,
-            'grant_types' => $this->normalizeStringList($clientData['grant_types'] ?? null, ['authorization_code']),
-            'response_types' => $this->normalizeStringList($clientData['response_types'] ?? null, ['code']),
+            'grant_types' => $this->normalizeSupportedStringList($clientData['grant_types'] ?? null, self::SUPPORTED_GRANT_TYPES),
+            'response_types' => $this->normalizeSupportedStringList($clientData['response_types'] ?? null, self::SUPPORTED_RESPONSE_TYPES),
             'scope' => $scope,
             'redirect_uris' => $this->normalizeStringList($clientData['redirect_uris'] ?? null, ['http://localhost']),
         ];
@@ -385,8 +387,8 @@ final readonly class OAuthService
             'authorization_endpoint' => $baseUrl . '/mcp_oauth/authorize',
             'token_endpoint' => $baseUrl . '/mcp_oauth/token',
             'registration_endpoint' => $baseUrl . '/mcp_oauth/register',
-            'response_types_supported' => ['code'],
-            'grant_types_supported' => ['authorization_code'],
+            'response_types_supported' => self::SUPPORTED_RESPONSE_TYPES,
+            'grant_types_supported' => self::SUPPORTED_GRANT_TYPES,
             'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['none'],
             'registration_endpoint_auth_methods_supported' => ['none'],
@@ -490,5 +492,17 @@ final readonly class OAuthService
 
         $normalized = array_values(array_filter($value, static fn(mixed $item): bool => is_string($item) && $item !== ''));
         return $normalized !== [] ? $normalized : $default;
+    }
+
+    /**
+     * @param list<string> $supported
+     * @return list<string>
+     */
+    private function normalizeSupportedStringList(mixed $value, array $supported): array
+    {
+        $normalized = $this->normalizeStringList($value, $supported);
+        $allowed = array_values(array_filter($normalized, static fn(string $item): bool => in_array($item, $supported, true)));
+
+        return $allowed !== [] ? $allowed : $supported;
     }
 }

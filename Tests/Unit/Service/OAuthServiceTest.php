@@ -101,4 +101,16 @@ final class OAuthServiceTest extends TestCase
         self::assertContains('none', $metadata['token_endpoint_auth_methods_supported']);
         self::assertSame('https://example.com/mcp_oauth/register', $metadata['registration_endpoint']);
     }
+
+    public function testRegisterClientOnlyReturnsSupportedGrantTypes(): void
+    {
+        $client = $this->service->registerClient([
+            'client_name' => 'Cursor',
+            'grant_types' => ['authorization_code', 'refresh_token'],
+            'response_types' => ['code'],
+            'redirect_uris' => ['http://127.0.0.1/callback'],
+        ]);
+
+        self::assertSame(['authorization_code'], $client['grant_types']);
+    }
 }
