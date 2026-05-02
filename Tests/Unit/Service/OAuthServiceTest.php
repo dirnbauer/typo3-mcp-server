@@ -100,9 +100,10 @@ final class OAuthServiceTest extends TestCase
         self::assertSame('https://example.com', $metadata['issuer']);
         self::assertContains('none', $metadata['token_endpoint_auth_methods_supported']);
         self::assertSame('https://example.com/mcp_oauth/register', $metadata['registration_endpoint']);
+        self::assertSame(['authorization_code', 'refresh_token'], $metadata['grant_types_supported']);
     }
 
-    public function testRegisterClientOnlyReturnsSupportedGrantTypes(): void
+    public function testRegisterClientReturnsSupportedGrantTypes(): void
     {
         $client = $this->service->registerClient([
             'client_name' => 'Cursor',
@@ -111,6 +112,18 @@ final class OAuthServiceTest extends TestCase
             'redirect_uris' => ['http://127.0.0.1/callback'],
         ]);
 
-        self::assertSame(['authorization_code'], $client['grant_types']);
+        self::assertSame(['authorization_code', 'refresh_token'], $client['grant_types']);
+    }
+
+    public function testRegisterClientFallsBackToSupportedGrantTypes(): void
+    {
+        $client = $this->service->registerClient([
+            'client_name' => 'Cursor',
+            'grant_types' => ['client_credentials'],
+            'response_types' => ['code'],
+            'redirect_uris' => ['http://127.0.0.1/callback'],
+        ]);
+
+        self::assertSame(['authorization_code', 'refresh_token'], $client['grant_types']);
     }
 }

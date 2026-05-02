@@ -17,7 +17,8 @@ final readonly class OAuthService
     private const CLIENT_ID = 'typo3-mcp-server';
     private const CODE_EXPIRY_SECONDS = 600; // 10 minutes
     private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
-    private const SUPPORTED_GRANT_TYPES = ['authorization_code'];
+    private const REFRESH_TOKEN_EXPIRY_SECONDS = 7776000; // 90 days
+    private const SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
     private const SUPPORTED_RESPONSE_TYPES = ['code'];
 
     public function __construct(
@@ -88,7 +89,7 @@ final readonly class OAuthService
     /**
      * Exchange authorization code for access token
      *
-     * @return array{access_token: string, token_type: string, expires_in: int}|null
+     * @return array{access_token: string, refresh_token: string, token_type: string, expires_in: int}|null
      */
     public function exchangeCodeForToken(string $code, ?string $codeVerifier = null, ?ServerRequestInterface $request = null): ?array
     {
@@ -128,7 +129,9 @@ final readonly class OAuthService
 
         // Generate access token
         $accessToken = $this->generateSecureToken();
+        $refreshToken = $this->generateSecureToken();
         $expires = time() + self::TOKEN_EXPIRY_SECONDS;
+        $refreshExpires = time() + self::REFRESH_TOKEN_EXPIRY_SECONDS;
 
         // Get client IP
         $clientIp = '';
@@ -146,10 +149,12 @@ final readonly class OAuthService
                 'tstamp' => time(),
                 'crdate' => time(),
                 'token' => hash('sha256', $accessToken),
+                'refresh_token' => hash('sha256', $refreshToken),
                 'token_version' => 1,
                 'be_user_uid' => $authCode['be_user_uid'],
                 'client_name' => $authCode['client_name'],
                 'expires' => $expires,
+                'refresh_expires' => $refreshExpires,
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,
@@ -164,6 +169,71 @@ final readonly class OAuthService
 
         return [
             'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer',
+            'expires_in' => self::TOKEN_EXPIRY_SECONDS,
+        ];
+    }
+
+    /**
+     * Rotate a refresh token and return a fresh access token pair.
+     *
+     * @return array{access_token: string, refresh_token: string, token_type: string, expires_in: int}|null
+     */
+    public function refreshAccessToken(string $refreshToken, ?ServerRequestInterface $request = null): ?array
+    {
+        if ($refreshToken === '') {
+            return null;
+        }
+
+        $refreshTokenHash = hash('sha256', $refreshToken);
+        $connection = $this->connectionPool
+            ->getConnectionForTable('tx_mcpserver_access_tokens');
+
+        $queryBuilder = $connection->createQueryBuilder();
+        $tokenRecord = $queryBuilder
+            ->select('*')
+            ->from('tx_mcpserver_access_tokens')
+            ->where(
+                $queryBuilder->expr()->eq('refresh_token', $queryBuilder->createNamedParameter($refreshTokenHash)),
+                $queryBuilder->expr()->gt('refresh_expires', $queryBuilder->createNamedParameter(time())),
+                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
+            )
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!$tokenRecord) {
+            return null;
+        }
+
+        $accessToken = $this->generateSecureToken();
+        $newRefreshToken = $this->generateSecureToken();
+        $expires = time() + self::TOKEN_EXPIRY_SECONDS;
+        $refreshExpires = time() + self::REFRESH_TOKEN_EXPIRY_SECONDS;
+
+        $clientIp = '';
+        if ($request !== null) {
+            $clientIp = $this->getRemoteAddress($request);
+        }
+
+        $connection->update(
+            'tx_mcpserver_access_tokens',
+            [
+                'tstamp' => time(),
+                'token' => hash('sha256', $accessToken),
+                'refresh_token' => hash('sha256', $newRefreshToken),
+                'token_version' => 1,
+                'expires' => $expires,
+                'refresh_expires' => $refreshExpires,
+                'last_used' => time(),
+                'last_used_ip' => $clientIp,
+            ],
+            ['uid' => $tokenRecord['uid']],
+        );
+
+        return [
+            'access_token' => $accessToken,
+            'refresh_token' => $newRefreshToken,
             'token_type' => 'Bearer',
             'expires_in' => self::TOKEN_EXPIRY_SECONDS,
         ];
@@ -237,7 +307,10 @@ final readonly class OAuthService
             ->from('tx_mcpserver_access_tokens')
             ->where(
                 $queryBuilder->expr()->eq('be_user_uid', $queryBuilder->createNamedParameter($beUserId)),
-                $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->gt('expires', $queryBuilder->createNamedParameter(time())),
+                    $queryBuilder->expr()->gt('refresh_expires', $queryBuilder->createNamedParameter(time())),
+                ),
                 $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0)),
             )
             ->orderBy('crdate', 'DESC')
@@ -337,6 +410,10 @@ final readonly class OAuthService
             ->set('tstamp', $tokenQueryBuilder->createNamedParameter($currentTime, Connection::PARAM_INT))
             ->where(
                 $tokenQueryBuilder->expr()->lt('expires', $tokenQueryBuilder->createNamedParameter($currentTime)),
+                $tokenQueryBuilder->expr()->or(
+                    $tokenQueryBuilder->expr()->eq('refresh_token', $tokenQueryBuilder->createNamedParameter('')),
+                    $tokenQueryBuilder->expr()->lt('refresh_expires', $tokenQueryBuilder->createNamedParameter($currentTime)),
+                ),
             )
             ->executeStatement();
     }
@@ -420,10 +497,12 @@ final readonly class OAuthService
                 'tstamp' => time(),
                 'crdate' => time(),
                 'token' => hash('sha256', $accessToken),
+                'refresh_token' => '',
                 'token_version' => 1,
                 'be_user_uid' => $beUserId,
                 'client_name' => $clientName,
                 'expires' => $expires,
+                'refresh_expires' => 0,
                 'last_used' => time(),
                 'created_ip' => $clientIp,
                 'last_used_ip' => $clientIp,

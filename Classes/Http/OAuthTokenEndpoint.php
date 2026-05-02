@@ -38,47 +38,22 @@ final readonly class OAuthTokenEndpoint
 
             $parsedBody = $this->getParsedBodyArray($request);
 
-            // Extract parameters (support both form data and JSON)
             $grantType = $parsedBody['grant_type'] ?? '';
-            $code = $parsedBody['code'] ?? '';
             $clientId = $parsedBody['client_id'] ?? '';
-            $codeVerifier = $parsedBody['code_verifier'] ?? null;
 
-            // Validate required parameters
-            if ($grantType !== 'authorization_code') {
-                return $this->createErrorResponse('unsupported_grant_type', 'Only authorization_code grant type is supported');
+            if ($grantType !== 'authorization_code' && $grantType !== 'refresh_token') {
+                return $this->createErrorResponse('unsupported_grant_type', 'Supported grant types are authorization_code and refresh_token');
             }
 
-            if (empty($code)) {
-                return $this->createErrorResponse('invalid_request', 'Missing required parameter: code');
-            }
-
-            if (empty($clientId) || $clientId !== 'typo3-mcp-server') {
+            if (!$this->isValidClientId($clientId)) {
                 return $this->createErrorResponse('invalid_client', 'Invalid client_id');
             }
 
-            $tokenData = $this->oauthService->exchangeCodeForToken($code, $codeVerifier, $request);
-
-            if (!$tokenData) {
-                return $this->createErrorResponse('invalid_grant', 'Invalid or expired authorization code');
+            if ($grantType === 'refresh_token') {
+                return $this->handleRefreshTokenGrant($parsedBody, $request);
             }
 
-            $this->logger->debug('Token exchange successful', [
-                'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
-            ]);
-
-            // Return token response
-            $stream = new Stream('php://temp', 'rw');
-            $stream->write($this->encodeJson($tokenData));
-            $stream->rewind();
-
-            $response = new Response(
-                $stream,
-                200,
-                ['Content-Type' => 'application/json'],
-            );
-
-            return $this->addCorsHeaders($response);
+            return $this->handleAuthorizationCodeGrant($parsedBody, $request);
 
         } catch (\Throwable $e) {
             $this->logger->error('OAuth token exchange failed', ['exception' => $e]);
@@ -107,13 +82,89 @@ final readonly class OAuthTokenEndpoint
     }
 
     /**
+     * @param array<string, string|null> $parsedBody
+     */
+    private function handleAuthorizationCodeGrant(array $parsedBody, ServerRequestInterface $request): ResponseInterface
+    {
+        $code = $parsedBody['code'] ?? '';
+        $codeVerifier = $parsedBody['code_verifier'] ?? null;
+
+        if ($code === '') {
+            return $this->createErrorResponse('invalid_request', 'Missing required parameter: code');
+        }
+
+        $tokenData = $this->oauthService->exchangeCodeForToken($code, $codeVerifier, $request);
+
+        if (!$tokenData) {
+            return $this->createErrorResponse('invalid_grant', 'Invalid or expired authorization code');
+        }
+
+        $this->logger->debug('Token exchange successful', [
+            'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
+        ]);
+
+        return $this->createTokenResponse($tokenData);
+    }
+
+    /**
+     * @param array<string, string|null> $parsedBody
+     */
+    private function handleRefreshTokenGrant(array $parsedBody, ServerRequestInterface $request): ResponseInterface
+    {
+        $refreshToken = $parsedBody['refresh_token'] ?? '';
+
+        if ($refreshToken === '') {
+            return $this->createErrorResponse('invalid_request', 'Missing required parameter: refresh_token');
+        }
+
+        $tokenData = $this->oauthService->refreshAccessToken($refreshToken, $request);
+
+        if (!$tokenData) {
+            return $this->createErrorResponse('invalid_grant', 'Invalid or expired refresh token');
+        }
+
+        $this->logger->debug('Token refresh successful', [
+            'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
+        ]);
+
+        return $this->createTokenResponse($tokenData);
+    }
+
+    /**
+     * @param array{access_token: string, refresh_token: string, token_type: string, expires_in: int} $tokenData
+     */
+    private function createTokenResponse(array $tokenData): ResponseInterface
+    {
+        $stream = new Stream('php://temp', 'rw');
+        $stream->write($this->encodeJson($tokenData));
+        $stream->rewind();
+
+        $response = new Response(
+            $stream,
+            200,
+            [
+                'Content-Type' => 'application/json',
+                'Cache-Control' => 'no-store',
+                'Pragma' => 'no-cache',
+            ],
+        );
+
+        return $this->addCorsHeaders($response);
+    }
+
+    private function isValidClientId(?string $clientId): bool
+    {
+        return $clientId === 'typo3-mcp-server';
+    }
+
+    /**
      * @return array<string, string|null>
      */
     private function getParsedBodyArray(ServerRequestInterface $request): array
     {
         $parsedBody = $request->getParsedBody();
         if (!is_array($parsedBody)) {
-            return [];
+            $parsedBody = $this->parseRawBody($request);
         }
 
         $result = [];
@@ -127,6 +178,35 @@ final readonly class OAuthTokenEndpoint
         }
 
         return $result;
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    private function parseRawBody(ServerRequestInterface $request): array
+    {
+        $body = $request->getBody();
+        if ($body->isSeekable()) {
+            $body->rewind();
+        }
+        $rawBody = $body->getContents();
+
+        if ($rawBody === '') {
+            return [];
+        }
+
+        $contentType = strtolower($request->getHeaderLine('Content-Type'));
+        if (str_contains($contentType, 'application/json')) {
+            $decoded = json_decode($rawBody, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        if (str_contains($contentType, 'application/x-www-form-urlencoded')) {
+            parse_str($rawBody, $formData);
+            return $formData;
+        }
+
+        return [];
     }
 
     /**

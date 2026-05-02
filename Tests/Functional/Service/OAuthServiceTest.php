@@ -214,9 +214,46 @@ final class OAuthServiceTest extends FunctionalTestCase
 
         self::assertIsArray($result);
         self::assertArrayHasKey('access_token', $result);
+        self::assertArrayHasKey('refresh_token', $result);
         self::assertArrayHasKey('token_type', $result);
         self::assertArrayHasKey('expires_in', $result);
         self::assertSame('Bearer', $result['token_type']);
+    }
+
+    public function testRefreshAccessTokenRotatesTokenPair(): void
+    {
+        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        $first = $this->service->exchangeCodeForToken($code);
+        self::assertIsArray($first);
+
+        $second = $this->service->refreshAccessToken($first['refresh_token']);
+        self::assertIsArray($second);
+        self::assertNotSame($first['access_token'], $second['access_token']);
+        self::assertNotSame($first['refresh_token'], $second['refresh_token']);
+
+        self::assertNull($this->service->validateToken($first['access_token']));
+        self::assertIsArray($this->service->validateToken($second['access_token']));
+        self::assertNull($this->service->refreshAccessToken($first['refresh_token']));
+    }
+
+    public function testRefreshAccessTokenRejectsInvalidToken(): void
+    {
+        self::assertNull($this->service->refreshAccessToken('invalid-refresh-token'));
+    }
+
+    public function testCleanupKeepsExpiredAccessTokenWithValidRefreshToken(): void
+    {
+        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        $first = $this->service->exchangeCodeForToken($code);
+        self::assertIsArray($first);
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_mcpserver_access_tokens');
+        $connection->update('tx_mcpserver_access_tokens', ['expires' => time() - 1], ['be_user_uid' => 1]);
+
+        $this->service->cleanupExpired();
+
+        self::assertIsArray($this->service->refreshAccessToken($first['refresh_token']));
     }
 
     public function testExchangeCodeForTokenReturnsNullForInvalidCode(): void

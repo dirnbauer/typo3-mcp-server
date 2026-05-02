@@ -21,9 +21,10 @@ Findings and remediation
 Fixed findings
 --------------
 
-1. Access tokens were stored in plain text.
+1. Access and refresh tokens were stored in plain text.
 
-   Status: Fixed. Access tokens are now SHA-256 hashed before storage.
+   Status: Fixed. Access and refresh tokens are now SHA-256 hashed before
+   storage.
 
 2. PKCE was not enforced consistently when a challenge was present.
 

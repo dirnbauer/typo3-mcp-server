@@ -42,6 +42,7 @@ class OAuthPkceTest extends AbstractFunctionalTest
 
         self::assertNotNull($result);
         self::assertArrayHasKey('access_token', $result);
+        self::assertArrayHasKey('refresh_token', $result);
     }
 
     public function testPkceWithWrongVerifierFails(): void
