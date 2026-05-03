@@ -64,7 +64,11 @@ SemVer once it leaves the experimental surface.
 
 - Default `network.outbound` policy ships at `[self]` only — public-web
   uploads must be opted in per deployment. The IP-range SSRF check still
-  blocks private addresses regardless.
+  blocks private addresses regardless. **In DDEV / `localUnsafeMode=on`
+  both gates are bypassed** so workflows like "fetch this Unsplash image
+  into fileadmin" work in dev without operators editing
+  `Capabilities.yaml`. Production with the default `localUnsafeMode=auto`
+  resolves to `off` and keeps the strict gate.
 - `RenderRecord` no longer follows redirects (a single 302 to a private
   IP would have bypassed the host check).
 - `RenderRecord` enforces TLS verification outside local mode.

@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Unit\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\LocalModeService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
@@ -66,6 +67,27 @@ final class CapabilityManifestServiceTest extends TestCase
         $service->assertHostAllowed('evil.example.org');
 
         // No exception means we passed.
+        self::assertTrue(true);
+    }
+
+    #[Test]
+    public function assertHostAllowedSkipsWhenLocalModeIsOn(): void
+    {
+        // DDEV / localUnsafeMode=on bypasses the manifest's outbound gate
+        // so workflows like "fetch this Unsplash image into fileadmin" work
+        // in dev without operators editing Capabilities.yaml. The
+        // SSRF private-IP filter inside UploadFileFromUrl is also lifted
+        // in this mode (see UploadFileFromUrlTool::validateUrl).
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+        $siteFinder = $this->createMock(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willReturn([]);
+        $service = new CapabilityManifestService(
+            new ExtensionConfiguration(),
+            $siteFinder,
+            new LocalModeService(new ExtensionConfiguration()),
+        );
+
+        $service->assertHostAllowed('images.unsplash.com');
         self::assertTrue(true);
     }
 
@@ -132,7 +154,12 @@ final class CapabilityManifestServiceTest extends TestCase
         $siteFinder = $this->createMock(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);
 
-        return new CapabilityManifestService(new ExtensionConfiguration(), $siteFinder, $tmp);
+        return new CapabilityManifestService(
+            new ExtensionConfiguration(),
+            $siteFinder,
+            $this->createLocalModeOff(),
+            $tmp,
+        );
     }
 
     /**
@@ -143,6 +170,22 @@ final class CapabilityManifestServiceTest extends TestCase
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $config;
         $siteFinder = $this->createMock(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);
-        return new CapabilityManifestService(new ExtensionConfiguration(), $siteFinder);
+        return new CapabilityManifestService(
+            new ExtensionConfiguration(),
+            $siteFinder,
+            $this->createLocalModeOff(),
+        );
+    }
+
+    /**
+     * Force local mode OFF so the manifest's outbound-host gate stays
+     * meaningful during the assert*Allowed tests. Production-default
+     * behavior is `auto`; pinning here keeps the unit test independent
+     * of the test runner's env (DDEV / Development context).
+     */
+    private function createLocalModeOff(): LocalModeService
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+        return new LocalModeService(new ExtensionConfiguration());
     }
 }

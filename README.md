@@ -308,12 +308,17 @@ developer's laptop:
 
 When the server detects a DDEV environment (via `IS_DDEV_PROJECT`,
 `DDEV_PROJECT`, `DDEV_HOSTNAME`, or `DDEV_TLD`) **or** when TYPO3 runs in
-the `Development/...` application context, both safety nets relax:
+the `Development/...` application context, the safety nets relax:
 
 - `WriteTable` accepts `workspace_id: 0` (live writes).
 - `BrowseFiles`, `WriteFile`, `UploadFile` accept any storage / path.
 - File-sandbox boundary checks are bypassed (path-traversal protection
   still applies).
+- The capability manifest's `network.outbound: [self]` gate is bypassed —
+  `UploadFileFromUrl` and `RenderRecord` accept any remote host. The
+  SSRF private-IP filter is also lifted so DDEV's `*.ddev.site`
+  (which resolves to `127.0.0.1`) and local NAS / staging hosts work
+  out of the box.
 
 Override via extension setting `localUnsafeMode`:
 

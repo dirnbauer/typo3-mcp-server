@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -39,6 +40,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         private readonly McpFileSandboxService $fileSandboxService,
         private readonly RequestFactory $requestFactory,
         private readonly CapabilityManifestService $capabilityManifest,
+        private readonly LocalModeService $localMode,
     ) {}
 
     /**
@@ -168,6 +170,15 @@ final class UploadFileFromUrlTool extends AbstractTool
         // no-op out of the box, but a hardened deployment can replace `*`
         // with an explicit allowlist.
         $this->capabilityManifest->assertHostAllowed($parsed['host']);
+
+        // Local-mode (DDEV / localUnsafeMode=on) escape hatch: skip the
+        // private-IP filter so workflows like "fetch from my local NAS" or
+        // "fetch from a *.ddev.site URL that resolves to 127.0.0.1" work
+        // without operators editing the manifest. Production mode keeps
+        // the strict gate.
+        if ($this->localMode->allowsUnrestrictedOutbound()) {
+            return;
+        }
 
         // Resolve hostname to IP and reject private/internal addresses (SSRF protection).
         // String-based hostname checks are trivially bypassed via decimal IPs, hex encoding,

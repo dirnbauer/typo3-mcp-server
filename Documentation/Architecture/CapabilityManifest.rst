@@ -166,10 +166,26 @@ Enforcement points
    Calls ``assertHostAllowed($host)`` before resolving the hostname.
    The hostname-to-IP-range SSRF check still applies on top — the
    manifest gate is the first line, the IP filter is the second.
+   In DDEV / ``localUnsafeMode=on`` both gates are skipped (see
+   "Local-mode escape hatch" below).
 
 ``RenderRecordTool::fetchUrl()``
    Same ``assertHostAllowed()`` gate, plus ``CURLOPT_FOLLOWLOCATION``
    disabled so a single 302 cannot bypass the host check.
+
+Local-mode escape hatch
+=======================
+
+DDEV / ``localUnsafeMode=on`` short-circuits ``assertHostAllowed()``
+entirely. The intent: a developer prototyping editorial workflows on
+their laptop should not need to edit ``Capabilities.yaml`` to fetch a
+test image from Unsplash. ``UploadFileFromUrlTool::validateUrl()`` also
+skips its private-IP filter in this mode so DDEV's ``*.ddev.site``
+(127.0.0.1 by default) works out of the box.
+
+Production sites with the default ``localUnsafeMode=auto`` resolve to
+``off`` (no DDEV vars, no Development context), so the strict gates
+remain the active enforcement.
 
 Bypassing the manifest
 ======================

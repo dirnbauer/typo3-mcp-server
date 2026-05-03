@@ -146,11 +146,16 @@ Extension configuration values
    :required: false
 
    Local-development escape hatch. When enabled (``on``, or ``auto`` with a
-   DDEV / Development context detected) the workspace-only-writes and
-   file-sandbox safety nets relax:
+   DDEV / Development context detected) the workspace-only-writes,
+   file-sandbox, and outbound-HTTP safety nets relax:
 
    - record writes accept ``workspace_id: 0`` (live writes)
    - file tools reach any storage / folder, not only ``fileSandboxRoot``
+   - outbound HTTP (``UploadFileFromUrl``, ``RenderRecord``) bypasses
+     the manifest's ``network.outbound`` allowlist AND the SSRF
+     private-IP filter — so DDEV's ``*.ddev.site`` (private IPs) and
+     fetches from public CDNs (Unsplash, Pixabay, …) both work without
+     editing ``Capabilities.yaml``
 
    Detection logic looks at ``IS_DDEV_PROJECT``, ``DDEV_PROJECT``,
    ``DDEV_HOSTNAME``, ``DDEV_TLD`` env vars and the TYPO3 application

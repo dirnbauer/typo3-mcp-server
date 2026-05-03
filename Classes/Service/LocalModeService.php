@@ -65,6 +65,17 @@ final readonly class LocalModeService
     }
 
     /**
+     * Should outbound HTTP be unrestricted (manifest network.outbound and
+     * the SSRF private-IP filter both bypassed)? Required so DDEV-based
+     * workflows like "fetch this Unsplash image" work without operators
+     * having to edit Configuration/Capabilities.yaml every session.
+     */
+    public function allowsUnrestrictedOutbound(): bool
+    {
+        return $this->isLocalMode();
+    }
+
+    /**
      * @return array{
      *     enabled: bool,
      *     setting: string,

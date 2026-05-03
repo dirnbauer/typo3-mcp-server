@@ -41,6 +41,7 @@ final class CapabilityManifestService
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
         private readonly SiteFinder $siteFinder,
+        private readonly ?LocalModeService $localMode = null,
         /**
          * Optional manifest-path override for tests. Production code never
          * passes this — DI auto-wires nothing into it and the class falls
@@ -229,6 +230,15 @@ final class CapabilityManifestService
     public function assertHostAllowed(string $host): void
     {
         if (!$this->isEnforced()) {
+            return;
+        }
+        // Local-mode escape hatch: in DDEV (or with localUnsafeMode=on) the
+        // manifest's network.outbound list is bypassed so workflows like
+        // "fetch this Unsplash image" work without operators having to edit
+        // Capabilities.yaml every session. Production sites with the default
+        // localUnsafeMode=auto resolve to false here and the strict policy
+        // applies.
+        if ($this->localMode !== null && $this->localMode->allowsUnrestrictedOutbound()) {
             return;
         }
         if ($host === '') {
