@@ -18,9 +18,10 @@ TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.
 
 .. seealso::
 
-   - :doc:`CursorTesting` — manual MCP-end-to-end testing through Cursor.
-   - ``FullFeatureChatbotScript.md`` — natural-language test script for any
-     MCP-connected chatbot.
+   - ``Testing/CursorTesting.md`` — manual MCP-end-to-end testing through
+     Cursor (Markdown source — see the file in the repository).
+   - ``Testing/FullFeatureChatbotScript.md`` — natural-language test script
+     for any MCP-connected chatbot.
 
 .. _testing-overview:
 

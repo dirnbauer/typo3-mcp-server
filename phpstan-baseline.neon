@@ -4641,12 +4641,3 @@ parameters:
 			identifier: booleanAnd.rightNotBoolean
 			count: 1
 			path: Classes/Utility/TcaFormattingUtility.php
-
-		-
-			message: '''
-				#^Call to deprecated method shouldNotDependOn\(\) of class PHPat\\Test\\Builder\\AssertionStep\:
-				Use \-\>shouldNot\(\)\-\>dependOn\(\)$#
-			'''
-			identifier: method.deprecated
-			count: 2
-			path: Tests/Architecture/ArchitectureTest.php
