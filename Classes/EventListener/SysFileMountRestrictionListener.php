@@ -7,6 +7,7 @@ namespace Hn\McpServer\EventListener;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\BeforeRecordReadEvent;
 use Hn\McpServer\Service\TableAccessService;
+use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -15,6 +16,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Restricts sys_file reads to the file mounts the current backend user can
  * actually access. Non-admin users with no file mounts see no files at all.
  */
+#[AsEventListener(identifier: 'mcp-server/sys-file-mount-restriction')]
 final class SysFileMountRestrictionListener
 {
     public function __invoke(BeforeRecordReadEvent $event): void

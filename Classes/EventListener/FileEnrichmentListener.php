@@ -7,6 +7,7 @@ namespace Hn\McpServer\EventListener;
 use Hn\McpServer\Event\AfterRecordReadEvent;
 use Hn\McpServer\Event\AfterSchemaLoadEvent;
 use Hn\McpServer\Service\SiteInformationService;
+use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -42,6 +43,7 @@ final class FileEnrichmentListener
         'public_url',
     ];
 
+    #[AsEventListener(identifier: 'mcp-server/file-enrichment-schema')]
     public function onSchemaLoad(AfterSchemaLoadEvent $event): void
     {
         match ($event->getTable()) {
@@ -51,6 +53,7 @@ final class FileEnrichmentListener
         };
     }
 
+    #[AsEventListener(identifier: 'mcp-server/file-enrichment-read')]
     public function onRecordRead(AfterRecordReadEvent $event): void
     {
         match ($event->getTable()) {

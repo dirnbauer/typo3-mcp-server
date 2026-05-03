@@ -3,7 +3,7 @@
     "type": "typo3-cms-extension",
     "description": "TYPO3 extension that provides a Model Context Protocol (MCP) server for interacting with TYPO3 pages and records",
     "license": "GPL-2.0-or-later",
-    "homepage": "https://github.com/hauptsacheNet/typo3-mcp-server",
+    "homepage": "https://github.com/dirnbauer/typo3-mcp-server",
     "authors": [
         {
             "name": "Marco Pfeiffer",
