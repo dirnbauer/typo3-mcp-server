@@ -172,6 +172,55 @@ Check:
   pending changes and that filtering (``onlyTables``) matches what you
   expect.
 
+A tool returns "tool ... is missing subsystems"
+================================================
+
+Symptom: an MCP call returns ``AccessDenied: tool "Foo" (manifest is
+missing subsystems: file:write)``.
+
+Cause: the capability manifest at ``Configuration/Capabilities.yaml`` no
+longer declares the subsystems that tool requires. Either an admin
+hardened the manifest (intentionally) or a recent ``mcp_server`` upgrade
+added a new tool whose subsystem isn't yet in the local manifest.
+
+Fix:
+
+- Inspect the active manifest: ``vendor/bin/typo3 mcp:get-capabilities --json``.
+- Add the missing entry under ``capabilities.subsystems`` if you want the
+  tool enabled.
+- Or set the extension setting ``enforceCapabilityManifest = 0`` to bypass
+  the manifest entirely (debugging only — opens every registered tool).
+
+A network-using tool returns "outbound request not in manifest"
+===============================================================
+
+Symptom: ``UploadFileFromUrl`` or ``RenderRecord`` returns
+``AccessDenied: outbound request to "..." (not in capability manifest
+network.outbound)``.
+
+Cause: the manifest's ``network.outbound`` list does not include that
+host. Default ships at ``[self]`` only.
+
+Fix: edit ``Configuration/Capabilities.yaml`` and add the host (or
+``*.example.com`` wildcard) under ``network.outbound``. Use ``*`` to allow
+any host (the IP-range SSRF check still rejects private addresses).
+
+Live writes are rejected even though I expect them to work
+==========================================================
+
+Symptom: ``WriteTable`` rejects ``workspace_id: 0`` with
+``AccessDenied: live workspace (set localUnsafeMode=on or run inside
+DDEV)`` even though you're on a developer machine.
+
+Cause: the server detected a Production-style application context and the
+``localUnsafeMode`` setting is at ``auto`` or ``off``.
+
+Fix: either set ``TYPO3_CONTEXT=Development`` (or one of its derivatives)
+in your environment, set ``IS_DDEV_PROJECT=true``, or pin
+``localUnsafeMode = on`` in extension settings. Verify via
+``vendor/bin/typo3 mcp:get-capabilities --json`` — the ``localMode``
+section reports what's detected.
+
 The backend module tabs do nothing
 ==================================
 

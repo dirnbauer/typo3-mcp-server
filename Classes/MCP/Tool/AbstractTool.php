@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Abstract base class for MCP tools
@@ -48,12 +51,30 @@ abstract class AbstractTool implements ToolInterface
     protected function executeInternal(array $params): CallToolResult
     {
         try {
+            $this->enforceCapabilityManifest();
             $this->enforceAdminOnly();
             $this->initialize();
             return $this->doExecute($params);
         } catch (\Throwable $e) {
             return $this->handleException($e, $this->getName());
         }
+    }
+
+    /**
+     * Refuse to execute when Configuration/Capabilities.yaml has not declared
+     * this tool's required subsystems. Disabling the manifest setting bypasses
+     * the check (see CapabilityManifestService::isEnforced()).
+     */
+    private function enforceCapabilityManifest(): void
+    {
+        try {
+            $manifest = GeneralUtility::makeInstance(CapabilityManifestService::class);
+        } catch (\Throwable) {
+            // DI not booted (e.g. very early CLI); skip — the runtime
+            // execution path will eventually hit the manifest in normal calls.
+            return;
+        }
+        $manifest->assertToolAllowed($this->getName());
     }
 
     protected function initialize(): void {}

@@ -88,6 +88,18 @@ Writes go through DataHandler. Publishes and rollbacks default to dry-run.
 File tools are sandboxed. Admin-only tools (`CreateSite`, `InstallExtension`)
 are clearly gated.
 
+A **capability manifest** (`Configuration/Capabilities.yaml`) declares
+which subsystems each tool needs and gates outbound HTTP. Production
+operators harden by removing subsystems (e.g. delete `database:write` to
+make MCP read-only) or constraining `network.outbound` to specific
+domains. See
+[`Documentation/Architecture/CapabilityManifest.rst`](Documentation/Architecture/CapabilityManifest.rst).
+
+A **DDEV / local-mode service** (`LocalModeService`) detects developer
+environments and relaxes only the workspace-staging and file-sandbox
+safety nets — never authentication or capability policy. Production stays
+strict by default.
+
 ### 6. Language-awareness, conditional
 
 Translation parameters are only exposed when the site actually has more than
@@ -299,6 +311,8 @@ The runtime is intentionally thin; TYPO3 does most of the work.
 | `FileReferenceAttachmentService` | Workspace-safe `sys_file_reference` creation via DataHandler |
 | `OAuthService` | Auth codes, PKCE, SHA-256 token hashing, revocation |
 | `SelectItemResolver` | FormEngine-style select resolution (itemsProcFunc, TSconfig) |
+| `LocalModeService` | Detect DDEV / Development context; gate live writes + unrestricted file access |
+| `CapabilityManifestService` | Read `Capabilities.yaml`; refuse undeclared tools and out-of-policy outbound HTTP |
 
 ### HTTP transport hardening
 

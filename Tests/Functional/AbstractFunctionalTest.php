@@ -48,6 +48,12 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        // Pin the local-mode escape hatch off for the default test run so the
+        // existing safety-net assertions (sandbox boundary, workspace-only
+        // writes) keep their original semantics. Tests that exercise the
+        // local-mode behavior turn it on explicitly via ExtensionConfiguration.
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         $this->initializeServices();
         $this->setupDefaultLanguage();
         $this->loadStandardFixtures();

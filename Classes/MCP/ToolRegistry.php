@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP;
 
 use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 use Hn\McpServer\MCP\Tool\ToolInterface;
+use Hn\McpServer\Service\CapabilityManifestService;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
@@ -24,6 +25,7 @@ final class ToolRegistry
     public function __construct(
         #[AutowireIterator('mcp.tool')]
         iterable $tools,
+        private readonly ?CapabilityManifestService $capabilityManifest = null,
     ) {
         foreach ($tools as $tool) {
             $normalizedTool = $this->normalizeTool($tool);
@@ -46,11 +48,18 @@ final class ToolRegistry
     }
 
     /**
-     * Get a specific tool by name
+     * Get a specific tool by name. Capability-manifest enforcement happens
+     * inside AbstractTool::execute() so a manifest-blocked call surfaces a
+     * structured error instead of a silent "tool not found".
      */
     public function getTool(string $name): ?ToolInterface
     {
         return $this->tools[$name] ?? null;
+    }
+
+    public function getCapabilityManifest(): ?CapabilityManifestService
+    {
+        return $this->capabilityManifest;
     }
 
     private function normalizeTool(mixed $tool): ?ToolInterface

@@ -34,6 +34,37 @@ Services that do not implement the interface but expose ``getName()`` and
 their schema and result types. This lets third-party extensions contribute MCP
 tools without taking a hard dependency on this extension's interface.
 
+Capability manifest
+-------------------
+
+Every tool call also passes through ``CapabilityManifestService::assertToolAllowed()``
+inside ``AbstractTool::execute()``. The active manifest lives at
+``Configuration/Capabilities.yaml`` and lists the subsystems each tool needs
+(``database:read``, ``file:write``, ``render:frontend``, …). Removing a
+subsystem disables every tool that requires it; the call returns an
+``AccessDeniedException`` rather than executing.
+
+Outbound HTTP from ``UploadFileFromUrl`` and ``RenderRecord`` is gated by the
+manifest's ``network.outbound`` policy. Default ships closed at ``[self]`` —
+operators opt in to additional hosts per deployment.
+
+CLI mirror
+----------
+
+Every tool is also a TYPO3 console command. Use ``vendor/bin/typo3 list mcp``
+to discover them. Output modes:
+
+- ``--json`` — machine-readable envelope ``{ok, result}``
+- ``--plain`` or ``--no-ansi`` — plain text without decoration
+- (default) — pretty colored output
+
+Pass parameters via ``--param key=value`` (repeatable), ``--params <json>``,
+or ``--param key=@file.json`` (file must live under the project root). Use
+``vendor/bin/typo3 mcp:tool <Name>`` for any tool without a dedicated
+shortcut, or ``vendor/bin/typo3 mcp:tool:list --schema=<Name>`` to dump the
+JSON Schema. Recipe for adding a new shortcut: see the ``typo3-mcp-cli``
+claude-code skill.
+
 Tool names (MCP ``tools/list``)
 ===============================
 
@@ -47,6 +78,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - Tool name
      - Access
      - Summary
+   * - ``GetCapabilities``
+     - Read
+     - Return the active capability manifest + runtime mode (always callable)
    * - ``ListWorkspaces``
      - Read
      - List workspaces; use for optional ``workspace_id`` on record tools
@@ -152,6 +186,13 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``GetPaymentStats``
      - Read
      - Summarize x402 payment activity and revenue when payment logging exists
+   * - ``GetPreviewUrl``
+     - Read
+     - Build a workspace preview URL for a page or content element
+   * - ``RenderRecord``
+     - Read
+     - Fetch the rendered FE HTML/text of a page in workspace context
+       (for visual verification)
 
 Record-backed tools
 ===================
@@ -1027,6 +1068,64 @@ Summarize x402 payment statistics when the optional payment-log table exists.
 :Parameters:
    - ``period`` (string): ``today``, ``7days``, ``30days`` (default), or ``all``
    - ``groupBy`` (string): ``page`` (default), ``day``, or ``network``
+
+Verification tools
+==================
+
+GetPreviewUrl
+-------------
+
+Build a workspace preview URL for a page or content element.
+
+:Parameters:
+   - ``table`` (string, required): ``pages`` or ``tt_content``
+   - ``uid`` (integer, required): live UID of the record
+   - ``language`` (string, optional): ISO code; defaults to record's own language
+
+The preview URL is signed by TYPO3's ``PreviewUriBuilder`` so it can be
+opened without a backend login. For ``tt_content`` rows the URL is the
+parent page's preview URL with ``#c<uid>`` appended.
+
+Use this right after a write to drop a "see what I just changed" link into
+chat for a stakeholder.
+
+RenderRecord
+------------
+
+Fetch the rendered frontend HTML for a page in workspace context.
+
+:Parameters:
+   - ``pageId`` (integer, required): live page UID
+   - ``contentUid`` (integer, optional): when set, the response is reduced
+     to the rendered HTML of that single ``tt_content`` element
+   - ``mode`` (string): ``html`` (default), ``text`` (strips tags), or
+     ``preview`` (URL only, no fetch)
+   - ``language`` (string): ISO code
+   - ``maxLength`` (integer): cap on response size in characters
+     (default 50 000, max 200 000)
+
+Closes the verification loop for an LLM editor: write a record with
+``WriteTable``, then ask ``RenderRecord`` whether the result actually
+shows up the way it should. Outbound HTTP is gated by the capability
+manifest's ``network.outbound`` policy (default ``self`` — only the
+TYPO3 instance's own site bases). Redirects are not followed (single
+302 to a private IP would bypass the host check), and TLS verification
+is enforced unless ``localUnsafeMode`` is enabled (DDEV self-signed
+certs).
+
+GetCapabilities
+---------------
+
+Return the active capability manifest plus runtime mode (DDEV/local-mode
+detection results, enforcement on/off).
+
+No parameters. Always callable — bypasses the manifest gate so a fresh
+client can introspect what is and isn't allowed before attempting other
+calls.
+
+Useful as the first call of an MCP session: the LLM learns which tools
+are available, which subsystems are declared, whether live writes are
+unlocked (DDEV/localUnsafeMode), and whether outbound HTTP is open.
 
 File safety model
 =================

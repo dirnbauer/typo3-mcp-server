@@ -148,16 +148,20 @@ final class McpFileSandboxServiceTest extends TestCase
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $configuration;
 
+        $localMode = new \Hn\McpServer\Service\LocalModeService(new ExtensionConfiguration());
+
         $workspaceContextService = new WorkspaceContextService(
             $this->createMock(ConnectionPool::class),
             new Context(),
             self::createStub(LoggerInterface::class),
             $this->createMock(WorkspaceService::class),
+            $localMode,
         );
 
         return new McpFileSandboxService(
             new ExtensionConfiguration(),
             $workspaceContextService,
+            $localMode,
         );
     }
 

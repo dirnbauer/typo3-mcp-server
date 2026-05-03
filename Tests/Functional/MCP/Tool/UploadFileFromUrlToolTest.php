@@ -13,6 +13,17 @@ use PHPUnit\Framework\Attributes\Test;
  */
 final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The default capability manifest only allows `self` outbound, which
+        // would short-circuit the SSRF assertions below by rejecting unknown
+        // hosts before they reach UploadFileFromUrl::validateUrl(). Drop the
+        // manifest gate for these tests so the IP-range SSRF check is what
+        // rejects private/loopback addresses (which is what we're verifying).
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['enforceCapabilityManifest'] = '0';
+    }
+
     #[Test]
     public function rejectsEmptyUrl(): void
     {

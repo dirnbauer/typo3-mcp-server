@@ -86,6 +86,67 @@ Accepted risks
    redirects/size limits apply. Extend functional coverage when changing this
    code path.
 
+6. ``localUnsafeMode`` (extension config; default ``auto``) relaxes
+   workspace-only writes and the file sandbox when DDEV / Development
+   context is detected.
+
+   Rationale: production never sets ``IS_DDEV_PROJECT`` or runs in the
+   Development context. The pre-existing OAuth, capability manifest, and
+   TYPO3 permission checks remain enforced regardless of local mode.
+   Operators that want belt-and-braces gating can pin
+   ``localUnsafeMode = off`` so even an accidentally-set DDEV env var
+   cannot relax the safety nets.
+
+2026-05-03 (capability manifest + DDEV-aware local mode)
+========================================================
+
+Added findings and mitigations
+------------------------------
+
+1. Capability manifest now declares per-tool required subsystems and
+   outbound network policy.
+
+   Status: Enforced. ``Configuration/Capabilities.yaml`` lists every tool
+   and the subsystems it needs. ``AbstractTool::execute()`` rejects calls
+   whose required subsystems are not declared. ``UploadFileFromUrl`` and
+   ``RenderRecord`` consult ``CapabilityManifestService::assertHostAllowed()``
+   before opening a socket. Default ``network.outbound`` ships closed at
+   ``[self]``; operators opt in to public web per deployment.
+
+2. ``RenderRecord`` SSRF gate: redirects disabled, TLS verified.
+
+   Status: Hardened. ``CURLOPT_FOLLOWLOCATION`` set to ``false`` so a
+   single 302 cannot bypass the host allowlist; ``CURLOPT_SSL_VERIFYPEER``
+   stays on except in ``localUnsafeMode`` (where DDEV's self-signed certs
+   are common). Initial ``assertHostAllowed`` check is the only gate the
+   request must satisfy.
+
+3. CLI ``@path`` parameter file loader.
+
+   Status: Mitigated. ``AbstractMcpToolCommand::coerceValue`` resolves
+   ``@file.json`` paths via ``realpath`` and rejects targets outside the
+   TYPO3 project root. CLI is operator-trusted but this prevents accidental
+   smuggling of host files (``/etc/passwd``, …) into tool params.
+
+Accepted risks (additions)
+--------------------------
+
+1. Local-mode auto-detection treats DDEV env vars OR Development context
+   as enabling.
+
+   Rationale: the ``OR`` is intentional for ergonomics — a developer using
+   DDEV in Production context (e.g. a DDEV-served preview of a production
+   build) still wants live writes available. Operators who consider this
+   too permissive can pin ``localUnsafeMode = off`` to require the
+   stricter AND semantics.
+
+2. Capability manifest enforcement uses ``GeneralUtility::makeInstance``
+   inside ``AbstractTool::execute()``.
+
+   Rationale: makeInstance is the documented TYPO3 entry point for early
+   bootstrap calls (CLI, eID) where constructor injection isn't fully
+   set up. The service has no mutable state.
+
 Structured MCP results
 ======================
 

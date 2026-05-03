@@ -101,6 +101,31 @@ Permission-aware access
 The extension runs with the authenticated backend user's permissions. MCP
 should never see more than that backend user could manage manually.
 
+Capability-manifest enforcement
+-------------------------------
+
+Every tool declares which subsystems it needs (``database:read``,
+``file:write``, ``render:frontend``, …). The shipped
+``Configuration/Capabilities.yaml`` enumerates them and maps every tool
+to its requirements. ``AbstractTool::execute()`` rejects calls whose
+required subsystems aren't declared, and outbound HTTP for
+``UploadFileFromUrl`` / ``RenderRecord`` is gated by
+``network.outbound`` (default: ``self`` only).
+
+Hardening means deleting lines from the manifest. Removing
+``database:write`` makes the MCP read-only; replacing
+``network.outbound: [self, '*']`` with ``[self, 'images.unsplash.com']``
+locks outbound HTTP to a single domain.
+
+DDEV / local-development mode
+-----------------------------
+
+Detection of DDEV environment variables or the TYPO3 Development
+application context relaxes the workspace-only-writes and file-sandbox
+safety nets so a developer's laptop is ergonomic to use. Override via
+the ``localUnsafeMode`` extension setting (``auto``/``on``/``off``).
+Authentication and the capability manifest stay enforced regardless.
+
 Important limitations
 =====================
 

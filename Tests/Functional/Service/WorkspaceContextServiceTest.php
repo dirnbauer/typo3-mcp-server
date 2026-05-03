@@ -25,6 +25,11 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        // Keep the workspace=0 rejection assertion meaningful by pinning local
+        // mode off — otherwise DDEV / Development context would unlock live
+        // writes and the test below stops being a security regression.
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 

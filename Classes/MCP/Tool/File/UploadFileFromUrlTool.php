@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -37,6 +38,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         private readonly StorageRepository $storageRepository,
         private readonly McpFileSandboxService $fileSandboxService,
         private readonly RequestFactory $requestFactory,
+        private readonly CapabilityManifestService $capabilityManifest,
     ) {}
 
     /**
@@ -160,6 +162,12 @@ final class UploadFileFromUrlTool extends AbstractTool
                 sprintf('Only %s URLs are allowed. Got "%s".', implode(' and ', self::ALLOWED_SCHEMES), $scheme),
             ]);
         }
+
+        // Capability-manifest enforcement: refuse hosts not in
+        // network.outbound. The default manifest ships with `*` so this is a
+        // no-op out of the box, but a hardened deployment can replace `*`
+        // with an explicit allowlist.
+        $this->capabilityManifest->assertHostAllowed($parsed['host']);
 
         // Resolve hostname to IP and reject private/internal addresses (SSRF protection).
         // String-based hostname checks are trivially bypassed via decimal IPs, hex encoding,

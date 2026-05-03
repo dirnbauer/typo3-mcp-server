@@ -23,7 +23,13 @@ final readonly class WorkspaceContextService
         private Context $context,
         private LoggerInterface $logger,
         private WorkspaceService $workspaceService,
+        private LocalModeService $localMode,
     ) {}
+
+    public function localModeEnabled(): bool
+    {
+        return $this->localMode->isLocalMode();
+    }
 
     /**
      * Switch to the optimal workspace for the current user.
@@ -50,11 +56,23 @@ final readonly class WorkspaceContextService
     /**
      * Switch to an explicitly requested workspace after validating access.
      *
+     * Workspace 0 (live) is rejected unless {@see LocalModeService::allowsLiveWrites()}
+     * returns true (DDEV / development context). The default safety net keeps writes
+     * staged in a workspace even when the caller passes `workspace_id: 0` explicitly.
+     *
      * @throws AccessDeniedException if the user cannot access the workspace
      */
     public function switchToWorkspace(BackendUserAuthentication $beUser, int $workspaceId): int
     {
-        if ($workspaceId <= 0) {
+        if ($workspaceId === 0) {
+            if (!$this->localMode->allowsLiveWrites()) {
+                throw new AccessDeniedException('live workspace (set localUnsafeMode=on or run inside DDEV)', 'switch');
+            }
+            $this->setWorkspaceContext($beUser, 0);
+            return 0;
+        }
+
+        if ($workspaceId < 0) {
             throw new AccessDeniedException('workspace', 'switch');
         }
 

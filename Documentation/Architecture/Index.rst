@@ -14,6 +14,7 @@ Architecture
    WorkspaceTransparency
    LanguageOverlays
    InlineRelations
+   CapabilityManifest
    SecurityAudit
 
 Design decisions
@@ -108,3 +109,7 @@ Key security measures:
 - File access is restricted to the MCP file sandbox instead of unrestricted
   ``fileadmin`` paths
 - Uploads use randomized stored filenames to reduce predictable file exposure
+- Capability manifest gates every tool call and outbound HTTP request; see
+  :doc:`CapabilityManifest`.
+- DDEV / local-mode detection relaxes only the workspace-staging and
+  file-sandbox safety nets — never authentication or capability policy.

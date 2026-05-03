@@ -18,7 +18,13 @@ final readonly class McpFileSandboxService
     public function __construct(
         private ExtensionConfiguration $extensionConfiguration,
         private WorkspaceContextService $workspaceContextService,
+        private LocalModeService $localMode,
     ) {}
+
+    public function isUnrestricted(): bool
+    {
+        return $this->localMode->allowsUnrestrictedFileAccess();
+    }
 
     /**
      * @return array{
@@ -38,6 +44,7 @@ final readonly class McpFileSandboxService
             'uploadFolder' => $this->buildUploadFolderIdentifier($workspaceId),
             'workspaceId' => $workspaceId,
             'workspaceUploads' => $this->useWorkspaceUploadFolders(),
+            'unrestricted' => $this->localMode->allowsUnrestrictedFileAccess(),
         ];
     }
 
@@ -232,6 +239,13 @@ final readonly class McpFileSandboxService
      */
     private function assertWithinBaseFolder(int $storageUid, string $fullPath, array $base): void
     {
+        // Local development (DDEV / `localUnsafeMode=on`): all storages and folders
+        // are reachable. Path traversal protection still applies — that lives in
+        // sanitizeRelativeFilePath / sanitizeRelativeFolderPath.
+        if ($this->localMode->allowsUnrestrictedFileAccess()) {
+            return;
+        }
+
         if ($storageUid !== $base['storageUid']) {
             throw new ValidationException([
                 sprintf(

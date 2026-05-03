@@ -32,6 +32,79 @@ services:
       - name: 'console.command'
         command: 'mcp:oauth'
         description: 'Manage OAuth tokens for MCP server'
+
+  # Generic MCP tool runner + per-tool ergonomic shortcuts.
+  # The typo3-mcp-cli skill walks through adding more.
+  Hn\McpServer\Command\McpToolRunCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:tool'
+        description: 'Run any registered MCP tool by name (use mcp:tool:list to discover them).'
+  Hn\McpServer\Command\McpToolListCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:tool:list'
+        description: 'List MCP tools registered in this TYPO3 instance.'
+  Hn\McpServer\Command\Tool\ReadTableToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:read-table'
+        description: 'Read records from a TCA table (workspace-aware, language-aware).'
+  Hn\McpServer\Command\Tool\WriteTableToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:write-table'
+        description: 'Create / update / move / translate / delete a TCA record (workspace-staged).'
+  Hn\McpServer\Command\Tool\GetPageToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-page'
+        description: 'Fetch a TYPO3 page including content elements (workspace-aware).'
+  Hn\McpServer\Command\Tool\GetPageTreeToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-page-tree'
+        description: 'Print the page tree as text (workspace-aware).'
+  Hn\McpServer\Command\Tool\SearchToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:search'
+        description: 'Full-text search across workspace-capable TCA tables.'
+  Hn\McpServer\Command\Tool\ListTablesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-tables'
+        description: 'List MCP-accessible TCA tables and their access info.'
+  Hn\McpServer\Command\Tool\GetTableSchemaToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-table-schema'
+        description: 'Return the TCA-derived schema for a table (fields, types, validation).'
+  Hn\McpServer\Command\Tool\ListWorkspacesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-workspaces'
+        description: 'List workspaces accessible to the current backend user.'
+  Hn\McpServer\Command\Tool\PublishWorkspaceToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:publish-workspace'
+        description: 'Publish workspace changes to live (defaults to dryRun=true).'
+  Hn\McpServer\Command\Tool\GetCapabilitiesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-capabilities'
+        description: 'Show the active capability manifest + runtime mode.'
+  Hn\McpServer\Command\Tool\RenderRecordToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:render-record'
+        description: 'Render a page (or single content element) through the FE in workspace context.'
+  Hn\McpServer\Command\Tool\GetPreviewUrlToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-preview-url'
+        description: 'Build a workspace preview URL for a page or content element.'
         
   # Make ToolRegistry public for eID access
   Hn\McpServer\MCP\ToolRegistry:

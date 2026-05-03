@@ -16,6 +16,12 @@ TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.
    E2eSuite
    E2eCiDebugging
 
+.. seealso::
+
+   - :doc:`CursorTesting` — manual MCP-end-to-end testing through Cursor.
+   - ``FullFeatureChatbotScript.md`` — natural-language test script for any
+     MCP-connected chatbot.
+
 .. _testing-overview:
 
 Test layers
