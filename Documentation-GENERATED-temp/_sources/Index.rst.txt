@@ -79,6 +79,7 @@ Start here depending on your role:
 - :doc:`Configuration/Index` for module, OAuth, workspace, and file sandbox
   configuration
 - :doc:`Tools/Index` for the complete MCP tool reference
+- :doc:`Testing/Index` for the E2E test suite and CI test workflow
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
   deeper architecture notes
 - :doc:`Troubleshooting/Index` when something is not working
@@ -96,5 +97,6 @@ Further reading
    Installation/Index
    Configuration/Index
    Tools/Index
+   Testing/Index
    Architecture/Index
    Troubleshooting/Index

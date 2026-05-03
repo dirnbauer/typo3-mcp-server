@@ -12,15 +12,15 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
-                        <link href="InlineRelations.html" rel="prev" title="Inline relations"/>
+                        <link href="CapabilityManifest.html" rel="prev" title="Capability manifest"/>
             <link href="../Troubleshooting/Index.html" rel="next" title="Troubleshooting"/>
             <link href="../Index.html" rel="top" title="MCP Server"/>
     </head>
@@ -126,7 +126,16 @@
     </a></li>    <li class="" role="menuitem">
     <a href="../Tools/Index.html">
         Tools
-    </a></li>    <li class=" active" role="menuitem">
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class=" active" role="menuitem">
     <a href="Index.html">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -141,6 +150,9 @@
     </a></li><li class="" role="menuitem">
     <a href="InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="CapabilityManifest.html">
+        Capability manifest
     </a></li><li class=" current active" role="menuitem">
     <a href="#" aria-current="page">
         Security audit
@@ -191,9 +203,10 @@ URL download tool, and extension settings.</p>
     
 <ol start="1">
     <li value="1">
-    <p>Access tokens were stored in plain text.</p>
+    <p>Access and refresh tokens were stored in plain text.</p>
 
-    <p>Status: Fixed. Access tokens are now SHA-256 hashed before storage.</p>
+    <p>Status: Fixed. Access and refresh tokens are now SHA-256 hashed before
+storage.</p>
 </li>
     <li value="2">
     <p>PKCE was not enforced consistently when a challenge was present.</p>
@@ -270,6 +283,255 @@ cannot fully eliminate DNS rebinding races without additional infrastructure.</p
 redirects/size limits apply. Extend functional coverage when changing this
 code path.</p>
 </li>
+    <li value="6">
+    <p><code>localUnsafeMode</code> (extension config; default <code>auto</code>) relaxes
+workspace-only writes and the file sandbox when DDEV / Development
+context is detected.</p>
+
+    <p>Rationale: production never sets <code>IS_DDEV_PROJECT</code> or runs in the
+Development context. The pre-existing OAuth, capability manifest, and
+TYPO3 permission checks remain enforced regardless of local mode.
+Operators that want belt-and-braces gating can pin
+<code>localUnsafeMode = off</code> so even an accidentally-set DDEV env var
+cannot relax the safety nets.</p>
+</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-security-audit-skill-pass-owasp-cwe">
+            <h2>2026-05-03 (security-audit skill pass — OWASP / CWE)<a class="headerlink" href="#2026-05-03-security-audit-skill-pass-owasp-cwe" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="fixed-findings">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p><strong>OWASP A01 / IDOR</strong> — <code>ReadTableTool</code> did not validate <code>pid</code>/<code>uid</code>
+against the BE user&#039;s webmount, only against table-level access via
+<code>TableAccessService</code>. A non-admin token holder could read records on
+pages outside their DB mount.</p>
+
+    <p>Status: Fixed. <code>ReadTableTool::ensurePageAccess()</code> mirrors
+<code>WriteTableTool::validatePageAccess()</code> (admins pass through, others
+need <code>isInWebMount(pid)</code>). UID-only lookups also post-filter the
+result set via <code>filterRecordsByWebMount()</code> so cross-page reads via
+<code>uid</code> are equally gated.</p>
+</li>
+    <li value="2">
+    <p><strong>OWASP A04 / Mass-assignment</strong> — <code>BulkWriteTool</code> and <code>WriteTableTool</code>
+accepted <code>t3ver_*</code>, <code>deleted</code>, <code>tstamp</code>, <code>crdate</code>, <code>cruser_id</code>,
+<code>perms_*</code> in the data array. DataHandler sanitized most, but
+defense-in-depth at the MCP layer is appropriate.</p>
+
+    <p>Status: Fixed. Both tools reject these system columns up-front with a
+structured error rather than letting the value silently disappear.</p>
+</li>
+    <li value="3">
+    <p><strong>OWASP A05 / misconfig</strong> — <code>enableMcpAuthHeaderDiagnostic</code> defaulted
+to ON. The <code>?test=auth</code> probe is unauthenticated.</p>
+
+    <p>Status: Default flipped to OFF in <code>ext_conf_template.txt</code>. Operators
+who want the backend module connection-check indicator turn it on
+explicitly.</p>
+</li>
+    <li value="4">
+    <p><strong>OWASP API4 / resource consumption</strong> — <code>GetPageTreeTool</code> accepted
+any depth (<code>depth=10000</code> would scale linearly).</p>
+
+    <p>Status: Bounded to 10 with <code>max(1, min(10, $depth))</code>.</p>
+</li>
+    <li value="5">
+    <p><strong>OWASP A09 / logging gap</strong> — <code>OAuthService</code> returned <code>null</code> silently
+on PKCE mismatch, missing/expired auth code, invalid bearer token,
+and refresh-token rotation failure. Production log monitoring had no
+way to detect attack patterns.</p>
+
+    <p>Status: Fixed. Each branch now logs at warning level with <code>client_ip</code>
+context (and PKCE method on the wrong-method branch). <code>OAuthService</code>
+gained an optional <code>LoggerInterface</code> constructor parameter (DI
+provides one; existing callers that pass none get a <code>NullLogger</code>).</p>
+</li>
+    <li value="6">
+    <p><strong>CWE-93 / header injection</strong> — <code>validateRedirectUri()</code> accepted
+non-http custom schemes (e.g. <code>cursor://</code>, <code>vscode://</code>) without
+filtering CR/LF/NUL bytes. The validated string was later
+concatenated into a <code>Location:</code> response header.</p>
+
+    <p>Status: Fixed. <code>preg_match(&#039;/[\\r\\n\\0]/&#039;, $url)</code> rejects any URL
+carrying line-break / NUL bytes before parse_url is even called.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-added">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1" type="1">
+    <li value="1">Cookie <code>Secure</code> flag drops behind a TLS-terminating reverse proxy
+when <code>getUri()-&gt;getScheme()</code> returns <code>http</code>. Operators behind a
+proxy must set <code>X-Forwarded-Proto</code> and configure trusted proxies in
+TYPO3, or the OAuth-state cookie is sent in the clear over the
+internal hop. Documented as an operator-side concern.</li>
+    <li value="2"><code>Build/build-ter.sh</code> does not commit a lockfile or sign the bundled
+<code>Resources/Private/PHP/vendor</code> payload. The TER zip therefore
+varies build-to-build. Tracking for a focused supply-chain hardening
+PR (composer.lock + sha256 manifest + cosign).</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-typo3-security-skill-pass-rfc-9700-alignment">
+            <h2>2026-05-03 (typo3-security skill pass — RFC 9700 alignment)<a class="headerlink" href="#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="fixed-findings">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>PKCE was conditionally required (<code>$pkce !== &#039;&#039;</code> gate). RFC 9700 §2.1.1
+makes it mandatory.</p>
+
+    <p>Status: Fixed. <code>OAuthAuthorizeEndpoint::handle()</code> and
+<code>handleApproval()</code> now reject any authorization-code request without
+a <code>code_challenge</code>. Method must be <code>S256</code> (no <code>plain</code>).</p>
+</li>
+    <li value="2">
+    <p>Plaintext token fallback (<code>token_version=0</code>).</p>
+
+    <p>Status: Removed. <code>OAuthService::validateToken()</code> no longer falls back
+to plaintext column lookup. Any pre-migration tokens are rejected and
+the affected MCP client is forced to re-authenticate via the install
+button — issuing a freshly hashed token.</p>
+</li>
+    <li value="3">
+    <p>HTML-attribute escaping in the OAuth consent page used the
+PHP-version-default flag set, which historically did not include
+<code>ENT_QUOTES</code>.</p>
+
+    <p>Status: Hardened. All escaped values now use
+<code>ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5</code> so single quotes and
+malformed UTF-8 cannot break the template.</p>
+</li>
+    <li value="4">
+    <p><code>/mcp</code> and <code>/mcp_oauth/*</code> responses lacked browser-defense headers.</p>
+
+    <p>Status: Fixed. <code>CorsHeadersTrait::addSecurityHeaders()</code> stamps
+<code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>,
+<code>Referrer-Policy: no-referrer</code>, <code>Cache-Control: no-store</code>, and
+<code>Pragma: no-cache</code>. Wired into <code>McpEndpoint</code> (success + error path).</p>
+</li>
+    <li value="5">
+    <p><code>OAuthTokenEndpoint</code> debug log used a 20-char token prefix (80 bits).</p>
+
+    <p>Status: Reduced to 8-char prefix (32 bits) — enough for log
+correlation, not enough to reconstruct the full 64-char token.</p>
+</li>
+    <li value="6">
+    <p><code>WriteFileTool</code> default <code>textfile_ext</code> accepted SVG, which can
+carry inline <code>&lt;script&gt;</code> and trigger stored XSS.</p>
+
+    <p>Status: SVG removed from the default. Operators who need SVG must
+add it to <code>$TYPO3_CONF_VARS[SYS][textfile_ext]</code> and pipe through
+<code>TYPO3\\CMS\\Core\\Resource\\Security\\SvgSanitizer</code>.</p>
+</li>
+    <li value="7">
+    <p><code>RenderRecord</code> cURL fetched without resolving the host to an IP.</p>
+
+    <p>Status: Fixed. Outside <code>localUnsafeMode</code>, the host is resolved with
+<code>gethostbynamel()</code> and any private/reserved address aborts the
+request — same protection model as <code>UploadFileFromUrl</code>.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-added">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1" type="1">
+    <li value="1">OAuth authorization code is bound to the client name and redirect URI
+only loosely (the exchange call does not re-verify the redirect URI).
+Currently a single-client deployment with a locked-down redirect, so
+the impact is theoretical — flagged for a focused PR that adds the
+per-RFC-9700 §4.1.3 strict comparison.</li>
+    <li value="2">Refresh-token rotation does not invalidate the previous refresh token
+(replay detection / family revocation per RFC 9700 §4.14). Tokens are
+single-use within their TTL and rotated, but a captured token used
+twice goes undetected. To be addressed in a focused refresh-rotation
+PR.</li>
+    <li value="3">No rate limiting on <code>/mcp</code>, <code>/mcp_oauth/token</code>, or
+<code>/mcp_oauth/authorize</code>. Bearer-token brute force is unbounded
+(32-byte random tokens make this impractical, but a defense-in-depth
+limiter is appropriate). Recommend adding an upstream HTTP-tier limit
+(nginx <code>limit_req</code>, Apache <code>mod_qos</code>, or a TYPO3 PSR-15
+middleware that calls <code>Symfony\\Component\\RateLimiter</code>).</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-capability-manifest-ddev-aware-local-mode">
+            <h2>2026-05-03 (capability manifest + DDEV-aware local mode)<a class="headerlink" href="#2026-05-03-capability-manifest-ddev-aware-local-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="added-findings-and-mitigations">
+            <h3>Added findings and mitigations<a class="headerlink" href="#added-findings-and-mitigations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>Capability manifest now declares per-tool required subsystems and
+outbound network policy.</p>
+
+    <p>Status: Enforced. <code>Configuration/Capabilities.yaml</code> lists every tool
+and the subsystems it needs. <code>AbstractTool::execute()</code> rejects calls
+whose required subsystems are not declared. <code>UploadFileFromUrl</code> and
+<code>RenderRecord</code> consult <code>CapabilityManifestService::assertHostAllowed()</code>
+before opening a socket. Default <code>network.outbound</code> ships closed at
+<code>[self]</code>; operators opt in to public web per deployment.</p>
+</li>
+    <li value="2">
+    <p><code>RenderRecord</code> SSRF gate: redirects disabled, TLS verified.</p>
+
+    <p>Status: Hardened. <code>CURLOPT_FOLLOWLOCATION</code> set to <code>false</code> so a
+single 302 cannot bypass the host allowlist; <code>CURLOPT_SSL_VERIFYPEER</code>
+stays on except in <code>localUnsafeMode</code> (where DDEV&#039;s self-signed certs
+are common). Initial <code>assertHostAllowed</code> check is the only gate the
+request must satisfy.</p>
+</li>
+    <li value="3">
+    <p>CLI <code>@path</code> parameter file loader.</p>
+
+    <p>Status: Mitigated. <code>AbstractMcpToolCommand::coerceValue</code> resolves
+<code>@file.json</code> paths via <code>realpath</code> and rejects targets outside the
+TYPO3 project root. CLI is operator-trusted but this prevents accidental
+smuggling of host files (<code>/etc/passwd</code>, …) into tool params.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-additions">
+            <h3>Accepted risks (additions)<a class="headerlink" href="#accepted-risks-additions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>Local-mode auto-detection treats DDEV env vars OR Development context
+as enabling.</p>
+
+    <p>Rationale: the <code>OR</code> is intentional for ergonomics — a developer using
+DDEV in Production context (e.g. a DDEV-served preview of a production
+build) still wants live writes available. Operators who consider this
+too permissive can pin <code>localUnsafeMode = off</code> to require the
+stricter AND semantics.</p>
+</li>
+    <li value="2">
+    <p>Capability manifest enforcement uses <code>GeneralUtility::makeInstance</code>
+inside <code>AbstractTool::execute()</code>.</p>
+
+    <p>Rationale: makeInstance is the documented TYPO3 entry point for early
+bootstrap calls (CLI, eID) where constructor injection isn&#039;t fully
+set up. The service has no mutable state.</p>
+</li>
 </ol>
 
     </section>
@@ -302,7 +564,7 @@ the constrained <code>where</code> parser</li>
                         
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
-                            <a class="page-link" href="InlineRelations.html"
+                            <a class="page-link" href="CapabilityManifest.html"
                                title="Accesskey Alt(+Shift)+p">
                                 <i class="fa-solid fa-chevron-left"></i> Previous
                             </a>
@@ -403,7 +665,7 @@ the constrained <code>where</code> parser</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

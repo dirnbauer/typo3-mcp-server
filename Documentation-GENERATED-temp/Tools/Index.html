@@ -12,16 +12,16 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
                         <link href="../Configuration/Index.html" rel="prev" title="Configuration"/>
-            <link href="../Architecture/Index.html" rel="next" title="Architecture"/>
+            <link href="../Testing/Index.html" rel="next" title="Testing"/>
             <link href="../Index.html" rel="top" title="MCP Server"/>
     </head>
 <body>
@@ -127,6 +127,15 @@
     <a href="#" aria-current="page">
         Tools
     </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class="" role="menuitem">
     <a href="../Architecture/Index.html">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -141,6 +150,9 @@
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/CapabilityManifest.html">
+        Capability manifest
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/SecurityAudit.html">
         Security audit
@@ -203,6 +215,45 @@ their schema and result types. This lets third-party extensions contribute MCP
 tools without taking a hard dependency on this extension&#039;s interface.</p>
 
     </section>
+            <section class="section" id="capability-manifest">
+            <h3>Capability manifest<a class="headerlink" href="#capability-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool call also passes through <code>CapabilityManifestService::assertToolAllowed()</code>
+inside <code>AbstractTool::execute()</code>. The active manifest lives at
+<code>Configuration/Capabilities.yaml</code> and lists the subsystems each tool needs
+(<code>database:read</code>, <code>file:write</code>, <code>render:frontend</code>, …). Removing a
+subsystem disables every tool that requires it; the call returns an
+<code>AccessDeniedException</code> rather than executing.</p>
+
+            
+    <p>Outbound HTTP from <code>UploadFileFromUrl</code> and <code>RenderRecord</code> is gated by the
+manifest&#039;s <code>network.outbound</code> policy. Default ships closed at <code>[self]</code> —
+operators opt in to additional hosts per deployment.</p>
+
+    </section>
+            <section class="section" id="cli-mirror">
+            <h3>CLI mirror<a class="headerlink" href="#cli-mirror" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool is also a TYPO3 console command. Use <code>vendor/bin/typo3 list mcp</code>
+to discover them. Output modes:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>--json</code> — machine-readable envelope <code>{ok, result}</code></li>
+    <li class="dash"><code>--plain</code> or <code>--no-ansi</code> — plain text without decoration</li>
+    <li class="dash">(default) — pretty colored output</li>
+</ul>
+
+            
+    <p>Pass parameters via <code>--param key=value</code> (repeatable), <code>--params &lt;json&gt;</code>,
+or <code>--param key=@file.json</code> (file must live under the project root). Use
+<code>vendor/bin/typo3 mcp:tool &lt;Name&gt;</code> for any tool without a dedicated
+shortcut, or <code>vendor/bin/typo3 mcp:tool:list --schema=&lt;Name&gt;</code> to dump the
+JSON Schema. Recipe for adding a new shortcut: see the <code>typo3-mcp-cli</code>
+claude-code skill.</p>
+
+    </section>
     </section>
             <section class="section" id="tool-names-mcp-tools-list">
             <h2>Tool names (MCP <code>tools/list</code>)<a class="headerlink" href="#tool-names-mcp-tools-list" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -224,6 +275,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
         </thead>
         <tbody>
     <tr>
+            <td><code>GetCapabilities</code></td>            <td>Read</td>            <td>Return the active capability manifest + runtime mode (always callable)</td>    </tr>    <tr>
             <td><code>ListWorkspaces</code></td>            <td>Read</td>            <td>List workspaces; use for optional <code>workspace_id</code> on record tools</td>    </tr>    <tr>
             <td><code>GetPageTree</code></td>            <td>Read</td>            <td>Page tree with depth control (workspace overlay)</td>    </tr>    <tr>
             <td><code>GetPage</code></td>            <td>Read</td>            <td>Resolve page by UID or URL; content context</td>    </tr>    <tr>
@@ -258,7 +310,10 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
             <td><code>InstallExtension</code></td>            <td>Execute</td>            <td>Install, activate, or search TYPO3 extensions (admin-only)</td>    </tr>    <tr>
             <td><code>ListPaidContent</code></td>            <td>Read</td>            <td>List pages gated by the optional x402 paywall extension</td>    </tr>    <tr>
             <td><code>GetPaidContent</code></td>            <td>Read</td>            <td>Return x402 payment requirements or paid content for one page</td>    </tr>    <tr>
-            <td><code>GetPaymentStats</code></td>            <td>Read</td>            <td>Summarize x402 payment activity and revenue when payment logging exists</td>    </tr></tbody>    </table>
+            <td><code>GetPaymentStats</code></td>            <td>Read</td>            <td>Summarize x402 payment activity and revenue when payment logging exists</td>    </tr>    <tr>
+            <td><code>GetPreviewUrl</code></td>            <td>Read</td>            <td>Build a workspace preview URL for a page or content element</td>    </tr>    <tr>
+            <td><code>RenderRecord</code></td>            <td>Read</td>            <td>Fetch the rendered FE HTML/text of a page in workspace context
+(for visual verification)</td>    </tr></tbody>    </table>
 </div>
     </section>
             <section class="section" id="record-backed-tools">
@@ -1555,6 +1610,88 @@ directly.</p>
     </dl>
     </section>
     </section>
+            <section class="section" id="verification-tools">
+            <h2>Verification tools<a class="headerlink" href="#verification-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="getpreviewurl">
+            <h3>GetPreviewUrl<a class="headerlink" href="#getpreviewurl" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Build a workspace preview URL for a page or content element.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required): <code>pages</code> or <code>tt_content</code></li>
+    <li class="dash"><code>uid</code> (integer, required): live UID of the record</li>
+    <li class="dash"><code>language</code> (string, optional): ISO code; defaults to record&#039;s own language</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The preview URL is signed by TYPO3&#039;s <code>PreviewUriBuilder</code> so it can be
+opened without a backend login. For <code>tt_content</code> rows the URL is the
+parent page&#039;s preview URL with <code>#c&lt;uid&gt;</code> appended.</p>
+
+            
+    <p>Use this right after a write to drop a &quot;see what I just changed&quot; link into
+chat for a stakeholder.</p>
+
+    </section>
+            <section class="section" id="renderrecord">
+            <h3>RenderRecord<a class="headerlink" href="#renderrecord" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Fetch the rendered frontend HTML for a page in workspace context.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>pageId</code> (integer, required): live page UID</li>
+    <li class="dash"><code>contentUid</code> (integer, optional): when set, the response is reduced
+to the rendered HTML of that single <code>tt_content</code> element</li>
+    <li class="dash"><code>mode</code> (string): <code>html</code> (default), <code>text</code> (strips tags), or
+<code>preview</code> (URL only, no fetch)</li>
+    <li class="dash"><code>language</code> (string): ISO code</li>
+    <li class="dash"><code>maxLength</code> (integer): cap on response size in characters
+(default 50 000, max 200 000)</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Closes the verification loop for an LLM editor: write a record with
+<code>WriteTable</code>, then ask <code>RenderRecord</code> whether the result actually
+shows up the way it should. Outbound HTTP is gated by the capability
+manifest&#039;s <code>network.outbound</code> policy (default <code>self</code> — only the
+TYPO3 instance&#039;s own site bases). Redirects are not followed (single
+302 to a private IP would bypass the host check), and TLS verification
+is enforced unless <code>localUnsafeMode</code> is enabled (DDEV self-signed
+certs).</p>
+
+    </section>
+            <section class="section" id="getcapabilities">
+            <h3>GetCapabilities<a class="headerlink" href="#getcapabilities" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Return the active capability manifest plus runtime mode (DDEV/local-mode
+detection results, enforcement on/off).</p>
+
+            
+    <p>No parameters. Always callable — bypasses the manifest gate so a fresh
+client can introspect what is and isn&#039;t allowed before attempting other
+calls.</p>
+
+            
+    <p>Useful as the first call of an MCP session: the LLM learns which tools
+are available, which subsystems are declared, whether live writes are
+unlocked (DDEV/localUnsafeMode), and whether outbound HTTP is open.</p>
+
+    </section>
+    </section>
             <section class="section" id="file-safety-model">
             <h2>File safety model<a class="headerlink" href="#file-safety-model" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
                 
@@ -1591,7 +1728,7 @@ file itself</li>
                             </a>
                         </li>
                     <li class="page-item">
-                            <a class="page-link" href="../Architecture/Index.html"
+                            <a class="page-link" href="../Testing/Index.html"
                                title="Accesskey Alt(+Shift)+n">
                                 Next <i class="fa-solid fa-chevron-right"></i>
                             </a>
@@ -1686,7 +1823,7 @@ file itself</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

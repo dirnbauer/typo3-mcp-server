@@ -1,5 +1,11 @@
 {
     "std:doc": {
+        "Architecture\/CapabilityManifest": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html",
+            "Capability manifest"
+        ],
         "Architecture\/ImplementationOverview": [
             "-",
             "-",
@@ -66,6 +72,24 @@
             "Introduction\/IntendedBehavior.html",
             "Intended behavior"
         ],
+        "Testing\/E2eCiDebugging": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html",
+            "E2E CI and debugging"
+        ],
+        "Testing\/E2eSuite": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html",
+            "The E2E suite"
+        ],
+        "Testing\/Index": [
+            "-",
+            "-",
+            "Testing\/Index.html",
+            "Testing"
+        ],
         "Tools\/Index": [
             "-",
             "-",
@@ -80,6 +104,12 @@
         ]
     },
     "std:label": {
+        "capability-manifest": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#capability-manifest",
+            "Capability manifest"
+        ],
         "architecture": [
             "-",
             "-",
@@ -122,6 +152,12 @@
             "Installation\/Index.html#installation-local-cli",
             "Local TYPO3 CLI server"
         ],
+        "installation-cli-mirror": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-cli-mirror",
+            "CLI mirror (every tool, every shell)"
+        ],
         "introduction": [
             "-",
             "-",
@@ -133,6 +169,126 @@
             "-",
             "Introduction\/IntendedBehavior.html#intended-behavior",
             "Intended behavior"
+        ],
+        "testing-e2e-ci-debugging": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-ci-debugging",
+            "E2E CI and debugging"
+        ],
+        "testing-e2e-ci": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-ci",
+            "GitHub Actions"
+        ],
+        "testing-e2e-debugging": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-debugging",
+            "Debugging failures"
+        ],
+        "testing-e2e-common-failures": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-common-failures",
+            "Common failure patterns"
+        ],
+        "testing-e2e-artifacts": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-artifacts",
+            "Artifact workflow"
+        ],
+        "testing-e2e-maintenance": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-maintenance",
+            "Maintenance rules"
+        ],
+        "testing-e2e-local-environment-notes": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-local-environment-notes",
+            "Local environment notes"
+        ],
+        "testing-e2e-suite": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-suite",
+            "The E2E suite"
+        ],
+        "testing-e2e-purpose": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-purpose",
+            "What the suite proves"
+        ],
+        "testing-e2e-files": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-files",
+            "Important files"
+        ],
+        "testing-e2e-command": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-command",
+            "Primary command"
+        ],
+        "testing-e2e-local-mode": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-local-mode",
+            "Local no-Docker mode"
+        ],
+        "testing-e2e-docker-mode": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-docker-mode",
+            "Docker mode"
+        ],
+        "testing-e2e-configuration": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-configuration",
+            "Runtime configuration"
+        ],
+        "testing-e2e-authentication": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-authentication",
+            "Authentication flow"
+        ],
+        "testing-e2e-iframe": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-iframe",
+            "TYPO3 iframe handling"
+        ],
+        "testing-e2e-current-specs": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-current-specs",
+            "Current test cases"
+        ],
+        "testing": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing",
+            "Testing"
+        ],
+        "testing-overview": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing-overview",
+            "Test layers"
+        ],
+        "testing-primary-commands": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing-primary-commands",
+            "Primary commands"
         ],
         "tools": [
             "-",
@@ -169,9 +325,81 @@
             "-",
             "Configuration\/Index.html#confval-ext-mcp-server-enablemcpauthheaderdiagnostic",
             "enableMcpAuthHeaderDiagnostic"
+        ],
+        "confval-ext-mcp-server-localunsafemode": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-localunsafemode",
+            "localUnsafeMode"
+        ],
+        "confval-ext-mcp-server-enforcecapabilitymanifest": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-enforcecapabilitymanifest",
+            "enforceCapabilityManifest"
         ]
     },
     "std:title": {
+        "capability-manifest-1": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#capability-manifest",
+            "Capability manifest"
+        ],
+        "why": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#why",
+            "Why"
+        ],
+        "manifest-layout": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#manifest-layout",
+            "Manifest layout"
+        ],
+        "prerequisite-chains": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#prerequisite-chains",
+            "Prerequisite chains"
+        ],
+        "subsystem-catalog": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#subsystem-catalog",
+            "Subsystem catalog"
+        ],
+        "enforcement-points": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#enforcement-points",
+            "Enforcement points"
+        ],
+        "bypassing-the-manifest": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#bypassing-the-manifest",
+            "Bypassing the manifest"
+        ],
+        "using-the-manifest-as-a-hardening-tool": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#using-the-manifest-as-a-hardening-tool",
+            "Using the manifest as a hardening tool"
+        ],
+        "inspecting-the-active-manifest": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#inspecting-the-active-manifest",
+            "Inspecting the active manifest"
+        ],
+        "differences-from-the-original-blog-proposal": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#differences-from-the-original-blog-proposal",
+            "Differences from the original blog proposal"
+        ],
         "implementation-overview": [
             "-",
             "-",
@@ -454,6 +682,42 @@
             "Architecture\/SecurityAudit.html#accepted-risks",
             "Accepted risks"
         ],
+        "2026-05-03-security-audit-skill-pass-owasp-cwe": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#2026-05-03-security-audit-skill-pass-owasp-cwe",
+            "2026-05-03 (security-audit skill pass \u2014 OWASP \/ CWE)"
+        ],
+        "accepted-risks-added": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#accepted-risks-added",
+            "Accepted risks (added)"
+        ],
+        "2026-05-03-typo3-security-skill-pass-rfc-9700-alignment": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment",
+            "2026-05-03 (typo3-security skill pass \u2014 RFC 9700 alignment)"
+        ],
+        "2026-05-03-capability-manifest-ddev-aware-local-mode": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#2026-05-03-capability-manifest-ddev-aware-local-mode",
+            "2026-05-03 (capability manifest + DDEV-aware local mode)"
+        ],
+        "added-findings-and-mitigations": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#added-findings-and-mitigations",
+            "Added findings and mitigations"
+        ],
+        "accepted-risks-additions": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#accepted-risks-additions",
+            "Accepted risks (additions)"
+        ],
         "structured-mcp-results": [
             "-",
             "-",
@@ -550,6 +814,12 @@
             "Configuration\/Index.html#extension-configuration-values",
             "Extension configuration values"
         ],
+        "capability-manifest": [
+            "-",
+            "-",
+            "Tools\/Index.html#capability-manifest",
+            "Capability manifest"
+        ],
         "why-the-sandbox-matters": [
             "-",
             "-",
@@ -640,6 +910,12 @@
             "Installation\/Index.html#installation-local-cli",
             "Local TYPO3 CLI server"
         ],
+        "cli-mirror-every-tool-every-shell": [
+            "-",
+            "-",
+            "Installation\/Index.html#installation-cli-mirror",
+            "CLI mirror (every tool, every shell)"
+        ],
         "after-installation": [
             "-",
             "-",
@@ -705,6 +981,18 @@
             "-",
             "Introduction\/Index.html#permission-aware-access",
             "Permission-aware access"
+        ],
+        "capability-manifest-enforcement": [
+            "-",
+            "-",
+            "Introduction\/Index.html#capability-manifest-enforcement",
+            "Capability-manifest enforcement"
+        ],
+        "ddev-local-development-mode": [
+            "-",
+            "-",
+            "Introduction\/Index.html#ddev-local-development-mode",
+            "DDEV \/ local-development mode"
         ],
         "important-limitations": [
             "-",
@@ -778,6 +1066,126 @@
             "Introduction\/IntendedBehavior.html#verification-expectations",
             "Verification expectations"
         ],
+        "e2e-ci-and-debugging": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-ci-debugging",
+            "E2E CI and debugging"
+        ],
+        "github-actions": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-ci",
+            "GitHub Actions"
+        ],
+        "debugging-failures": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-debugging",
+            "Debugging failures"
+        ],
+        "common-failure-patterns": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-common-failures",
+            "Common failure patterns"
+        ],
+        "artifact-workflow": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-artifacts",
+            "Artifact workflow"
+        ],
+        "maintenance-rules": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-maintenance",
+            "Maintenance rules"
+        ],
+        "local-environment-notes": [
+            "-",
+            "-",
+            "Testing\/E2eCiDebugging.html#testing-e2e-local-environment-notes",
+            "Local environment notes"
+        ],
+        "the-e2e-suite": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-suite",
+            "The E2E suite"
+        ],
+        "what-the-suite-proves": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-purpose",
+            "What the suite proves"
+        ],
+        "important-files": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-files",
+            "Important files"
+        ],
+        "primary-command": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-command",
+            "Primary command"
+        ],
+        "local-no-docker-mode": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-local-mode",
+            "Local no-Docker mode"
+        ],
+        "docker-mode": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-docker-mode",
+            "Docker mode"
+        ],
+        "runtime-configuration": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-configuration",
+            "Runtime configuration"
+        ],
+        "authentication-flow": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-authentication",
+            "Authentication flow"
+        ],
+        "typo3-iframe-handling": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-iframe",
+            "TYPO3 iframe handling"
+        ],
+        "current-test-cases": [
+            "-",
+            "-",
+            "Testing\/E2eSuite.html#testing-e2e-current-specs",
+            "Current test cases"
+        ],
+        "testing-1": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing",
+            "Testing"
+        ],
+        "test-layers": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing-overview",
+            "Test layers"
+        ],
+        "primary-commands": [
+            "-",
+            "-",
+            "Testing\/Index.html#testing-primary-commands",
+            "Primary commands"
+        ],
         "tools-1": [
             "-",
             "-",
@@ -795,6 +1203,12 @@
             "-",
             "Tools\/Index.html#third-party-tools",
             "Third-party tools"
+        ],
+        "cli-mirror": [
+            "-",
+            "-",
+            "Tools\/Index.html#cli-mirror",
+            "CLI mirror"
         ],
         "tool-names-mcp-tools-list": [
             "-",
@@ -1138,6 +1552,30 @@
             "Tools\/Index.html#getpaymentstats",
             "GetPaymentStats"
         ],
+        "verification-tools": [
+            "-",
+            "-",
+            "Tools\/Index.html#verification-tools",
+            "Verification tools"
+        ],
+        "getpreviewurl": [
+            "-",
+            "-",
+            "Tools\/Index.html#getpreviewurl",
+            "GetPreviewUrl"
+        ],
+        "renderrecord": [
+            "-",
+            "-",
+            "Tools\/Index.html#renderrecord",
+            "RenderRecord"
+        ],
+        "getcapabilities": [
+            "-",
+            "-",
+            "Tools\/Index.html#getcapabilities",
+            "GetCapabilities"
+        ],
         "troubleshooting-1": [
             "-",
             "-",
@@ -1198,6 +1636,24 @@
             "Troubleshooting\/Index.html#publishworkspace-published-nothing",
             "PublishWorkspace published nothing"
         ],
+        "a-tool-returns-tool-is-missing-subsystems": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#a-tool-returns-tool-is-missing-subsystems",
+            "A tool returns \"tool ... is missing subsystems\""
+        ],
+        "a-network-using-tool-returns-outbound-request-not-in-manifest": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#a-network-using-tool-returns-outbound-request-not-in-manifest",
+            "A network-using tool returns \"outbound request not in manifest\""
+        ],
+        "live-writes-are-rejected-even-though-i-expect-them-to-work": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#live-writes-are-rejected-even-though-i-expect-them-to-work",
+            "Live writes are rejected even though I expect them to work"
+        ],
         "the-backend-module-tabs-do-nothing": [
             "-",
             "-",
@@ -1241,6 +1697,18 @@
             "-",
             "Configuration\/Index.html#confval-ext-mcp-server-enablemcpauthheaderdiagnostic",
             "enableMcpAuthHeaderDiagnostic"
+        ],
+        "ext-mcp-server-localunsafemode": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-localunsafemode",
+            "localUnsafeMode"
+        ],
+        "ext-mcp-server-enforcecapabilitymanifest": [
+            "-",
+            "-",
+            "Configuration\/Index.html#confval-ext-mcp-server-enforcecapabilitymanifest",
+            "enforceCapabilityManifest"
         ]
     }
 }

@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -127,6 +127,15 @@
     <a href="../Tools/Index.html">
         Tools
     </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class="" role="menuitem">
     <a href="../Architecture/Index.html">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -141,6 +150,9 @@
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/CapabilityManifest.html">
+        Capability manifest
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/SecurityAudit.html">
         Security audit
@@ -290,6 +302,34 @@ configurable MCP file sandbox, which defaults to <code>fileadmin/mcp/</code>.</p
             
     <p>The extension runs with the authenticated backend user&#039;s permissions. MCP
 should never see more than that backend user could manage manually.</p>
+
+    </section>
+            <section class="section" id="capability-manifest-enforcement">
+            <h3>Capability-manifest enforcement<a class="headerlink" href="#capability-manifest-enforcement" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool declares which subsystems it needs (<code>database:read</code>,
+<code>file:write</code>, <code>render:frontend</code>, …). The shipped
+<code>Configuration/Capabilities.yaml</code> enumerates them and maps every tool
+to its requirements. <code>AbstractTool::execute()</code> rejects calls whose
+required subsystems aren&#039;t declared, and outbound HTTP for
+<code>UploadFileFromUrl</code> / <code>RenderRecord</code> is gated by
+<code>network.outbound</code> (default: <code>self</code> only).</p>
+
+            
+    <p>Hardening means deleting lines from the manifest. Removing
+<code>database:write</code> makes the MCP read-only; replacing
+<code>network.outbound: [self, &#039;*&#039;]</code> with <code>[self, &#039;images.unsplash.com&#039;]</code>
+locks outbound HTTP to a single domain.</p>
+
+    </section>
+            <section class="section" id="ddev-local-development-mode">
+            <h3>DDEV / local-development mode<a class="headerlink" href="#ddev-local-development-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Detection of DDEV environment variables or the TYPO3 Development
+application context relaxes the workspace-only-writes and file-sandbox
+safety nets so a developer&#039;s laptop is ergonomic to use. Override via
+the <code>localUnsafeMode</code> extension setting (<code>auto</code>/<code>on</code>/<code>off</code>).
+Authentication and the capability manifest stay enforced regardless.</p>
 
     </section>
     </section>
@@ -454,7 +494,7 @@ versions and validate upgrades in a non-production environment first.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

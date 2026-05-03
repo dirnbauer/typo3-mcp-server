@@ -156,8 +156,8 @@ Shared services
    can work with URLs as well as page UIDs.
 
 ``OAuthService``
-   Stores authorization codes and access tokens, hashes access tokens before
-   database storage, validates PKCE, and tracks token usage metadata.
+   Stores authorization codes, access tokens, and refresh tokens; hashes tokens
+   before database storage; validates PKCE; and tracks token usage metadata.
 
 TYPO3 core integration
 ======================

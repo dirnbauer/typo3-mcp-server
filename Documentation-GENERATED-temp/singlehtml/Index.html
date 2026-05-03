@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -147,7 +147,7 @@
 
         <dd class="field-odd">
             
-    <p>Sun, 26 Apr 2026 10:05:45 +0000</p>
+    <p>Sun, 03 May 2026 11:54:09 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -216,6 +216,7 @@ immediately once stored.</p>
     <li class="dash"><a href="#">Configuration</a> for module, OAuth, workspace, and file sandbox
 configuration</li>
     <li class="dash"><a href="#">Tools</a> for the complete MCP tool reference</li>
+    <li class="dash"><a href="#">Testing</a> for the E2E test suite and CI test workflow</li>
     <li class="dash"><a href="#">Architecture</a> for design decisions, implementation layers, and
 deeper architecture notes</li>
     <li class="dash"><a href="#">Troubleshooting</a> when something is not working</li>
@@ -351,6 +352,11 @@ deeper architecture notes</li>
 
 </li>
             <li class="toc-item">
+    <a href="#capability-manifest">Capability manifest</a>
+
+
+</li>
+            <li class="toc-item">
     <a href="#why-the-sandbox-matters">Why the sandbox matters</a>
 
 
@@ -482,7 +488,39 @@ deeper architecture notes</li>
 
 </li>
             <li class="toc-item">
+    <a href="#verification-tools">Verification tools</a>
+
+
+</li>
+            <li class="toc-item">
     <a href="#file-safety-model">File safety model</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="#testing-1">Testing</a>
+        <ul class="menu-level-1">
+            <li class="toc-item">
+    <a href="#the-e2e-suite">The E2E suite</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#e2e-ci-and-debugging">E2E CI and debugging</a>
+
+
+</li>
+                    </ul>
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="#test-layers">Test layers</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#primary-commands">Primary commands</a>
 
 
 </li>
@@ -508,6 +546,11 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="#inline-relations">Inline relations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#capability-manifest-1">Capability manifest</a>
 
 
 </li>
@@ -586,6 +629,21 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="#publishworkspace-published-nothing">PublishWorkspace published nothing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#a-tool-returns-tool-is-missing-subsystems">A tool returns &quot;tool ... is missing subsystems&quot;</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#a-network-using-tool-returns-outbound-request-not-in-manifest">A network-using tool returns &quot;outbound request not in manifest&quot;</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#live-writes-are-rejected-even-though-i-expect-them-to-work">Live writes are rejected even though I expect them to work</a>
 
 
 </li>
@@ -737,6 +795,34 @@ configurable MCP file sandbox, which defaults to <code>fileadmin/mcp/</code>.</p
             
     <p>The extension runs with the authenticated backend user&#039;s permissions. MCP
 should never see more than that backend user could manage manually.</p>
+
+    </section>
+            <section class="section" id="capability-manifest-enforcement">
+            <h3>Capability-manifest enforcement<a class="headerlink" href="#capability-manifest-enforcement" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool declares which subsystems it needs (<code>database:read</code>,
+<code>file:write</code>, <code>render:frontend</code>, …). The shipped
+<code>Configuration/Capabilities.yaml</code> enumerates them and maps every tool
+to its requirements. <code>AbstractTool::execute()</code> rejects calls whose
+required subsystems aren&#039;t declared, and outbound HTTP for
+<code>UploadFileFromUrl</code> / <code>RenderRecord</code> is gated by
+<code>network.outbound</code> (default: <code>self</code> only).</p>
+
+            
+    <p>Hardening means deleting lines from the manifest. Removing
+<code>database:write</code> makes the MCP read-only; replacing
+<code>network.outbound: [self, &#039;*&#039;]</code> with <code>[self, &#039;images.unsplash.com&#039;]</code>
+locks outbound HTTP to a single domain.</p>
+
+    </section>
+            <section class="section" id="ddev-local-development-mode">
+            <h3>DDEV / local-development mode<a class="headerlink" href="#ddev-local-development-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Detection of DDEV environment variables or the TYPO3 Development
+application context relaxes the workspace-only-writes and file-sandbox
+safety nets so a developer&#039;s laptop is ergonomic to use. Override via
+the <code>localUnsafeMode</code> extension setting (<code>auto</code>/<code>on</code>/<code>off</code>).
+Authentication and the capability manifest stay enforced regardless.</p>
 
     </section>
     </section>
@@ -1172,6 +1258,76 @@ boundary</strong> in <code>TECHNICAL_OVERVIEW.md</code> (repository root).</p>
 
 </div>
     </section>
+            <section class="section" id="cli-mirror-every-tool-every-shell" data-rst-anchor="installation-cli-mirror">
+            <a id="installation-cli-mirror"></a>
+            <h3>CLI mirror (every tool, every shell)<a class="headerlink" href="#cli-mirror-every-tool-every-shell" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every MCP tool is also a TYPO3 console command, so shell scripts, CI
+pipelines, and <code>ddev exec</code> can drive the same surface as the MCP
+endpoint. List what&#039;s available:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Discover MCP tool commands</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 list mcp</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Run any registered tool by name:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Generic runner</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 mcp:tool ReadTable --param table=pages --param pid=1 --json
+vendor/bin/typo3 mcp:tool:list --schema=ReadTable</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Or use one of the shipped per-tool shortcuts:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Per-tool shortcuts</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 mcp:<span class="hljs-built_in">read</span>-table --table tt_content --pid 1
+vendor/bin/typo3 mcp:write-table --action create --table pages --pid 1 --param data=<span class="hljs-string">'{"title": "X"}'</span>
+vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Output modes:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>--json</code> — machine envelope <code>{ok, result}</code></li>
+    <li class="dash"><code>--plain</code> or <code>--no-ansi</code> — plain text without decoration</li>
+    <li class="dash">(default) — pretty colored output</li>
+</ul>
+
+            
+    <p>Use <code>--param key=@payload.json</code> to pass JSON from a file (constrained to
+the TYPO3 project root). Adding a new <code>mcp:&lt;tool&gt;</code> shortcut: see the
+<code>typo3-mcp-cli</code> claude-code skill.</p>
+
+    </section>
     </section>
             <section class="section" id="after-installation">
             <h2>After installation<a class="headerlink" href="#after-installation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1181,9 +1337,11 @@ boundary</strong> in <code>TECHNICAL_OVERVIEW.md</code> (repository root).</p>
             
 
 <ul>
-    <li class="dash"><a href="#">Configuration</a> to configure the file sandbox and understand
-workspace behavior</li>
+    <li class="dash"><a href="#">Configuration</a> to configure the file sandbox, capability
+manifest, local-mode toggle, and workspace behavior</li>
     <li class="dash"><a href="#">Tools</a> to review the available MCP tools</li>
+    <li class="dash"><a href="#">Capability manifest</a> to understand the
+declaration-and-enforcement security model</li>
 </ul>
 
     </section>
@@ -1496,6 +1654,163 @@ hiding the associated health-check indicator when disabled.</p>
         </dd>
     </dl>
 </section>
+            <section data-search-title="localUnsafeMode"
+         data-search-id="confval-ext-mcp-server-localunsafemode"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-localunsafemode"
+>
+    <h3 class="sr-only">localUnsafeMode</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">local<wbr>Unsafe<wbr>Mode</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-localunsafemode"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-localunsafemode"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">options[auto, on, off]
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">auto
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Local-development escape hatch. When enabled (<code>on</code>, or <code>auto</code> with a
+DDEV / Development context detected) the workspace-only-writes and
+file-sandbox safety nets relax:</p>
+
+
+<ul>
+    <li class="dash">record writes accept <code>workspace_id: 0</code> (live writes)</li>
+    <li class="dash">file tools reach any storage / folder, not only <code>fileSandboxRoot</code></li>
+</ul>
+
+    <p>Detection logic looks at <code>IS_DDEV_PROJECT</code>, <code>DDEV_PROJECT</code>,
+<code>DDEV_HOSTNAME</code>, <code>DDEV_TLD</code> env vars and the TYPO3 application
+context.</p>
+    
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>Setting this to <code>on</code> outside a trusted local environment removes
+the most important MCP safety nets. Production sites should leave
+this at <code>auto</code> (the default) — there should be no DDEV vars and no
+Development context in production, so <code>auto</code> resolves to <code>off</code>
+automatically.</p>
+
+</div>
+    <p>Authentication (OAuth + backend session) and the capability manifest
+stay enforced even with this on; only the workspace-staging and
+file-sandbox checks are skipped.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
+            <section data-search-title="enforceCapabilityManifest"
+         data-search-id="confval-ext-mcp-server-enforcecapabilitymanifest"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-enforcecapabilitymanifest"
+>
+    <h3 class="sr-only">enforceCapabilityManifest</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">enforce<wbr>Capability<wbr>Manifest</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-enforcecapabilitymanifest"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-enforcecapabilitymanifest"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">boolean
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">true
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Reject MCP tool calls whose required subsystems are not declared in
+<code>Configuration/Capabilities.yaml</code>. Also enforces the
+<code>network.outbound</code> allowlist for <code>UploadFileFromUrl</code> and
+<code>RenderRecord</code>.</p>
+
+    <p>Disable only for local debugging — turning this off opens every
+registered tool plus arbitrary outbound HTTP.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
+    </section>
+            <section class="section" id="capability-manifest">
+            <h2>Capability manifest<a class="headerlink" href="#capability-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The shipped <code>Configuration/Capabilities.yaml</code> declares the subsystems
+this MCP exposes (<code>database:read</code>, <code>database:write</code>, <code>file:write</code>,
+<code>render:frontend</code>, …) and maps each tool to the subsystems it requires.
+At call time, <code>AbstractTool::execute()</code> rejects tools whose required
+subsystems aren&#039;t declared, and <code>CapabilityManifestService::assertHostAllowed()</code>
+rejects outbound HTTP to hosts not in <code>network.outbound</code>.</p>
+
+            
+    <p>Inspect the active manifest from the CLI:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> ./vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>To <strong>harden</strong> an installation:</p>
+
+            
+
+<ul>
+    <li class="dash">Remove a subsystem (e.g. <code>file:write</code>) from <code>capabilities.subsystems</code>
+to disable every tool that depends on it.</li>
+    <li class="dash">Replace <code>network.outbound: [self]</code> with an explicit allowlist of
+domains your editors actually need (<code>images.unsplash.com</code>,
+<code>*.example.com</code>, …).</li>
+    <li class="dash">Remove <code>database:write</code> to make the MCP read-only.</li>
+</ul>
+
+            
+    <p>To <strong>soften</strong> for development:</p>
+
+            
+
+<ul>
+    <li class="dash">Add <code>- &#039;*&#039;</code> under <code>network.outbound</code> to allow public-web image
+uploads (the IP-range SSRF check still blocks private addresses).</li>
+    <li class="dash">Set <code>enforceCapabilityManifest = 0</code> to bypass the gate entirely.</li>
+</ul>
+
     </section>
             <section class="section" id="why-the-sandbox-matters">
             <h2>Why the sandbox matters<a class="headerlink" href="#why-the-sandbox-matters" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1597,6 +1912,45 @@ their schema and result types. This lets third-party extensions contribute MCP
 tools without taking a hard dependency on this extension&#039;s interface.</p>
 
     </section>
+            <section class="section" id="capability-manifest">
+            <h3>Capability manifest<a class="headerlink" href="#capability-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool call also passes through <code>CapabilityManifestService::assertToolAllowed()</code>
+inside <code>AbstractTool::execute()</code>. The active manifest lives at
+<code>Configuration/Capabilities.yaml</code> and lists the subsystems each tool needs
+(<code>database:read</code>, <code>file:write</code>, <code>render:frontend</code>, …). Removing a
+subsystem disables every tool that requires it; the call returns an
+<code>AccessDeniedException</code> rather than executing.</p>
+
+            
+    <p>Outbound HTTP from <code>UploadFileFromUrl</code> and <code>RenderRecord</code> is gated by the
+manifest&#039;s <code>network.outbound</code> policy. Default ships closed at <code>[self]</code> —
+operators opt in to additional hosts per deployment.</p>
+
+    </section>
+            <section class="section" id="cli-mirror">
+            <h3>CLI mirror<a class="headerlink" href="#cli-mirror" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Every tool is also a TYPO3 console command. Use <code>vendor/bin/typo3 list mcp</code>
+to discover them. Output modes:</p>
+
+            
+
+<ul>
+    <li class="dash"><code>--json</code> — machine-readable envelope <code>{ok, result}</code></li>
+    <li class="dash"><code>--plain</code> or <code>--no-ansi</code> — plain text without decoration</li>
+    <li class="dash">(default) — pretty colored output</li>
+</ul>
+
+            
+    <p>Pass parameters via <code>--param key=value</code> (repeatable), <code>--params &lt;json&gt;</code>,
+or <code>--param key=@file.json</code> (file must live under the project root). Use
+<code>vendor/bin/typo3 mcp:tool &lt;Name&gt;</code> for any tool without a dedicated
+shortcut, or <code>vendor/bin/typo3 mcp:tool:list --schema=&lt;Name&gt;</code> to dump the
+JSON Schema. Recipe for adding a new shortcut: see the <code>typo3-mcp-cli</code>
+claude-code skill.</p>
+
+    </section>
     </section>
             <section class="section" id="tool-names-mcp-tools-list">
             <h2>Tool names (MCP <code>tools/list</code>)<a class="headerlink" href="#tool-names-mcp-tools-list" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1618,6 +1972,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
         </thead>
         <tbody>
     <tr>
+            <td><code>GetCapabilities</code></td>            <td>Read</td>            <td>Return the active capability manifest + runtime mode (always callable)</td>    </tr>    <tr>
             <td><code>ListWorkspaces</code></td>            <td>Read</td>            <td>List workspaces; use for optional <code>workspace_id</code> on record tools</td>    </tr>    <tr>
             <td><code>GetPageTree</code></td>            <td>Read</td>            <td>Page tree with depth control (workspace overlay)</td>    </tr>    <tr>
             <td><code>GetPage</code></td>            <td>Read</td>            <td>Resolve page by UID or URL; content context</td>    </tr>    <tr>
@@ -1652,7 +2007,10 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
             <td><code>InstallExtension</code></td>            <td>Execute</td>            <td>Install, activate, or search TYPO3 extensions (admin-only)</td>    </tr>    <tr>
             <td><code>ListPaidContent</code></td>            <td>Read</td>            <td>List pages gated by the optional x402 paywall extension</td>    </tr>    <tr>
             <td><code>GetPaidContent</code></td>            <td>Read</td>            <td>Return x402 payment requirements or paid content for one page</td>    </tr>    <tr>
-            <td><code>GetPaymentStats</code></td>            <td>Read</td>            <td>Summarize x402 payment activity and revenue when payment logging exists</td>    </tr></tbody>    </table>
+            <td><code>GetPaymentStats</code></td>            <td>Read</td>            <td>Summarize x402 payment activity and revenue when payment logging exists</td>    </tr>    <tr>
+            <td><code>GetPreviewUrl</code></td>            <td>Read</td>            <td>Build a workspace preview URL for a page or content element</td>    </tr>    <tr>
+            <td><code>RenderRecord</code></td>            <td>Read</td>            <td>Fetch the rendered FE HTML/text of a page in workspace context
+(for visual verification)</td>    </tr></tbody>    </table>
 </div>
     </section>
             <section class="section" id="record-backed-tools">
@@ -2949,6 +3307,88 @@ directly.</p>
     </dl>
     </section>
     </section>
+            <section class="section" id="verification-tools">
+            <h2>Verification tools<a class="headerlink" href="#verification-tools" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="getpreviewurl">
+            <h3>GetPreviewUrl<a class="headerlink" href="#getpreviewurl" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Build a workspace preview URL for a page or content element.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>table</code> (string, required): <code>pages</code> or <code>tt_content</code></li>
+    <li class="dash"><code>uid</code> (integer, required): live UID of the record</li>
+    <li class="dash"><code>language</code> (string, optional): ISO code; defaults to record&#039;s own language</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>The preview URL is signed by TYPO3&#039;s <code>PreviewUriBuilder</code> so it can be
+opened without a backend login. For <code>tt_content</code> rows the URL is the
+parent page&#039;s preview URL with <code>#c&lt;uid&gt;</code> appended.</p>
+
+            
+    <p>Use this right after a write to drop a &quot;see what I just changed&quot; link into
+chat for a stakeholder.</p>
+
+    </section>
+            <section class="section" id="renderrecord">
+            <h3>RenderRecord<a class="headerlink" href="#renderrecord" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Fetch the rendered frontend HTML for a page in workspace context.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+            
+
+<ul>
+    <li class="dash"><code>pageId</code> (integer, required): live page UID</li>
+    <li class="dash"><code>contentUid</code> (integer, optional): when set, the response is reduced
+to the rendered HTML of that single <code>tt_content</code> element</li>
+    <li class="dash"><code>mode</code> (string): <code>html</code> (default), <code>text</code> (strips tags), or
+<code>preview</code> (URL only, no fetch)</li>
+    <li class="dash"><code>language</code> (string): ISO code</li>
+    <li class="dash"><code>maxLength</code> (integer): cap on response size in characters
+(default 50 000, max 200 000)</li>
+</ul>
+        </dd>
+    </dl>
+            
+    <p>Closes the verification loop for an LLM editor: write a record with
+<code>WriteTable</code>, then ask <code>RenderRecord</code> whether the result actually
+shows up the way it should. Outbound HTTP is gated by the capability
+manifest&#039;s <code>network.outbound</code> policy (default <code>self</code> — only the
+TYPO3 instance&#039;s own site bases). Redirects are not followed (single
+302 to a private IP would bypass the host check), and TLS verification
+is enforced unless <code>localUnsafeMode</code> is enabled (DDEV self-signed
+certs).</p>
+
+    </section>
+            <section class="section" id="getcapabilities">
+            <h3>GetCapabilities<a class="headerlink" href="#getcapabilities" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    <p>Return the active capability manifest plus runtime mode (DDEV/local-mode
+detection results, enforcement on/off).</p>
+
+            
+    <p>No parameters. Always callable — bypasses the manifest gate so a fresh
+client can introspect what is and isn&#039;t allowed before attempting other
+calls.</p>
+
+            
+    <p>Useful as the first call of an MCP session: the LLM learns which tools
+are available, which subsystems are declared, whether live writes are
+unlocked (DDEV/localUnsafeMode), and whether outbound HTTP is open.</p>
+
+    </section>
+    </section>
             <section class="section" id="file-safety-model">
             <h2>File safety model<a class="headerlink" href="#file-safety-model" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
                 
@@ -2970,6 +3410,624 @@ semantics:</p>
     <li class="dash">workspace safety applies to records and file references, not to the physical
 file itself</li>
 </ul>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="testing-1" data-rst-anchor="testing">
+            <a id="testing"></a>
+            <h1>Testing<a class="headerlink" href="#testing-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>This section documents project-specific test workflows for TYPO3 MCP Server.
+It focuses on the browser E2E suite because that suite has its own temporary
+TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.</p>
+
+            <div class="toctree-wrapper compound">
+        <ul class="menu-level">
+    <li class="toc-item">
+    <a href="#the-e2e-suite">The E2E suite</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#e2e-ci-and-debugging">E2E CI and debugging</a>
+
+
+</li>
+    </ul>
+</div>
+                
+<div class="admonition seealso" role="alert">
+    <p class="admonition-title">See also</p>
+        
+
+<ul>
+    <li class="dash"><code>Testing/CursorTesting.md</code> — manual MCP-end-to-end testing through
+Cursor (Markdown source — see the file in the repository).</li>
+    <li class="dash"><code>Testing/FullFeatureChatbotScript.md</code> — natural-language test script
+for any MCP-connected chatbot.</li>
+</ul>
+
+</div>
+            <section class="section" id="test-layers" data-rst-anchor="testing-overview">
+            <a id="testing-overview"></a>
+            <h2>Test layers<a class="headerlink" href="#test-layers" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The project uses several layers of tests:</p>
+
+            
+
+<ul>
+    <li class="dash">unit tests for pure PHP services and utilities</li>
+    <li class="dash">functional tests for TYPO3 database, TCA, workspace, and DataHandler
+behavior</li>
+    <li class="dash">LLM-oriented tests for MCP response ergonomics and model-facing workflows</li>
+    <li class="dash">Playwright E2E tests for browser-visible backend module workflows</li>
+    <li class="dash">code-quality checks for PHPStan, PHP CS Fixer, Rector, and Fractor</li>
+</ul>
+
+            
+    <p>The E2E suite is intentionally narrow. It verifies the TYPO3 backend module as
+an editor sees it, while deeper MCP tool contracts stay in PHP tests.</p>
+
+    </section>
+            <section class="section" id="primary-commands" data-rst-anchor="testing-primary-commands">
+            <a id="testing-primary-commands"></a>
+            <h2>Primary commands<a class="headerlink" href="#primary-commands" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Use these commands during normal development:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Run the full PHP test suite</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> composer <span class="hljs-built_in">test</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+                <div class="code-block-caption">
+        <span class="caption-text">Run static analysis</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> composer phpstan</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+                <div class="code-block-caption">
+        <span class="caption-text">Run the E2E suite</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> bash Build/runTests.sh -s e2e --no-docker</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+                <div class="code-block-caption">
+        <span class="caption-text">Render the documentation</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">composer docs:check</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="the-e2e-suite" data-rst-anchor="testing-e2e-suite">
+            <a id="testing-e2e-suite"></a>
+            <h1>The E2E suite<a class="headerlink" href="#the-e2e-suite" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>The E2E suite verifies the TYPO3 backend module in a real TYPO3 installation.
+It does not mock the module template, JavaScript, AJAX routes, TYPO3 backend
+frames, or TYPO3 modal behavior.</p>
+
+            <section class="section" id="what-the-suite-proves" data-rst-anchor="testing-e2e-purpose">
+            <a id="testing-e2e-purpose"></a>
+            <h2>What the suite proves<a class="headerlink" href="#what-the-suite-proves" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The suite checks that <span class="guilabel">User &gt; MCP Server</span> works after the extension
+has been installed into a fresh TYPO3 instance.</p>
+
+            
+    <p>It covers:</p>
+
+            
+
+<ul>
+    <li class="dash">backend login with an administrator account</li>
+    <li class="dash">loading the MCP Server backend module inside the TYPO3 content iframe</li>
+    <li class="dash">stable setup-tab navigation</li>
+    <li class="dash">token creation through the name modal and the &quot;shown once&quot; token modal</li>
+    <li class="dash">token table refresh after AJAX calls</li>
+    <li class="dash">token revoke confirmation behavior</li>
+    <li class="dash">endpoint status indicators rendered by the module</li>
+    <li class="dash">copy-button presence for setup snippets</li>
+</ul>
+
+            
+    <p>It does not replace the PHP functional tests for MCP tool behavior. Tool
+contracts, workspace transparency, table access, file handling, and language
+overlay behavior are covered by PHPUnit and LLM-oriented tests. The E2E suite
+exists to catch browser-level regressions that PHP tests cannot see.</p>
+
+    </section>
+            <section class="section" id="important-files" data-rst-anchor="testing-e2e-files">
+            <a id="testing-e2e-files"></a>
+            <h2>Important files<a class="headerlink" href="#important-files" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <div class="table-responsive">
+    <table class="table table-bordered align-default colwidths-grid">
+                    <colgroup>
+                                    <col style="width: 34%">
+                        </colgroup>
+            <thead>
+            <tr>
+                            <th>File</th>
+                            <th>Role</th>
+                    </tr>
+        </thead>
+        <tbody>
+    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>run<wbr>Tests.<wbr>sh</code></td>            <td>Orchestrates local and Docker E2E environments.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>package.<wbr>json</code></td>            <td>Pins Playwright and exposes helper npm scripts.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>config.<wbr>ts</code></td>            <td>Reads base URL and backend credentials from environment variables.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>helper/<wbr>login.<wbr>setup.<wbr>ts</code></td>            <td>Logs into TYPO3 once and stores Playwright authentication state.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>fixtures/<wbr>setup-<wbr>fixtures.<wbr>ts</code></td>            <td>Provides page-object helpers for backend navigation and module access.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>e2e/<wbr>mcp-<wbr>module.<wbr>spec.<wbr>ts</code></td>            <td>Contains the backend module workflow assertions.</td>    </tr>    <tr>
+            <td><code class="code-inline file" translate="no" title="File path">.github/<wbr>workflows/<wbr>tests.<wbr>yml</code></td>            <td>Runs the E2E suite in GitHub Actions.</td>    </tr></tbody>    </table>
+</div>
+    </section>
+            <section class="section" id="primary-command" data-rst-anchor="testing-e2e-command">
+            <a id="testing-e2e-command"></a>
+            <h2>Primary command<a class="headerlink" href="#primary-command" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Run the suite through the project test runner:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Run the E2E suite</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">bash Build/runTests.sh -s e2e</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>When Docker is unavailable, the runner automatically falls back to local mode.
+You can request local mode explicitly:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Run E2E without Docker</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">bash Build/runTests.sh -s e2e --no-docker</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Any arguments after the suite options are passed to Playwright:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Run one Playwright test by title</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">bash Build/runTests.sh -s e2e -- --grep <span class="hljs-string">"tab navigation works"</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+            <section class="section" id="local-no-docker-mode" data-rst-anchor="testing-e2e-local-mode">
+            <a id="testing-e2e-local-mode"></a>
+            <h2>Local no-Docker mode<a class="headerlink" href="#local-no-docker-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Local mode is the same mode used by GitHub Actions. It uses the current PHP
+environment, SQLite, and the local Playwright browser cache.</p>
+
+            
+    <p>The runner performs these steps:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">Remove stale TYPO3 runtime state from <code class="code-inline file" translate="no" title="File path">var/</code>, <code class="code-inline file" translate="no" title="File path">config/<wbr>system/</code>,
+and old SQLite files.</li>
+    <li value="2">Run Composer install without scripts.</li>
+    <li value="3">Execute <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="vendor/bin/typo3 setup"
+          data-shortdescription="Code written in Shell Script"
+          data-details="Raw command line interface code on operating-system level."
+          data-morelink=""          data-bs-html="true"
+    >
+        vendor/<wbr>bin/<wbr>typo3 setup</code> with SQLite.</li>
+    <li value="4">Create an administrator account named <code>admin</code> with password
+<code>Admin123!</code>.</li>
+    <li value="5">Relax <code>trustedHostsPattern</code> and <code>devIPmask</code> for the temporary test
+server.</li>
+    <li value="6">Start PHP&#039;s built-in web server on <code>127.0.0.1:8080</code> by default.</li>
+    <li value="7">Wait until <code>/typo3/</code> responds.</li>
+    <li value="8">Install Playwright npm dependencies when <code class="code-inline file" translate="no" title="File path">Build/<wbr>node_<wbr>modules</code> is
+missing.</li>
+    <li value="9">Install the Chromium browser if needed.</li>
+    <li value="10">Run <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="npx playwright test"
+          data-shortdescription="Code written in Shell Script"
+          data-details="Raw command line interface code on operating-system level."
+          data-morelink=""          data-bs-html="true"
+    >
+        npx playwright test</code>.</li>
+</ol>
+
+            
+    <p>The port can be changed with <code>TYPO3_E2E_PORT</code>:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Run local E2E on another port</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">TYPO3_E2E_PORT=8090 bash Build/runTests.sh -s e2e --no-docker</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>The local web server writes to:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Local E2E web server log</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">var/log/typo3-e2e-web.log</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+            <section class="section" id="docker-mode" data-rst-anchor="testing-e2e-docker-mode">
+            <a id="testing-e2e-docker-mode"></a>
+            <h2>Docker mode<a class="headerlink" href="#docker-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Docker mode is useful when the host should not provide PHP extensions,
+Composer, a database, or browser dependencies. It creates an isolated Docker
+network per run and starts:</p>
+
+            
+
+<ul>
+    <li class="dash">a MySQL 8.0 container with a tmpfs data directory</li>
+    <li class="dash">a PHP 8.4 TYPO3 web container using <code class="code-inline file" translate="no" title="File path">public/</code></li>
+    <li class="dash">a Playwright container based on <code>mcr.microsoft.com/playwright:v1.52.0-noble</code></li>
+</ul>
+
+            
+    <p>The Playwright container reaches TYPO3 through the Docker network at
+<code>http://web:8080</code>. Containers and the temporary network are removed by the
+cleanup trap when the script exits.</p>
+
+    </section>
+            <section class="section" id="runtime-configuration" data-rst-anchor="testing-e2e-configuration">
+            <a id="testing-e2e-configuration"></a>
+            <h2>Runtime configuration<a class="headerlink" href="#runtime-configuration" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Playwright reads configuration from <code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>config.<wbr>ts</code>.</p>
+
+            <div class="table-responsive">
+    <table class="table table-bordered align-default colwidths-grid">
+                    <colgroup>
+                                    <col style="width: 30%">
+                        </colgroup>
+            <thead>
+            <tr>
+                            <th>Variable</th>
+                            <th>Default</th>
+                            <th>Meaning</th>
+                    </tr>
+        </thead>
+        <tbody>
+    <tr>
+            <td><code>TYPO3_BASE_URL</code></td>            <td><code>http://localhost:8080</code></td>            <td>Base URL for the temporary TYPO3 instance.</td>    </tr>    <tr>
+            <td><code>TYPO3_ADMIN_USER</code></td>            <td><code>admin</code></td>            <td>Backend username used by the login setup.</td>    </tr>    <tr>
+            <td><code>TYPO3_ADMIN_PASSWORD</code></td>            <td><code>Admin123!</code></td>            <td>Backend password used by the login setup.</td>    </tr></tbody>    </table>
+</div>
+            
+    <p>The runner sets <code>TYPO3_BASE_URL</code> automatically. Override credentials only
+when targeting a pre-existing TYPO3 instance outside the runner.</p>
+
+    </section>
+            <section class="section" id="authentication-flow" data-rst-anchor="testing-e2e-authentication">
+            <a id="testing-e2e-authentication"></a>
+            <h2>Authentication flow<a class="headerlink" href="#authentication-flow" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The login setup project is defined in
+<code class="code-inline file" translate="no" title="File path">Build/<wbr>tests/<wbr>playwright/<wbr>helper/<wbr>login.<wbr>setup.<wbr>ts</code>. It opens <code>/typo3/</code>,
+fills the TYPO3 backend login form, waits for the backend module menu, and
+writes Playwright storage state to:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Playwright authentication state</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">Build/tests/playwright/.auth/login.json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>The E2E tests reuse that storage state, so each test starts authenticated
+without logging in again. This keeps the module tests focused on MCP Server UI
+behavior rather than TYPO3 login mechanics.</p>
+
+    </section>
+            <section class="section" id="typo3-iframe-handling" data-rst-anchor="testing-e2e-iframe">
+            <a id="testing-e2e-iframe"></a>
+            <h2>TYPO3 iframe handling<a class="headerlink" href="#typo3-iframe-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>TYPO3 backend modules render inside <code>#typo3-contentIframe</code>. The test suite
+therefore uses a Playwright <code>FrameLocator</code>:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Backend module frame access</span>
+    </div><div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs typescript">frame = page.frameLocator(<span class="hljs-string">'#typo3-contentIframe'</span>);
+<span class="hljs-keyword">await</span> expect(frame.locator(<span class="hljs-string">'.module-body'</span>)).toBeVisible();</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>Controls rendered by the MCP module are selected inside that frame. TYPO3
+modals are different: the TYPO3 Modal API appends them to the top-level
+document, not inside the content iframe. Tests that interact with token modals
+therefore use <code>page.locator(&#039;.modal&#039;)</code> instead of <code>frame.locator()</code>.</p>
+
+    </section>
+            <section class="section" id="current-test-cases" data-rst-anchor="testing-e2e-current-specs">
+            <a id="testing-e2e-current-specs"></a>
+            <h2>Current test cases<a class="headerlink" href="#current-test-cases" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt><code>module page loads with expected sections</code></dt>
+        
+        <dd>Verifies that <code>#mcpSetupTabs</code> and <code>#tokens-container</code> are present.</dd>
+                                <dt><code>tab navigation works</code></dt>
+        
+        <dd>Clicks <code>#local-mcp-remote-tab</code>, <code>#local-cli-tab</code>, and
+<code>#remote-setup-tab</code> and verifies that the matching panels become visible.</dd>
+                                <dt><code>create token via central button shows name modal then token modal</code></dt>
+        
+        <dd>Creates a token named <code>test-token</code>, verifies the &quot;Token Created&quot; modal,
+checks that the shown token is a 64-character hexadecimal value, closes the
+modal, and confirms that <code>test-token</code> appears in the token table.</dd>
+                                <dt><code>revoke token shows confirmation modal</code></dt>
+        
+        <dd>Uses an existing token when available. If no token exists, the test skips
+itself. Otherwise it opens the revoke confirmation modal and cancels it.</dd>
+                                <dt><code>refresh tokens button works</code></dt>
+        
+        <dd>Clicks <code>#refresh-tokens-btn</code> and verifies that the token container remains
+visible after the AJAX refresh.</dd>
+                                <dt><code>endpoint status indicators exist</code></dt>
+        
+        <dd>Confirms that at least one <code>.endpoint-status</code> indicator is rendered.</dd>
+                                <dt><code>copy buttons exist</code></dt>
+        
+        <dd>Confirms that at least one setup copy button is rendered.</dd>
+            </dl>
+    </section>
+    </section>
+
+        </article>
+<article>
+            
+<section class="section" id="e2e-ci-and-debugging" data-rst-anchor="testing-e2e-ci-debugging">
+            <a id="testing-e2e-ci-debugging"></a>
+            <h1>E2E CI and debugging<a class="headerlink" href="#e2e-ci-and-debugging" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>This page documents how the Playwright suite runs in GitHub Actions and how to
+debug failures from CI artifacts or local logs.</p>
+
+            <section class="section" id="github-actions" data-rst-anchor="testing-e2e-ci">
+            <a id="testing-e2e-ci"></a>
+            <h2>GitHub Actions<a class="headerlink" href="#github-actions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The workflow job is named <code>E2E Tests</code> in <code class="code-inline file" translate="no" title="File path">.github/<wbr>workflows/<wbr>tests.<wbr>yml</code>.
+It runs on <code>ubuntu-latest</code> with PHP 8.4, Node.js 22, SQLite, and Playwright
+1.52.0.</p>
+
+            
+    <p>The CI job performs these steps:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">Check out the repository.</li>
+    <li value="2">Install PHP with <code>sqlite3</code>, <code>pdo_sqlite</code>, and <code>intl</code>.</li>
+    <li value="3">Install Composer dependencies.</li>
+    <li value="4">Run <code class="code-inline"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="npm ci"
+          data-shortdescription="Code written in Shell Script"
+          data-details="Raw command line interface code on operating-system level."
+          data-morelink=""          data-bs-html="true"
+    >
+        npm ci</code> in <code class="code-inline file" translate="no" title="File path">Build/</code>.</li>
+    <li value="5">Install Chromium with Playwright system dependencies.</li>
+    <li value="6">Run <code class="code-inline code-inline-long"
+          translate="no"
+          data-bs-toggle="modal"
+          data-bs-target="#generalModal"
+          data-code="bash Build/runTests.sh -s e2e --no-docker"
+          data-shortdescription="Code written in Shell Script"
+          data-details="Raw command line interface code on operating-system level."
+          data-morelink=""          data-bs-html="true"
+    >
+        bash Build/<wbr>run<wbr>Tests.<wbr>sh -<wbr>s e2e --<wbr>no-<wbr>docker</code>.</li>
+    <li value="7">Upload <code class="code-inline file" translate="no" title="File path">Build/<wbr>playwright-<wbr>report</code> and <code class="code-inline file" translate="no" title="File path">Build/<wbr>test-<wbr>results</code> when
+the job fails.</li>
+</ol>
+
+            
+    <p>The uploaded artifact is named <code>playwright-report</code> and is retained for seven
+days. Use it to inspect screenshots, traces, and Playwright&#039;s
+<code>error-context.md</code> files.</p>
+
+    </section>
+            <section class="section" id="debugging-failures" data-rst-anchor="testing-e2e-debugging">
+            <a id="testing-e2e-debugging"></a>
+            <h2>Debugging failures<a class="headerlink" href="#debugging-failures" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>When E2E fails, check these sources in order:</p>
+
+            
+    
+<ol start="1" type="1">
+    <li value="1">GitHub Actions job log for the failing Playwright assertion.</li>
+    <li value="2">The <code>playwright-report</code> artifact for screenshots, traces, and page
+snapshots.</li>
+    <li value="3"><code class="code-inline file" translate="no" title="File path">Build/<wbr>test-<wbr>results/**/<wbr>error-<wbr>context.<wbr>md</code> for the accessibility-style
+page snapshot at the failure point.</li>
+    <li value="4"><code class="code-inline file" translate="no" title="File path">var/<wbr>log/<wbr>typo3-<wbr>e2e-<wbr>web.<wbr>log</code> for local TYPO3 web-server errors.</li>
+    <li value="5">Browser network entries in the Playwright trace for failed AJAX requests.</li>
+</ol>
+
+    </section>
+            <section class="section" id="common-failure-patterns" data-rst-anchor="testing-e2e-common-failures">
+            <a id="testing-e2e-common-failures"></a>
+            <h2>Common failure patterns<a class="headerlink" href="#common-failure-patterns" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt>Missing iframe selector</dt>
+        
+        <dd>The module did not load, the backend route changed, or the login setup did
+not produce a valid backend session.</dd>
+                                <dt>Missing tab selector</dt>
+        
+        <dd>The template changed without keeping stable IDs such as
+<code>#local-mcp-remote-tab</code>.</dd>
+                                <dt>Missing &quot;Token Created&quot; modal</dt>
+        
+        <dd>The create-token AJAX request failed. Inspect the trace network tab for the
+<code>/typo3/ajax/mcp-server/create-token</code> request and its JSON response.</dd>
+                                <dt>Top-level modal not found</dt>
+        
+        <dd>The test may be looking in the iframe even though TYPO3 moved the modal to
+the top document.</dd>
+                                <dt>Browser dependency failure</dt>
+        
+        <dd>Chromium could not start because the local environment is missing Linux
+browser libraries. Install Playwright dependencies for that environment, or
+use Docker mode.</dd>
+            </dl>
+    </section>
+            <section class="section" id="artifact-workflow" data-rst-anchor="testing-e2e-artifacts">
+            <a id="testing-e2e-artifacts"></a>
+            <h2>Artifact workflow<a class="headerlink" href="#artifact-workflow" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>On CI failure, download the <code>playwright-report</code> artifact from the failed run.
+It contains:</p>
+
+            
+
+<ul>
+    <li class="dash"><code class="code-inline file" translate="no" title="File path">Build/<wbr>playwright-<wbr>report</code> with the HTML report</li>
+    <li class="dash"><code class="code-inline file" translate="no" title="File path">Build/<wbr>test-<wbr>results</code> with screenshots, traces, and error contexts</li>
+    <li class="dash">per-test <code class="code-inline file" translate="no" title="File path">error-<wbr>context.<wbr>md</code> files with page snapshots</li>
+    <li class="dash">trace archives that include network requests and DOM snapshots</li>
+</ul>
+
+            
+    <p>Network traces are especially useful for token-management failures. The token
+creation flow should send a POST request to
+<code>/typo3/ajax/mcp-server/create-token</code> and receive JSON with <code>success: true</code>
+and a <code>token</code> value.</p>
+
+    </section>
+            <section class="section" id="maintenance-rules" data-rst-anchor="testing-e2e-maintenance">
+            <a id="testing-e2e-maintenance"></a>
+            <h2>Maintenance rules<a class="headerlink" href="#maintenance-rules" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Keep E2E tests user-facing and stable:</p>
+
+            
+
+<ul>
+    <li class="dash">Prefer stable IDs for module controls that tests must click.</li>
+    <li class="dash">Keep TYPO3 modal assertions at top-page level.</li>
+    <li class="dash">Keep module-content assertions inside <code>#typo3-contentIframe</code>.</li>
+    <li class="dash">Do not assert decorative markup or translated implementation details unless
+the text is part of the workflow contract.</li>
+    <li class="dash">Add E2E coverage when a change affects backend module navigation, token
+management, AJAX route wiring, health checks, or TYPO3 modal behavior.</li>
+    <li class="dash">Keep deeper MCP tool semantics in PHPUnit functional tests; browser tests
+should not duplicate large record-tool scenarios.</li>
+</ul>
+
+    </section>
+            <section class="section" id="local-environment-notes" data-rst-anchor="testing-e2e-local-environment-notes">
+            <a id="testing-e2e-local-environment-notes"></a>
+            <h2>Local environment notes<a class="headerlink" href="#local-environment-notes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Local no-Docker mode depends on browser libraries being present on the machine
+that runs Playwright. If Chromium cannot start, install Playwright&#039;s browser
+dependencies for the local environment, or use Docker mode.</p>
+
+            
+    <p>Node.js should satisfy the range in <code class="code-inline file" translate="no" title="File path">Build/<wbr>package.<wbr>json</code>:
+<code>&gt;=22.18.0 &lt;23.0.0</code>. CI uses Node.js 22.</p>
+
+            
+    <p>The local web server is temporary and is stopped by the cleanup trap in
+<code class="code-inline file" translate="no" title="File path">Build/<wbr>run<wbr>Tests.<wbr>sh</code>. If a run is interrupted and port <code>8080</code> remains
+busy, stop the stale PHP process or run with a different <code>TYPO3_E2E_PORT</code>.</p>
 
     </section>
     </section>
@@ -3106,6 +4164,10 @@ areas.</p>
     <li class="dash">File access is restricted to the MCP file sandbox instead of unrestricted
 <code>fileadmin</code> paths</li>
     <li class="dash">Uploads use randomized stored filenames to reduce predictable file exposure</li>
+    <li class="dash">Capability manifest gates every tool call and outbound HTTP request; see
+<a href="#">Capability manifest</a>.</li>
+    <li class="dash">DDEV / local-mode detection relaxes only the workspace-staging and
+file-sandbox safety nets — never authentication or capability policy.</li>
 </ul>
 
     </section>
@@ -3346,8 +4408,8 @@ and computes workspace-specific upload folders when that feature is enabled.</dd
 can work with URLs as well as page UIDs.</dd>
                                 <dt><code>OAuthService</code></dt>
         
-        <dd>Stores authorization codes and access tokens, hashes access tokens before
-database storage, validates PKCE, and tracks token usage metadata.</dd>
+        <dd>Stores authorization codes, access tokens, and refresh tokens; hashes tokens
+before database storage; validates PKCE; and tracks token usage metadata.</dd>
             </dl>
     </section>
             <section class="section" id="typo3-core-integration">
@@ -3886,6 +4948,278 @@ embedded</li>
         </article>
 <article>
             
+<section class="section" id="capability-manifest-1" data-rst-anchor="capability-manifest">
+            <a id="capability-manifest"></a>
+            <h1>Capability manifest<a class="headerlink" href="#capability-manifest-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            
+    <p>The MCP server ships <code>Configuration/Capabilities.yaml</code> — a declarative
+manifest of which subsystems the extension touches and which subsystems
+each tool requires. The model is adapted from the article
+<a href="https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests">TYPO3 extension security — capability manifests</a>.</p>
+
+            <section class="section" id="why">
+            <h2>Why<a class="headerlink" href="#why" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>PHP cannot sandbox extensions at runtime; every extension runs with full
+process privilege. Defense-in-depth comes from <strong>declaration plus
+enforcement at well-known choke points</strong>:</p>
+
+            
+
+<ul>
+    <li class="dash">An extension declares what it does.</li>
+    <li class="dash">The framework refuses to let it do anything else.</li>
+    <li class="dash">An operator can inspect the declaration before installing.</li>
+</ul>
+
+            
+    <p>For the MCP server, the relevant choke points are:</p>
+
+            
+
+<ul>
+    <li class="dash">The tool dispatcher (<code>AbstractTool::execute()</code>) — refuses tools whose
+required subsystems aren&#039;t in the manifest.</li>
+    <li class="dash">The outbound HTTP path (<code>UploadFileFromUrl</code>, <code>RenderRecord</code>) —
+refuses target hosts not in <code>network.outbound</code>.</li>
+</ul>
+
+    </section>
+            <section class="section" id="manifest-layout">
+            <h2>Manifest layout<a class="headerlink" href="#manifest-layout" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs yaml"><span class="hljs-attr">capabilities:</span>
+  <span class="hljs-attr">version:</span> <span class="hljs-string">'1.0'</span>
+  <span class="hljs-attr">extension:</span> <span class="hljs-string">mcp_server</span>
+
+  <span class="hljs-attr">subsystems:</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">database:read</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">database:write</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">file:write</span>
+    <span class="hljs-bullet">-</span> <span class="hljs-string">render:frontend</span>
+    <span class="hljs-comment"># ...</span>
+
+  <span class="hljs-attr">network:</span>
+    <span class="hljs-attr">outbound:</span>
+      <span class="hljs-bullet">-</span> <span class="hljs-string">self</span>                <span class="hljs-comment"># all configured TYPO3 site bases</span>
+      <span class="hljs-comment"># - 'images.unsplash.com'</span>
+      <span class="hljs-comment"># - '*.example.com'</span>
+
+  <span class="hljs-attr">database:</span>
+    <span class="hljs-attr">own_tables:</span> <span class="hljs-string">[tx_mcpserver_*]</span>
+    <span class="hljs-attr">reads:</span> <span class="hljs-string">['*']</span>
+    <span class="hljs-attr">writes:</span> <span class="hljs-string">['*']</span>
+
+  <span class="hljs-attr">tools:</span>
+    <span class="hljs-attr">ReadTable:</span>         <span class="hljs-string">[database:read]</span>
+    <span class="hljs-attr">WriteTable:</span>        <span class="hljs-string">[database:write]</span>
+    <span class="hljs-attr">UploadFileFromUrl:</span> <span class="hljs-string">[file:write]</span>
+    <span class="hljs-attr">RenderRecord:</span>      <span class="hljs-string">[database:read,</span> <span class="hljs-string">render:frontend]</span>
+    <span class="hljs-comment"># ...</span>
+
+  <span class="hljs-attr">risk:</span>
+    <span class="hljs-attr">level:</span> <span class="hljs-string">high</span>
+    <span class="hljs-attr">justification:</span> <span class="hljs-string">|
+      MCP exposes structured CRUD on every workspace-capable TCA
+      table plus file uploads. ...</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+            <section class="section" id="prerequisite-chains">
+            <h2>Prerequisite chains<a class="headerlink" href="#prerequisite-chains" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Subsystems can declare <code>requires:</code> chains. A subsystem is <strong>effective</strong>
+only when itself and all its prerequisites are also declared. Removing a
+prerequisite cascades — every subsystem that depends on it stops being
+effective too.</p>
+
+            
+    <p>The shipped manifest expresses these editor-intuitive rules:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs yaml"><span class="hljs-attr">requires:</span>
+  <span class="hljs-attr">file:write:</span>        <span class="hljs-string">[file:read,</span> <span class="hljs-string">database:write]</span>
+  <span class="hljs-attr">workspace:write:</span>   <span class="hljs-string">[workspace:read,</span> <span class="hljs-string">database:write]</span>
+  <span class="hljs-attr">site:write:</span>        <span class="hljs-string">[database:write]</span>
+  <span class="hljs-attr">render:frontend:</span>   <span class="hljs-string">[database:read]</span>
+  <span class="hljs-attr">extension:install:</span> <span class="hljs-string">[database:write]</span>
+  <span class="hljs-attr">database:write:</span>    <span class="hljs-string">[database:read]</span>
+  <span class="hljs-attr">cli:safe:</span>          <span class="hljs-string">[database:read]</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>What this buys you in practice:</p>
+
+            
+
+<ul>
+    <li class="dash"><strong>Remove ``database:write``</strong> → every file-write tool, workspace-write
+tool, site-write tool, and <code>InstallExtension</code> becomes inert too.
+Uploaded files have no value when you can&#039;t attach them to anything;
+publishing has no value when there&#039;s nothing in workspace.</li>
+    <li class="dash"><strong>Remove ``file:read``</strong> → <code>file:write</code> drops out automatically.
+Cannot blindly write where you cannot see.</li>
+</ul>
+
+            
+    <p>The chain concept is the central idea of the
+<a href="https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests">TYPO3 extension capability manifest article</a>,
+adapted for runtime enforcement of this MCP server. Rejection messages
+distinguish <em>missing</em> from <em>unmet-prerequisite</em> so an operator knows
+where to look in their hardened <code>Capabilities.yaml</code>:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs plaintext">AccessDenied: tool "UploadFileFromUrl" (manifest is missing subsystems:
+file:write (needs: database:write))</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    </section>
+            <section class="section" id="subsystem-catalog">
+            <h2>Subsystem catalog<a class="headerlink" href="#subsystem-catalog" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <div class="table-responsive">
+    <table class="table table-bordered align-default colwidths-grid">
+                    <colgroup>
+                                    <col style="width: 22%">
+                        </colgroup>
+            <thead>
+            <tr>
+                            <th>Subsystem</th>
+                            <th>Meaning</th>
+                    </tr>
+        </thead>
+        <tbody>
+    <tr>
+            <td><code>database:read</code></td>            <td>Reads from any workspace-capable TCA table, plus extras listed in
+<code>additionalReadOnlyTables</code>.</td>    </tr>    <tr>
+            <td><code>database:write</code></td>            <td>DataHandler writes against TCA tables. Workspace-staged unless
+<code>localUnsafeMode</code> lifts that, and gated by TYPO3 user permissions.</td>    </tr>    <tr>
+            <td><code>database:schema</code></td>            <td>Returns TCA / FlexForm schemas. Read-only metadata.</td>    </tr>    <tr>
+            <td><code>workspace:read</code></td>            <td>Lists workspaces and pending changes.</td>    </tr>    <tr>
+            <td><code>workspace:write</code></td>            <td>Publishes or rolls back workspace changes via DataHandler.</td>    </tr>    <tr>
+            <td><code>file:read</code></td>            <td>Browses file storages, reads metadata.</td>    </tr>    <tr>
+            <td><code>file:write</code></td>            <td>Uploads, writes, or imports files.</td>    </tr>    <tr>
+            <td><code>cli:safe</code></td>            <td>Runs an allowlisted set of TYPO3 CLI commands (<code>cache:flush</code>,
+<code>install:fixfolderstructure</code>, …). Not a shell.</td>    </tr>    <tr>
+            <td><code>extension:install</code></td>            <td><code>InstallExtensionTool</code> (admin-only). Disabled by removing this
+entry from the manifest.</td>    </tr>    <tr>
+            <td><code>site:write</code></td>            <td><code>CreateSite</code>, <code>ManageRedirects</code>. Admin-only.</td>    </tr>    <tr>
+            <td><code>render:frontend</code></td>            <td>Outbound HTTP to a TYPO3 site base for rendered HTML
+(<code>RenderRecord</code>). Network policy still applies.</td>    </tr>    <tr>
+            <td><code>log:read</code></td>            <td><code>GetSystemLog</code>.</td>    </tr>    <tr>
+            <td><code>x402:payments</code></td>            <td>Optional paid-content / payment-stats tools.</td>    </tr></tbody>    </table>
+</div>
+    </section>
+            <section class="section" id="enforcement-points">
+            <h2>Enforcement points<a class="headerlink" href="#enforcement-points" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt><code>AbstractTool::execute()</code></dt>
+        
+        <dd>Calls <code>CapabilityManifestService::assertToolAllowed($name)</code> before
+any user-controlled code path. If the tool&#039;s required subsystems
+aren&#039;t all in the manifest, an <code>AccessDeniedException</code> is thrown and
+converted to an MCP error result.</dd>
+                                <dt><code>UploadFileFromUrlTool::validateUrl()</code></dt>
+        
+        <dd>Calls <code>assertHostAllowed($host)</code> before resolving the hostname.
+The hostname-to-IP-range SSRF check still applies on top — the
+manifest gate is the first line, the IP filter is the second.</dd>
+                                <dt><code>RenderRecordTool::fetchUrl()</code></dt>
+        
+        <dd>Same <code>assertHostAllowed()</code> gate, plus <code>CURLOPT_FOLLOWLOCATION</code>
+disabled so a single 302 cannot bypass the host check.</dd>
+            </dl>
+    </section>
+            <section class="section" id="bypassing-the-manifest">
+            <h2>Bypassing the manifest<a class="headerlink" href="#bypassing-the-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Set extension setting <code>enforceCapabilityManifest = 0</code> to skip both
+checks. Use only for debugging — this opens every registered tool plus
+arbitrary outbound HTTP. The <code>GetCapabilities</code> tool surfaces the
+current enforcement state so operators can see when the gate is off.</p>
+
+    </section>
+            <section class="section" id="using-the-manifest-as-a-hardening-tool">
+            <h2>Using the manifest as a hardening tool<a class="headerlink" href="#using-the-manifest-as-a-hardening-tool" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Three common scenarios:</p>
+
+            <dl>
+                        <dt><strong>Read-only MCP</strong></dt>
+        
+        <dd>Remove <code>database:write</code>, <code>file:write</code>, <code>workspace:write</code>,
+<code>site:write</code>, and <code>extension:install</code> from
+<code>capabilities.subsystems</code>. The corresponding tools refuse all calls
+even though they remain registered.</dd>
+                                <dt><strong>Public-web image uploads only from a fixed CDN</strong></dt>
+        
+        <dd>Replace <code>network.outbound: [self]</code> with
+<code>[self, &#039;images.unsplash.com&#039;, &#039;cdn.mybrand.com&#039;]</code>.
+<code>UploadFileFromUrl</code> accepts those hosts; everything else is rejected
+before DNS lookup. SSRF private-IP filter still runs after manifest
+approval.</dd>
+                                <dt><strong>Disable a single tool without changing code</strong></dt>
+        
+        <dd>Add an unused subsystem like <code>database:write-via-WriteTable</code> to
+<code>WriteTable</code>&#039;s requirement list and don&#039;t declare it. The tool stops
+working until the subsystem is added back. (Lighter-weight: set the
+tool&#039;s <code>[database:write]</code> to <code>[__disabled]</code> — same effect.)</dd>
+            </dl>
+    </section>
+            <section class="section" id="inspecting-the-active-manifest">
+            <h2>Inspecting the active manifest<a class="headerlink" href="#inspecting-the-active-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> ./vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>The output includes <code>manifest</code> (full YAML decoded), <code>enforced</code>
+(true/false), and <code>localMode</code> (DDEV / Development context detection
+results, plus the resolved <code>allows_live_writes</code> /
+<code>allows_unrestricted_files</code> flags).</p>
+
+    </section>
+            <section class="section" id="differences-from-the-original-blog-proposal">
+            <h2>Differences from the original blog proposal<a class="headerlink" href="#differences-from-the-original-blog-proposal" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The article proposes the manifest as an extension-discoverability
+mechanism with static-analysis enforcement (<code>typo3 capability:audit</code>,
+<code>typo3 capability:policy-check</code>). This extension implements a
+<strong>runtime</strong> enforcement variant: the manifest is consulted at call time,
+not only at audit time. Both approaches are complementary —
+static-analysis tooling can still inspect the manifest before deployment,
+while the runtime gate catches drift between what the manifest declares
+and what the code actually attempts.</p>
+
+    </section>
+    </section>
+
+        </article>
+<article>
+            
 <section class="section" id="security-audit">
             <h1>Security audit<a class="headerlink" href="#security-audit" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="date">
@@ -3909,9 +5243,10 @@ URL download tool, and extension settings.</p>
     
 <ol start="1">
     <li value="1">
-    <p>Access tokens were stored in plain text.</p>
+    <p>Access and refresh tokens were stored in plain text.</p>
 
-    <p>Status: Fixed. Access tokens are now SHA-256 hashed before storage.</p>
+    <p>Status: Fixed. Access and refresh tokens are now SHA-256 hashed before
+storage.</p>
 </li>
     <li value="2">
     <p>PKCE was not enforced consistently when a challenge was present.</p>
@@ -3987,6 +5322,255 @@ cannot fully eliminate DNS rebinding races without additional infrastructure.</p
     <p>Rationale: documented limits; private/reserved resolved IPs are rejected;
 redirects/size limits apply. Extend functional coverage when changing this
 code path.</p>
+</li>
+    <li value="6">
+    <p><code>localUnsafeMode</code> (extension config; default <code>auto</code>) relaxes
+workspace-only writes and the file sandbox when DDEV / Development
+context is detected.</p>
+
+    <p>Rationale: production never sets <code>IS_DDEV_PROJECT</code> or runs in the
+Development context. The pre-existing OAuth, capability manifest, and
+TYPO3 permission checks remain enforced regardless of local mode.
+Operators that want belt-and-braces gating can pin
+<code>localUnsafeMode = off</code> so even an accidentally-set DDEV env var
+cannot relax the safety nets.</p>
+</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-security-audit-skill-pass-owasp-cwe">
+            <h2>2026-05-03 (security-audit skill pass — OWASP / CWE)<a class="headerlink" href="#2026-05-03-security-audit-skill-pass-owasp-cwe" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="fixed-findings">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p><strong>OWASP A01 / IDOR</strong> — <code>ReadTableTool</code> did not validate <code>pid</code>/<code>uid</code>
+against the BE user&#039;s webmount, only against table-level access via
+<code>TableAccessService</code>. A non-admin token holder could read records on
+pages outside their DB mount.</p>
+
+    <p>Status: Fixed. <code>ReadTableTool::ensurePageAccess()</code> mirrors
+<code>WriteTableTool::validatePageAccess()</code> (admins pass through, others
+need <code>isInWebMount(pid)</code>). UID-only lookups also post-filter the
+result set via <code>filterRecordsByWebMount()</code> so cross-page reads via
+<code>uid</code> are equally gated.</p>
+</li>
+    <li value="2">
+    <p><strong>OWASP A04 / Mass-assignment</strong> — <code>BulkWriteTool</code> and <code>WriteTableTool</code>
+accepted <code>t3ver_*</code>, <code>deleted</code>, <code>tstamp</code>, <code>crdate</code>, <code>cruser_id</code>,
+<code>perms_*</code> in the data array. DataHandler sanitized most, but
+defense-in-depth at the MCP layer is appropriate.</p>
+
+    <p>Status: Fixed. Both tools reject these system columns up-front with a
+structured error rather than letting the value silently disappear.</p>
+</li>
+    <li value="3">
+    <p><strong>OWASP A05 / misconfig</strong> — <code>enableMcpAuthHeaderDiagnostic</code> defaulted
+to ON. The <code>?test=auth</code> probe is unauthenticated.</p>
+
+    <p>Status: Default flipped to OFF in <code>ext_conf_template.txt</code>. Operators
+who want the backend module connection-check indicator turn it on
+explicitly.</p>
+</li>
+    <li value="4">
+    <p><strong>OWASP API4 / resource consumption</strong> — <code>GetPageTreeTool</code> accepted
+any depth (<code>depth=10000</code> would scale linearly).</p>
+
+    <p>Status: Bounded to 10 with <code>max(1, min(10, $depth))</code>.</p>
+</li>
+    <li value="5">
+    <p><strong>OWASP A09 / logging gap</strong> — <code>OAuthService</code> returned <code>null</code> silently
+on PKCE mismatch, missing/expired auth code, invalid bearer token,
+and refresh-token rotation failure. Production log monitoring had no
+way to detect attack patterns.</p>
+
+    <p>Status: Fixed. Each branch now logs at warning level with <code>client_ip</code>
+context (and PKCE method on the wrong-method branch). <code>OAuthService</code>
+gained an optional <code>LoggerInterface</code> constructor parameter (DI
+provides one; existing callers that pass none get a <code>NullLogger</code>).</p>
+</li>
+    <li value="6">
+    <p><strong>CWE-93 / header injection</strong> — <code>validateRedirectUri()</code> accepted
+non-http custom schemes (e.g. <code>cursor://</code>, <code>vscode://</code>) without
+filtering CR/LF/NUL bytes. The validated string was later
+concatenated into a <code>Location:</code> response header.</p>
+
+    <p>Status: Fixed. <code>preg_match(&#039;/[\\r\\n\\0]/&#039;, $url)</code> rejects any URL
+carrying line-break / NUL bytes before parse_url is even called.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-added">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1" type="1">
+    <li value="1">Cookie <code>Secure</code> flag drops behind a TLS-terminating reverse proxy
+when <code>getUri()-&gt;getScheme()</code> returns <code>http</code>. Operators behind a
+proxy must set <code>X-Forwarded-Proto</code> and configure trusted proxies in
+TYPO3, or the OAuth-state cookie is sent in the clear over the
+internal hop. Documented as an operator-side concern.</li>
+    <li value="2"><code>Build/build-ter.sh</code> does not commit a lockfile or sign the bundled
+<code>Resources/Private/PHP/vendor</code> payload. The TER zip therefore
+varies build-to-build. Tracking for a focused supply-chain hardening
+PR (composer.lock + sha256 manifest + cosign).</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-typo3-security-skill-pass-rfc-9700-alignment">
+            <h2>2026-05-03 (typo3-security skill pass — RFC 9700 alignment)<a class="headerlink" href="#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="fixed-findings">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>PKCE was conditionally required (<code>$pkce !== &#039;&#039;</code> gate). RFC 9700 §2.1.1
+makes it mandatory.</p>
+
+    <p>Status: Fixed. <code>OAuthAuthorizeEndpoint::handle()</code> and
+<code>handleApproval()</code> now reject any authorization-code request without
+a <code>code_challenge</code>. Method must be <code>S256</code> (no <code>plain</code>).</p>
+</li>
+    <li value="2">
+    <p>Plaintext token fallback (<code>token_version=0</code>).</p>
+
+    <p>Status: Removed. <code>OAuthService::validateToken()</code> no longer falls back
+to plaintext column lookup. Any pre-migration tokens are rejected and
+the affected MCP client is forced to re-authenticate via the install
+button — issuing a freshly hashed token.</p>
+</li>
+    <li value="3">
+    <p>HTML-attribute escaping in the OAuth consent page used the
+PHP-version-default flag set, which historically did not include
+<code>ENT_QUOTES</code>.</p>
+
+    <p>Status: Hardened. All escaped values now use
+<code>ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5</code> so single quotes and
+malformed UTF-8 cannot break the template.</p>
+</li>
+    <li value="4">
+    <p><code>/mcp</code> and <code>/mcp_oauth/*</code> responses lacked browser-defense headers.</p>
+
+    <p>Status: Fixed. <code>CorsHeadersTrait::addSecurityHeaders()</code> stamps
+<code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>,
+<code>Referrer-Policy: no-referrer</code>, <code>Cache-Control: no-store</code>, and
+<code>Pragma: no-cache</code>. Wired into <code>McpEndpoint</code> (success + error path).</p>
+</li>
+    <li value="5">
+    <p><code>OAuthTokenEndpoint</code> debug log used a 20-char token prefix (80 bits).</p>
+
+    <p>Status: Reduced to 8-char prefix (32 bits) — enough for log
+correlation, not enough to reconstruct the full 64-char token.</p>
+</li>
+    <li value="6">
+    <p><code>WriteFileTool</code> default <code>textfile_ext</code> accepted SVG, which can
+carry inline <code>&lt;script&gt;</code> and trigger stored XSS.</p>
+
+    <p>Status: SVG removed from the default. Operators who need SVG must
+add it to <code>$TYPO3_CONF_VARS[SYS][textfile_ext]</code> and pipe through
+<code>TYPO3\\CMS\\Core\\Resource\\Security\\SvgSanitizer</code>.</p>
+</li>
+    <li value="7">
+    <p><code>RenderRecord</code> cURL fetched without resolving the host to an IP.</p>
+
+    <p>Status: Fixed. Outside <code>localUnsafeMode</code>, the host is resolved with
+<code>gethostbynamel()</code> and any private/reserved address aborts the
+request — same protection model as <code>UploadFileFromUrl</code>.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-added">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1" type="1">
+    <li value="1">OAuth authorization code is bound to the client name and redirect URI
+only loosely (the exchange call does not re-verify the redirect URI).
+Currently a single-client deployment with a locked-down redirect, so
+the impact is theoretical — flagged for a focused PR that adds the
+per-RFC-9700 §4.1.3 strict comparison.</li>
+    <li value="2">Refresh-token rotation does not invalidate the previous refresh token
+(replay detection / family revocation per RFC 9700 §4.14). Tokens are
+single-use within their TTL and rotated, but a captured token used
+twice goes undetected. To be addressed in a focused refresh-rotation
+PR.</li>
+    <li value="3">No rate limiting on <code>/mcp</code>, <code>/mcp_oauth/token</code>, or
+<code>/mcp_oauth/authorize</code>. Bearer-token brute force is unbounded
+(32-byte random tokens make this impractical, but a defense-in-depth
+limiter is appropriate). Recommend adding an upstream HTTP-tier limit
+(nginx <code>limit_req</code>, Apache <code>mod_qos</code>, or a TYPO3 PSR-15
+middleware that calls <code>Symfony\\Component\\RateLimiter</code>).</li>
+</ol>
+
+    </section>
+    </section>
+            <section class="section" id="2026-05-03-capability-manifest-ddev-aware-local-mode">
+            <h2>2026-05-03 (capability manifest + DDEV-aware local mode)<a class="headerlink" href="#2026-05-03-capability-manifest-ddev-aware-local-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="added-findings-and-mitigations">
+            <h3>Added findings and mitigations<a class="headerlink" href="#added-findings-and-mitigations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>Capability manifest now declares per-tool required subsystems and
+outbound network policy.</p>
+
+    <p>Status: Enforced. <code>Configuration/Capabilities.yaml</code> lists every tool
+and the subsystems it needs. <code>AbstractTool::execute()</code> rejects calls
+whose required subsystems are not declared. <code>UploadFileFromUrl</code> and
+<code>RenderRecord</code> consult <code>CapabilityManifestService::assertHostAllowed()</code>
+before opening a socket. Default <code>network.outbound</code> ships closed at
+<code>[self]</code>; operators opt in to public web per deployment.</p>
+</li>
+    <li value="2">
+    <p><code>RenderRecord</code> SSRF gate: redirects disabled, TLS verified.</p>
+
+    <p>Status: Hardened. <code>CURLOPT_FOLLOWLOCATION</code> set to <code>false</code> so a
+single 302 cannot bypass the host allowlist; <code>CURLOPT_SSL_VERIFYPEER</code>
+stays on except in <code>localUnsafeMode</code> (where DDEV&#039;s self-signed certs
+are common). Initial <code>assertHostAllowed</code> check is the only gate the
+request must satisfy.</p>
+</li>
+    <li value="3">
+    <p>CLI <code>@path</code> parameter file loader.</p>
+
+    <p>Status: Mitigated. <code>AbstractMcpToolCommand::coerceValue</code> resolves
+<code>@file.json</code> paths via <code>realpath</code> and rejects targets outside the
+TYPO3 project root. CLI is operator-trusted but this prevents accidental
+smuggling of host files (<code>/etc/passwd</code>, …) into tool params.</p>
+</li>
+</ol>
+
+    </section>
+            <section class="section" id="accepted-risks-additions">
+            <h3>Accepted risks (additions)<a class="headerlink" href="#accepted-risks-additions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            
+    
+<ol start="1">
+    <li value="1">
+    <p>Local-mode auto-detection treats DDEV env vars OR Development context
+as enabling.</p>
+
+    <p>Rationale: the <code>OR</code> is intentional for ergonomics — a developer using
+DDEV in Production context (e.g. a DDEV-served preview of a production
+build) still wants live writes available. Operators who consider this
+too permissive can pin <code>localUnsafeMode = off</code> to require the
+stricter AND semantics.</p>
+</li>
+    <li value="2">
+    <p>Capability manifest enforcement uses <code>GeneralUtility::makeInstance</code>
+inside <code>AbstractTool::execute()</code>.</p>
+
+    <p>Rationale: makeInstance is the documented TYPO3 entry point for early
+bootstrap calls (CLI, eID) where constructor injection isn&#039;t fully
+set up. The service has no mutable state.</p>
 </li>
 </ol>
 
@@ -4075,6 +5659,21 @@ most cases.</p>
 </li>
     <li class="toc-item">
     <a href="#publishworkspace-published-nothing">PublishWorkspace published nothing</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#a-tool-returns-tool-is-missing-subsystems">A tool returns &quot;tool ... is missing subsystems&quot;</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#a-network-using-tool-returns-outbound-request-not-in-manifest">A network-using tool returns &quot;outbound request not in manifest&quot;</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#live-writes-are-rejected-even-though-i-expect-them-to-work">Live writes are rejected even though I expect them to work</a>
 
 
 </li>
@@ -4313,6 +5912,68 @@ expect.</li>
 </ul>
 
     </section>
+            <section class="section" id="a-tool-returns-tool-is-missing-subsystems">
+            <h2>A tool returns &quot;tool ... is missing subsystems&quot;<a class="headerlink" href="#a-tool-returns-tool-is-missing-subsystems" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: an MCP call returns `<code class="code-inline" translate="no">Access<wbr>Denied: tool &quot;Foo&quot; <wbr>(manifest is
+missing subsystems: file:<wbr>write)</code>`.</p>
+
+            
+    <p>Cause: the capability manifest at <code>Configuration/Capabilities.yaml</code> no
+longer declares the subsystems that tool requires. Either an admin
+hardened the manifest (intentionally) or a recent <code>mcp_server</code> upgrade
+added a new tool whose subsystem isn&#039;t yet in the local manifest.</p>
+
+            
+    <p>Fix:</p>
+
+            
+
+<ul>
+    <li class="dash">Inspect the active manifest: <code>vendor/bin/typo3 mcp:get-capabilities --json</code>.</li>
+    <li class="dash">Add the missing entry under <code>capabilities.subsystems</code> if you want the
+tool enabled.</li>
+    <li class="dash">Or set the extension setting <code>enforceCapabilityManifest = 0</code> to bypass
+the manifest entirely (debugging only — opens every registered tool).</li>
+</ul>
+
+    </section>
+            <section class="section" id="a-network-using-tool-returns-outbound-request-not-in-manifest">
+            <h2>A network-using tool returns &quot;outbound request not in manifest&quot;<a class="headerlink" href="#a-network-using-tool-returns-outbound-request-not-in-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: <code>UploadFileFromUrl</code> or <code>RenderRecord</code> returns
+`<code class="code-inline" translate="no">Access<wbr>Denied: outbound request to &quot;...&quot; <wbr>(not in capability manifest
+network.<wbr>outbound)</code>`.</p>
+
+            
+    <p>Cause: the manifest&#039;s <code>network.outbound</code> list does not include that
+host. Default ships at <code>[self]</code> only.</p>
+
+            
+    <p>Fix: edit <code>Configuration/Capabilities.yaml</code> and add the host (or
+<code>*.example.com</code> wildcard) under <code>network.outbound</code>. Use <code>*</code> to allow
+any host (the IP-range SSRF check still rejects private addresses).</p>
+
+    </section>
+            <section class="section" id="live-writes-are-rejected-even-though-i-expect-them-to-work">
+            <h2>Live writes are rejected even though I expect them to work<a class="headerlink" href="#live-writes-are-rejected-even-though-i-expect-them-to-work" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>Symptom: <code>WriteTable</code> rejects <code>workspace_id: 0</code> with
+`<code class="code-inline" translate="no">Access<wbr>Denied: live workspace <wbr>(set local<wbr>Unsafe<wbr>Mode=on or run inside
+DDEV)</code>` even though you&#039;re on a developer machine.</p>
+
+            
+    <p>Cause: the server detected a Production-style application context and the
+<code>localUnsafeMode</code> setting is at <code>auto</code> or <code>off</code>.</p>
+
+            
+    <p>Fix: either set <code>TYPO3_CONTEXT=Development</code> (or one of its derivatives)
+in your environment, set <code>IS_DDEV_PROJECT=true</code>, or pin
+<code>localUnsafeMode = on</code> in extension settings. Verify via
+<code>vendor/bin/typo3 mcp:get-capabilities --json</code> — the <code>localMode</code>
+section reports what&#039;s detected.</p>
+
+    </section>
             <section class="section" id="the-backend-module-tabs-do-nothing">
             <h2>The backend module tabs do nothing<a class="headerlink" href="#the-backend-module-tabs-do-nothing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             
@@ -4454,7 +6115,7 @@ is designed to cover.</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

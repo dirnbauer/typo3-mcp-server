@@ -147,11 +147,54 @@ the remote OAuth endpoint.
    The same topic is covered technically under **Local stdio and the host OS
    boundary** in ``TECHNICAL_OVERVIEW.md`` (repository root).
 
+.. _installation-cli-mirror:
+
+CLI mirror (every tool, every shell)
+------------------------------------
+
+Every MCP tool is also a TYPO3 console command, so shell scripts, CI
+pipelines, and ``ddev exec`` can drive the same surface as the MCP
+endpoint. List what's available:
+
+.. code-block:: bash
+   :caption: Discover MCP tool commands
+
+   vendor/bin/typo3 list mcp
+
+Run any registered tool by name:
+
+.. code-block:: bash
+   :caption: Generic runner
+
+   vendor/bin/typo3 mcp:tool ReadTable --param table=pages --param pid=1 --json
+   vendor/bin/typo3 mcp:tool:list --schema=ReadTable
+
+Or use one of the shipped per-tool shortcuts:
+
+.. code-block:: bash
+   :caption: Per-tool shortcuts
+
+   vendor/bin/typo3 mcp:read-table --table tt_content --pid 1
+   vendor/bin/typo3 mcp:write-table --action create --table pages --pid 1 --param data='{"title": "X"}'
+   vendor/bin/typo3 mcp:get-capabilities --json
+
+Output modes:
+
+- ``--json`` — machine envelope ``{ok, result}``
+- ``--plain`` or ``--no-ansi`` — plain text without decoration
+- (default) — pretty colored output
+
+Use ``--param key=@payload.json`` to pass JSON from a file (constrained to
+the TYPO3 project root). Adding a new ``mcp:<tool>`` shortcut: see the
+``typo3-mcp-cli`` claude-code skill.
+
 After installation
 ==================
 
 Continue with:
 
-- :doc:`../Configuration/Index` to configure the file sandbox and understand
-  workspace behavior
+- :doc:`../Configuration/Index` to configure the file sandbox, capability
+  manifest, local-mode toggle, and workspace behavior
 - :doc:`../Tools/Index` to review the available MCP tools
+- :doc:`../Architecture/CapabilityManifest` to understand the
+  declaration-and-enforcement security model

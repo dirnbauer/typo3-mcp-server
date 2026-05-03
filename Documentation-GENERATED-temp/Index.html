@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -126,6 +126,15 @@
     <a href="Tools/Index.html">
         Tools
     </a></li>    <li class="" role="menuitem">
+    <a href="Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class="" role="menuitem">
     <a href="Architecture/Index.html">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -140,6 +149,9 @@
     </a></li><li class="" role="menuitem">
     <a href="Architecture/InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="Architecture/CapabilityManifest.html">
+        Capability manifest
     </a></li><li class="" role="menuitem">
     <a href="Architecture/SecurityAudit.html">
         Security audit
@@ -209,7 +221,7 @@
 
         <dd class="field-odd">
             
-    <p>Sun, 26 Apr 2026 10:05:45 +0000</p>
+    <p>Sun, 03 May 2026 11:54:09 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -278,6 +290,7 @@ immediately once stored.</p>
     <li class="dash"><a href="Configuration/Index.html">Configuration</a> for module, OAuth, workspace, and file sandbox
 configuration</li>
     <li class="dash"><a href="Tools/Index.html">Tools</a> for the complete MCP tool reference</li>
+    <li class="dash"><a href="Testing/Index.html">Testing</a> for the E2E test suite and CI test workflow</li>
     <li class="dash"><a href="Architecture/Index.html">Architecture</a> for design decisions, implementation layers, and
 deeper architecture notes</li>
     <li class="dash"><a href="Troubleshooting/Index.html">Troubleshooting</a> when something is not working</li>
@@ -413,6 +426,11 @@ deeper architecture notes</li>
 
 </li>
             <li class="toc-item">
+    <a href="Configuration/Index.html#capability-manifest">Capability manifest</a>
+
+
+</li>
+            <li class="toc-item">
     <a href="Configuration/Index.html#why-the-sandbox-matters">Why the sandbox matters</a>
 
 
@@ -544,7 +562,39 @@ deeper architecture notes</li>
 
 </li>
             <li class="toc-item">
+    <a href="Tools/Index.html#verification-tools">Verification tools</a>
+
+
+</li>
+            <li class="toc-item">
     <a href="Tools/Index.html#file-safety-model">File safety model</a>
+
+
+</li>
+                    </ul>
+</li>
+    <li class="toc-item">
+    <a href="Testing/Index.html#testing-1">Testing</a>
+        <ul class="menu-level-1">
+            <li class="toc-item">
+    <a href="Testing/E2eSuite.html#the-e2e-suite">The E2E suite</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Testing/E2eCiDebugging.html#e2e-ci-and-debugging">E2E CI and debugging</a>
+
+
+</li>
+                    </ul>
+        <ul class="section-level-1">
+            <li class="toc-item">
+    <a href="Testing/Index.html#test-layers">Test layers</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Testing/Index.html#primary-commands">Primary commands</a>
 
 
 </li>
@@ -570,6 +620,11 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="Architecture/InlineRelations.html#inline-relations">Inline relations</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Architecture/CapabilityManifest.html#capability-manifest-1">Capability manifest</a>
 
 
 </li>
@@ -648,6 +703,21 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="Troubleshooting/Index.html#publishworkspace-published-nothing">PublishWorkspace published nothing</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Troubleshooting/Index.html#a-tool-returns-tool-is-missing-subsystems">A tool returns &quot;tool ... is missing subsystems&quot;</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Troubleshooting/Index.html#a-network-using-tool-returns-outbound-request-not-in-manifest">A network-using tool returns &quot;outbound request not in manifest&quot;</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="Troubleshooting/Index.html#live-writes-are-rejected-even-though-i-expect-them-to-work">Live writes are rejected even though I expect them to work</a>
 
 
 </li>
@@ -773,7 +843,7 @@ deeper architecture notes</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

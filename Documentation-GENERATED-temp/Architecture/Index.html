@@ -12,15 +12,15 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
 <script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
-                        <link href="../Tools/Index.html" rel="prev" title="Tools"/>
+                        <link href="../Testing/E2eCiDebugging.html" rel="prev" title="E2E CI and debugging"/>
             <link href="ImplementationOverview.html" rel="next" title="Implementation overview"/>
             <link href="../Index.html" rel="top" title="MCP Server"/>
     </head>
@@ -126,7 +126,16 @@
     </a></li>    <li class="" role="menuitem">
     <a href="../Tools/Index.html">
         Tools
-    </a></li>    <li class=" current active" role="menuitem">
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class=" current active" role="menuitem">
     <a href="#" aria-current="page">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -141,6 +150,9 @@
     </a></li><li class="" role="menuitem">
     <a href="InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="CapabilityManifest.html">
+        Capability manifest
     </a></li><li class="" role="menuitem">
     <a href="SecurityAudit.html">
         Security audit
@@ -296,6 +308,10 @@ areas.</p>
     <li class="dash">File access is restricted to the MCP file sandbox instead of unrestricted
 <code>fileadmin</code> paths</li>
     <li class="dash">Uploads use randomized stored filenames to reduce predictable file exposure</li>
+    <li class="dash">Capability manifest gates every tool call and outbound HTTP request; see
+<a href="CapabilityManifest.html">Capability manifest</a>.</li>
+    <li class="dash">DDEV / local-mode detection relaxes only the workspace-staging and
+file-sandbox safety nets — never authentication or capability policy.</li>
 </ul>
 
     </section>
@@ -306,7 +322,7 @@ areas.</p>
                         
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
-                            <a class="page-link" href="../Tools/Index.html"
+                            <a class="page-link" href="../Testing/E2eCiDebugging.html"
                                title="Accesskey Alt(+Shift)+p">
                                 <i class="fa-solid fa-chevron-left"></i> Previous
                             </a>
@@ -407,7 +423,7 @@ areas.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

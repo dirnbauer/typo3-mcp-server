@@ -139,6 +139,80 @@ Extension configuration values
    diagnostic probe to the outside world. The backend module falls back to
    hiding the associated health-check indicator when disabled.
 
+.. confval:: localUnsafeMode
+   :name: ext-mcp-server-localUnsafeMode
+   :type: options[auto, on, off]
+   :default: auto
+   :required: false
+
+   Local-development escape hatch. When enabled (``on``, or ``auto`` with a
+   DDEV / Development context detected) the workspace-only-writes and
+   file-sandbox safety nets relax:
+
+   - record writes accept ``workspace_id: 0`` (live writes)
+   - file tools reach any storage / folder, not only ``fileSandboxRoot``
+
+   Detection logic looks at ``IS_DDEV_PROJECT``, ``DDEV_PROJECT``,
+   ``DDEV_HOSTNAME``, ``DDEV_TLD`` env vars and the TYPO3 application
+   context.
+
+   .. warning::
+
+      Setting this to ``on`` outside a trusted local environment removes
+      the most important MCP safety nets. Production sites should leave
+      this at ``auto`` (the default) — there should be no DDEV vars and no
+      Development context in production, so ``auto`` resolves to ``off``
+      automatically.
+
+   Authentication (OAuth + backend session) and the capability manifest
+   stay enforced even with this on; only the workspace-staging and
+   file-sandbox checks are skipped.
+
+.. confval:: enforceCapabilityManifest
+   :name: ext-mcp-server-enforceCapabilityManifest
+   :type: boolean
+   :default: true
+   :required: false
+
+   Reject MCP tool calls whose required subsystems are not declared in
+   ``Configuration/Capabilities.yaml``. Also enforces the
+   ``network.outbound`` allowlist for ``UploadFileFromUrl`` and
+   ``RenderRecord``.
+
+   Disable only for local debugging — turning this off opens every
+   registered tool plus arbitrary outbound HTTP.
+
+Capability manifest
+===================
+
+The shipped ``Configuration/Capabilities.yaml`` declares the subsystems
+this MCP exposes (``database:read``, ``database:write``, ``file:write``,
+``render:frontend``, …) and maps each tool to the subsystems it requires.
+At call time, ``AbstractTool::execute()`` rejects tools whose required
+subsystems aren't declared, and ``CapabilityManifestService::assertHostAllowed()``
+rejects outbound HTTP to hosts not in ``network.outbound``.
+
+Inspect the active manifest from the CLI:
+
+.. code-block:: bash
+
+   ddev exec ./vendor/bin/typo3 mcp:get-capabilities --json
+
+To **harden** an installation:
+
+- Remove a subsystem (e.g. ``file:write``) from ``capabilities.subsystems``
+  to disable every tool that depends on it.
+- Replace ``network.outbound: [self]`` with an explicit allowlist of
+  domains your editors actually need (``images.unsplash.com``,
+  ``*.example.com``, …).
+- Remove ``database:write`` to make the MCP read-only.
+
+To **soften** for development:
+
+- Add ``- '*'`` under ``network.outbound`` to allow public-web image
+  uploads (the IP-range SSRF check still blocks private addresses).
+- Set ``enforceCapabilityManifest = 0`` to bypass the gate entirely.
+
 Why the sandbox matters
 =======================
 

@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-04-26T10:05:45+00:00" name="docsearch:modified">
-<meta content="2026-04-26T10:05:45+00:00" name="dc.modified">
-<meta content="2026-04-26T10:05:45+00:00" property="article:modified_time">
+<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
+<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
+<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -127,6 +127,15 @@
     <a href="../Tools/Index.html">
         Tools
     </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class="" role="menuitem">
     <a href="../Architecture/Index.html">
         Architecture
     </a>        <ul class="menu-level-1"><li class="" role="menuitem">
@@ -141,6 +150,9 @@
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/InlineRelations.html">
         Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/CapabilityManifest.html">
+        Capability manifest
     </a></li><li class="" role="menuitem">
     <a href="../Architecture/SecurityAudit.html">
         Security audit
@@ -471,6 +483,163 @@ hiding the associated health-check indicator when disabled.</p>
         </dd>
     </dl>
 </section>
+            <section data-search-title="localUnsafeMode"
+         data-search-id="confval-ext-mcp-server-localunsafemode"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-localunsafemode"
+>
+    <h3 class="sr-only">localUnsafeMode</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">local<wbr>Unsafe<wbr>Mode</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-localunsafemode"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-localunsafemode"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">options[auto, on, off]
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">auto
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Local-development escape hatch. When enabled (<code>on</code>, or <code>auto</code> with a
+DDEV / Development context detected) the workspace-only-writes and
+file-sandbox safety nets relax:</p>
+
+
+<ul>
+    <li class="dash">record writes accept <code>workspace_id: 0</code> (live writes)</li>
+    <li class="dash">file tools reach any storage / folder, not only <code>fileSandboxRoot</code></li>
+</ul>
+
+    <p>Detection logic looks at <code>IS_DDEV_PROJECT</code>, <code>DDEV_PROJECT</code>,
+<code>DDEV_HOSTNAME</code>, <code>DDEV_TLD</code> env vars and the TYPO3 application
+context.</p>
+    
+<div class="admonition warning" role="alert">
+    <p class="admonition-title">Warning</p>
+        
+    <p>Setting this to <code>on</code> outside a trusted local environment removes
+the most important MCP safety nets. Production sites should leave
+this at <code>auto</code> (the default) — there should be no DDEV vars and no
+Development context in production, so <code>auto</code> resolves to <code>off</code>
+automatically.</p>
+
+</div>
+    <p>Authentication (OAuth + backend session) and the capability manifest
+stay enforced even with this on; only the workspace-staging and
+file-sandbox checks are skipped.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
+            <section data-search-title="enforceCapabilityManifest"
+         data-search-id="confval-ext-mcp-server-enforcecapabilitymanifest"
+         data-search-facet="Option"
+         class="confval-section"
+         id="confval-ext-mcp-server-enforcecapabilitymanifest"
+>
+    <h3 class="sr-only">enforceCapabilityManifest</h3>
+    <dl class="confval">
+        <dt             class="d-flex justify-content-between">
+            <div class="confval-header flex-grow-1">
+                <code class="sig-name descname"><span
+                        class="pre">enforce<wbr>Capability<wbr>Manifest</span></code>
+                                    <a class="headerlink" href="#confval-ext-mcp-server-enforcecapabilitymanifest"
+                       data-bs-toggle="modal"
+                       data-bs-target="#linkReferenceModal"
+                       data-id="confval-ext-mcp-server-enforcecapabilitymanifest"
+                       title="Reference this configuration value"><i
+                            class="fa-solid fa-paragraph"></i></a>
+                </div>
+            <div class="confval-back-to-top">                    <a href="#" class="backToTop" title="Back to top"><i
+                            class="fa-solid fa-arrow-up fa-xs"></i></a>            </div>        </dt>
+        <dd>
+                            <dl class="field-list simple">
+                                            <dt class="field-even">Type</dt>
+                        <dd class="field-even">boolean
+                        </dd>
+                                            <dt class="field-odd">Default</dt>
+                        <dd class="field-odd">true
+                        </dd>
+                    </dl>
+                        <div class="confval-description">
+                
+    <p>Reject MCP tool calls whose required subsystems are not declared in
+<code>Configuration/Capabilities.yaml</code>. Also enforces the
+<code>network.outbound</code> allowlist for <code>UploadFileFromUrl</code> and
+<code>RenderRecord</code>.</p>
+
+    <p>Disable only for local debugging — turning this off opens every
+registered tool plus arbitrary outbound HTTP.</p>
+
+            </div>
+        </dd>
+    </dl>
+</section>
+    </section>
+            <section class="section" id="capability-manifest">
+            <h2>Capability manifest<a class="headerlink" href="#capability-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            
+    <p>The shipped <code>Configuration/Capabilities.yaml</code> declares the subsystems
+this MCP exposes (<code>database:read</code>, <code>database:write</code>, <code>file:write</code>,
+<code>render:frontend</code>, …) and maps each tool to the subsystems it requires.
+At call time, <code>AbstractTool::execute()</code> rejects tools whose required
+subsystems aren&#039;t declared, and <code>CapabilityManifestService::assertHostAllowed()</code>
+rejects outbound HTTP to hosts not in <code>network.outbound</code>.</p>
+
+            
+    <p>Inspect the active manifest from the CLI:</p>
+
+            <div class="code-block-wrapper" translate="no">
+            
+    <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> ./vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+            
+    <p>To <strong>harden</strong> an installation:</p>
+
+            
+
+<ul>
+    <li class="dash">Remove a subsystem (e.g. <code>file:write</code>) from <code>capabilities.subsystems</code>
+to disable every tool that depends on it.</li>
+    <li class="dash">Replace <code>network.outbound: [self]</code> with an explicit allowlist of
+domains your editors actually need (<code>images.unsplash.com</code>,
+<code>*.example.com</code>, …).</li>
+    <li class="dash">Remove <code>database:write</code> to make the MCP read-only.</li>
+</ul>
+
+            
+    <p>To <strong>soften</strong> for development:</p>
+
+            
+
+<ul>
+    <li class="dash">Add <code>- &#039;*&#039;</code> under <code>network.outbound</code> to allow public-web image
+uploads (the IP-range SSRF check still blocks private addresses).</li>
+    <li class="dash">Set <code>enforceCapabilityManifest = 0</code> to bypass the gate entirely.</li>
+</ul>
+
     </section>
             <section class="section" id="why-the-sandbox-matters">
             <h2>Why the sandbox matters<a class="headerlink" href="#why-the-sandbox-matters" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -639,7 +808,7 @@ physical file versioning.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: Apr 26, 2026 10:05</p>
+                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">
