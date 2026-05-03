@@ -64,8 +64,8 @@ vendor/bin/typo3 extension:activate mcp_server
 
 **Requirements**
 
-- TYPO3 `^14.0`
-- PHP `>=8.2`
+- TYPO3 `^14.0` (v14.3 LTS — no v12/v13 fallback paths in this fork)
+- PHP `8.2 – 8.5` (CI matrix runs all four)
 - `typo3/cms-workspaces`
 
 ### 2. Open the backend module
@@ -284,7 +284,9 @@ capabilities:
 **Enforcement points:**
 
 - `AbstractTool::execute()` — refuses to run a tool whose required
-  subsystems are not declared.
+  subsystems (or any of their `requires:` prerequisites) are not declared.
+  Removing `database:write` cascades into disabling every
+  `file:write`/`workspace:write`/`site:write` tool too.
 - `UploadFileFromUrlTool` and `RenderRecordTool` — refuse outbound requests
   to hosts not in `network.outbound` (the IP-range SSRF check still applies
   on top).
@@ -355,7 +357,7 @@ All settings live in **Extension Configuration → `mcp_server`**.
 | `fileSandboxRoot`              | `1:/mcp/` | FAL folder root where file tools operate                                         |
 | `workspaceUploadSubfolders`    | `1`     | Route uploads into workspace-specific folders                                      |
 | `allowMcpTokenInQueryString`   | `0`     | Allow `?token=…` on `/mcp` (legacy clients only, logging risk)                     |
-| `enableMcpAuthHeaderDiagnostic`| `1`     | Enable minimal `?test=auth` diagnostic on `/mcp`                                   |
+| `enableMcpAuthHeaderDiagnostic`| `0`     | Enable minimal `?test=auth` diagnostic on `/mcp` (off-by-default since 2026-05)    |
 | `localUnsafeMode`              | `auto`  | DDEV/Development → live writes + unrestricted file access. `on`/`off`/`auto`.      |
 | `enforceCapabilityManifest`    | `1`     | Reject tools whose required subsystems aren't declared in `Capabilities.yaml`      |
 
@@ -365,12 +367,17 @@ for details and security recommendations.
 ## Development
 
 ```bash
-ddev exec composer test            # unit + functional tests
+ddev exec composer test            # 42 unit + 817 functional, paratest -p 4
 ddev exec composer test:llm        # LLM-assisted ergonomics tests (needs OPENROUTER_API_KEY)
-ddev exec composer phpstan         # static analysis
+ddev exec composer phpstan         # PHPStan level max + saschaegerer/phpstan-typo3
+                                   # + phpstan-strict-rules + phpstan-deprecation-rules
 ddev exec composer php-cs-fixer:fix
+ddev exec composer rector          # PHP migrations dry-run
+ddev exec composer fractor         # non-PHP (FlexForm/TypoScript/Fluid) dry-run
 ddev exec composer docs:check      # RST render check (uses Docker)
 ```
+
+CI matrix runs **PHP 8.2 / 8.3 / 8.4 / 8.5 × TYPO3 ^14.0** on every push.
 
 E2E (Playwright) — spins up MySQL, TYPO3, Playwright in Docker:
 
