@@ -760,7 +760,7 @@ final class SearchTool extends AbstractRecordTool
             if (isset($record['t3ver_oid']) && $record['t3ver_oid'] > 0) {
                 // This is a workspace version - use the live UID instead
                 $record['uid'] = $record['t3ver_oid'];
-            } elseif (isset($record['t3ver_state']) && $record['t3ver_state'] == 1) {
+            } elseif (isset($record['t3ver_state']) && (int)$record['t3ver_state'] === 1) {
                 // This is a new placeholder record - its UID is already the "live" UID
                 // No change needed
             }

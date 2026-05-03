@@ -488,7 +488,7 @@ final class ReadTableTool extends AbstractRecordTool
         if (isset($record['t3ver_oid']) && $record['t3ver_oid'] > 0) {
             // This is a workspace version of an existing record - use the live UID instead
             $record['uid'] = $record['t3ver_oid'];
-        } elseif (isset($record['t3ver_state']) && $record['t3ver_state'] == 1) {
+        } elseif (isset($record['t3ver_state']) && (int)$record['t3ver_state'] === 1) {
             // This is a new record in workspace - keep its UID as is
             // New records don't have a live counterpart until published
             // No change needed
@@ -545,6 +545,19 @@ final class ReadTableTool extends AbstractRecordTool
             // Include the field
             $processedRecord[$field] = $this->convertFieldValue($table, $field, $value);
         }
+
+        // Belt-and-suspenders: workspace plumbing fields must never reach the
+        // MCP client even if a TCA showitem accidentally lists one. The
+        // workspace transparency contract requires only live UIDs to be
+        // exposed; t3ver_* are an internal implementation detail.
+        unset(
+            $processedRecord['t3ver_oid'],
+            $processedRecord['t3ver_wsid'],
+            $processedRecord['t3ver_state'],
+            $processedRecord['t3ver_stage'],
+            $processedRecord['t3ver_tstamp'],
+            $processedRecord['t3ver_count'],
+        );
 
         return $processedRecord;
     }

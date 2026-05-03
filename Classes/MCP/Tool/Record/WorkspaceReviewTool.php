@@ -253,8 +253,11 @@ final class WorkspaceReviewTool extends AbstractRecordTool
             $versionState = is_numeric($row['t3ver_state'] ?? null) ? (int)$row['t3ver_state'] : 0;
             $pid = is_numeric($row['pid'] ?? null) ? (int)$row['pid'] : 0;
 
+            // TYPO3 v14 t3ver_state values: 0=default, 1=new, 2=delete-placeholder,
+            // 4=move-pointer. The historic -1 ("new placeholder") and 3
+            // ("move placeholder") were dropped in v11 alongside t3ver_move_id —
+            // do not match against them here.
             $state = match ($versionState) {
-                -1 => 'new_placeholder',
                 1 => 'new',
                 2 => 'deleted',
                 4 => 'moved',

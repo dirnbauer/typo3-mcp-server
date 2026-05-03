@@ -9,7 +9,6 @@ use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Reads and enforces Configuration/Capabilities.yaml.

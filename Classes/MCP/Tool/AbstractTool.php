@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
-use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\Service\CapabilityManifestService;
