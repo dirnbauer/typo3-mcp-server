@@ -97,6 +97,75 @@ Accepted risks
    ``localUnsafeMode = off`` so even an accidentally-set DDEV env var
    cannot relax the safety nets.
 
+2026-05-03 (security-audit skill pass — OWASP / CWE)
+=====================================================
+
+Fixed findings
+--------------
+
+1. **OWASP A01 / IDOR** — ``ReadTableTool`` did not validate ``pid``/``uid``
+   against the BE user's webmount, only against table-level access via
+   ``TableAccessService``. A non-admin token holder could read records on
+   pages outside their DB mount.
+
+   Status: Fixed. ``ReadTableTool::ensurePageAccess()`` mirrors
+   ``WriteTableTool::validatePageAccess()`` (admins pass through, others
+   need ``isInWebMount(pid)``). UID-only lookups also post-filter the
+   result set via ``filterRecordsByWebMount()`` so cross-page reads via
+   ``uid`` are equally gated.
+
+2. **OWASP A04 / Mass-assignment** — ``BulkWriteTool`` and ``WriteTableTool``
+   accepted ``t3ver_*``, ``deleted``, ``tstamp``, ``crdate``, ``cruser_id``,
+   ``perms_*`` in the data array. DataHandler sanitized most, but
+   defense-in-depth at the MCP layer is appropriate.
+
+   Status: Fixed. Both tools reject these system columns up-front with a
+   structured error rather than letting the value silently disappear.
+
+3. **OWASP A05 / misconfig** — ``enableMcpAuthHeaderDiagnostic`` defaulted
+   to ON. The ``?test=auth`` probe is unauthenticated.
+
+   Status: Default flipped to OFF in ``ext_conf_template.txt``. Operators
+   who want the backend module connection-check indicator turn it on
+   explicitly.
+
+4. **OWASP API4 / resource consumption** — ``GetPageTreeTool`` accepted
+   any depth (``depth=10000`` would scale linearly).
+
+   Status: Bounded to 10 with ``max(1, min(10, $depth))``.
+
+5. **OWASP A09 / logging gap** — ``OAuthService`` returned ``null`` silently
+   on PKCE mismatch, missing/expired auth code, invalid bearer token,
+   and refresh-token rotation failure. Production log monitoring had no
+   way to detect attack patterns.
+
+   Status: Fixed. Each branch now logs at warning level with ``client_ip``
+   context (and PKCE method on the wrong-method branch). ``OAuthService``
+   gained an optional ``LoggerInterface`` constructor parameter (DI
+   provides one; existing callers that pass none get a ``NullLogger``).
+
+6. **CWE-93 / header injection** — ``validateRedirectUri()`` accepted
+   non-http custom schemes (e.g. ``cursor://``, ``vscode://``) without
+   filtering CR/LF/NUL bytes. The validated string was later
+   concatenated into a ``Location:`` response header.
+
+   Status: Fixed. ``preg_match('/[\\r\\n\\0]/', $url)`` rejects any URL
+   carrying line-break / NUL bytes before parse_url is even called.
+
+Accepted risks (added)
+----------------------
+
+1. Cookie ``Secure`` flag drops behind a TLS-terminating reverse proxy
+   when ``getUri()->getScheme()`` returns ``http``. Operators behind a
+   proxy must set ``X-Forwarded-Proto`` and configure trusted proxies in
+   TYPO3, or the OAuth-state cookie is sent in the clear over the
+   internal hop. Documented as an operator-side concern.
+
+2. ``Build/build-ter.sh`` does not commit a lockfile or sign the bundled
+   ``Resources/Private/PHP/vendor`` payload. The TER zip therefore
+   varies build-to-build. Tracking for a focused supply-chain hardening
+   PR (composer.lock + sha256 manifest + cosign).
+
 2026-05-03 (typo3-security skill pass — RFC 9700 alignment)
 ===========================================================
 

@@ -58,6 +58,58 @@ final class ReadTableTool extends AbstractRecordTool
     }
 
     /**
+     * IDOR defense: refuse to query records on a page outside the BE user's
+     * webmount. Admins pass through. The error message keeps the same tone
+     * as WriteTableTool::validatePageAccess().
+     */
+    private function ensurePageAccess(int $pid): void
+    {
+        $beUser = $this->getBackendUser();
+        if ($beUser->isAdmin()) {
+            return;
+        }
+        // BackendUserAuthentication::isInWebMount() returns int|null (the
+        // matched mount UID, or null when not in any mount). Cast to bool
+        // explicitly for phpstan-strict-rules.
+        if (((int)($beUser->isInWebMount($pid) ?? 0)) <= 0) {
+            throw new ValidationException([sprintf(
+                'Permission denied: You do not have access to page %d. Your account needs database mount point (DB Mount) ' .
+                'access to this page or its parent pages. Contact your administrator.',
+                $pid,
+            )]);
+        }
+    }
+
+    /**
+     * Drop rows whose pid is outside the BE user's webmount. Admins keep
+     * everything. Used when callers do uid-only lookups so we don't bypass
+     * the page-level IDOR gate.
+     *
+     * @param array<int, array<string, mixed>> $records
+     * @return list<array<string, mixed>>
+     */
+    private function filterRecordsByWebMount(array $records): array
+    {
+        $beUser = $this->getBackendUser();
+        if ($beUser->isAdmin()) {
+            return array_values($records);
+        }
+        return array_values(array_filter(
+            $records,
+            static function (array $row) use ($beUser): bool {
+                if (!is_numeric($row['pid'] ?? null)) {
+                    return false;
+                }
+                $pid = (int)$row['pid'];
+                if ($pid < 0) {
+                    return false;
+                }
+                return ((int)($beUser->isInWebMount($pid) ?? 0)) > 0;
+            },
+        ));
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function getTableCtrlArray(string $table): array
@@ -225,6 +277,14 @@ final class ReadTableTool extends AbstractRecordTool
             throw new ValidationException(['Offset must be non-negative']);
         }
 
+        // A01 / IDOR defense: when the caller targets a specific page, refuse
+        // unless it is in the BE user's webmount. This is the same gate
+        // WriteTableTool::validatePageAccess applies to writes.
+        // For root-level/non-pid tables the check is skipped (pid is null or 0).
+        if ($pid !== null && $pid > 0) {
+            $this->ensurePageAccess($pid);
+        }
+
         // Convert language ISO code to UID if provided
         $languageUid = null;
         if ($language !== null) {
@@ -245,6 +305,17 @@ final class ReadTableTool extends AbstractRecordTool
             $languageUid,
             $requestedFields
         );
+
+        // A01 / IDOR defense: when the caller looked up by uid (no pid filter),
+        // post-filter rows whose pid is outside the user's webmounts. Admins
+        // pass through unchanged. Root-level rows (pid=0) are returned only
+        // for tables that store everything at pid=0 (sys_file, ...) — those
+        // are read-only via TCA / additionalReadOnlyTables anyway.
+        if ($uid !== null && $pid === null) {
+            $result['records'] = $this->filterRecordsByWebMount($result['records']);
+            $result['total'] = count($result['records']);
+            $result['hasMore'] = false;
+        }
 
         // Include related records
         $result = $this->includeRelations($result, $table, $requestedFields);

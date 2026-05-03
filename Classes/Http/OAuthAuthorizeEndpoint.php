@@ -625,6 +625,15 @@ final readonly class OAuthAuthorizeEndpoint
             return '';
         }
 
+        // CRLF / NUL byte rejection (header-injection defense). The validated
+        // URL is later concatenated into a Location: response header; any
+        // unescaped \r\n would split the header. parse_url() does not strip
+        // these for non-http schemes (cursor://, vscode://, …), so we
+        // gate explicitly here.
+        if (preg_match('/[\r\n\0]/', $trimmedRedirectUri) === 1) {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
         $parsedUrl = parse_url($trimmedRedirectUri);
         if (!is_array($parsedUrl)) {
             throw new \InvalidArgumentException('Invalid redirect_uri');

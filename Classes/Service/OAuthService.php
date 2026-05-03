@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
@@ -20,9 +22,14 @@ final readonly class OAuthService
     private const SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
     private const SUPPORTED_RESPONSE_TYPES = ['code'];
 
+    private LoggerInterface $logger;
+
     public function __construct(
         private ConnectionPool $connectionPool,
-    ) {}
+        ?LoggerInterface $logger = null,
+    ) {
+        $this->logger = $logger ?? new NullLogger();
+    }
 
     /**
      * Generate authorization URL for OAuth flow
@@ -107,7 +114,13 @@ final readonly class OAuthService
             ->executeQuery()
             ->fetchAssociative();
 
+        // Auth-failure logging — these are the branches an attacker would
+        // probe; warning-level so production log monitoring picks them up.
+        $clientIp = $request !== null ? $this->getRemoteAddress($request) : '';
         if (!$authCode) {
+            $this->logger->warning('OAuth: authorization code lookup failed (invalid or expired)', [
+                'client_ip' => $clientIp,
+            ]);
             return null;
         }
 
@@ -115,13 +128,23 @@ final readonly class OAuthService
         if ($pkceChallenge !== '') {
             $challengeMethod = is_string($authCode['pkce_challenge_method'] ?? null) ? $authCode['pkce_challenge_method'] : '';
             if ($challengeMethod !== 'S256') {
+                $this->logger->warning('OAuth: rejected non-S256 PKCE method', [
+                    'client_ip' => $clientIp,
+                    'method' => $challengeMethod,
+                ]);
                 return null;
             }
             if ($codeVerifier === null || $codeVerifier === '') {
+                $this->logger->warning('OAuth: PKCE code_verifier missing on token exchange', [
+                    'client_ip' => $clientIp,
+                ]);
                 return null;
             }
             $computedChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
             if (!hash_equals($pkceChallenge, $computedChallenge)) {
+                $this->logger->warning('OAuth: PKCE challenge/verifier mismatch', [
+                    'client_ip' => $clientIp,
+                ]);
                 return null;
             }
         }
@@ -202,6 +225,10 @@ final readonly class OAuthService
             ->fetchAssociative();
 
         if (!$tokenRecord) {
+            $clientIp = $request !== null ? $this->getRemoteAddress($request) : '';
+            $this->logger->warning('OAuth: refresh-token rotation failed (invalid or expired)', [
+                'client_ip' => $clientIp,
+            ]);
             return null;
         }
 
@@ -267,6 +294,10 @@ final readonly class OAuthService
             // Pre-migration tokens (token_version=0, plaintext) are no longer
             // honored — affected MCP clients re-authenticate via the backend
             // module, which issues a freshly hashed token.
+            $clientIp = $request !== null ? $this->getRemoteAddress($request) : '';
+            $this->logger->warning('OAuth: bearer-token validation failed', [
+                'client_ip' => $clientIp,
+            ]);
             return null;
         }
 

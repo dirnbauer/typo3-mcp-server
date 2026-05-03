@@ -94,7 +94,10 @@ final class GetPageTreeTool extends AbstractRecordTool
     {
 
         $startPage = (int)($params['startPage'] ?? 0);
-        $depth = (int)($params['depth'] ?? 3);
+        // Bound depth to prevent unbounded resource consumption (OWASP API4).
+        // 10 covers any realistic site tree; deeper exploration uses
+        // iterative startPage navigation instead of a single huge query.
+        $depth = max(1, min(10, (int)($params['depth'] ?? 3)));
         $languageUid = null;
 
         // Handle language parameter if provided

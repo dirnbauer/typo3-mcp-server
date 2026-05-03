@@ -246,6 +246,39 @@ final class BulkWriteTool extends AbstractRecordTool
      *
      * @param array<string, mixed> $data
      */
+    /**
+     * Mass-assignment defense: keep MCP clients from setting workspace plumbing,
+     * audit columns, or core permission fields. DataHandler sanitizes most of
+     * these too, but defense-in-depth: bail out at validation time so the
+     * caller sees a structured error rather than a silently dropped value.
+     *
+     * Mirrors the rejection-list `WriteTableTool::validateRecordData` enforces
+     * for `uid`/`pid` (extended here for the rest of the system fields).
+     *
+     * @param array<int|string, mixed> $data
+     */
+    private function rejectForbiddenSystemFields(int $opIndex, array $data): ?string
+    {
+        $forbidden = [
+            'uid', 'pid',                                        // identity
+            't3ver_oid', 't3ver_wsid', 't3ver_state',
+            't3ver_stage', 't3ver_tstamp', 't3ver_count',         // workspace plumbing
+            'deleted', 'tstamp', 'crdate', 'cruser_id',           // audit
+            'perms_userid', 'perms_groupid',
+            'perms_user', 'perms_group', 'perms_everybody',       // page perms
+        ];
+        foreach ($forbidden as $field) {
+            if (array_key_exists($field, $data)) {
+                return sprintf(
+                    'Operation #%d: field "%s" cannot be set directly via MCP — it is a system column.',
+                    $opIndex,
+                    $field,
+                );
+            }
+        }
+        return null;
+    }
+
     private function detectInlineChildData(string $table, array $data): ?string
     {
         $tca = $GLOBALS['TCA'] ?? null;
@@ -347,6 +380,11 @@ final class BulkWriteTool extends AbstractRecordTool
                         $errors[] = 'Operation #' . $index . ': ' . $inlineError;
                         continue 2;
                     }
+                    $forbiddenError = $this->rejectForbiddenSystemFields($index, $data);
+                    if ($forbiddenError !== null) {
+                        $errors[] = $forbiddenError;
+                        continue 2;
+                    }
                     $normalizedData = [];
                     foreach ($data as $key => $value) {
                         if (is_string($key)) {
@@ -371,6 +409,11 @@ final class BulkWriteTool extends AbstractRecordTool
                     $inlineError = $this->detectInlineChildData($table, $data);
                     if ($inlineError !== null) {
                         $errors[] = 'Operation #' . $index . ': ' . $inlineError;
+                        continue 2;
+                    }
+                    $forbiddenError = $this->rejectForbiddenSystemFields($index, $data);
+                    if ($forbiddenError !== null) {
+                        $errors[] = $forbiddenError;
                         continue 2;
                     }
                     $normalizedData = [];

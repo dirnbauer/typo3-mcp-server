@@ -1203,6 +1203,26 @@ final class WriteTableTool extends AbstractRecordTool
             return "Field 'pid' can only be set during record creation";
         }
 
+        // Mass-assignment defense (defense in depth on top of DataHandler):
+        // refuse workspace plumbing, audit columns, and page perms even though
+        // DataHandler sanitizes most of these — gives the caller a structured
+        // error instead of a silently-dropped value.
+        $forbiddenSystemFields = [
+            't3ver_oid', 't3ver_wsid', 't3ver_state',
+            't3ver_stage', 't3ver_tstamp', 't3ver_count',
+            'deleted', 'tstamp', 'crdate', 'cruser_id',
+            'perms_userid', 'perms_groupid',
+            'perms_user', 'perms_group', 'perms_everybody',
+        ];
+        foreach ($forbiddenSystemFields as $forbiddenField) {
+            if (array_key_exists($forbiddenField, $data)) {
+                return sprintf(
+                    'Field "%s" cannot be set directly via MCP — it is a system column.',
+                    $forbiddenField,
+                );
+            }
+        }
+
         // Build merged record context for dynamic select item resolution (itemsProcFunc, TSconfig)
         if ($action === 'update' && $uid) {
             $existingRecord = BackendUtility::getRecord($table, $uid) ?? [];

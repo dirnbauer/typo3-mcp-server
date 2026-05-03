@@ -11,7 +11,7 @@ workspaceUploadSubfolders = 1
 allowMcpTokenInQueryString = 0
 
 # cat=security//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enableMcpAuthHeaderDiagnostic
-enableMcpAuthHeaderDiagnostic = 1
+enableMcpAuthHeaderDiagnostic = 0
 
 # cat=security//c; type=options[Auto-detect (DDEV / Development context)=auto, Always on (UNSAFE — local dev only)=on, Always off (production default)=off]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode
 localUnsafeMode = auto
