@@ -1,6 +1,138 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 4
+			path: Classes/Command/AbstractMcpToolCommand.php
+
+		-
+			message: '#^Binary operation "\." between ''\[MCP Server\] '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/Command/McpServerCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Command/McpServerCommand.php
+
+		-
+			message: '#^Foreach overwrites \$tool with its value variable\.$#'
+			identifier: foreach.valueOverwrite
+			count: 1
+			path: Classes/Command/McpTestCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, Hn\\McpServer\\MCP\\Tool\\ToolInterface\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Command/McpTestCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Command/McpTestCommand.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 3
+			path: Classes/Command/McpToolListCommand.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 4
+			path: Classes/Command/OAuthManageCommand.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\>\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 3
+			path: Classes/Command/OAuthManageCommand.php
+
+		-
+			message: '#^Only booleans are allowed in an elseif condition, string\|null given\.$#'
+			identifier: elseif.condNotBoolean
+			count: 1
+			path: Classes/Command/OAuthManageCommand.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/Command/OAuthManageCommand.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 5
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 1
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 4
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Controller\\McpServerModuleController\:\:resolveHostIps\(\) should return array\<string\> but returns list\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 5
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Parameter \#1 \$requestData of method Hn\\McpServer\\Controller\\McpServerModuleController\:\:validateCsrfToken\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/Controller/McpServerModuleController.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Database/Query/Restriction/WorkspaceDeletePlaceholderRestriction.php
+
+		-
+			message: '#^Parameter \#1 \$queriedTables \(array\<string, string\>\) of method Hn\\McpServer\\Database\\Query\\Restriction\\WorkspaceDeletePlaceholderRestriction\:\:buildExpression\(\) should be contravariant with parameter \$queriedTables \(array\) of method TYPO3\\CMS\\Core\\Database\\Query\\Restriction\\QueryRestrictionInterface\:\:buildExpression\(\)$#'
+			identifier: method.childParameterType
+			count: 1
+			path: Classes/Database/Query/Restriction/WorkspaceDeletePlaceholderRestriction.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Event/AfterRecordReadEvent.php
+
+		-
 			message: '#^Method Hn\\McpServer\\Event\\AfterRecordWriteEvent\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -11,24 +143,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/Event/AfterRecordWriteEvent.php
-
-		-
-			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Event/BeforeRecordWriteEvent.php
-
-		-
-			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:getData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Event/BeforeRecordWriteEvent.php
-
-		-
-			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:setData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Event/BeforeRecordWriteEvent.php
 
 		-
 			message: '#^Method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:__construct\(\) has parameter \$fields with no value type specified in iterable type array\.$#'
@@ -55,6 +169,276 @@ parameters:
 			path: Classes/Event/AfterSchemaLoadEvent.php
 
 		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:__construct\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:getData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Event\\BeforeRecordWriteEvent\:\:setData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Event/BeforeRecordWriteEvent.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 3
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/EventListener/SysFileMountRestrictionListener.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, Throwable\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: Classes/Exception/DatabaseException.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Exception/McpException.php
+
+		-
+			message: '#^Cannot access offset ''default\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Http/McpEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Http/McpEndpoint.php
+
+		-
+			message: '#^Parameter \#1 \$headers of static method Hn\\McpServer\\Http\\McpHttpLogRedactor\:\:redactHeadersForLog\(\) expects array\<string, array\<string\>\>, array\<array\<string\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/McpEndpoint.php
+
+		-
+			message: '#^Parameter \#1 \$queryParams of static method Hn\\McpServer\\Http\\McpHttpLogRedactor\:\:redactQueryParamsForLog\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/McpEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/McpEndpoint.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: Classes/Http/OAuthAuthorizeEndpoint.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 6
+			path: Classes/Http/OAuthAuthorizeEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Http/OAuthAuthorizeEndpoint.php
+
+		-
+			message: '#^Parameter \#1 \$data of method Hn\\McpServer\\Http\\OAuthAuthorizeEndpoint\:\:generateConsentTemplate\(\) expects array\{username\: string, client_name\: string, client_id\: string, redirect_uri\: string, code_challenge\: string, code_challenge_method\: string, state\: string, user_id\: int\}, array\{username\: string, client_name\: string, client_id\: non\-falsy\-string, redirect_uri\: string, code_challenge\: string, code_challenge_method\: string, state\: string, user_id\: mixed\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuthAuthorizeEndpoint.php
+
+		-
+			message: '#^Parameter \#1 \$string of function htmlspecialchars expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuthAuthorizeEndpoint.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/Http/OAuthMetadataEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Http/OAuthMetadataEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/OAuthMetadataEndpoint.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Http/OAuthRegisterEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/OAuthRegisterEndpoint.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/Http/OAuthResourceMetadataEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Http/OAuthResourceMetadataEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/OAuthResourceMetadataEndpoint.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\>\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: Classes/Http/OAuthTokenEndpoint.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Http/OAuthTokenEndpoint.php
+
+		-
+			message: '#^Binary operation "\." between ''Handling tools/call…'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Binary operation "\." between ''Unknown tool name\: '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Cannot access property \$arguments on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Cannot access property \$name on mixed\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, Hn\\McpServer\\MCP\\Tool\\ToolInterface\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Parameter \#1 \$inputSchema of static method Hn\\McpServer\\MCP\\McpServerFactory\:\:normaliseInputSchema\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Parameter \#1 \$name of method Hn\\McpServer\\MCP\\ToolRegistry\:\:getTool\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Parameter \#1 \$params of method Hn\\McpServer\\MCP\\Tool\\ToolInterface\:\:execute\(\) expects array\<string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/McpServerFactory.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/MCP/Tool/AbstractTool.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 3
+			path: Classes/MCP/Tool/AbstractTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\CompatibleToolAdapter\:\:normalizeSchema\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/CompatibleToolAdapter.php
+
+		-
+			message: '#^Parameter \#1 \$schema of method Hn\\McpServer\\MCP\\Tool\\CompatibleToolAdapter\:\:normalizeInputSchema\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/CompatibleToolAdapter.php
+
+		-
+			message: '#^Variable method call on object\.$#'
+			identifier: method.dynamicName
+			count: 1
+			path: Classes/MCP/Tool/CompatibleToolAdapter.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/File/BrowseFilesTool.php
+
+		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 1
@@ -67,6 +451,24 @@ parameters:
 			path: Classes/MCP/Tool/File/BrowseFolderTool.php
 
 		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/File/BrowseFolderTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/File/ReadFileMetadataTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/File/ReadFileMetadataTool.php
+
+		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 4
@@ -76,6 +478,12 @@ parameters:
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 4
+			path: Classes/MCP/Tool/File/SearchFileTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
 			path: Classes/MCP/Tool/File/SearchFileTool.php
 
 		-
@@ -115,21 +523,291 @@ parameters:
 			path: Classes/MCP/Tool/File/SearchFileTool.php
 
 		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/File/SearchMediaTool.php
+
+		-
+			message: '#^Casting to int something that''s already int\.$#'
+			identifier: cast.useless
+			count: 1
+			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/File/UploadFileTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/File/UploadFileTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 4
+			path: Classes/MCP/Tool/File/WriteFileTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/File/WriteFileTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 9
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Foreach overwrites \$sortbyField with its value variable\.$#'
+			identifier: foreach.valueOverwrite
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTool\:\:getPageData\(\) should return array\<string, mixed\> but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTool\:\:getTableCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\GetPageTool\:\:getTableRecordsInfo\(\) should return array\{total\: int, records\: list\<array\<string, mixed\>\>\} but returns array\{total\: int, records\: list\<array\>\}\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, mixed given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in an elseif condition, int\|false given\.$#'
+			identifier: elseif.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Parameter \#1 \$page of method Hn\\McpServer\\MCP\\Tool\\GetPageTool\:\:applyPageLanguageOverlay\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/GetPageTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 3
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Binary operation "\." between '' \('' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Binary operation "\." between '' \- '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Binary operation "\." between '' \['' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
 			message: '#^Binary operation "\." between ''Unknown language…'' and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
 			path: Classes/MCP/Tool/GetPageTreeTool.php
 
 		-
+			message: '#^Binary operation "\." between literal\-string&non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 4
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Binary operation "\.\=" between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: assignOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''_translated'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''doktype'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''hidden'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''nav_title'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''pages'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''subpageCount'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''subpages'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''title'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''total'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''uid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 10
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset ''url'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset int on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 7
+			count: 12
 			path: Classes/MCP/Tool/GetPageTreeTool.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
 			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 12
 			path: Classes/MCP/Tool/GetPageTreeTool.php
 
 		-
@@ -223,15 +901,201 @@ parameters:
 			path: Classes/MCP/Tool/GetPageTreeTool.php
 
 		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$doktype of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:getDoktypeLabel\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
 			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/GetPageTreeTool.php
 
 		-
+			message: '#^Parameter \#1 \$page of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:applyPageLanguageOverlay\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$pageId of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:getPluginStorageHints\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$pageTree of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:collectPageUids\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$pageTree of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:renderTextTree\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Parameter \#3 \$parentUid of method Hn\\McpServer\\MCP\\Tool\\GetPageTreeTool\:\:buildTreeFromLayers\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 7
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 3
+			path: Classes/MCP/Tool/GetPageTreeTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/InstallExtensionTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 3
+			path: Classes/MCP/Tool/InstallExtensionTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/MCP/Tool/ListWorkspacesTool.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/ListWorkspacesTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/MCP/Tool/Record/AbstractRecordTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 2
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, bool\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Parameter \#2 \$reference of method Hn\\McpServer\\MCP\\Tool\\Record\\AttachImageTool\:\:mergeReferenceMetadata\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Parameter \#2 \$transform of method Hn\\McpServer\\MCP\\Tool\\Record\\AttachImageTool\:\:applyTransform\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/AttachImageTool.php
+
+		-
+			message: '#^Parameter \#2 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\BulkWriteTool\:\:detectInlineChildData\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/BulkWriteTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/ContentAuditTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/CopyContentTool.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 11
+			path: Classes/MCP/Tool/Record/CreateSiteTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/CreateSiteTool.php
+
+		-
+			message: '#^Parameter \#1 \$defaultLanguage of method Hn\\McpServer\\MCP\\Tool\\Record\\CreateSiteTool\:\:buildLanguageSet\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/CreateSiteTool.php
+
+		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 2
+			count: 6
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Binary operation "\." between ''\<'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Binary operation "\." between literal\-string&non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 5
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -243,7 +1107,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''ROOT'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -255,11 +1119,17 @@ parameters:
 		-
 			message: '#^Cannot access offset ''config'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 8
+			count: 11
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset ''default'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''description'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
@@ -279,17 +1149,53 @@ parameters:
 		-
 			message: '#^Cannot access offset ''el'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 6
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''eval'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''fields'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset ''items'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 4
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset ''label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''max'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''name'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''size'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
@@ -297,7 +1203,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 6
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -309,7 +1215,7 @@ parameters:
 		-
 			message: '#^Cannot access offset 0 on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -334,6 +1240,18 @@ parameters:
 			message: '#^Cannot assign offset string to array\<string\>\|string\.$#'
 			identifier: offsetAssign.dimType
 			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 17
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -463,9 +1381,51 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Only booleans are allowed in an if condition, array\|string given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$array of function reset expects array\|object, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$content of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:createSuccessResult\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$field of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:formatField\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Parameter \#1 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:getExampleValueForField\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 3
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldNames of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:buildJsonExample\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$fields of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFields\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$sheets of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processSheets\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -481,6 +1441,18 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Parameter \#2 \$config of static method Hn\\McpServer\\Utility\\TcaFormattingUtility\:\:addFieldDetailsInline\(\) expects array\<string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$field of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processField\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Parameter \#2 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormField\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 3
@@ -493,13 +1465,67 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Part \$field\[''description''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$field\[''jsonPath''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$field\[''label''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$field\[''name''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$field\[''type''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Part \$identifier \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Part \$itemLabel \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Part \$itemValue \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$label \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$sheetLabel \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Part \$sheet\[''name''\] \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
@@ -511,9 +1537,15 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Part \$type \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 1
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -521,6 +1553,78 @@ parameters:
 			identifier: variable.undefined
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Casting to int something that''s already int\.$#'
+			identifier: cast.useless
+			count: 2
+			path: Classes/MCP/Tool/Record/GetPreviewUrlTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetPreviewUrlTool\:\:fetchRow\(\) should return array\<string, mixed\>\|null but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetPreviewUrlTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/GetSystemLogTool.php
+
+		-
+			message: '#^Binary operation "\." between '' \[ds_pointerField\: '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''disableCTypes'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''removeItems'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''table\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''tt_content\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 24
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
 
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:addFieldDetailsInline\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
@@ -539,6 +1643,216 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:getTableCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:getTcaSubArray\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$config of method Hn\\McpServer\\MCP\\Tool\\Record\\GetTableSchemaTool\:\:addFlexFormIdentifiers\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$config of static method Hn\\McpServer\\Utility\\TcaFormattingUtility\:\:addFieldDetailsInline\(\) expects array\<string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$string of static method TYPO3\\CMS\\Core\\Utility\\GeneralUtility\:\:trimExplode\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportContentTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 12
+			path: Classes/MCP/Tool/Record/ImportContentTool.php
+
+		-
+			message: '#^Only booleans are allowed in \|\|, int\|false given on the left side\.$#'
+			identifier: booleanOr.leftNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportContentTool.php
+
+		-
+			message: '#^Only booleans are allowed in \|\|, int\|false given on the right side\.$#'
+			identifier: booleanOr.rightNotBoolean
+			count: 4
+			path: Classes/MCP/Tool/Record/ImportContentTool.php
+
+		-
+			message: '#^Parameter \#1 \$availableTypes of method Hn\\McpServer\\MCP\\Tool\\Record\\ImportContentTool\:\:buildCTypeProfiles\(\) expects array\<string, string\>, array\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ImportContentTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\<0, max\>\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 11
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Parameter \#1 \$availableTypes of method Hn\\McpServer\\MCP\\Tool\\Record\\ImportFromUrlTool\:\:buildCTypeProfiles\(\) expects array\<string, string\>, array\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Binary operation "\." between '' \['' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Binary operation "\." between ''\- '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Binary operation "\." between ''\: '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 2
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 2
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''description'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''extension'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''extensionLabel'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''label'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''readOnly'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''read_only'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''restrictions'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''tables'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Cannot access offset ''workspace_capable'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 2
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
 
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:formatAccessibleTables\(\) has parameter \$accessibleTables with no value type specified in iterable type array\.$#'
@@ -571,14 +1885,98 @@ parameters:
 			path: Classes/MCP/Tool/Record/ListTablesTool.php
 
 		-
+			message: '#^Parameter \#1 \$extension of method Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:getExtensionLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 3
+			path: Classes/MCP/Tool/Record/ListTablesTool.php
+
+		-
 			message: '#^Property Hn\\McpServer\\MCP\\Tool\\Record\\ListTablesTool\:\:\$connectionPool is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1
 			path: Classes/MCP/Tool/Record/ListTablesTool.php
 
 		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 8
+			path: Classes/MCP/Tool/Record/ManageRedirectsTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/ManageRedirectsTool.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 1
+			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\<0, 1\> given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
+
+		-
+			message: '#^Parameter \#1 \$cmdMap of method Hn\\McpServer\\MCP\\Tool\\Record\\PublishWorkspaceTool\:\:filterCmdMapToTranslations\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
+
+		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
+			count: 3
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Binary operation "\." between ''\*,'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Binary operation "\." between mixed and '',list'' results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 6
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''MM'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
@@ -613,6 +2011,30 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_match_fields'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_sortby'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -621,7 +2043,19 @@ parameters:
 		-
 			message: '#^Cannot access offset ''items'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''maxitems'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''multiple'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -640,6 +2074,12 @@ parameters:
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot access offset ''uid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -663,19 +2103,37 @@ parameters:
 		-
 			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 4
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 9
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 6
+			count: 10
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 4
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Casting to int something that''s already int\.$#'
+			identifier: cast.useless
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Casting to string something that''s already string\.$#'
+			identifier: cast.useless
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -685,8 +2143,26 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 41
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+			identifier: equal.notAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:applyFilters\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:applyWorkspaceOverlay\(\) should return list\<array\<string, mixed\>\> but returns list\<array\>\.$#'
+			identifier: return.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
@@ -747,6 +2223,12 @@ parameters:
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTableCtrlArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
@@ -901,13 +2383,55 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Only booleans are allowed in &&, mixed given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, string\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\<string, mixed\>\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$array of function array_column expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Parameter \#1 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:createJsonResult\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -991,6 +2515,54 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Parameter \#1 \$mmTable of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$records of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$records of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$records of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1004,6 +2576,18 @@ parameters:
 
 		-
 			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, int\|string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$foreignField of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$records of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects array\<int, array\<string, mixed\>\>, array given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -1027,6 +2611,36 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Parameter \#3 \$localUid of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$foreignSortBy of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$requestedFields of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects array\<int, string\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#5 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Parameter \#5 \$foreignMatchFields of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Part \$language \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
@@ -1035,7 +2649,7 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 3
+			count: 10
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -1063,8 +2677,62 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Variable method call on TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\.$#'
+			identifier: method.dynamicName
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Casting to int something that''s already int\.$#'
+			identifier: cast.useless
+			count: 1
+			path: Classes/MCP/Tool/Record/RenderRecordTool.php
+
+		-
+			message: '#^Cannot access offset int\<1, max\> on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/RollbackWorkspaceTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WorkspaceReviewTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/WorkspaceReviewTool.php
+
+		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 4
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Binary operation "\+" between mixed and 1 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 5
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Binary operation "\." between ''Translation created…'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
@@ -1095,7 +2763,13 @@ parameters:
 		-
 			message: '#^Cannot access offset ''config'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 4
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''delete'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1107,13 +2781,25 @@ parameters:
 		-
 			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 4
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_match_fields'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_sortby'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 5
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 5
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1129,9 +2815,21 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset ''search'' on mixed\.$#'
+			message: '#^Cannot access offset ''replace'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''replaceAll'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''search'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1141,9 +2839,39 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset \(int\|string\) on mixed\.$#'
+			message: '#^Cannot access offset ''value'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset \(int\|string\) on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset int on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset int\<1, max\> on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset int\|string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1179,12 +2907,36 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 6
+			count: 19
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 16
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 42
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Dynamic call to static method Hn\\McpServer\\Service\\TableAccessService\:\:translateLabel\(\)\.$#'
+			identifier: staticMethod.dynamicCall
+			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Left side of && is always true\.$#'
 			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+			identifier: equal.notAllowed
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
@@ -1291,6 +3043,18 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableColumnsArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableCtrlArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:isSearchReplaceArray\(\) has parameter \$value with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1357,13 +3121,211 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Only booleans are allowed in &&, array\<string, mixed\> given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\<string, mixed\>\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|false\|null given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|null given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in &&, string\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 5
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, array\|false\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in a ternary operator condition, string\|null given\.$#'
+			identifier: ternary.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\<int, string\> given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\<string, mixed\>\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\<string, mixed\>\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|false\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, bool\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, mixed given\.$#'
+			identifier: if.condNotBoolean
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Parameter \#1 \$callback of function array_map expects \(callable\(mixed\)\: mixed\)\|null, Closure\(bool\|float\|GMP\|int\|resource\|string\|null\)\: string given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$items of method Hn\\McpServer\\Service\\TableAccessService\:\:parseSelectItems\(\) expects array\<int\|string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Parameter \#1 \$label of method Hn\\McpServer\\Service\\TableAccessService\:\:translateLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$search of function str_replace expects array\<string\>\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertDataForStorage\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableTcaArray\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method TYPO3\\CMS\\Core\\Database\\Query\\QueryBuilder\:\:from\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$tableName of method TYPO3\\CMS\\Core\\Database\\ConnectionPool\:\:getQueryBuilderForTable\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#1 \$workspaceId of class TYPO3\\CMS\\Core\\Database\\Query\\Restriction\\WorkspaceRestriction constructor expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, array given\.$#'
+			identifier: argument.type
+			count: 5
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$array of function implode expects array\<string\>, list given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -1376,6 +3338,18 @@ parameters:
 
 		-
 			message: '#^Parameter \#2 \$pid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects int, int\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \$replace of function substr_replace expects array\|string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -1417,6 +3391,18 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Parameter \#2 \$workspaceUid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getLiveUid\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#2 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1435,9 +3421,57 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Parameter \#3 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$pid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:buildInlineDataMap\(\) expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#4 \$translationData of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:translateRecord\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#4 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Parameter \#5 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertSysLanguageUidFromIsoIfNeeded\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Part \$fieldType \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Part \$index \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 2
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: array.invalidKey
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Possibly invalid array key type mixed\.$#'
+			identifier: offsetAccess.invalidOffset
+			count: 12
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -1447,8 +3481,38 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/SafeCliTool.php
+
+		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
+			count: 4
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Binary operation "\." between ''"'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 3
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Binary operation "\." between ''%%'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Binary operation "\." between ''Query\: "'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
@@ -1459,8 +3523,66 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
+			message: '#^Binary operation "\." between mixed and ''_'' results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
+				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
+				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
 			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access an offset on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''_inline_matches'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''_inline_metadata'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''_page'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''_parent_key'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
@@ -1483,9 +3605,15 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
+			message: '#^Cannot access offset ''field'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1501,9 +3629,75 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			message: '#^Cannot access offset ''parent_field'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''parent_table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''pid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''record'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''records'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''relation_type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''t3ver_oid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''t3ver_state'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''table'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''title'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot access offset ''uid'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1527,7 +3721,25 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
+			count: 5
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
 			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 27
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Loose comparison via "\=\=" is not allowed\.$#'
+			identifier: equal.notAllowed
+			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1729,6 +3941,24 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
+			message: '#^Parameter \#1 \$cType of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getContentTypeLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:like\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$inlineRecord of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
 			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1737,7 +3967,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$string of function strtoupper expects string, mixed given\.$#'
 			identifier: argument.type
-			count: 1
+			count: 2
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1747,15 +3977,39 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
 			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getSearchableFields\(\) expects string, mixed given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 3
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
 			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 2
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$table of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getTableLabel\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1767,13 +4021,121 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
 			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$value of method TYPO3\\CMS\\Core\\Database\\Query\\QueryBuilder\:\:escapeLikeWildcards\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$workspaceId of class Hn\\McpServer\\Database\\Query\\Restriction\\WorkspaceDeletePlaceholderRestriction constructor expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#1 \$workspaceId of class TYPO3\\CMS\\Core\\Database\\Query\\Restriction\\WorkspaceRestriction constructor expects int, mixed given\.$#'
+			identifier: argument.type
+			count: 3
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$query of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:extractSnippet\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$record of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$record of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$record of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$record of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects array\<string, mixed\>, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#2 \$tableData of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#3 \$parentTable of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#4 \$foreignField of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#5 \$parentField of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Parameter \#6 \$relationType of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Part \$cType \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Part \$inlineField \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Part \$pageTitle \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Part \$pageUid \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/MCP/Tool/SearchTool.php
+
+		-
+			message: '#^Part \$uid \(mixed\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 2
+			count: 11
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -1783,13 +4145,151 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
+			message: '''
+				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
+				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
+				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: Classes/MCP/Tool/X402/GetPaidContentTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/X402/GetPaidContentTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
+				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
+				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
+				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
+				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: Classes/MCP/Tool/X402/ListPaidContentTool.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 2
+			path: Classes/MCP/Tool/X402/ListPaidContentTool.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Middleware/BackendUserConfigurationMiddleware.php
+
+		-
+			message: '#^Loose comparison via "\!\=" is not allowed\.$#'
+			identifier: notEqual.notAllowed
+			count: 1
+			path: Classes/Middleware/BackendUserConfigurationMiddleware.php
+
+		-
+			message: '#^Parameter \#1 \$cookieValue of method Hn\\McpServer\\Middleware\\McpServerMiddleware\:\:decodeOAuthCookie\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Middleware/McpServerMiddleware.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\CapabilityManifestService\:\:getManifest\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/CapabilityManifestService.php
+
+		-
+			message: '#^Property Hn\\McpServer\\Service\\CapabilityManifestService\:\:\$manifest \(array\<string, mixed\>\|null\) does not accept array\<mixed\>\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: Classes/Service/CapabilityManifestService.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/Service/FileReferenceAttachmentService.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/Service/LanguageService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 4
+			path: Classes/Service/LanguageService.php
+
+		-
+			message: '#^Parameter \#1 \$string of function strlen expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/LanguageService.php
+
+		-
+			message: '#^Parameter \#1 \$string of function strtolower expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/LanguageService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, int\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: Classes/Service/McpFileSandboxService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 3
+			path: Classes/Service/OAuthService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 5
+			path: Classes/Service/OAuthService.php
+
+		-
 			message: '#^Cannot access offset ''columns'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 2
 			path: Classes/Service/SelectItemResolver.php
 
 		-
 			message: '#^Cannot access offset ''config'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot access offset ''items'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/Service/SelectItemResolver.php
@@ -1803,12 +4303,24 @@ parameters:
 		-
 			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 3
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
 			path: Classes/Service/SelectItemResolver.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
+			count: 2
+			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
 			count: 2
 			path: Classes/Service/SelectItemResolver.php
 
@@ -1849,10 +4361,67 @@ parameters:
 			path: Classes/Service/SelectItemResolver.php
 
 		-
+			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Service/SelectItemResolver.php
+
+		-
 			message: '#^Property Hn\\McpServer\\Service\\SelectItemResolver\:\:\$cache type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/Service/SelectItemResolver.php
+
+		-
+			message: '''
+				#^Call to deprecated method getIndpEnv\(\) of class TYPO3\\CMS\\Core\\Utility\\GeneralUtility\:
+				since TYPO3 v14\.3, will be removed in TYPO3 v15\.0\. Use NormalizedParams from the PSR\-7 request instead\.$#
+			'''
+			identifier: staticMethod.deprecated
+			count: 1
+			path: Classes/Service/SiteInformationService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 10
+			path: Classes/Service/SiteInformationService.php
+
+		-
+			message: '#^Only booleans are allowed in \|\|, int\|false given on the left side\.$#'
+			identifier: booleanOr.leftNotBoolean
+			count: 1
+			path: Classes/Service/SiteInformationService.php
+
+		-
+			message: '#^PHPDoc tag @var with type list\<string\> is not subtype of type list\<non\-falsy\-string\>\.$#'
+			identifier: varTag.type
+			count: 1
+			path: Classes/Service/SiteInformationService.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 6
+			path: Classes/Service/SiteInformationService.php
+
+		-
+			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
+			identifier: arrayFilter.strict
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 8
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset ''identifier'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
 
 		-
 			message: '#^Cannot cast mixed to int\.$#'
@@ -1863,5 +4432,248 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
+			count: 3
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 24
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getAllTcaTables\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getAvailableFields\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getConfigurationSection\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getRelevantPageTsconfig\(\) should return array\<string, mixed\> but returns array\.$#'
+			identifier: return.type
+			count: 3
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableColumns\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableTypeConfig\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Only booleans are allowed in &&, string given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 5
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
 			count: 2
 			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 4
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 7
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Parameter \#4 \$fields of method Hn\\McpServer\\Service\\TableAccessService\:\:addSubtypeFields\(\) expects array\<string, array\<string, mixed\>\>, array\<string, array\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Binary operation "\." between ''MCP Workspace for '' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 2
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|false given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|false given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 2
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Parameter \#1 \$workspaceRecord of method Hn\\McpServer\\Service\\WorkspaceContextService\:\:hasWriteAccess\(\) expects array\<string, mixed\>, array given\.$#'
+			identifier: argument.type
+			count: 2
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
+			identifier: ternary.shortNotAllowed
+			count: 1
+			path: Classes/Service/WorkspaceContextService.php
+
+		-
+			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
+			identifier: function.strict
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Cannot access offset ''BackendLayouts\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Cannot access offset ''config\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Cannot access offset ''web_layout\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 7
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getBackendLayoutForPage\(\) should return array\<string, mixed\>\|null but returns array\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getTableCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\<0, max\>\|false given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in &&, int\|false given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, TYPO3\\CMS\\Backend\\View\\BackendLayout\\BackendLayout given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, array\|null given\.$#'
+			identifier: if.condNotBoolean
+			count: 1
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in an if condition, int\|false given\.$#'
+			identifier: if.condNotBoolean
+			count: 4
+			path: Classes/Utility/RecordFormattingUtility.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 6
+			path: Classes/Utility/TcaFormattingUtility.php
+
+		-
+			message: '#^Only booleans are allowed in &&, mixed given on the right side\.$#'
+			identifier: booleanAnd.rightNotBoolean
+			count: 1
+			path: Classes/Utility/TcaFormattingUtility.php
+
+		-
+			message: '''
+				#^Call to deprecated method shouldNotDependOn\(\) of class PHPat\\Test\\Builder\\AssertionStep\:
+				Use \-\>shouldNot\(\)\-\>dependOn\(\)$#
+			'''
+			identifier: method.deprecated
+			count: 2
+			path: Tests/Architecture/ArchitectureTest.php

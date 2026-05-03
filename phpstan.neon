@@ -1,9 +1,19 @@
 includes:
     - phpstan-baseline.neon
     - vendor/phpat/phpat/extension.neon
+    # TYPO3 v14 PHPStan rules (saschaegerer/phpstan-typo3) — TCA, FormEngine,
+    # DataHandler, Extbase ObjectManager / repository typing, deprecated calls.
+    - vendor/saschaegerer/phpstan-typo3/extension.neon
+    # phpstan-strict-rules — overloaded comparisons, dynamic property access, etc.
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    # phpstan-deprecation-rules — flag use of @deprecated APIs (TYPO3 v14 cleanups).
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
-    level: 9
+    # Level "max" = maximum strictness. New errors must be either fixed or
+    # explicitly excluded; the baseline below is the historical residue we
+    # are working through, not a license to ignore new findings.
+    level: max
     paths:
         - Classes
         - Tests/Architecture
