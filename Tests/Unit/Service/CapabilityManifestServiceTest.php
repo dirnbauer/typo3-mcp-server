@@ -68,6 +68,72 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertTrue(true);
     }
 
+    #[Test]
+    public function effectiveSubsystemsIncludeFileWriteWhenAllPrerequisitesPresent(): void
+    {
+        $service = $this->createSubject();
+        $effective = $service->getEffectiveSubsystems();
+
+        // Default shipped manifest declares everything, so file:write is effective.
+        self::assertContains('file:write', $effective);
+        self::assertContains('database:write', $effective);
+    }
+
+    #[Test]
+    public function fileWriteIsBlockedWhenDatabaseWriteIsRemovedFromManifest(): void
+    {
+        // The point of the prerequisite chain: removing `database:write`
+        // from the operator's hardened manifest must also disable
+        // `file:write`-dependent tools, because uploaded files only make
+        // sense when there is content to attach them to.
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read', 'file:read', 'file:write'],
+            'requires' => [
+                'file:write' => ['file:read', 'database:write'],
+            ],
+            'tools' => [
+                'UploadFileFromUrl' => ['file:write'],
+            ],
+        ]);
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessageMatches('/file:write \\(needs: database:write\\)/');
+        $service->assertToolAllowed('UploadFileFromUrl');
+    }
+
+    #[Test]
+    public function effectiveSubsystemsExcludeChainsWithMissingPrerequisites(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read', 'file:read', 'file:write'],
+            'requires' => [
+                'file:write' => ['file:read', 'database:write'],
+            ],
+        ]);
+
+        $effective = $service->getEffectiveSubsystems();
+        self::assertContains('database:read', $effective);
+        self::assertContains('file:read', $effective);
+        self::assertNotContains('file:write', $effective, 'file:write must drop out when database:write is missing');
+    }
+
+    /**
+     * @param array<string, mixed> $capabilities
+     */
+    private function createSubjectWithManifest(array $capabilities): CapabilityManifestService
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'mcp-cap-');
+        if ($tmp === false) {
+            self::fail('Could not create temp manifest file.');
+        }
+        file_put_contents($tmp, \Symfony\Component\Yaml\Yaml::dump(['capabilities' => $capabilities]));
+
+        $siteFinder = $this->createMock(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willReturn([]);
+
+        return new CapabilityManifestService(new ExtensionConfiguration(), $siteFinder, $tmp);
+    }
+
     /**
      * @param array<string, mixed> $config
      */

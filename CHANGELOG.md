@@ -17,6 +17,13 @@ SemVer once it leaves the experimental surface.
   `AbstractTool::execute()` and the network paths of `UploadFileFromUrl`
   and `RenderRecord`. Default `network.outbound: [self]` ships closed —
   operators opt in to public web per deployment.
+- **Capability prerequisite chains** — `requires:` map in
+  `Capabilities.yaml`. Removing `database:write` automatically disables
+  every `file:write`-, `workspace:write`-, `site:write`-, and
+  `extension:install`-dependent tool. Removing `file:read` disables
+  `file:write`. Adapted from the [capability-manifest article](https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests)
+  and enforced at runtime; rejection messages distinguish "missing
+  subsystem" from "subsystem declared but its prerequisite is unmet".
 - **`GetCapabilities` tool** — returns the active manifest plus
   DDEV/local-mode runtime detection. Always callable; intended as the
   first call of an MCP session.

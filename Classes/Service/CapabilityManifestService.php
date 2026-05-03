@@ -41,6 +41,12 @@ final class CapabilityManifestService
     public function __construct(
         private readonly ExtensionConfiguration $extensionConfiguration,
         private readonly SiteFinder $siteFinder,
+        /**
+         * Optional manifest-path override for tests. Production code never
+         * passes this — DI auto-wires nothing into it and the class falls
+         * back to extension/public/relative resolution.
+         */
+        private readonly ?string $manifestPathOverride = null,
     ) {}
 
     /**
@@ -86,6 +92,80 @@ final class CapabilityManifestService
     }
 
     /**
+     * Subsystems whose prerequisites are all satisfied. A subsystem is
+     * effective only when itself AND its `requires:` chain are all in
+     * the declared list. Used by `assertToolAllowed` so removing
+     * `database:write` automatically disables `file:write`-dependent
+     * tools too.
+     *
+     * @return list<string>
+     */
+    public function getEffectiveSubsystems(): array
+    {
+        $declared = array_fill_keys($this->getDeclaredSubsystems(), true);
+        $rules = $this->getRequiresMap();
+
+        $effective = [];
+        foreach (array_keys($declared) as $subsystem) {
+            if ($this->isSubsystemSatisfied($subsystem, $declared, $rules, [])) {
+                $effective[] = $subsystem;
+            }
+        }
+        return $effective;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public function getRequiresMap(): array
+    {
+        $manifest = $this->getManifest();
+        $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
+        $requires = $capabilities['requires'] ?? [];
+        if (!is_array($requires)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($requires as $name => $deps) {
+            if (!is_string($name) || $name === '' || !is_array($deps)) {
+                continue;
+            }
+            $list = array_values(array_filter(array_map(
+                static fn(mixed $v): string => is_string($v) ? $v : '',
+                $deps,
+            ), static fn(string $v): bool => $v !== ''));
+            $normalized[$name] = $list;
+        }
+        return $normalized;
+    }
+
+    /**
+     * @param array<string, true> $declared
+     * @param array<string, list<string>> $rules
+     * @param array<string, true> $visited
+     */
+    private function isSubsystemSatisfied(string $subsystem, array $declared, array $rules, array $visited): bool
+    {
+        if (!isset($declared[$subsystem])) {
+            return false;
+        }
+        if (isset($visited[$subsystem])) {
+            // Circular requires — treat as satisfied to avoid infinite recursion;
+            // operators get the regular "missing" error from the originating call.
+            return true;
+        }
+        $visited[$subsystem] = true;
+
+        foreach ($rules[$subsystem] ?? [] as $dep) {
+            if (!$this->isSubsystemSatisfied($dep, $declared, $rules, $visited)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * @return list<string> required subsystems for a tool, or an empty list
      */
     public function getRequiredSubsystemsForTool(string $toolName): array
@@ -105,6 +185,7 @@ final class CapabilityManifestService
 
     /**
      * @throws AccessDeniedException when enforcement is on and a required subsystem is missing
+     *                               or any of its prerequisites are missing
      */
     public function assertToolAllowed(string $toolName): void
     {
@@ -112,14 +193,30 @@ final class CapabilityManifestService
             return;
         }
         $required = $this->getRequiredSubsystemsForTool($toolName);
-        $declared = $this->getDeclaredSubsystems();
-        $missing = array_values(array_diff($required, $declared));
+        $effective = $this->getEffectiveSubsystems();
+        $missing = array_values(array_diff($required, $effective));
         if ($missing !== []) {
+            // Distinguish "subsystem not declared" from "subsystem declared but
+            // its prerequisites are missing" so the operator knows where to
+            // look in Capabilities.yaml.
+            $declared = $this->getDeclaredSubsystems();
+            $rules = $this->getRequiresMap();
+            $details = [];
+            foreach ($missing as $subsystem) {
+                if (!in_array($subsystem, $declared, true)) {
+                    $details[] = $subsystem;
+                    continue;
+                }
+                $unmet = array_values(array_diff($rules[$subsystem] ?? [], $declared));
+                $details[] = $unmet === []
+                    ? $subsystem
+                    : sprintf('%s (needs: %s)', $subsystem, implode(', ', $unmet));
+            }
             throw new AccessDeniedException(
                 sprintf(
                     'tool "%s" (manifest is missing subsystems: %s)',
                     $toolName,
-                    implode(', ', $missing),
+                    implode(', ', $details),
                 ),
                 'execute',
             );
@@ -222,6 +319,9 @@ final class CapabilityManifestService
 
     private function resolveManifestPath(): ?string
     {
+        if ($this->manifestPathOverride !== null && is_file($this->manifestPathOverride)) {
+            return $this->manifestPathOverride;
+        }
         // Prefer the extension folder path resolved by TYPO3 (handles both
         // composer and TER installations).
         $candidate = null;

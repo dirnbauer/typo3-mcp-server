@@ -23,6 +23,23 @@ capabilities:
     - log:read          # GetSystemLog
     - x402:payments     # X402 paid-content tools (only loaded if x402 keys exist)
 
+  # Prerequisite chains. A subsystem on the left is only "effective" when
+  # all subsystems on the right are also declared. Removing `database:write`
+  # therefore also disables every tool that needs `file:write` — uploaded
+  # files only make sense when there is content to attach them to. Removing
+  # `file:read` disables `file:write` (cannot blindly write where you cannot
+  # see). The chain is one of the central ideas from
+  # https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests
+  # adapted for runtime enforcement.
+  requires:
+    file:write:        [file:read, database:write]
+    workspace:write:   [workspace:read, database:write]
+    site:write:        [database:write]
+    render:frontend:   [database:read]
+    extension:install: [database:write]
+    database:write:    [database:read]
+    cli:safe:          [database:read]
+
   # Network policy. Listeners (UploadFileFromUrl, RenderRecord) refuse
   # outbound HTTP unless the target host or scheme is permitted here.
   # Defense-in-depth: the IP-range check inside UploadFileFromUrl still

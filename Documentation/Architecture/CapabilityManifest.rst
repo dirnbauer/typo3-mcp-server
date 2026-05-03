@@ -70,6 +70,48 @@ Manifest layout
          MCP exposes structured CRUD on every workspace-capable TCA
          table plus file uploads. ...
 
+Prerequisite chains
+===================
+
+Subsystems can declare ``requires:`` chains. A subsystem is **effective**
+only when itself and all its prerequisites are also declared. Removing a
+prerequisite cascades — every subsystem that depends on it stops being
+effective too.
+
+The shipped manifest expresses these editor-intuitive rules:
+
+.. code-block:: yaml
+
+   requires:
+     file:write:        [file:read, database:write]
+     workspace:write:   [workspace:read, database:write]
+     site:write:        [database:write]
+     render:frontend:   [database:read]
+     extension:install: [database:write]
+     database:write:    [database:read]
+     cli:safe:          [database:read]
+
+What this buys you in practice:
+
+- **Remove ``database:write``** → every file-write tool, workspace-write
+  tool, site-write tool, and ``InstallExtension`` becomes inert too.
+  Uploaded files have no value when you can't attach them to anything;
+  publishing has no value when there's nothing in workspace.
+- **Remove ``file:read``** → ``file:write`` drops out automatically.
+  Cannot blindly write where you cannot see.
+
+The chain concept is the central idea of the
+`TYPO3 extension capability manifest article
+<https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests>`__,
+adapted for runtime enforcement of this MCP server. Rejection messages
+distinguish *missing* from *unmet-prerequisite* so an operator knows
+where to look in their hardened ``Capabilities.yaml``:
+
+.. code-block:: text
+
+   AccessDenied: tool "UploadFileFromUrl" (manifest is missing subsystems:
+   file:write (needs: database:write))
+
 Subsystem catalog
 =================
 
