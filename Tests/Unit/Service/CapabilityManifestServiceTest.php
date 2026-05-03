@@ -8,6 +8,7 @@ use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Service\CapabilityManifestService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -126,7 +127,7 @@ final class CapabilityManifestServiceTest extends TestCase
         if ($tmp === false) {
             self::fail('Could not create temp manifest file.');
         }
-        file_put_contents($tmp, \Symfony\Component\Yaml\Yaml::dump(['capabilities' => $capabilities]));
+        file_put_contents($tmp, Yaml::dump(['capabilities' => $capabilities]));
 
         $siteFinder = $this->createMock(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);

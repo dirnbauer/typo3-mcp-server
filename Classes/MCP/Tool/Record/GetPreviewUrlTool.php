@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\SiteInformationService;
@@ -11,7 +12,10 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Routing\PreviewUriBuilder;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Generate a workspace preview URL for a record.
@@ -192,15 +196,15 @@ final class GetPreviewUrlTool extends AbstractRecordTool
         $beUser = $GLOBALS['BE_USER'] ?? null;
         $workspaceId = $beUser instanceof BackendUserAuthentication ? (int)$beUser->workspace : 0;
 
-        $connection = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable($table);
         $connection->getRestrictions()->removeAll();
         $row = $connection->select(...$fields)
             ->from($table)
             ->where(
                 $connection->expr()->or(
-                    $connection->expr()->eq('uid', $connection->createNamedParameter($uid, \Doctrine\DBAL\ParameterType::INTEGER)),
-                    $connection->expr()->eq('t3ver_oid', $connection->createNamedParameter($uid, \Doctrine\DBAL\ParameterType::INTEGER)),
+                    $connection->expr()->eq('uid', $connection->createNamedParameter($uid, ParameterType::INTEGER)),
+                    $connection->expr()->eq('t3ver_oid', $connection->createNamedParameter($uid, ParameterType::INTEGER)),
                 ),
             )
             ->setMaxResults(1)
@@ -211,7 +215,7 @@ final class GetPreviewUrlTool extends AbstractRecordTool
             return null;
         }
         if ($workspaceId > 0) {
-            \TYPO3\CMS\Backend\Utility\BackendUtility::workspaceOL($table, $row, $workspaceId);
+            BackendUtility::workspaceOL($table, $row, $workspaceId);
             if (!is_array($row)) {
                 return null;
             }

@@ -7,8 +7,8 @@ namespace Hn\McpServer\Service;
 use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service for centralizing site and domain information
@@ -63,7 +63,9 @@ final class SiteInformationService
 
     /**
      * Returns "<scheme>://<host>" from the active request, or the first site
-     * whose base has a host, or TYPO3_REQUEST_HOST as a last resort.
+     * whose base has a host. The PSR-7 request is the v14.3+ source of truth
+     * (replaces the deprecated `GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST')`
+     * fallback, removed in v15).
      */
     private function resolveRequestOrSiteBase(): ?string
     {
@@ -73,6 +75,12 @@ final class SiteInformationService
             $scheme = $uri->getScheme() ?: 'https';
             if (!empty($host)) {
                 return $scheme . '://' . $host;
+            }
+
+            // PSR-7 attribute set by NormalizedParamsAttribute middleware.
+            $params = $this->currentRequest->getAttribute('normalizedParams');
+            if ($params instanceof NormalizedParams && $params->getRequestHost() !== '') {
+                return $params->getRequestHost();
             }
         }
 
@@ -85,19 +93,9 @@ final class SiteInformationService
                 }
             }
         } catch (\Throwable) {
-            // Ignore and fall through to the env-based fallback
+            // No sites configured (CLI/install) — caller falls back to the relative URL.
         }
 
-        $envHost = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
-        if (is_string($envHost) && $envHost !== '') {
-            // TYPO3_REQUEST_HOST is "<scheme>://<host>" — accept only when the host
-            // segment is actually populated, otherwise we'd build URLs like
-            // "http:///fileadmin/x.jpg" in CLI/test contexts without a server name.
-            $parts = parse_url($envHost);
-            if (!empty($parts['host'])) {
-                return $envHost;
-            }
-        }
         return null;
     }
 

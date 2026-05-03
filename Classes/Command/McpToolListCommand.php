@@ -74,7 +74,7 @@ final class McpToolListCommand extends Command
             if ($plain) {
                 $output->writeln(sprintf('%-26s  %s', $name, $description));
             } else {
-                $output->writeln(sprintf('<info>%s</info>  %s', str_pad($name, 26), $description));
+                $output->writeln(sprintf('<info>%s</info>  %s', str_pad((string)$name, 26), $description));
             }
         }
         return Command::SUCCESS;

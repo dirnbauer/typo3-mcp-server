@@ -9,6 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * Reads and enforces Configuration/Capabilities.yaml.
@@ -325,7 +326,7 @@ final class CapabilityManifestService
         // composer and TER installations).
         $candidate = null;
         try {
-            $candidate = \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::extPath('mcp_server') . self::MANIFEST_PATH;
+            $candidate = ExtensionManagementUtility::extPath('mcp_server') . self::MANIFEST_PATH;
         } catch (\Throwable) {
             // Extension manager not booted yet — fall through to the public path.
         }

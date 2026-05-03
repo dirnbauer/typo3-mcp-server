@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Unit\Service;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use PHPUnit\Framework\Attributes\Test;
@@ -148,7 +149,7 @@ final class McpFileSandboxServiceTest extends TestCase
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $configuration;
 
-        $localMode = new \Hn\McpServer\Service\LocalModeService(new ExtensionConfiguration());
+        $localMode = new LocalModeService(new ExtensionConfiguration());
 
         $workspaceContextService = new WorkspaceContextService(
             $this->createMock(ConnectionPool::class),

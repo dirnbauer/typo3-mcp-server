@@ -22,10 +22,10 @@ use TYPO3\CMS\Core\Core\Environment;
  *
  * Read the SecurityAudit.rst document before touching this class.
  */
-final class LocalModeService
+final readonly class LocalModeService
 {
     public function __construct(
-        private readonly ExtensionConfiguration $extensionConfiguration,
+        private ExtensionConfiguration $extensionConfiguration,
     ) {}
 
     /**

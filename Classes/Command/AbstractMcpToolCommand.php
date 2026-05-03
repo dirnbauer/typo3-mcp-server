@@ -321,7 +321,7 @@ abstract class AbstractMcpToolCommand extends Command
         }
         if (!$beUser->isAdmin()) {
             $beUser->user['admin'] = 1;
-            $beUser->user['uid'] = $beUser->user['uid'] ?? 1;
+            $beUser->user['uid'] ??= 1;
         }
         $defaults = $beUser->uc_default;
         $beUser->uc = array_merge(is_array($defaults) ? $defaults : [], is_array($beUser->uc) ? $beUser->uc : []);

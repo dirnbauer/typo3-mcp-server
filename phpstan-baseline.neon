@@ -4361,18 +4361,9 @@ parameters:
 			path: Classes/Service/SelectItemResolver.php
 
 		-
-			message: '''
-				#^Call to deprecated method getIndpEnv\(\) of class TYPO3\\CMS\\Core\\Utility\\GeneralUtility\:
-				since TYPO3 v14\.3, will be removed in TYPO3 v15\.0\. Use NormalizedParams from the PSR\-7 request instead\.$#
-			'''
-			identifier: staticMethod.deprecated
-			count: 1
-			path: Classes/Service/SiteInformationService.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 10
+			count: 9
 			path: Classes/Service/SiteInformationService.php
 
 		-
