@@ -283,18 +283,6 @@ parameters:
 			path: Classes/Http/OAuthAuthorizeEndpoint.php
 
 		-
-			message: '#^Parameter \#1 \$data of method Hn\\McpServer\\Http\\OAuthAuthorizeEndpoint\:\:generateConsentTemplate\(\) expects array\{username\: string, client_name\: string, client_id\: string, redirect_uri\: string, code_challenge\: string, code_challenge_method\: string, state\: string, user_id\: int\}, array\{username\: string, client_name\: string, client_id\: non\-falsy\-string, redirect_uri\: string, code_challenge\: string, code_challenge_method\: string, state\: string, user_id\: mixed\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Http/OAuthAuthorizeEndpoint.php
-
-		-
-			message: '#^Parameter \#1 \$string of function htmlspecialchars expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Http/OAuthAuthorizeEndpoint.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
 			count: 1
@@ -4261,7 +4249,7 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|false given\.$#'
 			identifier: booleanNot.exprNotBoolean
-			count: 5
+			count: 3
 			path: Classes/Service/OAuthService.php
 
 		-

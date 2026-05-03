@@ -99,8 +99,10 @@ final readonly class OAuthTokenEndpoint
             return $this->createErrorResponse('invalid_grant', 'Invalid or expired authorization code');
         }
 
+        // Log only an 8-char prefix (32 bits) — enough to correlate logs,
+        // not enough to brute-force back to the full 64-char hex token.
         $this->logger->debug('Token exchange successful', [
-            'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
+            'tokenPrefix' => substr($tokenData['access_token'], 0, 8),
         ]);
 
         return $this->createTokenResponse($tokenData);
@@ -124,7 +126,7 @@ final readonly class OAuthTokenEndpoint
         }
 
         $this->logger->debug('Token refresh successful', [
-            'tokenPrefix' => substr($tokenData['access_token'], 0, 20),
+            'tokenPrefix' => substr($tokenData['access_token'], 0, 8),
         ]);
 
         return $this->createTokenResponse($tokenData);

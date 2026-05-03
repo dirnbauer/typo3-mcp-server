@@ -72,4 +72,20 @@ trait CorsHeadersTrait
         $response = new Response();
         return $this->addCorsHeaders($response->withStatus(200));
     }
+
+    /**
+     * Stamp the standard browser-defense headers onto an MCP / OAuth response.
+     * `/mcp` and `/mcp_oauth/*` are not meant to be embedded in browsers, so
+     * X-Frame-Options: DENY is appropriate. Cache-Control: no-store keeps
+     * bearer-token responses out of intermediate proxies.
+     */
+    private function addSecurityHeaders(ResponseInterface $response): ResponseInterface
+    {
+        return $response
+            ->withHeader('X-Content-Type-Options', 'nosniff')
+            ->withHeader('X-Frame-Options', 'DENY')
+            ->withHeader('Referrer-Policy', 'no-referrer')
+            ->withHeader('Cache-Control', 'no-store')
+            ->withHeader('Pragma', 'no-cache');
+    }
 }

@@ -183,6 +183,25 @@ final class RenderRecordTool extends AbstractRecordTool
         // Manifest gate: host must be in network.outbound (default `self`).
         $this->capabilityManifest->assertHostAllowed($host);
 
+        // SSRF defense in depth: even if the manifest allows the host (e.g.
+        // `self` matches a misconfigured site whose host resolves to 127.0.0.1
+        // or another internal address), refuse to dial private/reserved IPs.
+        // In local mode (DDEV) DNS commonly resolves to private addresses for
+        // the dev TLD, so the check is lifted there.
+        if (!$this->localMode->isLocalMode()) {
+            $ips = gethostbynamel($host);
+            if ($ips === false || $ips === []) {
+                throw new ValidationException(['Could not resolve render-host: ' . $host]);
+            }
+            foreach ($ips as $ip) {
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                    throw new ValidationException([
+                        'Render request would target a private/reserved network address — refused.',
+                    ]);
+                }
+            }
+        }
+
         $handle = curl_init($url);
         if ($handle === false) {
             throw new ValidationException(['cURL is not available — cannot fetch render output.']);

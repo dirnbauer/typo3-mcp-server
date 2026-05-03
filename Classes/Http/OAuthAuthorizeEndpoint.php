@@ -34,8 +34,14 @@ final readonly class OAuthAuthorizeEndpoint
             $this->initializeBackendUserContext($request);
 
             $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
-            $challengeMethod = $queryParams['code_challenge_method'] ?? '';
-            if ($challengeMethod !== '' && $challengeMethod !== 'S256') {
+            // RFC 9700 §2.1.1 makes PKCE mandatory for the authorization-code
+            // grant. Reject the flow if the client did not send a challenge.
+            $challengeRaw = $queryParams['code_challenge'] ?? '';
+            if (!is_string($challengeRaw) || $challengeRaw === '') {
+                return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
+            }
+            $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+            if ($challengeMethod !== 'S256') {
                 return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
             }
 
@@ -180,12 +186,15 @@ final readonly class OAuthAuthorizeEndpoint
         $clientName = $postParams['client_name'] ?? $this->resolveClientName($request);
         $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $pkceChallenge = $queryParams['code_challenge'] ?? '';
-        $challengeMethod = $queryParams['code_challenge_method'] ?? '';
-        if ($pkceChallenge !== '' && $challengeMethod !== 'S256') {
-            return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+        $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+        // RFC 9700 §2.1.1 — PKCE is mandatory; no plain method, no missing
+        // challenge. The GET handler already rejects missing challenges; we
+        // re-check here so a forged POST cannot bypass.
+        if (!is_string($pkceChallenge) || $pkceChallenge === '') {
+            return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
         }
-        if ($challengeMethod === '') {
-            $challengeMethod = 'S256';
+        if ($challengeMethod !== 'S256') {
+            return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
         }
         $state = $postParams['state'] ?? $queryParams['state'] ?? '';
 
@@ -252,17 +261,24 @@ final readonly class OAuthAuthorizeEndpoint
         if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
             return $this->createErrorResponse('server_error', 'Backend user context missing');
         }
-        $username = $beUser->user['username'] ?? 'Unknown';
+        $username = is_string($beUser->user['username'] ?? null) ? $beUser->user['username'] : 'Unknown';
+        $userId = is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0;
 
+        // ENT_QUOTES escapes single AND double quotes — required because the
+        // consent template embeds these into HTML attributes; the default
+        // (ENT_HTML_QUOTES = ENT_QUOTES on PHP 8.1+) is on but make it
+        // explicit so a future template tweak with single-quoted attributes
+        // does not regress.
+        $esc = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
         $html = $this->generateConsentTemplate([
-            'username' => htmlspecialchars($username),
-            'client_name' => htmlspecialchars($clientName),
-            'client_id' => htmlspecialchars($clientId),
-            'redirect_uri' => htmlspecialchars($redirectUri),
-            'code_challenge' => htmlspecialchars($codeChallenge),
-            'code_challenge_method' => htmlspecialchars($challengeMethod),
-            'state' => htmlspecialchars($state),
-            'user_id' => $beUser->user['uid'],
+            'username' => $esc($username),
+            'client_name' => $esc($clientName),
+            'client_id' => $esc($clientId),
+            'redirect_uri' => $esc($redirectUri),
+            'code_challenge' => $esc($codeChallenge),
+            'code_challenge_method' => $esc($challengeMethod),
+            'state' => $esc($state),
+            'user_id' => $userId,
         ]);
 
         $stream = new Stream('php://temp', 'rw');
@@ -524,9 +540,9 @@ final readonly class OAuthAuthorizeEndpoint
     <div class="container">
         <div class="success">✓ Authorization Successful</div>
         
-        <p>Authorization code for <strong>' . htmlspecialchars($clientName) . '</strong>:</p>
-        
-        <div class="code" id="authCode">' . htmlspecialchars($code) . '</div>
+        <p>Authorization code for <strong>' . htmlspecialchars($clientName, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8') . '</strong>:</p>
+
+        <div class="code" id="authCode">' . htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8') . '</div>
         
         <button class="copy-button" onclick="copyCode()">Copy Code</button>
         

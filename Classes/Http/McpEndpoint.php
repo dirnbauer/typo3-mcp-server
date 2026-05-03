@@ -145,7 +145,7 @@ final readonly class McpEndpoint
                 $headers,
             );
 
-            return $this->addCorsHeaders($response);
+            return $this->addSecurityHeaders($this->addCorsHeaders($response));
         } catch (\Throwable $e) {
             $this->logger->error('MCP request failed', ['exception' => $e]);
             $stream = new Stream('php://temp', 'rw');
@@ -154,11 +154,11 @@ final readonly class McpEndpoint
             ]));
             $stream->rewind();
 
-            return $this->addCorsHeaders(new Response(
+            return $this->addSecurityHeaders($this->addCorsHeaders(new Response(
                 $stream,
                 500,
                 ['Content-Type' => 'application/json'],
-            ));
+            )));
         }
     }
 

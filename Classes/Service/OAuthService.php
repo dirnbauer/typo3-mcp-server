@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -264,10 +263,11 @@ final readonly class OAuthService
             ->fetchAssociative();
 
         if (!$tokenRecord) {
-            $tokenRecord = $this->fallbackPlaintextLookup($connection, $token);
-            if (!$tokenRecord) {
-                return null;
-            }
+            // No plaintext fallback (RFC 9700 §4.13: avoid weak comparisons).
+            // Pre-migration tokens (token_version=0, plaintext) are no longer
+            // honored — affected MCP clients re-authenticate via the backend
+            // module, which issues a freshly hashed token.
+            return null;
         }
 
         // Update last used timestamp and IP
@@ -518,39 +518,6 @@ final readonly class OAuthService
     private function generateSecureToken(): string
     {
         return bin2hex(random_bytes(32));
-    }
-
-    /**
-     * Look up a pre-migration plaintext token (token_version=0) and auto-upgrade it to hashed.
-     *
-     * @return array<string, mixed>|false
-     */
-    private function fallbackPlaintextLookup(\Doctrine\DBAL\Connection $connection, string $plainToken): array|false
-    {
-        $qb = $connection->createQueryBuilder();
-        $row = $qb
-            ->select('*')
-            ->from('tx_mcpserver_access_tokens')
-            ->where(
-                $qb->expr()->eq('token', $qb->createNamedParameter($plainToken)),
-                $qb->expr()->eq('token_version', $qb->createNamedParameter(0, ParameterType::INTEGER)),
-                $qb->expr()->gt('expires', $qb->createNamedParameter(time())),
-                $qb->expr()->eq('deleted', $qb->createNamedParameter(0)),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        if (!$row) {
-            return false;
-        }
-
-        $connection->update(
-            'tx_mcpserver_access_tokens',
-            ['token' => hash('sha256', $plainToken), 'token_version' => 1],
-            ['uid' => $row['uid']]
-        );
-
-        return $row;
     }
 
     private function getRemoteAddress(ServerRequestInterface $request): string

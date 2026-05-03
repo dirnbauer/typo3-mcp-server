@@ -97,6 +97,81 @@ Accepted risks
    ``localUnsafeMode = off`` so even an accidentally-set DDEV env var
    cannot relax the safety nets.
 
+2026-05-03 (typo3-security skill pass — RFC 9700 alignment)
+===========================================================
+
+Fixed findings
+--------------
+
+1. PKCE was conditionally required (``$pkce !== ''`` gate). RFC 9700 §2.1.1
+   makes it mandatory.
+
+   Status: Fixed. ``OAuthAuthorizeEndpoint::handle()`` and
+   ``handleApproval()`` now reject any authorization-code request without
+   a ``code_challenge``. Method must be ``S256`` (no ``plain``).
+
+2. Plaintext token fallback (``token_version=0``).
+
+   Status: Removed. ``OAuthService::validateToken()`` no longer falls back
+   to plaintext column lookup. Any pre-migration tokens are rejected and
+   the affected MCP client is forced to re-authenticate via the install
+   button — issuing a freshly hashed token.
+
+3. HTML-attribute escaping in the OAuth consent page used the
+   PHP-version-default flag set, which historically did not include
+   ``ENT_QUOTES``.
+
+   Status: Hardened. All escaped values now use
+   ``ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5`` so single quotes and
+   malformed UTF-8 cannot break the template.
+
+4. ``/mcp`` and ``/mcp_oauth/*`` responses lacked browser-defense headers.
+
+   Status: Fixed. ``CorsHeadersTrait::addSecurityHeaders()`` stamps
+   ``X-Content-Type-Options: nosniff``, ``X-Frame-Options: DENY``,
+   ``Referrer-Policy: no-referrer``, ``Cache-Control: no-store``, and
+   ``Pragma: no-cache``. Wired into ``McpEndpoint`` (success + error path).
+
+5. ``OAuthTokenEndpoint`` debug log used a 20-char token prefix (80 bits).
+
+   Status: Reduced to 8-char prefix (32 bits) — enough for log
+   correlation, not enough to reconstruct the full 64-char token.
+
+6. ``WriteFileTool`` default ``textfile_ext`` accepted SVG, which can
+   carry inline ``<script>`` and trigger stored XSS.
+
+   Status: SVG removed from the default. Operators who need SVG must
+   add it to ``$TYPO3_CONF_VARS[SYS][textfile_ext]`` and pipe through
+   ``TYPO3\\CMS\\Core\\Resource\\Security\\SvgSanitizer``.
+
+7. ``RenderRecord`` cURL fetched without resolving the host to an IP.
+
+   Status: Fixed. Outside ``localUnsafeMode``, the host is resolved with
+   ``gethostbynamel()`` and any private/reserved address aborts the
+   request — same protection model as ``UploadFileFromUrl``.
+
+Accepted risks (added)
+----------------------
+
+1. OAuth authorization code is bound to the client name and redirect URI
+   only loosely (the exchange call does not re-verify the redirect URI).
+   Currently a single-client deployment with a locked-down redirect, so
+   the impact is theoretical — flagged for a focused PR that adds the
+   per-RFC-9700 §4.1.3 strict comparison.
+
+2. Refresh-token rotation does not invalidate the previous refresh token
+   (replay detection / family revocation per RFC 9700 §4.14). Tokens are
+   single-use within their TTL and rotated, but a captured token used
+   twice goes undetected. To be addressed in a focused refresh-rotation
+   PR.
+
+3. No rate limiting on ``/mcp``, ``/mcp_oauth/token``, or
+   ``/mcp_oauth/authorize``. Bearer-token brute force is unbounded
+   (32-byte random tokens make this impractical, but a defense-in-depth
+   limiter is appropriate). Recommend adding an upstream HTTP-tier limit
+   (nginx ``limit_req``, Apache ``mod_qos``, or a TYPO3 PSR-15
+   middleware that calls ``Symfony\\Component\\RateLimiter``).
+
 2026-05-03 (capability manifest + DDEV-aware local mode)
 ========================================================
 

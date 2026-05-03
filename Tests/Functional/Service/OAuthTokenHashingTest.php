@@ -93,8 +93,12 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         self::assertNotEquals($tokenData['access_token'], $row['token']);
     }
 
-    public function testLegacyPlainTextTokenValidatesViaFallback(): void
+    public function testLegacyPlainTextTokenIsRejected(): void
     {
+        // Pre-migration plaintext-token fallback was removed in the
+        // 2026-05-03 typo3-security pass (RFC 9700 alignment). Operators
+        // who still have token_version=0 rows must re-issue tokens via the
+        // backend module — the SHA-256-only path is the supported one.
         $plainToken = bin2hex(random_bytes(32));
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_access_tokens');
@@ -108,22 +112,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
         ]);
 
         $result = $this->service->validateToken($plainToken);
-        self::assertNotNull($result, 'Pre-migration plaintext tokens must validate via fallback');
-        self::assertEquals(1, $result['be_user_uid']);
-
-        // Verify the token was auto-upgraded to hashed (token_version=1)
-        $row = $connection->createQueryBuilder()
-            ->select('token', 'token_version')
-            ->from('tx_mcpserver_access_tokens')
-            ->where('client_name = \'legacy-client\'')
-            ->executeQuery()
-            ->fetchAssociative();
-        self::assertEquals(1, (int)$row['token_version'], 'Token must be auto-upgraded to version 1');
-        self::assertEquals(hash('sha256', $plainToken), $row['token'], 'Token must be hashed after auto-upgrade');
-
-        // Second validation should work via hash lookup (no longer needs fallback)
-        $result2 = $this->service->validateToken($plainToken);
-        self::assertNotNull($result2, 'Token must still validate after auto-upgrade via hash lookup');
+        self::assertNull($result, 'Plaintext (token_version=0) tokens must no longer validate.');
     }
 
     public function testLegacyPlainTextTokenInvalidAfterWizardMigration(): void

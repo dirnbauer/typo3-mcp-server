@@ -40,7 +40,8 @@ final class WriteFileTool extends AbstractTool
         return [
             'description' => 'Create or overwrite a text-based file inside the MCP file sandbox, and/or update its metadata. '
                 . 'The configured sandbox defaults to fileadmin/mcp/ and all paths are restricted to that area. '
-                . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .svg, .yaml, .md. '
+                . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .yaml, .md. '
+                . '(SVG excluded by default to prevent stored XSS — opt in via TYPO3 SYS textfile_ext + SvgSanitizer.) '
                 . 'Binary file uploads (images, PDFs, etc.) are NOT supported. '
                 . 'Can also update metadata (title, description, alt text, copyright) on any existing file — including images — without changing the file content. '
                 . 'WARNING: Physical files are NOT workspace-versioned — changes take effect immediately across all workspaces.',
@@ -242,9 +243,14 @@ final class WriteFileTool extends AbstractTool
         $sysConfig = is_array($confVars) && is_array($confVars['SYS'] ?? null)
             ? $confVars['SYS']
             : [];
+        // SVG is intentionally NOT in the default list — it can carry inline
+        // <script> and trigger stored XSS when served from fileadmin/. Operators
+        // who need SVG uploads should sanitize via `TYPO3\CMS\Core\Resource\
+        // Security\SvgSanitizer` and add `svg` to $TYPO3_CONF_VARS[SYS][textfile_ext]
+        // explicitly.
         $configuredTextExtensions = is_string($sysConfig['textfile_ext'] ?? null)
             ? $sysConfig['textfile_ext']
-            : 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf,yaml,yml,md,rst,json,svg';
+            : 'txt,ts,typoscript,html,htm,css,tmpl,js,sql,xml,csv,xlf,yaml,yml,md,rst,json';
         $textExtensions = GeneralUtility::trimExplode(
             ',',
             $configuredTextExtensions,
