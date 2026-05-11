@@ -96,7 +96,7 @@ final class TableAccessService
             } catch (\Exception) {
                 $config = 'sys_file_metadata';
             }
-            $this->additionalStandaloneTables = GeneralUtility::trimExplode(',', (string)$config, true);
+            $this->additionalStandaloneTables = GeneralUtility::trimExplode(',', is_scalar($config) ? (string)$config : '', true);
         }
 
         return $this->additionalStandaloneTables;
@@ -104,7 +104,8 @@ final class TableAccessService
 
     public function isEmbeddedChildTable(string $table): bool
     {
-        if (empty($this->getTableCtrl($table)['hideTable'])) {
+        $hideTable = $this->getTableCtrl($table)['hideTable'] ?? false;
+        if ($hideTable !== true && $hideTable !== 1 && $hideTable !== '1') {
             return false;
         }
 
@@ -723,7 +724,8 @@ final class TableAccessService
                 continue;
             }
             $mountPath = rtrim($mount['path'], '/') . '/';
-            if (str_starts_with((string)$row['identifier'], $mountPath)) {
+            $identifier = $row['identifier'] ?? null;
+            if (is_string($identifier) && str_starts_with($identifier, $mountPath)) {
                 return true;
             }
         }
@@ -1851,7 +1853,7 @@ final class TableAccessService
             $translated = $languageService->sL($label);
 
             // If translation failed, try to extract a meaningful fallback
-            if (empty($translated)) {
+            if ($translated === '') {
                 // Extract the last part of the LLL path as fallback
                 // e.g., "LLL:EXT:news/Resources/Private/Language/locallang_be.xlf:plugin.news_list.title" -> "news_list"
                 if (preg_match('/\.([^.]+)\.title$/', $label, $matches)) {

@@ -1420,7 +1420,9 @@ final class WriteTableTool extends AbstractRecordTool
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
 
-            if (empty($foreignTable) || empty($foreignField)) {
+            if (!is_string($foreignTable) || $foreignTable === ''
+                || !is_string($foreignField) || $foreignField === ''
+            ) {
                 continue;
             }
 
@@ -1593,7 +1595,9 @@ final class WriteTableTool extends AbstractRecordTool
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
 
-            if (empty($foreignTable) || empty($foreignField)) {
+            if (!is_string($foreignTable) || $foreignTable === ''
+                || !is_string($foreignField) || $foreignField === ''
+            ) {
                 continue;
             }
 

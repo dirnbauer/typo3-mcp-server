@@ -59,30 +59,22 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     {
 
         // Get parameters
-        $table = $params['table'] ?? 'tt_content';
-        $field = $params['field'] ?? 'pi_flexform';
-        $identifier = $params['identifier'] ?? '';
+        $table = isset($params['table']) && is_string($params['table']) ? $params['table'] : 'tt_content';
+        $field = isset($params['field']) && is_string($params['field']) ? $params['field'] : 'pi_flexform';
+        $identifier = isset($params['identifier']) && is_string($params['identifier']) ? $params['identifier'] : '';
 
         // Validate parameters
-        if (empty($identifier)) {
+        if ($identifier === '') {
             throw new \InvalidArgumentException('Identifier parameter is required');
         }
 
         // Validate table access using TableAccessService
         $this->ensureTableAccess($table, 'read');
 
-        // Check if the table and field exist
-        if (!isset($GLOBALS['TCA'][$table]['columns'][$field])) {
-            throw new \InvalidArgumentException("Field '$field' not found in table '$table'");
+        $flexFormConfig = $this->getFlexFieldConfig($table, $field);
+        if ($flexFormConfig === []) {
+            throw new \InvalidArgumentException("Field '$field' not found in table '$table' or is not a FlexForm field");
         }
-
-        // Check if the field is a FlexForm field
-        if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] !== 'flex') {
-            throw new \InvalidArgumentException("Field '$field' in table '$table' is not a FlexForm field");
-        }
-
-        // Get the FlexForm configuration
-        $flexFormConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
 
         // Build the header
         $header = "FLEXFORM SCHEMA: $identifier\n";
@@ -96,10 +88,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         // type). On TYPO3 13 the same field still uses the central `ds` map
         // keyed by `<list_type>` or `*,<list_type>` (and form_formframework
         // historically uses `*,form_formframework`). We try every shape.
-        $dsValue = $GLOBALS['TCA'][$table]['types'][$identifier]['columnsOverrides'][$field]['config']['ds']
-            ?? ($flexFormConfig['ds'][$identifier] ?? null)
-            ?? ($flexFormConfig['ds']['*,' . $identifier] ?? null)
-            ?? ($flexFormConfig['ds'][$identifier . ',list'] ?? null);
+        $dsMap = isset($flexFormConfig['ds']) && is_array($flexFormConfig['ds']) ? $flexFormConfig['ds'] : [];
+        $dsValue = $this->getTypeFlexFormDsValue($table, $field, $identifier)
+            ?? ($dsMap[$identifier] ?? null)
+            ?? ($dsMap['*,' . $identifier] ?? null)
+            ?? ($dsMap[$identifier . ',list'] ?? null);
 
         if ($dsValue !== null) {
 
@@ -620,38 +613,30 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     protected function getAvailableFlexForms(string $table, string $field): array
     {
         $result = [];
-
-        // Check if the table and field exist
-        if (!isset($GLOBALS['TCA'][$table]['columns'][$field])) {
+        $flexFormConfig = $this->getFlexFieldConfig($table, $field);
+        if ($flexFormConfig === []) {
             return $result;
         }
 
-        // Check if the field is a FlexForm field
-        if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] !== 'flex') {
-            return $result;
-        }
-
-        $flexFormConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
+        $dsMap = isset($flexFormConfig['ds']) && is_array($flexFormConfig['ds']) ? $flexFormConfig['ds'] : [];
 
         // Handle ds configuration (TYPO3 14 removed ds_pointerField)
-        if (!empty($flexFormConfig['ds']) && is_array($flexFormConfig['ds'])) {
-            foreach ($flexFormConfig['ds'] as $key => $ds) {
-                if (is_string($ds) && str_starts_with($ds, 'FILE:')) {
-                    $file = substr($ds, 5);
-                    $result[$key] = [
-                        'id' => $key,
-                        'file' => $file,
-                    ];
-                } else {
-                    $result[$key] = [
-                        'id' => $key,
-                    ];
-                }
+        foreach ($dsMap as $key => $ds) {
+            if (is_string($ds) && str_starts_with($ds, 'FILE:')) {
+                $file = substr($ds, 5);
+                $result[$key] = [
+                    'id' => $key,
+                    'file' => $file,
+                ];
+            } else {
+                $result[$key] = [
+                    'id' => $key,
+                ];
             }
         }
 
         // Add default FlexForm if available
-        if (!empty($flexFormConfig['ds']['default'])) {
+        if (array_key_exists('default', $dsMap)) {
             $result['default'] = [
                 'id' => 'default',
             ];
@@ -665,18 +650,12 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function getFlexFormDS(string $table, string $field, string $identifier): array
     {
-        // Check if the table and field exist
-        if (!isset($GLOBALS['TCA'][$table]['columns'][$field])) {
+        $flexFormConfig = $this->getFlexFieldConfig($table, $field);
+        if ($flexFormConfig === []) {
             return [];
         }
 
-        // Check if the field is a FlexForm field
-        if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] !== 'flex') {
-            return [];
-        }
-
-        $flexFormConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
-        $ds = $flexFormConfig['ds'] ?? [];
+        $ds = isset($flexFormConfig['ds']) && is_array($flexFormConfig['ds']) ? $flexFormConfig['ds'] : [];
 
         // Try to get the FlexForm DS directly from the configuration
         if (!empty($ds[$identifier])) {
@@ -703,6 +682,62 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         }
 
         return [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getFlexFieldConfig(string $table, string $field): array
+    {
+        $tca = $GLOBALS['TCA'][$table] ?? null;
+        if (!is_array($tca)) {
+            return [];
+        }
+        $columns = $tca['columns'] ?? null;
+        if (!is_array($columns)) {
+            return [];
+        }
+        $fieldTca = $columns[$field] ?? null;
+        if (!is_array($fieldTca)) {
+            return [];
+        }
+        $config = $fieldTca['config'] ?? null;
+        if (!is_array($config) || ($config['type'] ?? null) !== 'flex') {
+            return [];
+        }
+
+        /** @var array<string, mixed> $config */
+        return $config;
+    }
+
+    private function getTypeFlexFormDsValue(string $table, string $field, string $identifier): mixed
+    {
+        $tca = $GLOBALS['TCA'][$table] ?? null;
+        if (!is_array($tca)) {
+            return null;
+        }
+        $types = $tca['types'] ?? null;
+        if (!is_array($types)) {
+            return null;
+        }
+        $typeConfig = $types[$identifier] ?? null;
+        if (!is_array($typeConfig)) {
+            return null;
+        }
+        $columnsOverrides = $typeConfig['columnsOverrides'] ?? null;
+        if (!is_array($columnsOverrides)) {
+            return null;
+        }
+        $fieldOverride = $columnsOverrides[$field] ?? null;
+        if (!is_array($fieldOverride)) {
+            return null;
+        }
+        $config = $fieldOverride['config'] ?? null;
+        if (!is_array($config)) {
+            return null;
+        }
+
+        return $config['ds'] ?? null;
     }
 
     /**

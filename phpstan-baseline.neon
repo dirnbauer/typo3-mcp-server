@@ -1071,7 +1071,7 @@ parameters:
 		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 6
+			count: 5
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1101,35 +1101,23 @@ parameters:
 		-
 			message: '#^Cannot access offset ''columns'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset ''config'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 11
+			count: 4
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset ''default'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''description'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Cannot access offset ''ds'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''ds_pointerField'' on mixed\.$#'
+			message: '#^Cannot access offset ''description'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
@@ -1161,7 +1149,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''items'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1191,7 +1179,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 6
+			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1203,25 +1191,19 @@ parameters:
 		-
 			message: '#^Cannot access offset 0 on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset 1 on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Cannot access offset mixed on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 7
+			count: 4
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1239,7 +1221,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 17
+			count: 11
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1417,12 +1399,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\AbstractRecordTool\:\:ensureTableAccess\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
 			message: '#^Parameter \#1 \$xmlArray of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormXml\(\) expects array, array\|string given\.$#'
 			identifier: argument.type
 			count: 2
@@ -1443,12 +1419,6 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\GetFlexFormSchemaTool\:\:processFlexFormField\(\) expects array, mixed given\.$#'
 			identifier: argument.type
-			count: 3
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Part \$field \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
 			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
@@ -1483,12 +1453,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Part \$identifier \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 2
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
 			message: '#^Part \$itemLabel \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
@@ -1519,12 +1483,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Part \$table \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 3
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
 			message: '#^Part \$type \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
@@ -1533,7 +1491,7 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1981,12 +1939,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Cannot access offset ''ds'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -2020,12 +1972,6 @@ parameters:
 			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2085,7 +2031,7 @@ parameters:
 		-
 			message: '#^Cannot access offset mixed on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2133,7 +2079,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 41
+			count: 39
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2527,21 +2473,9 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2564,12 +2498,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$foreignField of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2637,7 +2565,7 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 10
+			count: 8
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2907,7 +2835,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 42
+			count: 36
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3253,12 +3181,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$items of method Hn\\McpServer\\Service\\TableAccessService\:\:parseSelectItems\(\) expects array\<int\|string, mixed\>, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -3272,30 +3194,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$search of function str_replace expects array\<string\>\|string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertDataForStorage\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableTcaArray\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method TYPO3\\CMS\\Core\\Database\\Query\\QueryBuilder\:\:from\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$tableName of method TYPO3\\CMS\\Core\\Database\\ConnectionPool\:\:getQueryBuilderForTable\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -3385,12 +3283,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#2 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getAllowedAuthModeValues\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -3411,7 +3303,7 @@ parameters:
 		-
 			message: '#^Parameter \#3 \.\.\.\$values of function sprintf expects bool\|float\|int\|string\|null, mixed given\.$#'
 			identifier: argument.type
-			count: 3
+			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3452,14 +3344,8 @@ parameters:
 
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: array.invalidKey
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 12
+			count: 5
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -4405,13 +4291,13 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
-			count: 3
+			count: 2
 			path: Classes/Service/TableAccessService.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 24
+			count: 23
 			path: Classes/Service/TableAccessService.php
 
 		-

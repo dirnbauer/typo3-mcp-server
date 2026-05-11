@@ -1182,7 +1182,10 @@ final class ReadTableTool extends AbstractRecordTool
         $foreignField = $fieldConfig['config']['foreign_field'] ?? '';
 
         // Skip if the foreign table isn't accessible or no foreign field
-        if (!$this->tableAccessService->canAccessTable($foreignTable) || empty($foreignField)) {
+        if (!is_string($foreignTable)
+            || !is_string($foreignField) || $foreignField === ''
+            || !$this->tableAccessService->canAccessTable($foreignTable)
+        ) {
             return;
         }
 
@@ -1258,7 +1261,7 @@ final class ReadTableTool extends AbstractRecordTool
      */
     protected function getInlineRelatedRecords(string $table, string $foreignField, array $parentUids, string $foreignSortBy = '', array $foreignMatchFields = [], bool $embedAsChildren = false): array
     {
-        if (empty($parentUids)) {
+        if ($parentUids === []) {
             return [];
         }
 
@@ -1456,7 +1459,7 @@ final class ReadTableTool extends AbstractRecordTool
             }
         }
 
-        if (empty($parentUids)) {
+        if ($parentUids === []) {
             return [];
         }
 
