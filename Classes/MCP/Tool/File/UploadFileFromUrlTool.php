@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
@@ -41,6 +42,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         private readonly RequestFactory $requestFactory,
         private readonly CapabilityManifestService $capabilityManifest,
         private readonly LocalModeService $localMode,
+        private readonly FileMetadataIndexService $fileMetadataIndexService,
     ) {}
 
     /**
@@ -118,6 +120,7 @@ final class UploadFileFromUrlTool extends AbstractTool
             $storedFileName = $this->createUniqueStoredFileName($folder, $target['fileName']);
 
             $newFile = $storage->addFile($tempFile, $folder, $storedFileName);
+            $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
         } finally {
             if (file_exists($tempFile)) {
                 unlink($tempFile);

@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -24,6 +25,7 @@ final class UploadFileTool extends AbstractTool
     public function __construct(
         private readonly StorageRepository $storageRepository,
         private readonly McpFileSandboxService $fileSandboxService,
+        private readonly FileMetadataIndexService $fileMetadataIndexService,
     ) {}
 
     /**
@@ -98,6 +100,7 @@ final class UploadFileTool extends AbstractTool
         try {
             file_put_contents($tempFile, $decodedContent);
             $newFile = $storage->addFile($tempFile, $folder, $storedFileName);
+            $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
         } finally {
             if (file_exists($tempFile)) {
                 unlink($tempFile);

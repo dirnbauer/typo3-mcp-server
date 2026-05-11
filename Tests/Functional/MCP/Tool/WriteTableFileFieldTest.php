@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use Hn\McpServer\MCP\Tool\File\UploadFileTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
@@ -17,6 +18,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class WriteTableFileFieldTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+
+    private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     protected array $coreExtensionsToLoad = [
         'workspaces',
@@ -147,6 +150,51 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
 
         $ref = $refs[0];
         self::assertSame(1, (int)$ref['uid_local']);
+    }
+
+    public function testFileFieldRepairsMissingImageMetadataBeforeCreatingReference(): void
+    {
+        $upload = $this->getService(UploadFileTool::class);
+        $uploadResult = $upload->execute([
+            'path' => 'images/write-table-metadata.png',
+            'content_base64' => self::PIXEL_PNG_BASE64,
+        ]);
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        $uploadJson = json_decode((string)$uploadResult->content[0]->text, true);
+        self::assertIsArray($uploadJson);
+        $fileUid = (int)($uploadJson['uid'] ?? 0);
+        self::assertGreaterThan(0, $fileUid);
+
+        $metadataConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_file_metadata');
+        $metadataConnection->delete('sys_file_metadata', ['file' => $fileUid]);
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Content with repaired metadata',
+                'assets' => [
+                    ['uid_local' => $fileUid, 'alternative' => 'repaired metadata'],
+                ],
+            ],
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $metadata = $metadataConnection->createQueryBuilder()
+            ->select('width', 'height')
+            ->from('sys_file_metadata')
+            ->where('file = :file')
+            ->setParameter('file', $fileUid)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        self::assertIsArray($metadata);
+        self::assertSame(1, (int)$metadata['width']);
+        self::assertSame(1, (int)$metadata['height']);
     }
 
     public function testFileFieldEmptyArrayCreatesNoReferences(): void

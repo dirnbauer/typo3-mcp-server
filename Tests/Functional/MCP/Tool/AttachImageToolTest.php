@@ -108,6 +108,62 @@ final class AttachImageToolTest extends FunctionalTestCase
         self::assertSame('pixel test', $refs[0]['alternative']);
     }
 
+    public function testAttachImageRepairsMissingImageMetadataBeforeCreatingReference(): void
+    {
+        $upload = $this->getService(UploadFileTool::class);
+        $up = $upload->execute([
+            'path' => 'images/attach-metadata-pixel.png',
+            'content_base64' => self::PIXEL_PNG_BASE64,
+        ]);
+        self::assertFalse($up->isError, json_encode($up->jsonSerialize()));
+        $ujson = json_decode((string)$up->content[0]->text, true);
+        self::assertIsArray($ujson);
+        $sysFileUid = (int)($ujson['uid'] ?? 0);
+        self::assertGreaterThan(0, $sysFileUid);
+
+        $metadataConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_file_metadata');
+        $metadataConnection->delete('sys_file_metadata', ['file' => $sysFileUid]);
+
+        $write = $this->getService(WriteTableTool::class);
+        $create = $write->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Attach metadata repair test',
+            ],
+        ]);
+        self::assertFalse($create->isError, json_encode($create->jsonSerialize()));
+        $cjson = json_decode((string)$create->content[0]->text, true);
+        self::assertIsArray($cjson);
+        $contentUid = (int)($cjson['uid'] ?? 0);
+        self::assertGreaterThan(0, $contentUid);
+
+        $tool = $this->getService(AttachImageTool::class);
+        $result = $tool->execute([
+            'table' => 'tt_content',
+            'uid' => $contentUid,
+            'field' => 'assets',
+            'source' => ['sys_file_uid' => $sysFileUid],
+            'mode' => 'replace',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $metadata = $metadataConnection->createQueryBuilder()
+            ->select('width', 'height')
+            ->from('sys_file_metadata')
+            ->where('file = :file')
+            ->setParameter('file', $sysFileUid, ParameterType::INTEGER)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        self::assertIsArray($metadata);
+        self::assertSame(1, (int)$metadata['width']);
+        self::assertSame(1, (int)$metadata['height']);
+    }
+
     /**
      * When a content element has a workspace version row, sys_file_reference.uid_foreign must
      * be the version row uid — not t3ver_oid. Otherwise the reference does not belong to the
