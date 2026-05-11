@@ -138,6 +138,12 @@ services:
   # on the listener classes themselves (TYPO3 v13+ pattern). Services.yaml
   # tags are no longer needed — autoconfigure: true picks them up.
 
+  Hn\McpServer\EventListener\SysFileMetadataRestrictionListener:
+    tags:
+      - name: event.listener
+        event: Hn\McpServer\Event\BeforeRecordReadEvent
+        identifier: 'mcp-server/sys-file-metadata-restriction'
+
   # Explicitly configure the module controller
   Hn\McpServer\Controller\McpServerModuleController:
     public: true

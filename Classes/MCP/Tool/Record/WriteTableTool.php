@@ -1425,9 +1425,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             $isFileReference = ($foreignTable === 'sys_file_reference');
-            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
-            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
-            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
             // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
             $childIdentifiers = [];
@@ -1649,9 +1647,7 @@ final class WriteTableTool extends AbstractRecordTool
 
             $existingChildren = $queryBuilder->executeQuery()->fetchAllAssociative();
 
-            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
-            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
-            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
             $existingChildUids = [];
 
             foreach ($existingChildren as $existingChild) {

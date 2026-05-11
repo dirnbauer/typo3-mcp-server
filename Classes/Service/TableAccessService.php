@@ -52,6 +52,9 @@ final class TableAccessService
     /** @var list<string>|null */
     private ?array $additionalReadOnlyTables = null;
 
+    /** @var list<string>|null */
+    private ?array $additionalStandaloneTables = null;
+
     public function __construct(
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly PageDoktypeRegistry $pageDoktypeRegistry,
@@ -76,6 +79,36 @@ final class TableAccessService
         }
 
         return $this->additionalReadOnlyTables;
+    }
+
+    /**
+     * Hidden TCA tables that should be exposed as standalone records instead
+     * of being embedded into their parent inline relation.
+     *
+     * @return list<string>
+     */
+    public function getAdditionalStandaloneTables(): array
+    {
+        if ($this->additionalStandaloneTables === null) {
+            try {
+                $config = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+                    ->get('mcp_server', 'additionalStandaloneTables');
+            } catch (\Exception) {
+                $config = 'sys_file_metadata';
+            }
+            $this->additionalStandaloneTables = GeneralUtility::trimExplode(',', (string)$config, true);
+        }
+
+        return $this->additionalStandaloneTables;
+    }
+
+    public function isEmbeddedChildTable(string $table): bool
+    {
+        if (empty($this->getTableCtrl($table)['hideTable'])) {
+            return false;
+        }
+
+        return !in_array($table, $this->getAdditionalStandaloneTables(), true);
     }
 
     /**
@@ -793,7 +826,6 @@ final class TableAccessService
             'sys_file', // Files are managed through file system, not direct DB edits
             'sys_file_processedfile', // Processed files are generated automatically
             'sys_file_storage', // Storage configuration - sensitive
-            'sys_file_metadata', // File metadata - usually auto-generated
         ];
 
         if (in_array($table, $readOnlyTables)) {

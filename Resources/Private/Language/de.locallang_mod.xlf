@@ -26,6 +26,10 @@
 				<source>Additional read-only tables: comma-separated list of non-workspace-capable tables to expose for reads via MCP (e.g. sys_file). These cannot be written through workspace tools.</source>
 				<target>Zusätzliche nur-lesen-Tabellen: kommagetrennte Liste nicht-Workspace-fähiger Tabellen, die für Lesezugriff über MCP freigegeben werden (z. B. sys_file). Schreiben über Workspace-Tools ist nicht möglich.</target>
 			</trans-unit>
+			<trans-unit id="extconf.additionalStandaloneTables">
+				<source>Additional standalone tables: comma-separated list of hidden TCA tables to expose independently instead of embedding into parent inline relations (e.g. sys_file_metadata).</source>
+				<target>Zusätzliche eigenständige Tabellen: kommagetrennte Liste versteckter TCA-Tabellen, die unabhängig freigegeben werden statt in übergeordnete Inline-Relationen eingebettet zu werden (z. B. sys_file_metadata).</target>
+			</trans-unit>
 			<trans-unit id="extconf.fileSandboxRoot">
 				<source>MCP file sandbox root folder. Use a combined identifier such as "1:/mcp/". This defaults to fileadmin/mcp/ in the default storage.</source>
 				<target>MCP-Datei-Sandbox-Stammverzeichnis. Verwenden Sie einen kombinierten Bezeichner wie "1:/mcp/". Standardmäßig wird fileadmin/mcp/ im Standard-Speicher verwendet.</target>

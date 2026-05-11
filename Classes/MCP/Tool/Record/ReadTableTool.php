@@ -385,7 +385,8 @@ final class ReadTableTool extends AbstractRecordTool
             // 2. The UID is a live UID (for existing records with workspace versions)
 
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0) {
+            $tableSupportsWorkspaces = !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false);
+            if ($currentWorkspace > 0 && $tableSupportsWorkspaces) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $queryBuilder->andWhere(
@@ -450,7 +451,8 @@ final class ReadTableTool extends AbstractRecordTool
         if ($uid !== null) {
             // Apply the same UID filtering logic for count query
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0) {
+            $tableSupportsWorkspaces = !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false);
+            if ($currentWorkspace > 0 && $tableSupportsWorkspaces) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $countQueryBuilder->andWhere(
@@ -1184,9 +1186,9 @@ final class ReadTableTool extends AbstractRecordTool
             return;
         }
 
-        // Check if foreign table is hidden (dependent records that should be embedded)
-        $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-        $isHiddenTable = !empty($foreignTableTCA['ctrl']['hideTable']);
+        // Hidden TCA tables are normally dependent records. Some complex
+        // tables, such as sys_file_metadata, are configured as standalone.
+        $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
         // Get all related records, filtering by foreign_match_fields if present
         // (e.g., sys_file_reference uses tablenames/fieldname to distinguish which field owns each reference)
