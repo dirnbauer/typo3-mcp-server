@@ -20,6 +20,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
     use GetServiceTrait;
 
     private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
+    private const TINY_PDF_BASE64 = 'JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0NvdW50IDA+PmVuZG9iagp0cmFpbGVyPDwvUm9vdCAxIDAgUj4+CiUlRU9GCg==';
 
     protected array $coreExtensionsToLoad = [
         'workspaces',
@@ -195,6 +196,53 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
         self::assertIsArray($metadata);
         self::assertSame(1, (int)$metadata['width']);
         self::assertSame(1, (int)$metadata['height']);
+    }
+
+    public function testFileFieldKeepsPdfDownloadsAttachableWithoutImageDimensions(): void
+    {
+        $upload = $this->getService(UploadFileTool::class);
+        $uploadResult = $upload->execute([
+            'path' => 'docs/download.pdf',
+            'content_base64' => self::TINY_PDF_BASE64,
+            'metadata' => [
+                'title' => 'Download PDF',
+            ],
+        ]);
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        $uploadJson = json_decode((string)$uploadResult->content[0]->text, true);
+        self::assertIsArray($uploadJson);
+        $fileUid = (int)($uploadJson['uid'] ?? 0);
+        self::assertGreaterThan(0, $fileUid);
+        self::assertSame('application/pdf', (string)($uploadJson['mimeType'] ?? ''));
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'textmedia',
+                'header' => 'Content with PDF download',
+                'assets' => [
+                    ['uid_local' => $fileUid, 'title' => 'Download PDF'],
+                ],
+            ],
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $metadataConnection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_file_metadata');
+        $metadata = $metadataConnection->createQueryBuilder()
+            ->select('width', 'height')
+            ->from('sys_file_metadata')
+            ->where('file = :file')
+            ->setParameter('file', $fileUid)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        self::assertIsArray($metadata);
+        self::assertSame(0, (int)$metadata['width']);
+        self::assertSame(0, (int)$metadata['height']);
     }
 
     public function testFileFieldEmptyArrayCreatesNoReferences(): void
