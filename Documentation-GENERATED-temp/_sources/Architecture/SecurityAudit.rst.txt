@@ -97,6 +97,34 @@ Accepted risks
    ``localUnsafeMode = off`` so even an accidentally-set DDEV env var
    cannot relax the safety nets.
 
+2026-05-03 (local-mode UX fix: outbound HTTP relaxes too)
+==========================================================
+
+Issue
+-----
+
+Local-mode (DDEV / ``localUnsafeMode=on``) relaxed the workspace-only
+writes and the file sandbox, but did not relax the capability
+manifest's ``network.outbound`` allowlist or the SSRF private-IP
+filter inside ``UploadFileFromUrl``. Developers reported that fetching
+images from Unsplash failed in DDEV with "no permission to network this
+resource", contradicting the README claim that "everything is allowed
+in DDEV".
+
+Fix
+---
+
+``LocalModeService::allowsUnrestrictedOutbound()`` added; both gates
+short-circuit when it returns true:
+
+- ``CapabilityManifestService::assertHostAllowed()`` returns immediately.
+- ``UploadFileFromUrlTool::validateUrl()`` skips the
+  ``gethostbynamel()`` + private-IP filter.
+
+Production behavior is unchanged: with the default
+``localUnsafeMode=auto`` outside DDEV / Development context the new
+method returns false and the strict gates remain active.
+
 2026-05-03 (security-audit skill pass — OWASP / CWE)
 =====================================================
 

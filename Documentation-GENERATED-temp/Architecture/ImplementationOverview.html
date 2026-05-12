@@ -4,7 +4,7 @@
     <title>Implementation overview
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
@@ -175,16 +175,16 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="implementation-overview">
             <h1>Implementation overview<a class="headerlink" href="#implementation-overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="overview">
             <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension is organized around a small MCP runtime with a set of TYPO3-aware
 tool classes. The important design goal is that MCP clients see stable,
 editor-friendly behavior while TYPO3 keeps control over permissions,
@@ -193,11 +193,11 @@ workspaces, TCA, language overlays, and file access.</p>
     </section>
             <section class="section" id="request-flow">
             <h2>Request flow<a class="headerlink" href="#request-flow" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Remote MCP requests follow this path:</p>
 
-            
-    
+
+
 <ol start="1" type="1">
     <li value="1"><code>Classes/Middleware/McpServerMiddleware.php</code> intercepts the <code>/mcp</code> path
 before TYPO3&#039;s site resolver and dispatches to <code class="code-inline code-inline-long"
@@ -236,14 +236,14 @@ requests.</li>
 encoded into text content.</li>
 </ol>
 
-            
+
     <p>Local stdio requests skip the HTTP/OAuth layer and start at
 <code>Classes/Command/McpServerCommand.php</code>.</p>
 
     </section>
             <section class="section" id="mcp-ergonomics-external-guidance">
             <h2>MCP ergonomics (external guidance)<a class="headerlink" href="#mcp-ergonomics-external-guidance" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Tool design is checked against the public <code class="code-inline" translate="no">mcp-<wbr>builder</code> skill (Anthropic,
 <a href="https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md">https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md</a> ):
 clear descriptions, JSON Schema properties, the four MCP tool <strong>annotations</strong>
@@ -280,13 +280,13 @@ on every tool, pagination hints where results are bounded (e.g. <code>ReadTable<
 returns a <code>CallToolResult</code> with <code>isError</code> instead of throwing (so the client
 gets a normal tool error, not a JSON-RPC internal error).</p>
 
-            
+
     <p><strong>Naming:</strong> Tools use PascalCase names aligned with TYPO3 concepts
 (<code>ReadTable</code>, <code>GetPageTree</code>, …), not a <code>prefix_action</code> pattern; the
 official tools table in <a href="../Tools/Index.html">Tools</a> lists names and access mode for
 LLM discoverability.</p>
 
-            
+
     <p><strong>Structured outputs:</strong> The bundled PHP MCP SDK does not advertise
 <code>outputSchema</code> on tool results; outputs remain JSON-in-text (or plain text)
 as documented in <a href="SecurityAudit.html">Security audit</a>.</p>
@@ -296,10 +296,10 @@ as documented in <a href="SecurityAudit.html">Security audit</a>.</p>
             <h2>Main layers<a class="headerlink" href="#main-layers" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="http-and-backend-module-layer">
             <h3>HTTP and backend module layer<a class="headerlink" href="#http-and-backend-module-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p><code>Classes/Http/</code> contains:</p>
 
-            
+
 
 <ul>
     <li class="dash">the MCP endpoint (<code>McpEndpoint</code>), which handles OAuth validation, backend
@@ -313,7 +313,7 @@ calls stays in-memory for the current request only.</li>
     <li class="dash">shared CORS helpers</li>
 </ul>
 
-            
+
     <p><code>Classes/Controller/McpServerModuleController.php</code> powers the backend module
 under <span class="guilabel">User &gt; MCP Server</span>. That module is the operator-facing control
 surface for endpoint discovery, client setup, token management, and current
@@ -322,10 +322,10 @@ workspace information.</p>
     </section>
             <section class="section" id="mcp-runtime-layer">
             <h3>MCP runtime layer<a class="headerlink" href="#mcp-runtime-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The runtime itself is intentionally thin:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>McpServerFactory</code> wires the MCP SDK server and registers the
@@ -346,10 +346,10 @@ context before the concrete tool runs</li>
     </section>
             <section class="section" id="tool-layer">
             <h3>Tool layer<a class="headerlink" href="#tool-layer" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The public MCP surface lives in <code>Classes/MCP/Tool/</code>:</p>
 
-            
+
 
 <ul>
     <li class="dash">page navigation and page context tools</li>
@@ -360,10 +360,10 @@ context before the concrete tool runs</li>
     <li class="dash">optional x402 monetization helpers</li>
 </ul>
 
-            
+
     <p><code>Classes/MCP/Tool/Record/</code> contains the TCA-driven record tools:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>ListTables</code></li>
@@ -378,7 +378,7 @@ context before the concrete tool runs</li>
     <li class="dash"><code>CopyContent</code> / <code>CreateSite</code> / <code>ManageRedirects</code></li>
 </ul>
 
-            
+
     <p>These tools are deliberately generic. They are not built around one specific
 extension. Instead they derive their behavior from TYPO3 TCA and the current
 backend user&#039;s permissions.</p>
@@ -389,39 +389,39 @@ backend user&#039;s permissions.</p>
             <h2>Shared services<a class="headerlink" href="#shared-services" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <dl>
                         <dt><code>WorkspaceContextService</code></dt>
-        
+
         <dd>Keeps the current non-live workspace by default, switches to an explicit
 workspace when requested, otherwise selects a writable workspace, or creates
 an MCP workspace if none exists and the user is allowed to create one.</dd>
                                 <dt><code>TableAccessService</code></dt>
-        
+
         <dd>The central gatekeeper for table and field visibility. It combines TCA,
 backend permissions, workspace capability checks, read-only restrictions,
 and TSconfig-based field disabling.</dd>
                                 <dt><code>LanguageService</code></dt>
-        
+
         <dd>Maps TYPO3 site languages to ISO codes. Tool schemas use this service to
 decide whether to expose language parameters at all.</dd>
                                 <dt><code>McpFileSandboxService</code></dt>
-        
+
         <dd>Restricts file operations to a configured sandbox root such as <code>1:/mcp/</code>
 and computes workspace-specific upload folders when that feature is enabled.</dd>
                                 <dt><code>SiteInformationService</code></dt>
-        
+
         <dd>Resolves available domains and generates page URLs so page-oriented tools
 can work with URLs as well as page UIDs.</dd>
                                 <dt><code>OAuthService</code></dt>
-        
+
         <dd>Stores authorization codes, access tokens, and refresh tokens; hashes tokens
 before database storage; validates PKCE; and tracks token usage metadata.</dd>
             </dl>
     </section>
             <section class="section" id="typo3-core-integration">
             <h2>TYPO3 core integration<a class="headerlink" href="#typo3-core-integration" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension tries to stay close to TYPO3 core behavior:</p>
 
-            
+
 
 <ul>
     <li class="dash">writes use <code>DataHandler</code></li>
@@ -430,7 +430,7 @@ before database storage; validates PKCE; and tracks token usage metadata.</dd>
     <li class="dash">file operations go through TYPO3 FAL</li>
 </ul>
 
-            
+
     <p>Where TYPO3 core does not provide transparent MCP behavior directly, the
 extension adds a small adaptation layer instead of replacing TYPO3 wholesale.
 The main example is workspace transparency.</p>
@@ -440,15 +440,15 @@ The main example is workspace transparency.</p>
             <h2>Transparency contracts<a class="headerlink" href="#transparency-contracts" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="workspace-transparency">
             <h3>Workspace transparency<a class="headerlink" href="#workspace-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>MCP clients should not have to understand TYPO3 version rows or workspace
 overlay internals. The implementation therefore keeps client-facing UIDs stable
 and resolves workspace rows internally.</p>
 
-            
+
     <p>Important pieces:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>WorkspaceDeletePlaceholderRestriction</code> hides live rows that are deleted in
@@ -457,25 +457,25 @@ the active workspace</li>
     <li class="dash">read and search results are normalized back to stable live-facing UIDs</li>
 </ul>
 
-            
+
     <p>See <a href="WorkspaceTransparency.html">Workspace transparency</a> for the detailed rationale.</p>
 
     </section>
             <section class="section" id="language-visibility">
             <h3>Language visibility<a class="headerlink" href="#language-visibility" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Language handling is intentionally conditional. If an instance has only one
 language, tools do not expose translation-oriented parameters just for the sake
 of symmetry. When multiple languages exist, tools expose ISO-code based
 language parameters so MCP clients do not need numeric language IDs.</p>
 
-            
+
     <p>See <a href="LanguageOverlays.html">Language overlays</a> for the overlay strategy.</p>
 
     </section>
             <section class="section" id="file-safety-model">
             <h3>File safety model<a class="headerlink" href="#file-safety-model" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>File tools are sandboxed to the MCP file sandbox, but TYPO3 physical files are
 not workspace-versioned. The implementation does not hide that fact. Workspace
 subfolders only reduce collisions and keep draft-oriented uploads grouped more
@@ -485,10 +485,10 @@ predictably.</p>
     </section>
             <section class="section" id="tests-and-quality">
             <h2>Tests and quality<a class="headerlink" href="#tests-and-quality" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The repository uses several test layers:</p>
 
-            
+
 
 <ul>
     <li class="dash">unit tests for focused service behavior</li>
@@ -499,7 +499,7 @@ translations, file handling, and extension compatibility</li>
 multi-step workflows</li>
 </ul>
 
-            
+
     <p>The functional test surface is broad enough that the documentation should be
 read as executable behavior, not only as product copy. When tool behavior
 changes, the corresponding functional tests are expected to change with it.</p>
@@ -509,7 +509,7 @@ changes, the corresponding functional tests are expected to change with it.</p>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="Index.html"
@@ -613,7 +613,7 @@ changes, the corresponding functional tests are expected to change with it.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

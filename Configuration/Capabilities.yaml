@@ -93,6 +93,7 @@ capabilities:
     ImportFromUrl:      [database:write, file:write]
     ManageRedirects:    [site:write]
     CreateSite:         [site:write]
+    SiteSet:            [site:write]
     GetSystemLog:       [log:read]
     ContentAudit:       [database:read]
     ListWorkspaces:     [workspace:read]

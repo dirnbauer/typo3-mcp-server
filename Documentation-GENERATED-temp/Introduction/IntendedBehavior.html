@@ -4,7 +4,7 @@
     <title>Intended behavior
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Introduction</a></li>
@@ -175,25 +175,25 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="intended-behavior-1" data-rst-anchor="intended-behavior">
             <a id="intended-behavior"></a>
             <h1>Intended behavior<a class="headerlink" href="#intended-behavior-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
-            
+
     <p>This page is the product-level specification for the maintained TYPO3 MCP
 Server line. The goal is not only to describe which tools exist, but also how
 they are expected to behave when an MCP client uses them correctly.</p>
 
             <section class="section" id="core-contract">
             <h2>Core contract<a class="headerlink" href="#core-contract" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension is intended to behave like this:</p>
 
-            
+
 
 <ul>
     <li class="dash">MCP clients discover the available surface through <code>tools/list</code> instead of
@@ -212,10 +212,10 @@ errors instead of generic internal failures</li>
             <h2>Record behavior<a class="headerlink" href="#record-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="workspace-first-writes">
             <h3>Workspace-first writes<a class="headerlink" href="#workspace-first-writes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Record-backed modifications are expected to stay behind TYPO3 workspaces:</p>
 
-            
+
 
 <ul>
     <li class="dash">direct live edits are not the normal MCP write path</li>
@@ -230,10 +230,10 @@ internal workspace version row underneath</li>
     </section>
             <section class="section" id="read-transparency">
             <h3>Read transparency<a class="headerlink" href="#read-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Read tools are expected to hide TYPO3 workspace internals:</p>
 
-            
+
 
 <ul>
     <li class="dash">delete placeholders should not leak into normal client-facing reads</li>
@@ -244,10 +244,10 @@ internal workspace version row underneath</li>
     </section>
             <section class="section" id="type-and-schema-behavior">
             <h3>Type and schema behavior<a class="headerlink" href="#type-and-schema-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The MCP server is intended to stay TCA-first:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>GetTableSchema</code> explains fields, types, palettes, visibility, and
@@ -262,11 +262,11 @@ raw database column</li>
     </section>
             <section class="section" id="file-behavior">
             <h2>File behavior<a class="headerlink" href="#file-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The file tools intentionally do <strong>not</strong> promise workspace versioning for
 physical files:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>BrowseFiles</code>, <code>ReadFileMetadata</code>, <code>WriteFile</code>, <code>UploadFile</code>, and
@@ -282,10 +282,10 @@ fields</li>
     </section>
             <section class="section" id="import-review-and-execution">
             <h2>Import, review, and execution<a class="headerlink" href="#import-review-and-execution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The import tools are intended to support review-first editorial workflows:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>ImportContent</code> can analyze text, Markdown, or HTML and propose content
@@ -301,11 +301,11 @@ previews so irreversible steps require explicit confirmation</li>
     </section>
             <section class="section" id="optional-capability-families">
             <h2>Optional capability families<a class="headerlink" href="#optional-capability-families" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Some tools are intentionally optional because they depend on TYPO3 packages or
 instance configuration that may not exist everywhere:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>ManageRedirects</code> requires the <code>sys_redirect</code> table to be available; when
@@ -323,11 +323,11 @@ instead of acting like general shell access</li>
     </section>
             <section class="section" id="verification-expectations">
             <h2>Verification expectations<a class="headerlink" href="#verification-expectations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>This repository intends the specification, implementation, and tests to move
 together:</p>
 
-            
+
 
 <ul>
     <li class="dash">functional tests should cover behavior that is documented here</li>
@@ -342,7 +342,7 @@ deterministic unit or functional coverage</li>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="Index.html"
@@ -446,7 +446,7 @@ deterministic unit or functional coverage</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

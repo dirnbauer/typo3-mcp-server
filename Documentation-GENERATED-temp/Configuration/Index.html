@@ -4,7 +4,7 @@
     <title>Configuration
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,32 +167,32 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
                     <li aria-current="page"  class="breadcrumb-item  active">Configuration</li>
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="configuration-1" data-rst-anchor="configuration">
             <a id="configuration"></a>
             <h1>Configuration<a class="headerlink" href="#configuration-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="backend-module">
             <h2>Backend module<a class="headerlink" href="#backend-module" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The MCP Server module is available under <span class="guilabel">User &gt; MCP Server</span> in the
 TYPO3 backend.</p>
 
-            
+
     <p>The module is the main control center for editors and integrators. From there
 you can:</p>
 
-            
+
 
 <ul>
     <li class="dash">View the MCP endpoint URL</li>
@@ -205,15 +205,15 @@ you can:</p>
     </section>
             <section class="section" id="oauth-setup">
             <h2>OAuth setup<a class="headerlink" href="#oauth-setup" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension supports OAuth 2.1 with PKCE for authentication. Dynamic
 client discovery is exposed through the well-known endpoints used by MCP
 clients.</p>
 
-            
+
     <p>Access tokens are:</p>
 
-            
+
 
 <ul>
     <li class="dash">stored as hashes in the database</li>
@@ -221,7 +221,7 @@ clients.</p>
     <li class="dash">revocable through the backend module</li>
 </ul>
 
-            
+
     <p>For token-authenticated HTTP requests, the extension also initializes an
 anonymous in-memory TYPO3 backend user session for the lifetime of the request.
 This keeps <code>DataHandler</code> update paths that touch session state working
@@ -230,13 +230,13 @@ correctly, without creating a persistent backend login.</p>
     </section>
             <section class="section" id="workspace-behavior">
             <h2>Workspace behavior<a class="headerlink" href="#workspace-behavior" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>All record tools are workspace-aware.</p>
 
-            
+
     <p>Default behavior:</p>
 
-            
+
 
 <ul>
     <li class="dash">if the user is already in a non-live workspace, that workspace is kept</li>
@@ -244,10 +244,10 @@ correctly, without creating a persistent backend login.</p>
     <li class="dash">if needed, the extension can create an MCP workspace for the user</li>
 </ul>
 
-            
+
     <p>Explicit behavior:</p>
 
-            
+
 
 <ul>
     <li class="dash">tools that operate on records accept <code>workspace_id</code></li>
@@ -256,25 +256,25 @@ correctly, without creating a persistent backend login.</p>
 details</li>
 </ul>
 
-                
+
 <div class="admonition important" role="alert">
     <p class="admonition-title">Important</p>
-        
+
     <p>Live records are not directly edited through the record tools.</p>
 
 </div>
     </section>
             <section class="section" id="file-sandbox-configuration">
             <h2>File sandbox configuration<a class="headerlink" href="#file-sandbox-configuration" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension uses a dedicated file sandbox so MCP file tools do not receive
 unrestricted <code>fileadmin</code> access.</p>
 
-            
+
     <p>By default, the sandbox root is:</p>
 
             <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs plaintext">1:/mcp/</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -283,11 +283,11 @@ unrestricted <code>fileadmin</code> access.</p>
         <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
     </div>
 </div>
-            
+
     <p>This usually maps to:</p>
 
             <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs plaintext">fileadmin/mcp/</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -330,7 +330,7 @@ unrestricted <code>fileadmin</code> access.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>Combined folder identifier that defines the MCP file sandbox root.</p>
 
     <p>All MCP file tools are restricted to this root. Use a combined identifier,
@@ -371,13 +371,13 @@ for example <code>1:/mcp/</code> or <code>1:/ai-content/</code>.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>When enabled, <code>UploadFile</code> stores uploads below workspace-specific
 subfolders inside the sandbox root.</p>
 
     <p>Example:</p>
 <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs plaintext">1:/mcp/workspaces/ws-3/images/</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -421,14 +421,14 @@ subfolders inside the sandbox root.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>When enabled, the <code>/mcp</code> endpoint accepts a bearer token in a
 <code>?token=…</code> query string instead of the <code>Authorization: Bearer</code>
 header.</p>
-    
+
 <div class="admonition warning" role="alert">
     <p class="admonition-title">Warning</p>
-        
+
     <p>Disabled by default on purpose. Query-string tokens leak into reverse
 proxy logs, access logs, browser history, and referrer headers. Only
 turn this on for legacy clients that cannot send the Authorization
@@ -470,7 +470,7 @@ header, and rotate tokens regularly.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>Controls the lightweight <code>?test=auth</code> diagnostic used by the backend
 module to verify whether a reverse proxy strips the <code>Authorization</code>
 header.</p>
@@ -514,24 +514,29 @@ hiding the associated health-check indicator when disabled.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>Local-development escape hatch. When enabled (<code>on</code>, or <code>auto</code> with a
-DDEV / Development context detected) the workspace-only-writes and
-file-sandbox safety nets relax:</p>
+DDEV / Development context detected) the workspace-only-writes,
+file-sandbox, and outbound-HTTP safety nets relax:</p>
 
 
 <ul>
     <li class="dash">record writes accept <code>workspace_id: 0</code> (live writes)</li>
     <li class="dash">file tools reach any storage / folder, not only <code>fileSandboxRoot</code></li>
+    <li class="dash">outbound HTTP (<code>UploadFileFromUrl</code>, <code>RenderRecord</code>) bypasses
+the manifest&#039;s <code>network.outbound</code> allowlist AND the SSRF
+private-IP filter — so DDEV&#039;s <code>*.ddev.site</code> (private IPs) and
+fetches from public CDNs (Unsplash, Pixabay, …) both work without
+editing <code>Capabilities.yaml</code></li>
 </ul>
 
     <p>Detection logic looks at <code>IS_DDEV_PROJECT</code>, <code>DDEV_PROJECT</code>,
 <code>DDEV_HOSTNAME</code>, <code>DDEV_TLD</code> env vars and the TYPO3 application
 context.</p>
-    
+
 <div class="admonition warning" role="alert">
     <p class="admonition-title">Warning</p>
-        
+
     <p>Setting this to <code>on</code> outside a trusted local environment removes
 the most important MCP safety nets. Production sites should leave
 this at <code>auto</code> (the default) — there should be no DDEV vars and no
@@ -578,7 +583,7 @@ file-sandbox checks are skipped.</p>
                         </dd>
                     </dl>
                         <div class="confval-description">
-                
+
     <p>Reject MCP tool calls whose required subsystems are not declared in
 <code>Configuration/Capabilities.yaml</code>. Also enforces the
 <code>network.outbound</code> allowlist for <code>UploadFileFromUrl</code> and
@@ -594,7 +599,7 @@ registered tool plus arbitrary outbound HTTP.</p>
     </section>
             <section class="section" id="capability-manifest">
             <h2>Capability manifest<a class="headerlink" href="#capability-manifest" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The shipped <code>Configuration/Capabilities.yaml</code> declares the subsystems
 this MCP exposes (<code>database:read</code>, <code>database:write</code>, <code>file:write</code>,
 <code>render:frontend</code>, …) and maps each tool to the subsystems it requires.
@@ -602,11 +607,11 @@ At call time, <code>AbstractTool::execute()</code> rejects tools whose required
 subsystems aren&#039;t declared, and <code>CapabilityManifestService::assertHostAllowed()</code>
 rejects outbound HTTP to hosts not in <code>network.outbound</code>.</p>
 
-            
+
     <p>Inspect the active manifest from the CLI:</p>
 
             <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs bash">ddev <span class="hljs-built_in">exec</span> ./vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -615,10 +620,10 @@ rejects outbound HTTP to hosts not in <code>network.outbound</code>.</p>
         <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
     </div>
 </div>
-            
+
     <p>To <strong>harden</strong> an installation:</p>
 
-            
+
 
 <ul>
     <li class="dash">Remove a subsystem (e.g. <code>file:write</code>) from <code>capabilities.subsystems</code>
@@ -629,10 +634,10 @@ domains your editors actually need (<code>images.unsplash.com</code>,
     <li class="dash">Remove <code>database:write</code> to make the MCP read-only.</li>
 </ul>
 
-            
+
     <p>To <strong>soften</strong> for development:</p>
 
-            
+
 
 <ul>
     <li class="dash">Add <code>- &#039;*&#039;</code> under <code>network.outbound</code> to allow public-web image
@@ -643,10 +648,10 @@ uploads (the IP-range SSRF check still blocks private addresses).</li>
     </section>
             <section class="section" id="why-the-sandbox-matters">
             <h2>Why the sandbox matters<a class="headerlink" href="#why-the-sandbox-matters" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The sandbox improves safety and maintainability:</p>
 
-            
+
 
 <ul>
     <li class="dash">AI-generated files stay inside a known directory</li>
@@ -659,17 +664,17 @@ assets</li>
     </section>
             <section class="section" id="file-safety-notes">
             <h2>File safety notes<a class="headerlink" href="#file-safety-notes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-                
+
 <div class="admonition warning" role="alert">
     <p class="admonition-title">Warning</p>
-        
+
     <p>TYPO3 does not workspace-version physical files.</p>
 
 </div>
-            
+
     <p>This remains true even with the sandbox:</p>
 
-            
+
 
 <ul>
     <li class="dash">uploaded files exist immediately once stored</li>
@@ -678,17 +683,17 @@ assets</li>
 workspaces</li>
 </ul>
 
-            
+
     <p>Use the sandbox and workspace upload folders to reduce risk, not to simulate
 physical file versioning.</p>
 
     </section>
             <section class="section" id="configuration-checklist">
             <h2>Configuration checklist<a class="headerlink" href="#configuration-checklist" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Use this checklist when rolling out the extension:</p>
 
-            
+
 
 <ul>
     <li class="dash">confirm the TYPO3 base URL is correct for remote MCP clients</li>
@@ -704,7 +709,7 @@ physical file versioning.</p>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="../Installation/Index.html"
@@ -808,7 +813,7 @@ physical file versioning.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

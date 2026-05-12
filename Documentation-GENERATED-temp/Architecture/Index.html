@@ -4,7 +4,7 @@
     <title>Architecture
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,46 +167,46 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
                     <li aria-current="page"  class="breadcrumb-item  active">Architecture</li>
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="architecture-1" data-rst-anchor="architecture">
             <a id="architecture"></a>
             <h1>Architecture<a class="headerlink" href="#architecture-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
-            
+
             <section class="section" id="design-decisions">
             <h2>Design decisions<a class="headerlink" href="#design-decisions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <dl>
                         <dt>Workspace-first</dt>
-        
+
         <dd>Every write operation goes through a TYPO3 workspace. Live data is never
 directly modified. This gives editors full control over what gets published.</dd>
                                 <dt>Transparent workspaces</dt>
-        
+
         <dd>The workspace concept is invisible to the MCP client. Tools automatically
 select an appropriate workspace. The client sees records as if workspaces
 don&#039;t exist -- live and workspace data are merged transparently.</dd>
                                 <dt>TCA-driven access</dt>
-        
+
         <dd>Table and field access is derived from TCA configuration, not hardcoded
 lists. When a new extension is installed, its tables become available
 automatically.</dd>
                                 <dt>Language overlay</dt>
-        
+
         <dd>Language overlays use TYPO3&#039;s <code>PageRepository</code> API. Workspace overlays
 use a custom implementation for transparency. See
 <a href="LanguageOverlays.html">Language overlays</a> for details.</dd>
                                 <dt>MCP tool ergonomics</dt>
-        
+
         <dd>Tool schemas, annotations, pagination hints, and error shaping follow MCP
 best-practice guidance (see the public <code>mcp-builder</code> skill). Details:
 <a href="ImplementationOverview.html">Implementation overview</a> (“MCP ergonomics”) and the tools overview
@@ -215,10 +215,10 @@ best-practice guidance (see the public <code>mcp-builder</code> skill). Details:
     </section>
             <section class="section" id="implementation-layers">
             <h2>Implementation layers<a class="headerlink" href="#implementation-layers" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The repository is split into a few deliberate layers:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>Classes/Http/</code> for the remote MCP endpoint and OAuth/discovery endpoints.
@@ -234,17 +234,17 @@ site services</li>
 formatting and workspace-specific query behavior</li>
 </ul>
 
-            
+
     <p>See <a href="ImplementationOverview.html">Implementation overview</a> for the request flow and the role of the
 main services.</p>
 
     </section>
             <section class="section" id="file-handling-and-sandboxing">
             <h2>File handling and sandboxing<a class="headerlink" href="#file-handling-and-sandboxing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Physical files in TYPO3 (FAL) are <strong>not</strong> workspace-versioned:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>sys_file</code> records are read-only through MCP</li>
@@ -254,14 +254,14 @@ to attach existing files to content elements</li>
     <li class="dash">Folder-based file collections are not workspace-safe; prefer static collections</li>
 </ul>
 
-            
+
     <p>To reduce risk, MCP file tools are restricted to a configurable file sandbox.</p>
 
-            
+
     <p>Default sandbox root:</p>
 
             <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs plaintext">1:/mcp/</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -270,11 +270,11 @@ to attach existing files to content elements</li>
         <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
     </div>
 </div>
-            
+
     <p>Optional workspace upload folders:</p>
 
             <div class="code-block-wrapper" translate="no">
-            
+
     <pre class="code-block"><code class="hljs plaintext">1:/mcp/workspaces/ws-&lt;id&gt;/</code></pre>
     <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
             <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
@@ -283,7 +283,7 @@ to attach existing files to content elements</li>
         <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
     </div>
 </div>
-            
+
     <p>This does not change TYPO3&#039;s physical file semantics. It only limits where MCP
 is allowed to work and helps separate draft-oriented uploads from other file
 areas.</p>
@@ -291,13 +291,13 @@ areas.</p>
     </section>
             <section class="section" id="security">
             <h2>Security<a class="headerlink" href="#security" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>See <a href="SecurityAudit.html">Security audit</a> for the security notes and accepted risks.</p>
 
-            
+
     <p>Key security measures:</p>
 
-            
+
 
 <ul>
     <li class="dash">Access tokens are SHA-256 hashed before database storage</li>
@@ -319,7 +319,7 @@ file-sandbox safety nets — never authentication or capability policy.</li>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="../Testing/E2eCiDebugging.html"
@@ -423,7 +423,7 @@ file-sandbox safety nets — never authentication or capability policy.</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

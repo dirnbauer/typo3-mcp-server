@@ -376,6 +376,12 @@
             "Architecture\/CapabilityManifest.html#enforcement-points",
             "Enforcement points"
         ],
+        "local-mode-escape-hatch": [
+            "-",
+            "-",
+            "Architecture\/CapabilityManifest.html#local-mode-escape-hatch",
+            "Local-mode escape hatch"
+        ],
         "bypassing-the-manifest": [
             "-",
             "-",
@@ -681,6 +687,24 @@
             "-",
             "Architecture\/SecurityAudit.html#accepted-risks",
             "Accepted risks"
+        ],
+        "2026-05-03-local-mode-ux-fix-outbound-http-relaxes-too": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#2026-05-03-local-mode-ux-fix-outbound-http-relaxes-too",
+            "2026-05-03 (local-mode UX fix: outbound HTTP relaxes too)"
+        ],
+        "issue": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#issue",
+            "Issue"
+        ],
+        "fix": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#fix",
+            "Fix"
         ],
         "2026-05-03-security-audit-skill-pass-owasp-cwe": [
             "-",
@@ -1515,6 +1539,12 @@
             "-",
             "Tools\/Index.html#createsite",
             "CreateSite"
+        ],
+        "siteset": [
+            "-",
+            "-",
+            "Tools\/Index.html#siteset",
+            "SiteSet"
         ],
         "extension-management": [
             "-",

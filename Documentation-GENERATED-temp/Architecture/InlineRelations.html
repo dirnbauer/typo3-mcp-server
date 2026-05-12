@@ -4,7 +4,7 @@
     <title>Inline relations
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
@@ -175,16 +175,16 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="inline-relations">
             <h1>Inline relations<a class="headerlink" href="#inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="overview">
             <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>TYPO3 inline relations, also known as IRRE, allow parent-child record
 structures. The MCP tools support reading and writing inline relations with a
 workspace-aware model and a few deliberate limitations.</p>
@@ -194,14 +194,14 @@ workspace-aware model and a few deliberate limitations.</p>
             <h2>Relation types<a class="headerlink" href="#relation-types" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="independent-inline-relations">
             <h3>Independent inline relations<a class="headerlink" href="#independent-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>These relations point to records that also exist independently, for example
 <code>tt_content</code>. In read results they are usually represented as arrays of UIDs.</p>
 
     </section>
             <section class="section" id="embedded-inline-relations">
             <h3>Embedded inline relations<a class="headerlink" href="#embedded-inline-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>These relations point to child records that primarily exist under a parent, for
 example some dependent extension tables. In read results they are typically
 returned as embedded record arrays.</p>
@@ -212,10 +212,10 @@ returned as embedded record arrays.</p>
             <h2>Current write support<a class="headerlink" href="#current-write-support" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="independent-relations">
             <h3>Independent relations<a class="headerlink" href="#independent-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Independent relations can be handled in two useful ways:</p>
 
-            
+
 
 <ul>
     <li class="dash">Update the child record&#039;s foreign field directly</li>
@@ -225,10 +225,10 @@ returned as embedded record arrays.</p>
     </section>
             <section class="section" id="embedded-relations">
             <h3>Embedded relations<a class="headerlink" href="#embedded-relations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Embedded child creation works through a two-step approach:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>DataHandler</code> creates the child records</li>
@@ -240,17 +240,17 @@ does not manage that relation field directly through TCA columns</li>
     </section>
             <section class="section" id="file-references">
             <h2>File references<a class="headerlink" href="#file-references" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p><code>sys_file_reference</code> records are now supported through the <code>WriteTable</code>
 tool. When a file field (TCA type <code>file</code>) receives an array of
 <code>sys_file</code> UIDs or objects with UID and metadata, the extension creates
 <code>sys_file_reference</code> records and wires them to the parent record through
 <code>DataHandler</code>. File references are workspace-versioned like other records.</p>
 
-                
+
 <div class="admonition note" role="alert">
     <p class="admonition-title">Note</p>
-        
+
     <p><strong>Workspace version rows and ``AttachImage``</strong>. In a draft workspace, a live
 parent record (for example <code>tt_content</code> or an inline child such as
 <code>items</code>) is often represented by a separate <em>version</em> row
@@ -269,11 +269,11 @@ in the backend and on the site even though tools report success.</p>
     </section>
             <section class="section" id="automatic-workspace-handling">
             <h2>Automatic workspace handling<a class="headerlink" href="#automatic-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Inline relation reads and writes use the same workspace context service as the
 rest of the extension:</p>
 
-            
+
 
 <ul>
     <li class="dash">The current non-live workspace is kept when one is already active;
@@ -286,7 +286,7 @@ needed</li>
     </section>
             <section class="section" id="best-practices">
             <h2>Best practices<a class="headerlink" href="#best-practices" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">Prefer the foreign-field method for simple independent relations</li>
@@ -299,7 +299,7 @@ embedded</li>
     </section>
             <section class="section" id="future-improvements">
             <h2>Future improvements<a class="headerlink" href="#future-improvements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">Bulk updates for relation management</li>
@@ -312,7 +312,7 @@ embedded</li>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="LanguageOverlays.html"
@@ -416,7 +416,7 @@ embedded</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

@@ -144,7 +144,7 @@ Subsystem catalog
      - ``InstallExtensionTool`` (admin-only). Disabled by removing this
        entry from the manifest.
    * - ``site:write``
-     - ``CreateSite``, ``ManageRedirects``. Admin-only.
+     - ``CreateSite``, ``SiteSet``, ``ManageRedirects``. Admin-only.
    * - ``render:frontend``
      - Outbound HTTP to a TYPO3 site base for rendered HTML
        (``RenderRecord``). Network policy still applies.

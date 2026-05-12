@@ -4,7 +4,7 @@
     <title>Introduction
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,39 +167,39 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
                     <li aria-current="page"  class="breadcrumb-item  active">Introduction</li>
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="introduction-1" data-rst-anchor="introduction">
             <a id="introduction"></a>
             <h1>Introduction<a class="headerlink" href="#introduction-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="what-this-extension-does">
             <h2>What this extension does<a class="headerlink" href="#what-this-extension-does" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p><strong>Thank you</strong> to <a href="https://github.com/hauptsacheNet">hauptsacheNet</a> and Marco
 Pfeiffer for the original TYPO3 MCP Server. This documentation describes a
 maintained line of that work, including <strong>updates and additional features</strong>;
 some of the newer surface is <strong>experimental</strong> and may change—see the project
 <code>README.md</code> for rollout guidance.</p>
 
-            
+
     <p>TYPO3 MCP Server exposes TYPO3 through the
 <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> so AI assistants
 can work with structured TYPO3 data instead of scraping backend HTML.</p>
 
-            
+
     <p>It is built for editor-facing use cases such as:</p>
 
-            
+
 
 <ul>
     <li class="dash">creating or updating content records</li>
@@ -209,26 +209,26 @@ can work with structured TYPO3 data instead of scraping backend HTML.</p>
     <li class="dash">browsing and managing files inside a dedicated MCP file sandbox</li>
 </ul>
 
-            
+
     <p>The extension is not a shortcut around TYPO3. It keeps TYPO3 in control.</p>
 
-            
+
     <p>Operator setup (endpoint URL, OAuth clients, tokens) is documented under
 <a href="../Configuration/Index.html">Configuration</a> and exposed in the backend module
 <strong>User → MCP Server</strong>.</p>
 
-            
+
     <p>For the explicit product-level specification of how the maintained line is
 intended to behave, see <a href="IntendedBehavior.html">Intended behavior</a>.</p>
 
     </section>
             <section class="section" id="why-typo3-needs-mcp">
             <h2>Why TYPO3 needs MCP<a class="headerlink" href="#why-typo3-needs-mcp" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>TYPO3 backends are designed for people working in forms, lists, and trees.
 LLMs need:</p>
 
-            
+
 
 <ul>
     <li class="dash">predictable tool calls</li>
@@ -237,7 +237,7 @@ LLMs need:</p>
     <li class="dash">safe write paths</li>
 </ul>
 
-            
+
     <p>MCP provides that interface, and TYPO3 MCP Server maps it back to TYPO3
 concepts such as page trees, TCA, workspaces, language overlays, and
 DataHandler-based writes.</p>
@@ -245,8 +245,8 @@ DataHandler-based writes.</p>
     </section>
             <section class="section" id="how-it-works">
             <h2>How it works<a class="headerlink" href="#how-it-works" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
-    
+
+
 <ol start="1" type="1">
     <li value="1">An MCP client connects to TYPO3 over HTTP or stdio.</li>
     <li value="2">The client authenticates using OAuth, or runs locally through the TYPO3 CLI.</li>
@@ -256,10 +256,10 @@ DataHandler-based writes.</p>
     <li value="6">Editors review and publish workspace changes in TYPO3.</li>
 </ol>
 
-                
+
 <div class="admonition note" role="alert">
     <p class="admonition-title">Note</p>
-        
+
     <p><strong>Local stdio</strong> (this maintained line): host security is <strong>not</strong> the same as
 TYPO3 permissions. See <a href="../Installation/Index.html#installation-local-cli">Local TYPO3 CLI server</a> in
 <a href="../Installation/Index.html">Installation</a> and <strong>Local stdio and the host OS boundary</strong> in
@@ -271,42 +271,42 @@ TYPO3 permissions. See <a href="../Installation/Index.html#installation-local-cl
             <h2>Core principles<a class="headerlink" href="#core-principles" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="workspace-first-writes">
             <h3>Workspace-first writes<a class="headerlink" href="#workspace-first-writes" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Record changes are staged in TYPO3 workspaces. Live content is not directly
 edited through MCP.</p>
 
     </section>
             <section class="section" id="tca-first-modeling">
             <h3>TCA-first modeling<a class="headerlink" href="#tca-first-modeling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The extension uses TCA as the source of truth for schemas and validation
 behavior wherever possible.</p>
 
     </section>
             <section class="section" id="transparent-workspace-handling">
             <h3>Transparent workspace handling<a class="headerlink" href="#transparent-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>MCP clients do not need to know TYPO3 workspace internals. The extension
 selects or creates a suitable workspace and keeps returned identifiers stable.</p>
 
     </section>
             <section class="section" id="file-sandboxing">
             <h3>File sandboxing<a class="headerlink" href="#file-sandboxing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>File tools do not get unrestricted <code>fileadmin</code> access. They operate inside a
 configurable MCP file sandbox, which defaults to <code>fileadmin/mcp/</code>.</p>
 
     </section>
             <section class="section" id="permission-aware-access">
             <h3>Permission-aware access<a class="headerlink" href="#permission-aware-access" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The extension runs with the authenticated backend user&#039;s permissions. MCP
 should never see more than that backend user could manage manually.</p>
 
     </section>
             <section class="section" id="capability-manifest-enforcement">
             <h3>Capability-manifest enforcement<a class="headerlink" href="#capability-manifest-enforcement" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Every tool declares which subsystems it needs (<code>database:read</code>,
 <code>file:write</code>, <code>render:frontend</code>, …). The shipped
 <code>Configuration/Capabilities.yaml</code> enumerates them and maps every tool
@@ -315,7 +315,7 @@ required subsystems aren&#039;t declared, and outbound HTTP for
 <code>UploadFileFromUrl</code> / <code>RenderRecord</code> is gated by
 <code>network.outbound</code> (default: <code>self</code> only).</p>
 
-            
+
     <p>Hardening means deleting lines from the manifest. Removing
 <code>database:write</code> makes the MCP read-only; replacing
 <code>network.outbound: [self, &#039;*&#039;]</code> with <code>[self, &#039;images.unsplash.com&#039;]</code>
@@ -324,7 +324,7 @@ locks outbound HTTP to a single domain.</p>
     </section>
             <section class="section" id="ddev-local-development-mode">
             <h3>DDEV / local-development mode<a class="headerlink" href="#ddev-local-development-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>Detection of DDEV environment variables or the TYPO3 Development
 application context relaxes the workspace-only-writes and file-sandbox
 safety nets so a developer&#039;s laptop is ergonomic to use. Override via
@@ -335,17 +335,17 @@ Authentication and the capability manifest stay enforced regardless.</p>
     </section>
             <section class="section" id="important-limitations">
             <h2>Important limitations<a class="headerlink" href="#important-limitations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-                
+
 <div class="admonition important" role="alert">
     <p class="admonition-title">Important</p>
-        
+
     <p>Physical files in TYPO3 are not workspace-versioned.</p>
 
 </div>
-            
+
     <p>That means:</p>
 
-            
+
 
 <ul>
     <li class="dash">uploading a file stores it immediately</li>
@@ -354,7 +354,7 @@ Authentication and the capability manifest stay enforced regardless.</p>
 itself</li>
 </ul>
 
-            
+
     <p>The extension mitigates this with a dedicated file sandbox and optional
 workspace-specific upload folders, but it does not pretend TYPO3 files are
 versioned when they are not.</p>
@@ -362,14 +362,14 @@ versioned when they are not.</p>
     </section>
             <section class="section" id="supported-versions">
             <h2>Supported versions<a class="headerlink" href="#supported-versions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">TYPO3 v14</li>
     <li class="dash">PHP 8.2 or higher</li>
 </ul>
 
-            
+
     <p>The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
 clients evolve: tool names, parameters, and behavior <strong>may change</strong> between
 releases when that improves safety or LLM ergonomics (see also the project
@@ -378,19 +378,19 @@ releases when that improves safety or LLM ergonomics (see also the project
     </section>
             <section class="section" id="acknowledgements">
             <h2>Acknowledgements<a class="headerlink" href="#acknowledgements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p><strong>Thanks again</strong> to the original authors at hauptsacheNet and to Marco Pfeiffer
 for the open foundation this extension extends. Ongoing <strong>updates and
 experimental features</strong> are documented alongside stable behavior; pin Composer
 versions and validate upgrades in a non-production environment first.</p>
 
-            
+
     </section>
     </section>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="../Index.html"
@@ -494,7 +494,7 @@ versions and validate upgrades in a non-production environment first.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

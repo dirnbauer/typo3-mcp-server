@@ -160,7 +160,7 @@ list is also returned by the `GetCapabilities` tool, gated by
   `UploadFile`, `UploadFileFromUrl`, `ReadFileMetadata`, `SearchFile`,
   `SearchMedia`, `ListStorages`
 - **Diagnostics** — `ContentAudit`, `GetSystemLog`, `ManageRedirects`
-- **Admin / operations** — `CreateSite`, `InstallExtension`, `SafeCli`
+- **Admin / operations** — `CreateSite`, `SiteSet`, `InstallExtension`, `SafeCli`
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats` (when `typo3-x402-paywall` is installed)
 

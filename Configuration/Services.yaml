@@ -105,6 +105,11 @@ services:
       - name: 'console.command'
         command: 'mcp:get-preview-url'
         description: 'Build a workspace preview URL for a page or content element.'
+  Hn\McpServer\Command\Tool\SiteSetToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:site-set'
+        description: 'Find, add, or remove TYPO3 Site Sets on an existing site.'
         
   # Make ToolRegistry public for eID access
   Hn\McpServer\MCP\ToolRegistry:

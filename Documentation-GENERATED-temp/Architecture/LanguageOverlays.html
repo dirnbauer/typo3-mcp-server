@@ -4,7 +4,7 @@
     <title>Language overlays
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
@@ -175,43 +175,43 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="language-overlays">
             <h1>Language overlays<a class="headerlink" href="#language-overlays" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="decision">
             <h2>Decision<a class="headerlink" href="#decision" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The extension uses TYPO3&#039;s <code>PageRepository</code> API for language overlays while
 keeping workspace overlays in custom code.</p>
 
     </section>
             <section class="section" id="context">
             <h2>Context<a class="headerlink" href="#context" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The MCP server must combine two concerns:</p>
 
-            
+
 
 <ul>
     <li class="dash">Workspace transparency for MCP clients</li>
     <li class="dash">Correct TYPO3 language behavior, including overlays and fallbacks</li>
 </ul>
 
-            
+
     <p>Both concerns were initially handled manually, but language overlays are a
 better fit for TYPO3&#039;s existing APIs than for custom query logic.</p>
 
     </section>
             <section class="section" id="rationale">
             <h2>Rationale<a class="headerlink" href="#rationale" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Language overlays differ from workspace overlays:</p>
 
-            
+
 
 <ul>
     <li class="dash">They represent content variation, not versioning</li>
@@ -220,7 +220,7 @@ better fit for TYPO3&#039;s existing APIs than for custom query logic.</p>
 modes</li>
 </ul>
 
-            
+
     <p>Using <code>PageRepository</code> with the proper <code>Context</code> and <code>LanguageAspect</code>
 keeps the implementation aligned with TYPO3 core behavior while preserving the
 custom workspace transparency model.</p>
@@ -228,10 +228,10 @@ custom workspace transparency model.</p>
     </section>
             <section class="section" id="implementation">
             <h2>Implementation<a class="headerlink" href="#implementation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>When a language is requested, the extension:</p>
 
-            
+
 
 <ul>
     <li class="dash">Creates a <code>Context</code> with the appropriate <code>LanguageAspect</code></li>
@@ -239,14 +239,14 @@ custom workspace transparency model.</p>
     <li class="dash">Reads pages through TYPO3&#039;s language-aware APIs</li>
 </ul>
 
-            
+
     <p>This means the extension reuses TYPO3&#039;s overlay logic instead of reimplementing
 fallback and translation behavior itself.</p>
 
     </section>
             <section class="section" id="benefits">
             <h2>Benefits<a class="headerlink" href="#benefits" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">Less custom code for language behavior</li>
@@ -258,13 +258,13 @@ fallback and translation behavior itself.</p>
     </section>
             <section class="section" id="per-site-iso-uid-resolution">
             <h2>Per-site ISO ⇄ UID resolution<a class="headerlink" href="#per-site-iso-uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Language UIDs are site-local: two sites in the same installation can legitimately
 assign the same UID to different languages (site A has <code>hu=1</code>, site B has
 <code>es=1</code>). The extension therefore keeps two layers of mapping in
 <code>LanguageService</code>:</p>
 
-            
+
 
 <ul>
     <li class="dash">A global union (first-wins) used to build schema enums across all sites.</li>
@@ -273,13 +273,13 @@ assign the same UID to different languages (site A has <code>hu=1</code>, site B
 request has site context.</li>
 </ul>
 
-            
+
     <p>The write tools resolve <code>sys_language_uid</code> per-site whenever a pid or uid is
 known, and reverse-map UIDs back to ISO codes through the owning site when
 building translate responses. Without this split, multi-site installations saw
 <code>targetLanguage: &quot;zh&quot;</code> for a record that was actually translated to Hungarian.</p>
 
-            
+
     <p>When a <code>CreateSite</code> call creates, updates, or changes the languages on a site,
 the language cache is reset so the next <code>tools/list</code> or write call sees the
 new layout without restarting the MCP session.</p>
@@ -287,12 +287,12 @@ new layout without restarting the MCP session.</p>
     </section>
             <section class="section" id="translation-ergonomics-writetable-translate">
             <h2>Translation ergonomics (WriteTable <code>translate</code>)<a class="headerlink" href="#translation-ergonomics-writetable-translate" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>DataHandler&#039;s <code>localize</code> command creates a translation shell record that
 mirrors source-language content with placeholder labels. The <code>translate</code>
 action layers several ergonomic defaults on top:</p>
 
-            
+
 
 <ul>
     <li class="dash"><strong>Visible by default.</strong> Translations are created with <code>hidden=0</code> unless the
@@ -320,7 +320,7 @@ row.</li>
     </section>
             <section class="section" id="related-code">
             <h2>Related code<a class="headerlink" href="#related-code" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash"><code>Classes/Service/LanguageService.php</code></li>
@@ -334,7 +334,7 @@ row.</li>
     </section>
             <section class="section" id="future-considerations">
             <h2>Future considerations<a class="headerlink" href="#future-considerations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>If TYPO3 changes its language overlay internals, the extension only needs to
 adjust its <code>Context</code> and <code>PageRepository</code> integration instead of replacing
 an entire custom overlay system.</p>
@@ -344,7 +344,7 @@ an entire custom overlay system.</p>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="WorkspaceTransparency.html"
@@ -448,7 +448,7 @@ an entire custom overlay system.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

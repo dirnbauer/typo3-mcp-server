@@ -4,7 +4,7 @@
     <title>Security audit
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
@@ -175,22 +175,22 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="security-audit">
             <h1>Security audit<a class="headerlink" href="#security-audit" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="date">
             <h2>Date<a class="headerlink" href="#date" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>2026-03-15 (TYPO3 v14-only extension; transport/logging hardening)</p>
 
     </section>
             <section class="section" id="scope">
             <h2>Scope<a class="headerlink" href="#scope" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p><code>Classes/</code> directory, OAuth implementation, MCP HTTP endpoint, file sandbox
 URL download tool, and extension settings.</p>
 
@@ -199,8 +199,8 @@ URL download tool, and extension settings.</p>
             <h2>Findings and remediation<a class="headerlink" href="#findings-and-remediation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="fixed-findings">
             <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p>Access and refresh tokens were stored in plain text.</p>
@@ -248,8 +248,8 @@ similar fingerprint fields).</p>
     </section>
             <section class="section" id="accepted-risks">
             <h3>Accepted risks<a class="headerlink" href="#accepted-risks" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p><code>DataHandler-&gt;admin = true</code> is still used during workspace creation.</p>
@@ -299,12 +299,47 @@ cannot relax the safety nets.</p>
 
     </section>
     </section>
+            <section class="section" id="2026-05-03-local-mode-ux-fix-outbound-http-relaxes-too">
+            <h2>2026-05-03 (local-mode UX fix: outbound HTTP relaxes too)<a class="headerlink" href="#2026-05-03-local-mode-ux-fix-outbound-http-relaxes-too" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="issue">
+            <h3>Issue<a class="headerlink" href="#issue" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>Local-mode (DDEV / <code>localUnsafeMode=on</code>) relaxed the workspace-only
+writes and the file sandbox, but did not relax the capability
+manifest&#039;s <code>network.outbound</code> allowlist or the SSRF private-IP
+filter inside <code>UploadFileFromUrl</code>. Developers reported that fetching
+images from Unsplash failed in DDEV with &quot;no permission to network this
+resource&quot;, contradicting the README claim that &quot;everything is allowed
+in DDEV&quot;.</p>
+
+    </section>
+            <section class="section" id="fix">
+            <h3>Fix<a class="headerlink" href="#fix" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p><code>LocalModeService::allowsUnrestrictedOutbound()</code> added; both gates
+short-circuit when it returns true:</p>
+
+
+
+<ul>
+    <li class="dash"><code>CapabilityManifestService::assertHostAllowed()</code> returns immediately.</li>
+    <li class="dash"><code>UploadFileFromUrlTool::validateUrl()</code> skips the
+<code>gethostbynamel()</code> + private-IP filter.</li>
+</ul>
+
+
+    <p>Production behavior is unchanged: with the default
+<code>localUnsafeMode=auto</code> outside DDEV / Development context the new
+method returns false and the strict gates remain active.</p>
+
+    </section>
+    </section>
             <section class="section" id="2026-05-03-security-audit-skill-pass-owasp-cwe">
             <h2>2026-05-03 (security-audit skill pass — OWASP / CWE)<a class="headerlink" href="#2026-05-03-security-audit-skill-pass-owasp-cwe" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="fixed-findings">
             <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p><strong>OWASP A01 / IDOR</strong> — <code>ReadTableTool</code> did not validate <code>pid</code>/<code>uid</code>
@@ -366,8 +401,8 @@ carrying line-break / NUL bytes before parse_url is even called.</p>
     </section>
             <section class="section" id="accepted-risks-added">
             <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1" type="1">
     <li value="1">Cookie <code>Secure</code> flag drops behind a TLS-terminating reverse proxy
 when <code>getUri()-&gt;getScheme()</code> returns <code>http</code>. Operators behind a
@@ -386,8 +421,8 @@ PR (composer.lock + sha256 manifest + cosign).</li>
             <h2>2026-05-03 (typo3-security skill pass — RFC 9700 alignment)<a class="headerlink" href="#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="fixed-findings">
             <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p>PKCE was conditionally required (<code>$pkce !== &#039;&#039;</code> gate). RFC 9700 §2.1.1
@@ -448,8 +483,8 @@ request — same protection model as <code>UploadFileFromUrl</code>.</p>
     </section>
             <section class="section" id="accepted-risks-added">
             <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1" type="1">
     <li value="1">OAuth authorization code is bound to the client name and redirect URI
 only loosely (the exchange call does not re-verify the redirect URI).
@@ -475,8 +510,8 @@ middleware that calls <code>Symfony\\Component\\RateLimiter</code>).</li>
             <h2>2026-05-03 (capability manifest + DDEV-aware local mode)<a class="headerlink" href="#2026-05-03-capability-manifest-ddev-aware-local-mode" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="added-findings-and-mitigations">
             <h3>Added findings and mitigations<a class="headerlink" href="#added-findings-and-mitigations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p>Capability manifest now declares per-tool required subsystems and
@@ -511,8 +546,8 @@ smuggling of host files (<code>/etc/passwd</code>, …) into tool params.</p>
     </section>
             <section class="section" id="accepted-risks-additions">
             <h3>Accepted risks (additions)<a class="headerlink" href="#accepted-risks-additions" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
-    
+
+
 <ol start="1">
     <li value="1">
     <p>Local-mode auto-detection treats DDEV env vars OR Development context
@@ -538,7 +573,7 @@ set up. The service has no mutable state.</p>
     </section>
             <section class="section" id="structured-mcp-results">
             <h2>Structured MCP results<a class="headerlink" href="#structured-mcp-results" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The bundled <code>logiscape/mcp-sdk-php</code> build in this project does not expose
 <code>outputSchema</code> / structured content on <code>CallToolResult</code>. Tools therefore
 return JSON in <code>TextContent</code>; keep schemas and descriptions accurate for client
@@ -547,7 +582,7 @@ parsing.</p>
     </section>
             <section class="section" id="no-issues-found">
             <h2>No issues found<a class="headerlink" href="#no-issues-found" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">SQL injection paths were closed by parameterized <code>QueryBuilder</code> usage and
@@ -561,7 +596,7 @@ the constrained <code>where</code> parser</li>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="CapabilityManifest.html"
@@ -665,7 +700,7 @@ the constrained <code>where</code> parser</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

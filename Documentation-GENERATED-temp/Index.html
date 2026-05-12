@@ -4,7 +4,7 @@
     <title>MCP Server
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -42,7 +42,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="#">MCP Server</a>
@@ -166,17 +166,17 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
                 <li aria-current="page"  class="breadcrumb-item  active">MCP Server</li>
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="mcp-server" data-rst-anchor="start">
             <a id="start"></a>
             <h1>MCP Server<a class="headerlink" href="#mcp-server" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
@@ -184,56 +184,56 @@
             <dt class="field-odd">Extension key</dt>
 
         <dd class="field-odd">
-            
+
     <p>mcp_server</p>
         </dd>
             <dt class="field-odd">Package name</dt>
 
         <dd class="field-odd">
-            
+
     <p>hn/typo3-mcp-server</p>
         </dd>
             <dt class="field-odd">Version</dt>
 
         <dd class="field-odd">
-            
+
         </dd>
             <dt class="field-odd">Language</dt>
 
         <dd class="field-odd">
-            
+
     <p>en</p>
         </dd>
             <dt class="field-odd">Author</dt>
 
         <dd class="field-odd">
-            
+
     <p>Marco Pfeiffer</p>
         </dd>
             <dt class="field-odd">License</dt>
 
         <dd class="field-odd">
-            
+
     <p>This document is published under the
 <a href="https://www.gnu.org/licenses/gpl-2.0.html">GNU General Public License v2.0 or later</a></p>
         </dd>
             <dt class="field-odd">Rendered</dt>
 
         <dd class="field-odd">
-            
-    <p>Sun, 03 May 2026 11:54:09 +0000</p>
+
+    <p>Tue, 12 May 2026 17:51:54 +0000</p>
         </dd>
     </dl>
             <hr />
-            
+
     <p>A TYPO3 extension that provides a
 <a href="https://modelcontextprotocol.io/">Model Context Protocol (MCP)</a>
 server for AI-assisted TYPO3 work.</p>
 
-                
+
 <div class="admonition note" role="alert">
     <p class="admonition-title">Note</p>
-        
+
     <p><strong>Thanks</strong> to <a href="https://github.com/hauptsacheNet">hauptsacheNet</a> and Marco
 Pfeiffer for the original TYPO3 MCP Server. This manual documents an
 actively maintained line that <strong>updates and extends</strong> that work; some newer
@@ -241,14 +241,14 @@ capabilities are <strong>experimental</strong> and may evolve between releasesâ€
 in staging before production use.</p>
 
 </div>
-            
+
     <p>The extension gives MCP clients structured access to TYPO3 pages, records,
 schemas, workspaces, and selected file operations without bypassing TYPO3&#039;s
 editorial model.</p>
 
             <section class="section" id="highlights">
             <h2>Highlights<a class="headerlink" href="#highlights" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">Read and write TYPO3 content through MCP tools</li>
@@ -259,16 +259,16 @@ editorial model.</p>
     <li class="dash">Connect remote MCP clients using OAuth 2.1 with PKCE</li>
 </ul>
 
-            
+
     <p>The public tool surface adapts to the current TYPO3 instance. For example,
 language parameters are only exposed when multiple site languages exist, and
 record tools automatically switch to an appropriate workspace unless a client
 explicitly requests a <code>workspace_id</code>.</p>
 
-                
+
 <div class="admonition note" role="alert">
     <p class="admonition-title">Note</p>
-        
+
     <p>Physical files are not workspace-versioned in TYPO3. The extension reduces
 file-related risk through a configurable MCP file sandbox and optional
 workspace-specific upload folders, but uploaded files still exist
@@ -278,10 +278,10 @@ immediately once stored.</p>
     </section>
             <section class="section" id="documentation-map">
             <h2>Documentation map<a class="headerlink" href="#documentation-map" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Start here depending on your role:</p>
 
-            
+
 
 <ul>
     <li class="dash"><a href="Introduction/Index.html">Introduction</a> for the product overview and safety model</li>
@@ -299,7 +299,7 @@ deeper architecture notes</li>
     </section>
             <section class="section" id="further-reading">
             <h2>Further reading<a class="headerlink" href="#further-reading" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash"><code class="code-inline file" translate="no" title="File path">README.<wbr>md</code> for the GitHub-facing project overview</li>
@@ -745,7 +745,7 @@ deeper architecture notes</li>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="Introduction/Index.html"
@@ -843,7 +843,7 @@ deeper architecture notes</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

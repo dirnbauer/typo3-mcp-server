@@ -174,6 +174,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``CreateSite``
      - Write
      - Create or update TYPO3 site configurations (admin-only)
+   * - ``SiteSet``
+     - Read/Write
+     - Find installed Site Sets and attach/detach them on sites (admin-only)
    * - ``InstallExtension``
      - Execute
      - Install, activate, or search TYPO3 extensions (admin-only)
@@ -220,6 +223,7 @@ workspace-aware execution:
 - ``ManageRedirects``
 - ``ImportFromUrl``
 - ``CreateSite``
+- ``SiteSet``
 
 Navigation and discovery
 ========================
@@ -1010,6 +1014,41 @@ response includes a ``warning`` pointing to ``action=update`` with a Site Set.
 ``create``, ``update``, ``addLanguage``, and ``replaceLanguages`` all reset
 the internal ISO⇄UID mapping cache so subsequent translate calls see the new
 language layout without restarting the MCP session.
+
+SiteSet
+-------
+
+Find installed TYPO3 Site Sets and add or remove one Site Set on an existing
+site.
+
+:Parameters:
+   - ``action`` (string, required): ``find``, ``add``, or ``remove``
+   - ``query`` (string): optional search term for ``find``. Matches Site Set
+     name, label, and dependencies.
+   - ``includeHidden`` (boolean): include hidden Site Sets in ``find``.
+     Defaults to false.
+   - ``identifier`` (string): site identifier (required for ``add`` and
+     ``remove``)
+   - ``siteSet`` (string): Site Set name, e.g. ``typo3/email`` (required for
+     ``add`` and ``remove``)
+   - ``workspace_id`` (integer): optional workspace override
+
+Admin-only. The assignment is written to the site YAML ``dependencies`` list,
+which TYPO3 uses for Site Set resolution. Site configuration files are not
+workspace-versioned, so ``add`` and ``remove`` take effect immediately.
+
+``add`` validates that the Site Set exists in TYPO3's Site Set registry and is
+idempotent when the set is already attached. ``remove`` can detach a name even
+if the extension providing the Site Set is no longer installed, which lets an
+operator clean up stale dependencies.
+
+CLI shortcut:
+
+.. code-block:: bash
+
+   vendor/bin/typo3 mcp:site-set --action=find --query=email --json
+   vendor/bin/typo3 mcp:site-set --action=add --identifier=main --siteSet=typo3/email
+   vendor/bin/typo3 mcp:site-set --action=remove --identifier=main --siteSet=typo3/email
 
 Extension management
 ====================

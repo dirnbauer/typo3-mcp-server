@@ -4,7 +4,7 @@
     <title>Workspace transparency
         documentation</title>
 
-    
+
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1.0" name="viewport">
 <meta content="phpdocumentor/guides" name="generator">
@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-03T11:54:09+00:00" name="docsearch:modified">
-<meta content="2026-05-03T11:54:09+00:00" name="dc.modified">
-<meta content="2026-05-03T11:54:09+00:00" property="article:modified_time">
+<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
+<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
+<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -43,7 +43,7 @@
                     </a>
                 </div>
                 <div class="align-self-center order-lg-2 order-last">
-                    
+
 <div class="toc-header">
     <div class="toc-title pe-3">
                             <a class="toc-title-project" href="../Index.html">MCP Server</a>
@@ -167,7 +167,7 @@
             </div>
             <div class="page-main-content">
                 <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
-        
+
 <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
         <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
@@ -175,16 +175,16 @@
         </ol>
         <div class="breadcrumb-additions"></div>
     </nav>
-                    
+
 <article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
     <div itemprop="articleBody">
         <!-- content start -->
-                
+
 <section class="section" id="workspace-transparency">
             <h1>Workspace transparency<a class="headerlink" href="#workspace-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
             <section class="section" id="overview">
             <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>This document describes how the MCP server hides TYPO3 workspace complexity
 from MCP clients. The goal is to expose a simplified content model while still
 keeping all writes safely inside TYPO3 workspaces.</p>
@@ -194,10 +194,10 @@ keeping all writes safely inside TYPO3 workspaces.</p>
             <h2>Background<a class="headerlink" href="#background" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <dl>
                         <dt>TYPO3 workspaces provide isolated editing areas before content is published to</dt>
-        
+
         <dd>live. The system uses:</dd>
             </dl>
-            
+
 
 <ul>
     <li class="dash">Live records with <code>t3ver_wsid = 0</code></li>
@@ -206,7 +206,7 @@ keeping all writes safely inside TYPO3 workspaces.</p>
     <li class="dash">Overlay processing after database queries</li>
 </ul>
 
-            
+
     <p>TYPO3&#039;s default backend approach combines SQL restrictions with
 <code>BackendUtility::workspaceOL()</code> post-processing. That works well for human
 editors who understand workspace states, but it is not transparent enough for
@@ -215,10 +215,10 @@ an MCP API.</p>
     </section>
             <section class="section" id="requirements">
             <h2>Requirements<a class="headerlink" href="#requirements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The MCP server needs:</p>
 
-            
+
 
 <ul>
     <li class="dash">Transparent operations without exposing workspace mechanics</li>
@@ -232,7 +232,7 @@ an MCP API.</p>
             <h2>Implementation<a class="headerlink" href="#implementation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
             <section class="section" id="delete-placeholders">
             <h3>Delete placeholders<a class="headerlink" href="#delete-placeholders" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The custom <code>WorkspaceDeletePlaceholderRestriction</code> excludes live records that
 have a delete placeholder in the active workspace. This prevents deleted
 content from leaking into read results.</p>
@@ -240,10 +240,10 @@ content from leaking into read results.</p>
     </section>
             <section class="section" id="uid-resolution">
             <h3>UID resolution<a class="headerlink" href="#uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p>The implementation uses two complementary mechanisms:</p>
 
-            
+
 
 <ul>
     <li class="dash"><code>getLiveUid()</code> maps workspace records back to the client-visible live UID</li>
@@ -251,14 +251,14 @@ content from leaking into read results.</p>
 to a live UID for updates or deletes</li>
 </ul>
 
-            
+
     <p>This keeps record identities stable even when TYPO3 internally works with
 workspace versions.</p>
 
     </section>
             <section class="section" id="query-time-workspace-handling">
             <h3>Query-time workspace handling<a class="headerlink" href="#query-time-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p><code>ReadTableTool</code> resolves both the direct <code>uid</code> and matching <code>t3ver_oid</code>
 records in a workspace. Combined with the delete-placeholder restriction, this
 allows clients to address records by their live UID while TYPO3 still reads and
@@ -267,10 +267,10 @@ writes the correct workspace version.</p>
     </section>
             <section class="section" id="search-result-normalization">
             <h3>Search result normalization<a class="headerlink" href="#search-result-normalization" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
-            
+
     <p><code>SearchTool</code> applies the same transparency rules by:</p>
 
-            
+
 
 <ul>
     <li class="dash">Filtering delete placeholders</li>
@@ -282,7 +282,7 @@ writes the correct workspace version.</p>
     </section>
             <section class="section" id="rationale">
             <h2>Rationale<a class="headerlink" href="#rationale" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>Using TYPO3&#039;s standard overlay flow alone would leave too much logic in
 post-processing. The current approach keeps workspace handling closer to the
 query, which improves consistency and avoids exposing workspace artifacts to
@@ -291,7 +291,7 @@ clients.</p>
     </section>
             <section class="section" id="benefits">
             <h2>Benefits<a class="headerlink" href="#benefits" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">Workspace handling is transparent to MCP clients</li>
@@ -303,7 +303,7 @@ clients.</p>
     </section>
             <section class="section" id="limitations">
             <h2>Limitations<a class="headerlink" href="#limitations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
 
 <ul>
     <li class="dash">The approach intentionally differs from standard TYPO3 backend patterns</li>
@@ -314,7 +314,7 @@ clients.</p>
     </section>
             <section class="section" id="testing">
             <h2>Testing<a class="headerlink" href="#testing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            
+
     <p>The implementation is covered by functional tests around workspace edge cases,
 write flows, and search behavior.</p>
 
@@ -323,7 +323,7 @@ write flows, and search behavior.</p>
         <!-- content end -->
     </div>
 </article>
-                        
+
             <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center"><li class="page-item">
                             <a class="page-link" href="ImplementationOverview.html"
@@ -427,7 +427,7 @@ write flows, and search behavior.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 03, 2026 11:54</p>
+                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">

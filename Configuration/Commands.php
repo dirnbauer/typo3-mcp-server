@@ -16,6 +16,7 @@ use Hn\McpServer\Command\Tool\PublishWorkspaceToolCommand;
 use Hn\McpServer\Command\Tool\ReadTableToolCommand;
 use Hn\McpServer\Command\Tool\RenderRecordToolCommand;
 use Hn\McpServer\Command\Tool\SearchToolCommand;
+use Hn\McpServer\Command\Tool\SiteSetToolCommand;
 use Hn\McpServer\Command\Tool\WriteTableToolCommand;
 
 return [
@@ -90,6 +91,10 @@ return [
     ],
     'mcp:get-preview-url' => [
         'class' => GetPreviewUrlToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:site-set' => [
+        'class' => SiteSetToolCommand::class,
         'schedulable' => false,
     ],
 ];
