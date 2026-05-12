@@ -202,7 +202,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         self::assertTrue($result->isError);
         self::assertStringContainsString("Field 'uid' cannot be modified directly", $result->content[0]->text);
 
-        // Test 2: pid modification in update
+        // Test 2: pid modification in update is allowed as a move
         $result = $this->tool->execute([
             'action' => 'update',
             'table' => 'pages',
@@ -213,8 +213,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError);
-        self::assertStringContainsString("Field 'pid' can only be set during record creation", $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Test 3: Invalid field value (exceeds max length)
         $longTitle = str_repeat('x', 300); // Title field typically has max length of 255

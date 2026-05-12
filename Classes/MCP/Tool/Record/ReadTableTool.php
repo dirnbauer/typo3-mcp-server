@@ -248,7 +248,10 @@ final class ReadTableTool extends AbstractRecordTool
         // Execute main logic
         // Extract and validate parameters
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
-        $uid = isset($params['uid']) ? (int)$params['uid'] : null;
+        $uidParam = $params['uid'] ?? null;
+        $uid = is_array($uidParam)
+            ? array_values(array_map('intval', array_filter($uidParam, 'is_numeric')))
+            : (is_numeric($uidParam) ? (int)$uidParam : null);
         $filtersParam = $params['filters'] ?? [];
         $limit = isset($params['limit']) ? (int)$params['limit'] : 20;
         $offset = isset($params['offset']) ? (int)$params['offset'] : 0;
@@ -335,7 +338,7 @@ final class ReadTableTool extends AbstractRecordTool
     protected function getRecords(
         string $table,
         ?int $pid,
-        ?int $uid,
+        int|array|null $uid,
         array $filters,
         int $limit,
         int $offset,
@@ -380,24 +383,25 @@ final class ReadTableTool extends AbstractRecordTool
 
         // Filter by uid if specified
         if ($uid !== null) {
+            $uids = is_array($uid) ? $uid : [$uid];
             // For workspace transparency, we need to handle both cases:
             // 1. The UID is a workspace UID (for new records)
             // 2. The UID is a live UID (for existing records with workspace versions)
 
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0) {
+            if ($currentWorkspace > 0 && !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $queryBuilder->andWhere(
                     $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter($uid, ParameterType::INTEGER))
+                        $queryBuilder->expr()->in('uid', $queryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY)),
+                        $queryBuilder->expr()->in('t3ver_oid', $queryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY))
                     )
                 );
             } else {
                 // In live workspace, just filter by UID
                 $queryBuilder->andWhere(
-                    $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, ParameterType::INTEGER))
+                    $queryBuilder->expr()->in('uid', $queryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY))
                 );
             }
         }
@@ -448,21 +452,22 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         if ($uid !== null) {
+            $uids = is_array($uid) ? $uid : [$uid];
             // Apply the same UID filtering logic for count query
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0) {
+            if ($currentWorkspace > 0 && !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $countQueryBuilder->andWhere(
                     $countQueryBuilder->expr()->or(
-                        $countQueryBuilder->expr()->eq('uid', $countQueryBuilder->createNamedParameter($uid, ParameterType::INTEGER)),
-                        $countQueryBuilder->expr()->eq('t3ver_oid', $countQueryBuilder->createNamedParameter($uid, ParameterType::INTEGER))
+                        $countQueryBuilder->expr()->in('uid', $countQueryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY)),
+                        $countQueryBuilder->expr()->in('t3ver_oid', $countQueryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY))
                     )
                 );
             } else {
                 // In live workspace, just filter by UID
                 $countQueryBuilder->andWhere(
-                    $countQueryBuilder->expr()->eq('uid', $countQueryBuilder->createNamedParameter($uid, ParameterType::INTEGER))
+                    $countQueryBuilder->expr()->in('uid', $countQueryBuilder->createNamedParameter($uids, Connection::PARAM_INT_ARRAY))
                 );
             }
         }
@@ -473,8 +478,8 @@ final class ReadTableTool extends AbstractRecordTool
 
         // Allow listeners to add restrictions (e.g. file mounts, tenant scopes)
         $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $countQueryBuilder, 'count'));
-        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select'));
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $countQueryBuilder, 'count', BeforeRecordReadEvent::SOURCE_READ));
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select', BeforeRecordReadEvent::SOURCE_READ));
 
         try {
             $totalCount = $countQueryBuilder->executeQuery()->fetchOne();
@@ -1184,9 +1189,8 @@ final class ReadTableTool extends AbstractRecordTool
             return;
         }
 
-        // Check if foreign table is hidden (dependent records that should be embedded)
-        $foreignTableTCA = $GLOBALS['TCA'][$foreignTable] ?? [];
-        $isHiddenTable = !empty($foreignTableTCA['ctrl']['hideTable']);
+        // Hidden tables are embedded unless explicitly configured as standalone.
+        $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
         // Get all related records, filtering by foreign_match_fields if present
         // (e.g., sys_file_reference uses tablenames/fieldname to distinguish which field owns each reference)
@@ -1304,7 +1308,7 @@ final class ReadTableTool extends AbstractRecordTool
 
         // Allow listeners to add restrictions to inline-child lookups too
         $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select'));
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select', BeforeRecordReadEvent::SOURCE_READ_INLINE));
 
         $records = $queryBuilder->executeQuery()->fetchAllAssociative();
         $records = $this->applyWorkspaceOverlay($table, $records);

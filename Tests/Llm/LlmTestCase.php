@@ -66,6 +66,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected int $llmCallCount = 0;
     protected int $toolCallCount = 0;
     protected int $toolErrorCount = 0;
+    protected int $attemptCount = 1;
 
     protected function setUp(): void
     {
@@ -108,6 +109,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             'llm_calls' => $this->llmCallCount,
             'tool_calls' => $this->toolCallCount,
             'tool_errors' => $this->toolErrorCount,
+            'attempts' => $this->attemptCount,
         ]));
     }
 
@@ -116,29 +118,61 @@ abstract class LlmTestCase extends FunctionalTestCase
      * LLM responses are inherently non-deterministic, so a single
      * failure does not necessarily indicate a broken test.
      */
-    protected function runTest(): mixed
+    protected function invokeTestMethod(string $methodName, array $testArguments): mixed
     {
         $maxRetries = 3;
         $lastException = null;
 
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $this->attemptCount = $attempt;
             try {
-                return parent::runTest();
+                return parent::invokeTestMethod($methodName, $testArguments);
             } catch (SkippedWithMessageException | IncompleteTestError $e) {
                 throw $e;
             } catch (AssertionFailedError $e) {
                 $lastException = $e;
                 if ($attempt < $maxRetries) {
+                    $this->logAttemptFailure($attempt, $maxRetries, $e, retrying: true);
                     try {
                         $this->tearDown();
                     } catch (\Throwable) {
                     }
                     $this->setUp();
+                } else {
+                    $this->logAttemptFailure($attempt, $maxRetries, $e, retrying: false);
                 }
             }
         }
 
         throw $lastException;
+    }
+
+    private function logAttemptFailure(int $attempt, int $maxRetries, \Throwable $e, bool $retrying): void
+    {
+        $modelKey = array_search($this->llmModel, static::MODELS, true);
+        $modelLabel = $modelKey !== false ? (string)$modelKey : $this->llmModel;
+        $shortClass = preg_replace('/^.*\\\\/', '', static::class);
+        $message = preg_replace('/\s+/', ' ', mb_substr($e->getMessage(), 0, 320));
+        $tag = $retrying ? 'LLM-RETRY' : 'LLM-FAIL';
+
+        $line = sprintf(
+            "[%s] [%s %d/%d] %s::%s#%s — %s\n",
+            date('H:i:s'),
+            $tag,
+            $attempt,
+            $maxRetries,
+            $shortClass,
+            $this->name(),
+            $modelLabel,
+            $message
+        );
+
+        $logFile = __DIR__ . '/../../.Build/llm-retries.log';
+        $dir = dirname($logFile);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        @file_put_contents($logFile, $line, FILE_APPEND);
     }
 
     /**

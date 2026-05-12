@@ -107,14 +107,38 @@ function formatStats(?array $stats): string
     $calls = (int)($stats['llm_calls'] ?? 0);
     $toolCalls = (int)($stats['tool_calls'] ?? 0);
     $errors = (int)($stats['tool_errors'] ?? 0);
+    $attempts = (int)($stats['attempts'] ?? 1);
     $errColor = $errors > 0 ? "\033[31m" : "\033[2m";
-    return " \033[2m[" . $calls . ' calls, ' . $toolCalls . ' tools, '
+    $attemptPrefix = $attempts > 1
+        ? "\033[33m{$attempts} attempts\033[0;2m, "
+        : '';
+    return " \033[2m[" . $attemptPrefix . $calls . ' calls, ' . $toolCalls . ' tools, '
         . $errColor . $errors . " err\033[2m]\033[0m";
 }
 
 // Evaluate results
 $degraded = [];
 $allPassed = true;
+
+$retryLog = __DIR__ . '/../.Build/llm-retries.log';
+if (file_exists($retryLog) && filesize($retryLog) > 0) {
+    $lines = array_filter(explode("\n", (string)file_get_contents($retryLog)));
+    $retryCount = 0;
+    $failCount = 0;
+    foreach ($lines as $line) {
+        if (str_contains($line, 'LLM-RETRY')) {
+            $retryCount++;
+        } elseif (str_contains($line, 'LLM-FAIL')) {
+            $failCount++;
+        }
+    }
+    echo "\033[33mRetry activity\033[0m (" . count($lines) . " events: $retryCount retries, $failCount final failures)\n";
+    echo str_repeat('-', 80) . "\n";
+    foreach ($lines as $line) {
+        echo $line . "\n";
+    }
+    echo str_repeat('-', 80) . "\n\n";
+}
 
 echo "LLM Test Results — Majority Pass Rule (min $minPass/" . count($testCases ? reset($testCases)['models'] : []) . " models)\n";
 echo str_repeat('=', 80) . "\n\n";

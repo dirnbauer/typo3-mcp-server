@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
+use Hn\McpServer\Event\BeforeRecordReadEvent;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
@@ -15,6 +16,7 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Utility\RecordFormattingUtility;
 use Mcp\Types\CallToolResult;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
@@ -487,6 +489,9 @@ final class SearchTool extends AbstractRecordTool
         }
 
         try {
+            $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+            $eventDispatcher->dispatch(new BeforeRecordReadEvent($parentTable, $queryBuilder, 'select', BeforeRecordReadEvent::SOURCE_SEARCH_PARENT));
+
             $parentRecords = $queryBuilder->executeQuery()->fetchAllAssociative();
 
             // Enhance with page information
@@ -717,6 +722,9 @@ final class SearchTool extends AbstractRecordTool
 
         // Apply limit
         $queryBuilder->setMaxResults($limit);
+
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select', BeforeRecordReadEvent::SOURCE_SEARCH));
 
         // Execute query with error handling
         try {

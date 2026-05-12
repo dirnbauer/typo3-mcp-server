@@ -1,6 +1,9 @@
 # cat=mcp/tables; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.additionalReadOnlyTables
 additionalReadOnlyTables = sys_file
 
+# cat=mcp/tables; type=string; label=Additional standalone hidden tables
+additionalStandaloneTables = sys_file_metadata
+
 # cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileSandboxRoot
 fileSandboxRoot = 1:/mcp/
 

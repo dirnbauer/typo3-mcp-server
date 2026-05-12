@@ -170,6 +170,10 @@ final class WriteTableTool extends AbstractRecordTool
         }
         $positionExplicit = array_key_exists('position', $params) && is_string($params['position']) && $params['position'] !== '';
 
+        if ($action === 'update' && isset($params['pid']) && is_array($data) && !array_key_exists('pid', $data)) {
+            $data['pid'] = $params['pid'];
+        }
+
         // Validate parameters
         if (empty($action)) {
             throw new ValidationException(['Action is required (create, update, translate, or delete)']);
@@ -195,6 +199,9 @@ final class WriteTableTool extends AbstractRecordTool
                     'Provide field names as keys, e.g. {"title": "Page Title", "bodytext": "Content"}.',
                 ]);
             }
+        }
+        if ($action === 'create' && $pid === null && is_array($data) && array_key_exists('pid', $data)) {
+            $pid = (int)$data['pid'];
         }
 
         // Extract search/replace operations from data (arrays of {search, replace} objects
@@ -280,7 +287,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch BeforeRecordWriteEvent — allows listeners to modify data or veto
-        $eventDispatcher = $this->eventDispatcher;
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $beforeEvent = new BeforeRecordWriteEvent($table, $action, $data, $uid, $pid);
         $eventDispatcher->dispatch($beforeEvent);
 
@@ -288,6 +295,10 @@ final class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Operation vetoed: ' . ($beforeEvent->getVetoReason() ?? 'No reason given'));
         }
         $data = $beforeEvent->getData();
+        if ($action === 'create' && is_array($data) && array_key_exists('pid', $data)) {
+            $pid = (int)$data['pid'];
+            unset($data['pid']);
+        }
 
         // Execute the action
         switch ($action) {
@@ -302,10 +313,11 @@ final class WriteTableTool extends AbstractRecordTool
                 }
                 $updateResult = null;
                 if (!empty($data) || !empty($searchReplace)) {
-                    $updateResult = $this->updateRecord($table, $uid, $data);
+                    $updateResult = $this->updateRecord($table, $uid, $data, $positionExplicit ? $position : null);
                     if ($updateResult->isError) {
                         return $updateResult;
                     }
+                    return $updateResult;
                 }
                 if ($positionExplicit) {
                     if ($uid === null) {
@@ -314,14 +326,10 @@ final class WriteTableTool extends AbstractRecordTool
                     if (!is_string($position) || $position === '') {
                         throw new \LogicException('positionExplicit is true but position is not a non-empty string');
                     }
-
                     return $this->moveRecord($table, $uid, $position, $pid);
                 }
-                if ($updateResult === null) {
-                    throw new \LogicException('WriteTable update without data/search_replace/position should have been rejected by validation');
-                }
 
-                return $updateResult;
+                throw new \LogicException('WriteTable update without data/search_replace/position should have been rejected by validation');
 
             case 'move':
                 return $this->moveRecord($table, $uid, $position, $pid);
@@ -515,7 +523,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = $this->eventDispatcher;
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $actualPid));
 
         // Build response with additional useful info
@@ -540,8 +548,17 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function updateRecord(string $table, int $uid, array $data, ?string $position = null): CallToolResult
     {
+        $targetPid = null;
+        if (array_key_exists('pid', $data)) {
+            $targetPid = (int)$data['pid'];
+            unset($data['pid']);
+        }
+        if ($table === 'pages' && $targetPid === $uid) {
+            return $this->createErrorResult('Validation error: Page cannot be moved below itself');
+        }
+
         // Validate the data
-        $validationResult = $this->validateRecordData($table, $data, 'update', $uid);
+        $validationResult = $this->validateRecordData($table, $data, 'update', $uid, $targetPid ?? 0);
         if ($validationResult !== true) {
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
@@ -560,7 +577,7 @@ final class WriteTableTool extends AbstractRecordTool
         $data = $this->ensureL10nStateForTranslation($table, $workspaceUid, $data);
 
         // Build unified dataMap: parent update + all inline children
-        $dataMap = [$table => [$workspaceUid => $data]];
+        $dataMap = !empty($data) ? [$table => [$workspaceUid => $data]] : [];
         $cmdMap = [];
 
         if (!empty($inlineRelations)) {
@@ -576,22 +593,33 @@ final class WriteTableTool extends AbstractRecordTool
             $this->syncInlineRelations($dataMap, $cmdMap, $table, $uid, $inlineRelations);
         }
 
-        // Process everything in a single DataHandler call (dataMap + cmdMap)
-        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-        $dataHandler->start($dataMap, $cmdMap);
-        $dataHandler->process_datamap();
-        if (!empty($cmdMap)) {
-            $dataHandler->process_cmdmap();
+        if (!empty($dataMap) || !empty($cmdMap)) {
+            // Process everything in a single DataHandler call (dataMap + cmdMap)
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+            $dataHandler->start($dataMap, $cmdMap);
+            if (!empty($dataMap)) {
+                $dataHandler->process_datamap();
+            }
+            if (!empty($cmdMap)) {
+                $dataHandler->process_cmdmap();
+            }
+
+            // Check for errors
+            if (!empty($dataHandler->errorLog)) {
+                return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
+            }
         }
 
-        // Check for errors
-        if (!empty($dataHandler->errorLog)) {
-            return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
+        if ($targetPid !== null || $position !== null) {
+            $moveResult = $this->moveRecord($table, $uid, $position ?? 'top', $targetPid);
+            if ($moveResult->isError) {
+                return $moveResult;
+            }
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = $this->eventDispatcher;
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
 
         // Return the result with the original live UID
@@ -622,7 +650,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = $this->eventDispatcher;
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
 
         return $this->createJsonResult([
@@ -1199,7 +1227,10 @@ final class WriteTableTool extends AbstractRecordTool
         if (isset($data['uid'])) {
             return "Field 'uid' cannot be modified directly";
         }
-        if (isset($data['pid']) && $action !== 'create') {
+        if ($table === 'pages' && $action === 'update' && $uid !== null && isset($data['pid']) && (int)$data['pid'] === $uid) {
+            return "Page cannot be moved below itself";
+        }
+        if (isset($data['pid']) && !in_array($action, ['create', 'update'], true)) {
             return "Field 'pid' can only be set during record creation";
         }
 
@@ -1237,14 +1268,29 @@ final class WriteTableTool extends AbstractRecordTool
             if (!$fieldConfig) {
                 continue;
             }
+            $typeField = $this->tableAccessService->getTypeFieldName($table);
+            if ($typeField !== null && $fieldName === $typeField) {
+                $allowedTypes = $this->tableAccessService->getAvailableTypes($table, $pid > 0 ? $pid : null);
+                $rawConfig = $fieldConfig['config'] ?? [];
+                $rawItems = isset($rawConfig['items']) && is_array($rawConfig['items'])
+                    ? $this->tableAccessService->parseSelectItems($rawConfig['items'])
+                    : ['values' => []];
+                if (!isset($allowedTypes[(string)$value]) && in_array((string)$value, array_map('strval', $rawItems['values']), true)) {
+                    return sprintf(
+                        "Field '%s' value '%s' is disabled by page TSconfig (removeItems/disableCTypes) or not available for this page",
+                        $fieldName,
+                        (string)$value
+                    );
+                }
+            }
 
             // Check if field is accessible (filters out inaccessible inline relations)
-            if (!$this->tableAccessService->canAccessField($table, $fieldName)) {
+            if (!$this->tableAccessService->canAccessField($table, $fieldName, '', $pid > 0 ? $pid : null)) {
                 return "Field '{$fieldName}' is not accessible";
             }
 
             // Validate field value (with record context for dynamic select item resolution)
-            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value);
+            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value, $mergedRecord);
             if ($validationError !== null) {
                 return $validationError;
             }
@@ -1308,7 +1354,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Get available fields for this record type
-        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType);
+        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType, $pid > 0 ? $pid : null);
 
         // The type field itself should always be available if it exists
         if ($typeField) {
@@ -1423,9 +1469,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             $isFileReference = ($foreignTable === 'sys_file_reference');
-            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
-            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
-            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
             // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
             $childIdentifiers = [];
@@ -1643,9 +1687,7 @@ final class WriteTableTool extends AbstractRecordTool
 
             $existingChildren = $queryBuilder->executeQuery()->fetchAllAssociative();
 
-            $foreignTableTCA = $this->getTableTcaArray($foreignTable);
-            $foreignTableCtrl = isset($foreignTableTCA['ctrl']) && is_array($foreignTableTCA['ctrl']) ? $foreignTableTCA['ctrl'] : [];
-            $isEmbeddedTable = !empty($foreignTableCtrl['hideTable']);
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
             $existingChildUids = [];
 
             foreach ($existingChildren as $existingChild) {

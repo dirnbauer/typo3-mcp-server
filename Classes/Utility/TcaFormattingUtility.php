@@ -22,7 +22,7 @@ final class TcaFormattingUtility
      * @param string $fieldName Optional field name for special handling
      * @param string $table Optional table name for authMode filtering
      */
-    public static function addFieldDetailsInline(string &$result, array $config, string $fieldName = '', string $table = ''): void
+    public static function addFieldDetailsInline(string &$result, array $config, string $fieldName = '', string $table = '', ?int $pid = null): void
     {
         // Get the field type
         $type = is_string($config['type'] ?? null) ? $config['type'] : '';
@@ -98,8 +98,9 @@ final class TcaFormattingUtility
                 $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
                 $optionLabels = [];
 
-                if ($table === 'pages' && $fieldName === 'doktype') {
-                    foreach ($tableAccessService->getAvailableTypes('pages') as $value => $label) {
+                $typeField = $table !== '' ? $tableAccessService->getTypeFieldName($table) : null;
+                if ($typeField !== null && $fieldName === $typeField) {
+                    foreach ($tableAccessService->getAvailableTypes($table, $pid) as $value => $label) {
                         $optionLabels[(string)$value] = $label;
                     }
                 } elseif (isset($config['items']) && is_array($config['items'])) {

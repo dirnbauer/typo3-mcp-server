@@ -187,9 +187,45 @@ parameters:
 			path: Classes/Event/BeforeRecordWriteEvent.php
 
 		-
+			message: '#^Cannot access offset ''categories''\|''file''\|''height''\|''width'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Cannot access offset ''columns'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Cannot access offset ''identifier''\|''metadata''\|''mime_type''\|''name''\|''sha1''\|''size''\|''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Cannot access offset ''sys_file'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Cannot access offset ''sys_file_metadata'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 3
+			path: Classes/EventListener/FileEnrichmentListener.php
+
+		-
+			message: '#^Parameter \#2 \$configuration of method Hn\\McpServer\\Event\\AfterSchemaLoadEvent\:\:addField\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 2
 			path: Classes/EventListener/FileEnrichmentListener.php
 
 		-
@@ -1071,7 +1107,13 @@ parameters:
 		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 6
+			count: 5
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Binary operation "\." between ''\*,'' and mixed results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1084,6 +1126,12 @@ parameters:
 			message: '#^Binary operation "\." between literal\-string&non\-falsy\-string and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 5
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Binary operation "\." between mixed and '',list'' results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1102,6 +1150,12 @@ parameters:
 			message: '#^Cannot access offset ''columns'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 4
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset ''columnsOverrides'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1125,13 +1179,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''ds'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Cannot access offset ''ds_pointerField'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 7
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1161,7 +1209,7 @@ parameters:
 		-
 			message: '#^Cannot access offset ''items'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 3
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1195,6 +1243,12 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
+			message: '#^Cannot access offset ''types'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
 			message: '#^Cannot access offset ''value'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
@@ -1203,19 +1257,25 @@ parameters:
 		-
 			message: '#^Cannot access offset 0 on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset 1 on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
 			message: '#^Cannot access offset mixed on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 5
+			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1239,7 +1299,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 17
+			count: 14
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1533,7 +1593,7 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
@@ -1563,12 +1623,6 @@ parameters:
 		-
 			message: '#^Binary operation "\." between '' \[ds_pointerField\: '' and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
 			count: 1
 			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
 
@@ -1609,9 +1663,15 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
 
 		-
+			message: '#^Cannot cast mixed to int\.$#'
+			identifier: cast.int
+			count: 1
+			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
+
+		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 24
+			count: 23
 			path: Classes/MCP/Tool/Record/GetTableSchemaTool.php
 
 		-
@@ -1981,12 +2041,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Cannot access offset ''ds'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -2020,12 +2074,6 @@ parameters:
 			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''hideTable'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2085,7 +2133,7 @@ parameters:
 		-
 			message: '#^Cannot access offset mixed on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2103,7 +2151,7 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 11
+			count: 10
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2133,7 +2181,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 41
+			count: 42
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2198,6 +2246,12 @@ parameters:
 
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
+			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$uid with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2545,6 +2599,12 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:isEmbeddedChildTable\(\) expects string, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/MCP/Tool/Record/ReadTableTool.php
+
+		-
 			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2725,6 +2785,12 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Cannot access offset ''allowLanguageSynchronization'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
@@ -2788,6 +2854,12 @@ parameters:
 			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 5
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Cannot access offset ''items'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -2895,19 +2967,19 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 19
+			count: 23
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
-			count: 16
+			count: 19
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 42
+			count: 44
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3109,6 +3181,12 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:validateFieldValue\(\) invoked with 4 parameters, 3 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
 			message: '#^Only booleans are allowed in &&, array\<string, mixed\> given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1
@@ -3231,7 +3309,7 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an if condition, bool\|null given\.$#'
 			identifier: if.condNotBoolean
-			count: 2
+			count: 3
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3283,7 +3361,7 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableTcaArray\(\) expects string, mixed given\.$#'
+			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:isEmbeddedChildTable\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -3460,6 +3538,12 @@ parameters:
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
 			count: 12
+			path: Classes/MCP/Tool/Record/WriteTableTool.php
+
+		-
+			message: '#^Property Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:\$eventDispatcher is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -4379,6 +4463,12 @@ parameters:
 			path: Classes/Service/SiteInformationService.php
 
 		-
+			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
 			message: '#^Call to function array_filter\(\) requires parameter \#2 to be passed to avoid loose comparison semantics\.$#'
 			identifier: arrayFilter.strict
 			count: 1
@@ -4391,9 +4481,45 @@ parameters:
 			path: Classes/Service/TableAccessService.php
 
 		-
+			message: '#^Cannot access offset ''disableCTypes'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
 			message: '#^Cannot access offset ''identifier'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset ''table\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset ''tt_content\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset ''types\.'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset mixed on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
 			path: Classes/Service/TableAccessService.php
 
 		-
@@ -4405,13 +4531,13 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
-			count: 3
+			count: 7
 			path: Classes/Service/TableAccessService.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 24
+			count: 25
 			path: Classes/Service/TableAccessService.php
 
 		-
@@ -4427,8 +4553,20 @@ parameters:
 			path: Classes/Service/TableAccessService.php
 
 		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getAvailableTypes\(\) should return array\<string\> but returns array\<string, mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
 			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getConfigurationSection\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getRelevantPageTsconfig\(\) is unused\.$#'
+			identifier: method.unused
 			count: 1
 			path: Classes/Service/TableAccessService.php
 
@@ -4453,6 +4591,18 @@ parameters:
 		-
 			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableTypeConfig\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTsConfigFieldSetting\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:isFieldDisabledByDefaultPageTsconfig\(\) is unused\.$#'
+			identifier: method.unused
 			count: 1
 			path: Classes/Service/TableAccessService.php
 
@@ -4484,6 +4634,30 @@ parameters:
 			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
 			identifier: if.condNotBoolean
 			count: 7
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$fieldName$#'
+			identifier: parameter.notFound
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$table$#'
+			identifier: parameter.notFound
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$type$#'
+			identifier: parameter.notFound
+			count: 1
+			path: Classes/Service/TableAccessService.php
+
+		-
+			message: '#^PHPDoc tag @return with type bool is incompatible with native type int\.$#'
+			identifier: return.phpDocType
+			count: 1
 			path: Classes/Service/TableAccessService.php
 
 		-

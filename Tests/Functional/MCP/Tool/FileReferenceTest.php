@@ -421,30 +421,7 @@ class FileReferenceTest extends FunctionalTestCase
         $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('metadata', $file);
         self::assertCount(1, $file['metadata']);
-        $meta = $file['metadata'][0];
-
-        // Plumbing and virtual columns must be gone.
-        foreach ([
-            'pid',
-            'tstamp',
-            'crdate',
-            'sys_language_uid',
-            'l10n_parent',
-            'l10n_diffsource',
-            'categories',
-            'file',
-            'fileinfo',
-        ] as $leaked) {
-            self::assertArrayNotHasKey($leaked, $meta, "embedded metadata should not expose '$leaked'");
-        }
-
-        // The data fields the LLM actually cares about must remain.
-        self::assertSame(1, $meta['uid']);
-        self::assertSame('Team Photo', $meta['title']);
-        self::assertSame('Alt text for test', $meta['alternative']);
-        self::assertSame('Description text', $meta['description']);
-        self::assertSame(1868, $meta['width']);
-        self::assertSame(1261, $meta['height']);
+        self::assertSame([1], $file['metadata']);
     }
 
     /**

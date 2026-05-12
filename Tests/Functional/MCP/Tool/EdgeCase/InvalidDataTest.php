@@ -248,7 +248,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         self::assertTrue($result->isError);
-        self::assertStringContainsString('can only be set during record creation', $result->content[0]->text);
+        self::assertStringContainsString('cannot be moved below itself', $result->content[0]->text);
     }
 
     /**

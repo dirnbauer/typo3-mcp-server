@@ -58,7 +58,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify error message
-        self::assertStringContainsString('FlexForm schema not found for identifier: *,form_formframework', $content);
+        self::assertStringContainsString('FlexForm schema not found for identifier: form_formframework', $content);
     }
 
     /**
@@ -80,7 +80,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify error message contains transformed identifier
-        self::assertStringContainsString('FlexForm schema not found for identifier: *,form_formframework', $content);
+        self::assertStringContainsString('FlexForm schema not found for identifier: form_formframework', $content);
     }
 
     /**
@@ -218,7 +218,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify error message
-        self::assertStringContainsString('FlexForm schema not found for identifier: *,form_formframework', $content);
+        self::assertStringContainsString('FlexForm schema not found for identifier: form_formframework', $content);
     }
 
     /**
@@ -261,7 +261,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
         $content = $result->content[0]->text;
 
         // Verify error message
-        self::assertStringContainsString('FlexForm schema not found for identifier: *,form_formframework', $content);
+        self::assertStringContainsString('FlexForm schema not found for identifier: form_formframework', $content);
     }
 
     /**
@@ -278,7 +278,7 @@ class GetFlexFormSchemaToolTest extends FunctionalTestCase
 
         self::assertTrue($result->isError);
         self::assertCount(1, $result->content);
-        self::assertStringContainsString('FlexForm schema not found for identifier: *,form_formframework', $result->content[0]->text);
+        self::assertStringContainsString('FlexForm schema not found for identifier: form_formframework', $result->content[0]->text);
     }
 
     /**

@@ -41,6 +41,10 @@ final class GetTableSchemaTool extends AbstractRecordTool
                             'If omitted, shows fields for the first available type and lists all available types. ' .
                             'Call again with a different type to see its fields. Types may be filtered by backend TSconfig (some types hidden from the list).',
                     ],
+                    'pid' => [
+                        'type' => 'integer',
+                        'description' => 'Page ID used to resolve page TSconfig for type and field visibility.',
+                    ],
                 ],
                 'required' => ['table'],
             ],
@@ -66,15 +70,16 @@ final class GetTableSchemaTool extends AbstractRecordTool
         $this->ensureTableAccess($table, 'read');
 
         $filterType = isset($params['type']) && is_string($params['type']) ? $params['type'] : '';
+        $pid = isset($params['pid']) ? (int)$params['pid'] : null;
 
-        $result = $this->generateTableSchema($table, $filterType);
+        $result = $this->generateTableSchema($table, $filterType, $pid);
         return $this->createSuccessResult($result);
     }
 
     /**
      * Generate a table schema as text
      */
-    protected function generateTableSchema(string $table, string $filterType = ''): string
+    protected function generateTableSchema(string $table, string $filterType = '', ?int $pid = null): string
     {
         $result = '';
 
@@ -124,19 +129,12 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
         // Get the type field using TableAccessService
         $typeField = $this->tableAccessService->getTypeFieldName($table);
-        $excludeTypes = !empty($typeField) ? $this->getRemovedTypesByTSconfig($table, $typeField) : [];
-
         // Get available types using TableAccessService
-        $types = $this->tableAccessService->getAvailableTypes($table);
+        $types = $this->tableAccessService->getAvailableTypes($table, $pid);
 
         // Apply label translations and exclusions
         $processedTypes = [];
         foreach ($types as $value => $label) {
-            // Skip excluded types
-            if (in_array($value, $excludeTypes)) {
-                continue;
-            }
-
             $processedTypes[$value] = TableAccessService::translateLabel($label);
         }
 
@@ -190,7 +188,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
         $result .= "-------\n";
 
         // Get available fields using TableAccessService (includes access control)
-        $availableFields = $this->tableAccessService->getAvailableFields($table, $filterType);
+        $availableFields = $this->tableAccessService->getAvailableFields($table, $filterType, $pid);
 
         if (empty($availableFields)) {
             $result .= "No accessible fields defined for this type.\n";
@@ -297,7 +295,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                             $tabContent .= '    ' . $prefix . $paletteFieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                             // Add field details inline
-                            $this->addFieldDetailsInline($tabContent, $fieldConfig, $paletteFieldName, $table, $filterType);
+                            $this->addFieldDetailsInline($tabContent, $fieldConfig, $paletteFieldName, $table, $filterType, $pid);
                             $tabContent .= "\n";
                         }
                     }
@@ -316,7 +314,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                         $tabContent .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                         // Add field details inline
-                        $this->addFieldDetailsInline($tabContent, $fieldConfig, $fieldName, $table, $filterType);
+                        $this->addFieldDetailsInline($tabContent, $fieldConfig, $fieldName, $table, $filterType, $pid);
                         $tabContent .= "\n";
                     }
                 }
@@ -363,7 +361,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
                 $result .= '    - ' . $fieldName . ' (' . $fieldLabel . '): ' . $fieldType;
 
                 // Add field details inline
-                $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType);
+                $this->addFieldDetailsInline($result, $fieldConfig, $fieldName, $table, $filterType, $pid);
                 $result .= "\n";
             }
         }
@@ -388,7 +386,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
     /**
      * Add field details inline
      */
-    protected function addFieldDetailsInline(string &$result, array $fieldConfig, string $fieldName, string $table, string $filterType = ''): void
+    protected function addFieldDetailsInline(string &$result, array $fieldConfig, string $fieldName, string $table, string $filterType = '', ?int $pid = null): void
     {
         // Handle both flattened (from TcaSchemaFactory) and nested (traditional TCA) structures
         $config = $fieldConfig['config'] ?? $fieldConfig;
@@ -400,7 +398,7 @@ final class GetTableSchemaTool extends AbstractRecordTool
             $this->addFlexFormIdentifiers($result, $config, $table, $fieldName, $filterType);
         } else {
             // For other field types, use the TcaFormattingUtility
-            TcaFormattingUtility::addFieldDetailsInline($result, $config, $fieldName, $table);
+            TcaFormattingUtility::addFieldDetailsInline($result, $config, $fieldName, $table, $pid);
         }
     }
 

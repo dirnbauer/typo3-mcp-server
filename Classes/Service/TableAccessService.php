@@ -14,6 +14,7 @@ use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
+use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -51,6 +52,9 @@ final class TableAccessService
 
     /** @var list<string>|null */
     private ?array $additionalReadOnlyTables = null;
+    /** @var list<string>|null */
+    private ?array $additionalStandaloneTables = null;
+    private ?int $cachedDefaultTSconfigPid = null;
 
     public function __construct(
         private readonly TcaSchemaFactory $tcaSchemaFactory,
@@ -76,6 +80,36 @@ final class TableAccessService
         }
 
         return $this->additionalReadOnlyTables;
+    }
+
+    /**
+     * Hidden TCA tables that should be exposed as standalone tables instead of embedded children.
+     *
+     * @return list<string>
+     */
+    public function getAdditionalStandaloneTables(): array
+    {
+        if ($this->additionalStandaloneTables === null) {
+            try {
+                $config = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+                    ->get('mcp_server', 'additionalStandaloneTables');
+            } catch (\Exception) {
+                $config = 'sys_file_metadata';
+            }
+            $this->additionalStandaloneTables = GeneralUtility::trimExplode(',', (string)$config, true);
+        }
+
+        return $this->additionalStandaloneTables;
+    }
+
+    public function isEmbeddedChildTable(string $table): bool
+    {
+        $hideTable = ($this->getTableCtrl($table)['hideTable'] ?? false) === true;
+        if (!$hideTable) {
+            return false;
+        }
+
+        return !in_array($table, $this->getAdditionalStandaloneTables(), true);
     }
 
     /**
@@ -418,7 +452,7 @@ final class TableAccessService
      * @param string $type Record type (optional)
      * @return array<string, array<string, mixed>> Field configuration
      */
-    public function getAvailableFields(string $table, string $type = ''): array
+    public function getAvailableFields(string $table, string $type = '', ?int $pid = null): array
     {
         $this->validateTableAccess($table);
 
@@ -507,7 +541,7 @@ final class TableAccessService
 
         // Apply field-level access restrictions
         foreach ($fields as $fieldName => $fieldConfig) {
-            if (!$this->canAccessField($table, $fieldName, $type)) {
+            if ($this->getFieldConfig($table, $fieldName) !== null && !$this->canAccessField($table, $fieldName, $type, $pid)) {
                 unset($fields[$fieldName]);
             }
         }
@@ -515,7 +549,15 @@ final class TableAccessService
         // Allow extensions to add, remove, or reconfigure fields
         $event = new AfterSchemaLoadEvent($table, $type, $fields);
         $this->eventDispatcher->dispatch($event);
-        return $event->getFields();
+        $fields = $event->getFields();
+
+        foreach ($fields as $fieldName => $fieldConfig) {
+            if ($this->getFieldConfig($table, $fieldName) !== null && !$this->canAccessField($table, $fieldName, $type, $pid)) {
+                unset($fields[$fieldName]);
+            }
+        }
+
+        return $fields;
     }
 
     /**
@@ -793,7 +835,6 @@ final class TableAccessService
             'sys_file', // Files are managed through file system, not direct DB edits
             'sys_file_processedfile', // Processed files are generated automatically
             'sys_file_storage', // Storage configuration - sensitive
-            'sys_file_metadata', // File metadata - usually auto-generated
         ];
 
         if (in_array($table, $readOnlyTables)) {
@@ -905,7 +946,33 @@ final class TableAccessService
      * @param string $type Record type (optional, for type-specific TSconfig)
      * @return bool
      */
-    public function canAccessField(string $table, string $fieldName, string $type = ''): bool
+    public function resolveTSconfigPid(?int $pid = null): int
+    {
+        if ($pid !== null && $pid > 0) {
+            return $pid;
+        }
+        if ($this->cachedDefaultTSconfigPid !== null) {
+            return $this->cachedDefaultTSconfigPid;
+        }
+
+        $resolved = 0;
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            foreach ($siteFinder->getAllSites() as $site) {
+                $rootPageId = $site->getRootPageId();
+                if ($rootPageId > 0) {
+                    $resolved = $rootPageId;
+                    break;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        $this->cachedDefaultTSconfigPid = $resolved;
+        return $resolved;
+    }
+
+    public function canAccessField(string $table, string $fieldName, string $type = '', ?int $pid = null): bool
     {
         $fieldConfig = $this->getFieldConfig($table, $fieldName);
         if ($fieldConfig === null) {
@@ -933,28 +1000,22 @@ final class TableAccessService
         }
 
         // Check TSconfig field visibility (applies to all users including admins)
-        $TSconfig = $this->getRelevantPageTsconfig();
+        $TSconfig = BackendUtility::getPagesTSconfig($this->resolveTSconfigPid($pid));
+        $fieldTSconfig = $TSconfig['TCEFORM.'][$table . '.'][$fieldName . '.'] ?? [];
+        $fieldDisabled = null;
+        $typesConfig = is_array($fieldTSconfig['types.'] ?? null) ? $fieldTSconfig['types.'] : [];
+        if ($type !== '' && array_key_exists($type . '.', $typesConfig)) {
+            $typeConfig = $typesConfig[$type . '.'] ?? [];
+            if (is_array($typeConfig) && array_key_exists('disabled', $typeConfig)) {
+                $fieldDisabled = $typeConfig['disabled'];
+            }
+        }
+        if ($fieldDisabled === null && is_array($fieldTSconfig) && array_key_exists('disabled', $fieldTSconfig)) {
+            $fieldDisabled = $fieldTSconfig['disabled'];
+        }
 
-        // Check if field is globally disabled via TCEFORM.[table].[field].disabled
-        $fieldDisabled = $this->getTsConfigFieldSetting($TSconfig, $table, $fieldName, 'disabled');
         if ($fieldDisabled === '1' || $fieldDisabled === 1 || $fieldDisabled === true) {
             return false;
-        }
-
-        if ($this->isFieldDisabledByDefaultPageTsconfig($table, $fieldName)) {
-            return false;
-        }
-
-        // Check if field is disabled for specific type via TCEFORM.[table].[field].types.[type].disabled
-        if (!empty($type)) {
-            $typeDisabled = $this->getTsConfigFieldSetting($TSconfig, $table, $fieldName, 'disabled', $type);
-            if ($typeDisabled === '1' || $typeDisabled === 1 || $typeDisabled === true) {
-                return false;
-            }
-
-            if ($this->isFieldDisabledByDefaultPageTsconfig($table, $fieldName, $type)) {
-                return false;
-            }
         }
 
         return true;
@@ -1411,7 +1472,7 @@ final class TableAccessService
      *
      * @return array<array-key, string>
      */
-    public function getAvailableTypes(string $table): array
+    public function getAvailableTypes(string $table, ?int $pid = null): array
     {
         $typeField = $this->getTypeFieldName($table);
         if (!$typeField) {
@@ -1424,17 +1485,24 @@ final class TableAccessService
             return ['0' => 'Default'];
         }
 
-        $typeFieldConfig = $this->getFieldTca($table, $typeField);
-        $typeConfig = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
-        $items = (isset($typeConfig['items']) && is_array($typeConfig['items'])) ? $typeConfig['items'] : [];
+        $resolverPid = $this->resolveTSconfigPid($pid);
+        $resolver = GeneralUtility::makeInstance(SelectItemResolver::class);
+        $resolved = $resolver->resolveSelectItems($table, $typeField, ['pid' => $resolverPid]);
 
-        // Use the shared parseSelectItems method
-        $parsed = $this->parseSelectItems($items);
-
-        // Convert to the expected format (value => label)
-        $types = [];
-        foreach ($parsed['values'] as $value) {
-            $types[(string)$value] = $parsed['labels'][$value] ?? $value;
+        if ($resolved !== null && !empty($resolved['values'])) {
+            $types = [];
+            foreach ($resolved['values'] as $value) {
+                $types[(string)$value] = $resolved['labels'][$value] ?? (string)$value;
+            }
+        } else {
+            $typeFieldConfig = $this->getFieldTca($table, $typeField);
+            $typeConfig = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
+            $items = (isset($typeConfig['items']) && is_array($typeConfig['items'])) ? $typeConfig['items'] : [];
+            $parsed = $this->parseSelectItems($items);
+            $types = [];
+            foreach ($parsed['values'] as $value) {
+                $types[(string)$value] = $parsed['labels'][$value] ?? $value;
+            }
         }
 
         if ($table === 'pages' && $typeField === 'doktype') {
@@ -1445,6 +1513,16 @@ final class TableAccessService
                 }
 
                 $types[$normalizedDoktype] = 'Registered custom page type';
+            }
+        }
+
+        if ($table === 'tt_content' && $typeField === 'CType') {
+            $TSconfig = BackendUtility::getPagesTSconfig($resolverPid);
+            $disableCTypes = $TSconfig['TCEMAIN.']['table.']['tt_content.']['disableCTypes'] ?? '';
+            if (!empty($disableCTypes)) {
+                foreach (GeneralUtility::trimExplode(',', (string)$disableCTypes, true) as $disabled) {
+                    unset($types[$disabled]);
+                }
             }
         }
 
