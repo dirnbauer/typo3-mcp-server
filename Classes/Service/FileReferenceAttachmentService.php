@@ -17,6 +17,7 @@ final readonly class FileReferenceAttachmentService
 {
     public function __construct(
         private ConnectionPool $connectionPool,
+        private FileMetadataIndexService $fileMetadataIndexService,
     ) {}
 
     /**
@@ -63,6 +64,8 @@ final readonly class FileReferenceAttachmentService
             if ($fileUid === null || $fileUid <= 0) {
                 continue;
             }
+
+            $this->fileMetadataIndexService->ensureImageMetadataForFileUid($fileUid);
 
             $newRefId = 'NEW_file_' . uniqid() . '_' . $index;
 

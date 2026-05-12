@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -42,6 +43,7 @@ final class WriteTableTool extends AbstractRecordTool
         private readonly ConnectionPool $connectionPool,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SiteFinder $siteFinder,
+        private readonly FileMetadataIndexService $fileMetadataIndexService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -1496,6 +1498,8 @@ final class WriteTableTool extends AbstractRecordTool
                     //  2) object with uid_local + optional metadata: {"uid_local": 5, "title": "...", "alternative": "..."}
                     //  3) reference to existing sys_file_reference UID with optional updates: {"uid": 12, "title": "..."}
                     if (is_numeric($item) && (int)$item > 0) {
+                        $this->fileMetadataIndexService->ensureImageMetadataForFileUid((int)$item);
+
                         $childNewId = 'NEW' . bin2hex(random_bytes(8));
                         $refData = [
                             'uid_local' => (int)$item,
@@ -1513,6 +1517,8 @@ final class WriteTableTool extends AbstractRecordTool
                     }
 
                     if (is_array($item) && isset($item['uid_local']) && is_numeric($item['uid_local']) && (int)$item['uid_local'] > 0) {
+                        $this->fileMetadataIndexService->ensureImageMetadataForFileUid((int)$item['uid_local']);
+
                         $childNewId = 'NEW' . bin2hex(random_bytes(8));
                         $refData = [
                             'uid_local' => (int)$item['uid_local'],
