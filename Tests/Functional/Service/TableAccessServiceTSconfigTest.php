@@ -42,13 +42,13 @@ class TableAccessServiceTSconfigTest extends FunctionalTestCase
         // first. The minimum supported version is 13, where the cache keys are
         // identical, so the same approach works there as well.
         if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() < 13) {
-            $this->markTestSkipped('TableAccessService requires TYPO3 13 or newer.');
+            self::markTestSkipped('TableAccessService requires TYPO3 13 or newer.');
         }
 
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 
-        $this->service = new TableAccessService();
+        $this->service = GeneralUtility::makeInstance(TableAccessService::class);
     }
 
     /**
@@ -58,7 +58,7 @@ class TableAccessServiceTSconfigTest extends FunctionalTestCase
     {
         $this->seedRootTSconfig('TCEFORM.tt_content.bodytext.disabled = 1');
 
-        $this->assertFalse(
+        self::assertFalse(
             $this->service->canAccessField('tt_content', 'bodytext'),
             'Globally disabled field should be hidden when no record type is given'
         );
@@ -78,15 +78,15 @@ class TableAccessServiceTSconfigTest extends FunctionalTestCase
             . 'TCEFORM.tt_content.bodytext.types.textmedia.disabled = 0'
         );
 
-        $this->assertTrue(
+        self::assertTrue(
             $this->service->canAccessField('tt_content', 'bodytext', 'textmedia'),
             'TCEFORM types.<recordType>.disabled = 0 must override the global disabled = 1'
         );
-        $this->assertFalse(
+        self::assertFalse(
             $this->service->canAccessField('tt_content', 'bodytext', 'text'),
             'Record types without an explicit override must still inherit the global disabled = 1'
         );
-        $this->assertFalse(
+        self::assertFalse(
             $this->service->canAccessField('tt_content', 'bodytext'),
             'Without a record type the global disabled = 1 must still apply'
         );
@@ -99,15 +99,15 @@ class TableAccessServiceTSconfigTest extends FunctionalTestCase
     {
         $this->seedRootTSconfig('TCEFORM.tt_content.header.types.text.disabled = 1');
 
-        $this->assertFalse(
+        self::assertFalse(
             $this->service->canAccessField('tt_content', 'header', 'text'),
             'TCEFORM types.<recordType>.disabled = 1 must hide the field for that record type'
         );
-        $this->assertTrue(
+        self::assertTrue(
             $this->service->canAccessField('tt_content', 'header', 'textmedia'),
             'Other record types must remain unaffected by an unrelated type-specific disable'
         );
-        $this->assertTrue(
+        self::assertTrue(
             $this->service->canAccessField('tt_content', 'header'),
             'Without a record type, the field must remain accessible because it is not globally disabled'
         );

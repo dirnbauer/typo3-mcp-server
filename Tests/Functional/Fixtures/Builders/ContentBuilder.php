@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class ContentBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'CType' => 'textmedia',
@@ -26,12 +24,9 @@ class ContentBuilder
         'hidden' => 0,
         'deleted' => 0,
     ];
-    
-    public function __construct(ConnectionPool $connectionPool)
-    {
-        $this->connectionPool = $connectionPool;
-    }
-    
+
+    public function __construct(private readonly ConnectionPool $connectionPool) {}
+
     /**
      * Set the page ID where content should be placed
      */
@@ -40,7 +35,7 @@ class ContentBuilder
         $this->data['pid'] = $pid;
         return $this;
     }
-    
+
     /**
      * Set the content type
      */
@@ -49,7 +44,7 @@ class ContentBuilder
         $this->data['CType'] = $cType;
         return $this;
     }
-    
+
     /**
      * Set the header
      */
@@ -58,7 +53,7 @@ class ContentBuilder
         $this->data['header'] = $header;
         return $this;
     }
-    
+
     /**
      * Set the bodytext
      */
@@ -67,7 +62,7 @@ class ContentBuilder
         $this->data['bodytext'] = $bodytext;
         return $this;
     }
-    
+
     /**
      * Set as textmedia type with content
      */
@@ -78,7 +73,7 @@ class ContentBuilder
         $this->data['bodytext'] = $bodytext;
         return $this;
     }
-    
+
     /**
      * Set as text type
      */
@@ -89,7 +84,7 @@ class ContentBuilder
         $this->data['bodytext'] = $bodytext;
         return $this;
     }
-    
+
     /**
      * Set as header type
      */
@@ -100,25 +95,23 @@ class ContentBuilder
         $this->data['header_layout'] = (string)$layout;
         return $this;
     }
-    
+
     /**
-     * Set as plugin content element. TYPO3 13 stores plugins as
-     * `CType=list, list_type=<plugin>`; TYPO3 14 dropped the `list` CType
-     * altogether and stores plugins via their own CType. We pick the right
-     * shape for the running TYPO3.
+     * Set as list/plugin type
      */
-    public function asPlugin(string $pluginIdentifier, string $header = ''): self
+    public function asPlugin(string $listType, string $header = ''): self
     {
-        if (\Hn\McpServer\Service\TableAccessService::hasPluginSubtypes()) {
-            $this->data['CType'] = 'list';
-            $this->data['list_type'] = $pluginIdentifier;
-        } else {
-            $this->data['CType'] = $pluginIdentifier;
+        $usesLegacyListType = isset($GLOBALS['TCA']['tt_content']['columns']['list_type']);
+        $this->data['CType'] = $usesLegacyListType ? 'list' : $listType;
+        $this->data['header'] = $header ?: $listType;
+        if ($usesLegacyListType) {
+            return $this->with('list_type', $listType);
         }
-        $this->data['header'] = $header ?: $pluginIdentifier;
+
+        unset($this->data['list_type']);
         return $this;
     }
-    
+
     /**
      * Set column position
      */
@@ -127,7 +120,7 @@ class ContentBuilder
         $this->data['colPos'] = $colPos;
         return $this;
     }
-    
+
     /**
      * Set sorting value
      */
@@ -136,7 +129,7 @@ class ContentBuilder
         $this->data['sorting'] = $sorting;
         return $this;
     }
-    
+
     /**
      * Set as hidden
      */
@@ -145,7 +138,7 @@ class ContentBuilder
         $this->data['hidden'] = 1;
         return $this;
     }
-    
+
     /**
      * Set as visible
      */
@@ -154,7 +147,7 @@ class ContentBuilder
         $this->data['hidden'] = 0;
         return $this;
     }
-    
+
     /**
      * Set language UID
      */
@@ -162,7 +155,7 @@ class ContentBuilder
     {
         return $this->with('sys_language_uid', $languageUid);
     }
-    
+
     /**
      * Set l10n parent for translations
      */
@@ -171,7 +164,7 @@ class ContentBuilder
         return $this->with('l10n_parent', $parentUid)
             ->with('l10n_source', $parentUid);
     }
-    
+
     /**
      * Set FlexForm data
      */
@@ -179,7 +172,7 @@ class ContentBuilder
     {
         return $this->with('pi_flexform', $flexFormXml);
     }
-    
+
     /**
      * Set pages for list types
      */
@@ -187,7 +180,7 @@ class ContentBuilder
     {
         return $this->with('pages', $pages);
     }
-    
+
     /**
      * Set recursive level
      */
@@ -195,7 +188,7 @@ class ContentBuilder
     {
         return $this->with('recursive', $recursive);
     }
-    
+
     /**
      * Set frame class
      */
@@ -203,7 +196,7 @@ class ContentBuilder
     {
         return $this->with('frame_class', $frameClass);
     }
-    
+
     /**
      * Set layout
      */
@@ -211,7 +204,7 @@ class ContentBuilder
     {
         return $this->with('layout', $layout);
     }
-    
+
     /**
      * Set custom data field
      */
@@ -220,7 +213,7 @@ class ContentBuilder
         $this->data[$field] = $value;
         return $this;
     }
-    
+
     /**
      * Create the content record and return its UID
      */
@@ -229,16 +222,16 @@ class ContentBuilder
         // Set timestamps
         $this->data['tstamp'] = time();
         $this->data['crdate'] = time();
-        
+
         $connection = $this->connectionPool->getConnectionForTable('tt_content');
         $connection->insert('tt_content', $this->data);
-        
+
         return (int)$connection->lastInsertId();
     }
-    
+
     /**
      * Create multiple content elements with incremented headers
-     * 
+     *
      * @param int $count Number of elements to create
      * @return array Array of created UIDs
      */
@@ -247,17 +240,17 @@ class ContentBuilder
         $uids = [];
         $baseHeader = $this->data['header'];
         $baseSorting = $this->data['sorting'];
-        
+
         for ($i = 1; $i <= $count; $i++) {
             $this->data['header'] = $baseHeader . ' ' . $i;
             $this->data['sorting'] = $baseSorting + ($i * 256);
             $uids[] = $this->create();
         }
-        
+
         // Reset values
         $this->data['header'] = $baseHeader;
         $this->data['sorting'] = $baseSorting;
-        
+
         return $uids;
     }
 }

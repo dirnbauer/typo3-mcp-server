@@ -8,6 +8,7 @@ use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Verify that setting `pid` in the data of an `action=update` call moves the
@@ -25,8 +26,8 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
     protected function setUp(): void
     {
         parent::setUp();
-        $this->writeTool = new WriteTableTool();
-        $this->readTool = new ReadTableTool();
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
     }
 
     public function testUpdatePidMovesContentRecordToAnotherPage(): void
@@ -43,7 +44,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'uid' => $sourceUids['Mover'],
             'data' => ['pid' => $targetPage],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($sourcePage, ['Keep1', 'Keep2']);
         // No position specified → the moved record lands at the top of the new page.
@@ -66,7 +67,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'data' => ['pid' => $targetPage],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     public function testUpdatePidWithPositionBottomLandsAtBottomOfTargetPage(): void
@@ -84,7 +85,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'data' => ['pid' => $targetPage],
             'position' => 'bottom',
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($targetPage, ['First', 'Second', 'Mover']);
         $this->assertOrderOnPage($sourcePage, []);
@@ -107,7 +108,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'data' => ['pid' => $emptyTarget],
             'position' => 'bottom',
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($sourcePage, []);
         $this->assertOrderOnPage($emptyTarget, ['Mover']);
@@ -129,7 +130,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'data' => ['pid' => $targetPage],
             'position' => 'after:' . $targetUids['First'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($targetPage, ['First', 'Mover', 'Second', 'Third']);
     }
@@ -151,7 +152,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
                 'header' => 'Renamed Header',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($sourcePage, []);
         $this->assertOrderOnPage($targetPage, ['Renamed Header']);
@@ -171,7 +172,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'uid' => $uids['B'],
             'data' => ['pid' => $page],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // 'B' was moved to the top of the same page.
         $this->assertOrderOnPage($page, ['B', 'A', 'C']);
@@ -191,16 +192,16 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'uid' => $childUid,
             'data' => ['pid' => $parentB],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $readResult = $this->readTool->execute([
             'table' => 'pages',
             'uid' => $childUid,
         ]);
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $data = $this->extractJsonFromResult($readResult);
         $record = $data['records'][0] ?? $data;
-        $this->assertSame($parentB, (int)$record['pid'], 'Page should now live under the new parent');
+        self::assertSame($parentB, (int)$record['pid'], 'Page should now live under the new parent');
     }
 
     public function testUpdateWithTopLevelPidStillWorksAsCompatFallback(): void
@@ -218,7 +219,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'uid' => $uids['Mover'],
             'pid' => $targetPage,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $this->assertOrderOnPage($targetPage, ['Mover']);
         $this->assertOrderOnPage($sourcePage, []);
@@ -241,7 +242,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'data' => ['pid' => $targetPage],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $this->assertOrderOnPage($targetPage, ['Lonely']);
     }
 
@@ -253,7 +254,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'pid' => $parentUid ?? $this->getRootPageUid(),
             'data' => ['title' => $title, 'slug' => $slug, 'doktype' => 1],
         ]);
-        $this->assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
         return (int)$this->extractJsonFromResult($pageResult)['uid'];
     }
 
@@ -272,7 +273,7 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
                 'position' => 'bottom',
                 'data' => ['CType' => 'textmedia', 'header' => $header, 'colPos' => 0],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
             $uids[$header] = (int)$this->extractJsonFromResult($result)['uid'];
         }
         return $uids;
@@ -287,10 +288,10 @@ class WriteTableUpdatePidTest extends AbstractFunctionalTest
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        $this->assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
         $readData = $this->extractJsonFromResult($readResult);
         $records = $readData['records'] ?? [];
         $actual = array_map(static fn(array $r): string => $r['header'], $records);
-        $this->assertSame($expectedHeaders, $actual);
+        self::assertSame($expectedHeaders, $actual);
     }
 }

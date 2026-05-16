@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
+use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -189,8 +190,8 @@ class NonAdminWriteTest extends AbstractFunctionalTest
         $this->switchToWorkspace(50);
 
         // Verify workspace is set
-        $this->assertEquals(50, $GLOBALS['BE_USER']->workspace, 'Workspace should be 50');
-        $this->assertFalse($GLOBALS['BE_USER']->isAdmin(), 'User should NOT be admin');
+        self::assertEquals(50, $GLOBALS['BE_USER']->workspace, 'Workspace should be 50');
+        self::assertFalse($GLOBALS['BE_USER']->isAdmin(), 'User should NOT be admin');
 
         // DEBUG: Verify page 100 exists and has correct permissions
         $connection = $this->connectionPool->getConnectionForTable('pages');
@@ -202,10 +203,10 @@ class NonAdminWriteTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAssociative();
 
-        $this->assertNotFalse($page, 'Page 100 should exist');
-        $this->assertEquals(99, $page['perms_userid'], 'Page owner should be user 99');
-        $this->assertEquals(31, $page['perms_user'], 'Page should have full user permissions');
-        $this->assertEquals(1, $page['doktype'], 'Page should be standard doktype');
+        self::assertNotFalse($page, 'Page 100 should exist');
+        self::assertEquals(99, $page['perms_userid'], 'Page owner should be user 99');
+        self::assertEquals(31, $page['perms_user'], 'Page should have full user permissions');
+        self::assertEquals(1, $page['doktype'], 'Page should be standard doktype');
 
         // 4. Execute write operation on page 100 (where user 99 has permissions)
         // Note: sys_language_uid should be auto-added by WriteTableTool now
@@ -217,22 +218,22 @@ class NonAdminWriteTest extends AbstractFunctionalTest
                 'CType' => 'text',
                 'header' => 'Non-Admin Test Content',
                 'bodytext' => 'This content was created by a non-admin user.',
-            ]
+            ],
         ]);
 
         // 5. This SHOULD succeed - if it fails, the error reveals the root cause
-        $this->assertFalse(
+        self::assertFalse(
             $result->isError,
-            'Non-admin write FAILED with full permissions configured. ' .
-            'Page data: ' . json_encode($page) . '. Error: ' .
-            json_encode($result->jsonSerialize(), JSON_PRETTY_PRINT)
+            'Non-admin write FAILED with full permissions configured. '
+            . 'Page data: ' . json_encode($page) . '. Error: '
+            . json_encode($result->jsonSerialize(), JSON_PRETTY_PRINT),
         );
 
         // 6. Verify the content was created
-        $responseData = json_decode($result->content[0]->text, true);
-        $this->assertIsArray($responseData, 'Response should be valid JSON');
-        $this->assertArrayHasKey('uid', $responseData, 'Response should contain UID');
-        $this->assertGreaterThan(0, $responseData['uid'], 'UID should be positive');
+        $responseData = json_decode((string)$result->content[0]->text, true);
+        self::assertIsArray($responseData, 'Response should be valid JSON');
+        self::assertArrayHasKey('uid', $responseData, 'Response should contain UID');
+        self::assertGreaterThan(0, $responseData['uid'], 'UID should be positive');
     }
 
     /**
@@ -277,14 +278,14 @@ class NonAdminWriteTest extends AbstractFunctionalTest
             'data' => [
                 'CType' => 'text',
                 'header' => 'Non-Admin on Root Page',
-            ]
+            ],
         ]);
 
         // 5. Check result
-        $this->assertFalse(
+        self::assertFalse(
             $result->isError,
-            'Non-admin write to page 1 FAILED. Error: ' .
-            json_encode($result->jsonSerialize(), JSON_PRETTY_PRINT)
+            'Non-admin write to page 1 FAILED. Error: '
+            . json_encode($result->jsonSerialize(), JSON_PRETTY_PRINT),
         );
     }
 
@@ -314,11 +315,11 @@ class NonAdminWriteTest extends AbstractFunctionalTest
             'pid' => 1,
             'data' => [
                 'CType' => 'text',
-                'header' => 'Admin Test Content'
-            ]
+                'header' => 'Admin Test Content',
+            ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -334,12 +335,12 @@ class NonAdminWriteTest extends AbstractFunctionalTest
         $this->switchToWorkspace(50);
 
         // Create a ReadTableTool and try to read
-        $readTool = GeneralUtility::makeInstance(\Hn\McpServer\MCP\Tool\Record\ReadTableTool::class);
+        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'pages',
-            'uid' => 100
+            'uid' => 100,
         ]);
 
-        $this->assertFalse($result->isError, 'Non-admin should be able to read pages: ' . json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, 'Non-admin should be able to read pages: ' . json_encode($result->jsonSerialize()));
     }
 }

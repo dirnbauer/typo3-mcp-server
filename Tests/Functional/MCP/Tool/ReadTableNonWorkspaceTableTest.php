@@ -38,7 +38,7 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        $this->readTool = new ReadTableTool();
+        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
 
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
@@ -57,7 +57,7 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
     public function testReadNonWorkspaceTableByUidInWorkspaceContextProducesNoWorkspaceColumnsInSql(): void
     {
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(
+        self::assertGreaterThan(
             0,
             $GLOBALS['BE_USER']->workspace,
             'Test prerequisite: backend user must be inside a workspace.'
@@ -67,59 +67,59 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $captured = $this->capturingDispatcher->capturedSqlForTable('sys_file');
-        $this->assertArrayHasKey('count', $captured, 'Count query should have been dispatched.');
-        $this->assertArrayHasKey('select', $captured, 'Select query should have been dispatched.');
+        self::assertArrayHasKey('count', $captured, 'Count query should have been dispatched.');
+        self::assertArrayHasKey('select', $captured, 'Select query should have been dispatched.');
 
         foreach ($captured as $type => $sql) {
-            $this->assertStringNotContainsString(
+            self::assertStringNotContainsString(
                 't3ver_oid',
                 $sql,
                 "The {$type} query against a non-workspace table must not reference t3ver_oid; "
                 . "this column does not exist on sys_file and the reference breaks MySQL/MariaDB. SQL: {$sql}"
             );
-            $this->assertStringNotContainsString('t3ver_wsid', $sql, "Got SQL: {$sql}");
-            $this->assertStringNotContainsString('t3ver_state', $sql, "Got SQL: {$sql}");
+            self::assertStringNotContainsString('t3ver_wsid', $sql, "Got SQL: {$sql}");
+            self::assertStringNotContainsString('t3ver_state', $sql, "Got SQL: {$sql}");
         }
     }
 
     public function testReadNonWorkspaceTableByUidInWorkspaceContextReturnsRecord(): void
     {
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         $result = $this->readTool->execute([
             'table' => 'sys_file',
             'uid' => 1,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $payload = json_decode($result->content[0]->text, true);
-        $this->assertSame(1, $payload['total']);
-        $this->assertCount(1, $payload['records']);
-        $this->assertSame(1, $payload['records'][0]['uid']);
+        $payload = json_decode((string)$result->content[0]->text, true);
+        self::assertSame(1, $payload['total']);
+        self::assertCount(1, $payload['records']);
+        self::assertSame(1, $payload['records'][0]['uid']);
     }
 
     public function testReadNonWorkspaceTableByMultipleUidsInWorkspaceContextReturnsRecords(): void
     {
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         $result = $this->readTool->execute([
             'table' => 'sys_file',
             'uid' => [1, 3],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $payload = json_decode($result->content[0]->text, true);
-        $this->assertSame(2, $payload['total']);
+        $payload = json_decode((string)$result->content[0]->text, true);
+        self::assertSame(2, $payload['total']);
         $uids = array_column($payload['records'], 'uid');
         sort($uids);
-        $this->assertSame([1, 3], $uids);
+        self::assertSame([1, 3], $uids);
     }
 }
 

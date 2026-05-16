@@ -22,33 +22,33 @@ require_once __DIR__ . '/LlmTestCase.php';
 // Simple .env.local loader
 (static function () {
     $envFile = __DIR__ . '/../../.env.local';
-    
+
     if (!file_exists($envFile)) {
         return;
     }
-    
+
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    
+
     foreach ($lines as $line) {
         // Skip comments
         if (str_starts_with(trim($line), '#')) {
             continue;
         }
-        
+
         // Parse KEY=VALUE or KEY='VALUE' or KEY="VALUE"
         if (preg_match('/^([A-Z_]+)\s*=\s*(.*)$/', $line, $matches)) {
             $key = $matches[1];
             $value = $matches[2];
-            
+
             // Remove quotes if present
             $value = trim($value);
             if (
-                (str_starts_with($value, '"') && str_ends_with($value, '"')) ||
-                (str_starts_with($value, "'") && str_ends_with($value, "'"))
+                (str_starts_with($value, '"') && str_ends_with($value, '"'))
+                || (str_starts_with($value, "'") && str_ends_with($value, "'"))
             ) {
                 $value = substr($value, 1, -1);
             }
-            
+
             // Set environment variable if not already set
             if (!getenv($key)) {
                 putenv("$key=$value");

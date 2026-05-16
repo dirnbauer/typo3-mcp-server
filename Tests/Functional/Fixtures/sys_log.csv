@@ -1,0 +1,8 @@
+"sys_log"
+,"uid","userid","tstamp","type","action","error","details","log_data","tablename","recuid","IP","channel","level","component","message"
+,1,1,1700000000,1,1,0,"Record created","","tt_content",10,"127.0.0.1","default",6,"TYPO3.CMS.Backend","User admin created record tt_content:10"
+,2,1,1700001000,1,2,0,"Record modified","","pages",3,"127.0.0.1","default",6,"TYPO3.CMS.Backend","User admin modified record pages:3"
+,3,1,1700002000,1,1,2,"Permission denied","","tt_content",11,"127.0.0.1","default",3,"TYPO3.CMS.Backend","Permission denied when creating record"
+,4,2,1700003000,255,0,0,"Login successful","","","","192.168.1.1","default",6,"TYPO3.CMS.Core","User editor logged in"
+,5,1,1700004000,1,1,0,"Cache cleared","","","","127.0.0.1","default",5,"TYPO3.CMS.Core","All caches have been cleared"
+,6,1,1700005000,1,1,3,"Database error","","tx_news_domain_model_news",5,"127.0.0.1","default",2,"TYPO3.CMS.Core","Critical database error occurred"

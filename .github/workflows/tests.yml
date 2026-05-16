@@ -2,55 +2,107 @@ name: Tests
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  documentation:
+    runs-on: ubuntu-latest
+    name: Documentation render check
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Render TYPO3 documentation
+        run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit tests with coverage
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run unit test suite with coverage
+        run: |
+          mkdir -p var/log
+          vendor/bin/phpunit -c Tests/UnitTests.xml --coverage-clover var/log/unit-coverage.xml
+
   functional-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { typo3: '13.4', php: '8.2' }
-          - { typo3: '13.4', php: '8.3' }
-          - { typo3: '13.4', php: '8.4' }
-          - { typo3: '13.4', php: '8.5' }
-          - { typo3: '14.3', php: '8.2' }
-          - { typo3: '14.3', php: '8.3' }
-          - { typo3: '14.3', php: '8.4' }
-          - { typo3: '14.3', php: '8.5' }
+          # TYPO3 v14.3 LTS supports PHP 8.2-8.5; cover all four.
+          - php-version: '8.2'
+            typo3-version: '^14.0'
+          - php-version: '8.3'
+            typo3-version: '^14.0'
+          - php-version: '8.4'
+            typo3-version: '^14.0'
+          - php-version: '8.5'
+            typo3-version: '^14.0'
 
-    name: TYPO3 ${{ matrix.typo3 }} / PHP ${{ matrix.php }}
+    name: "PHP ${{ matrix.php-version }} / TYPO3 ${{ matrix.typo3-version }}"
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        uses: shivammathur/setup-php@2.37.0
         with:
-          php-version: ${{ matrix.php }}
-          extensions: sqlite3, pdo_sqlite, intl
+          php-version: ${{ matrix.php-version }}
+          extensions: sqlite3, pdo_sqlite
           coverage: none
 
-      - name: Pin TYPO3 version
-        run: |
-          composer require --no-update --no-interaction --no-progress \
-            "typo3/cms-core:^${{ matrix.typo3 }}" \
-            "typo3/cms-backend:^${{ matrix.typo3 }}" \
-            "typo3/cms-workspaces:^${{ matrix.typo3 }}"
-          composer require --no-update --no-interaction --no-progress --dev \
-            "typo3/cms-install:^${{ matrix.typo3 }}"
-
       - name: Install Composer dependencies
-        run: composer update --no-interaction --prefer-dist
+        run: composer install --no-interaction --prefer-dist
 
       - name: Run functional test suite
         run: composer test
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.37.0
+        with:
+          php-version: '8.3'
+          extensions: sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHPStan
+        run: composer phpstan
+
+      - name: PHP CS Fixer
+        run: composer php-cs-fixer
+
+      - name: Rector
+        run: composer rector
+
+      - name: Fractor
+        run: composer fractor
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -110,7 +162,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Auto-trigger when tool implementations or LLM tests change
           FILES=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate --jq '.[].filename')
           if echo "$FILES" | grep -qE '^(Classes/MCP/Tool/|Classes/Service/|Tests/Llm/)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
@@ -123,13 +174,12 @@ jobs:
     if: always() && (github.event_name == 'push' || needs.llm-trigger.outputs.run == 'true')
     runs-on: ubuntu-latest
     name: LLM Tests
-
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        uses: shivammathur/setup-php@2.37.0
         with:
           php-version: '8.4'
           extensions: sqlite3, pdo_sqlite, intl
@@ -148,6 +198,8 @@ jobs:
         continue-on-error: true
 
       - name: Check majority pass rule
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: php Build/check-llm-results.php --min-pass=3
 
       - name: Publish LLM stats to Google Sheet

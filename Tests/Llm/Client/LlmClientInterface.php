@@ -12,7 +12,7 @@ interface LlmClientInterface
 {
     /**
      * Complete a prompt with available tools
-     * 
+     *
      * @param string $prompt The user prompt
      * @param array $tools Available tools in OpenAI function format
      * @param array $options Additional options (temperature, max_tokens, etc.)
@@ -22,7 +22,7 @@ interface LlmClientInterface
 
     /**
      * Continue a conversation with tool results
-     * 
+     *
      * @param string $initialPrompt The original user prompt
      * @param LlmResponse $previousResponse The previous LLM response containing tool calls
      * @param array $toolResults Array of tool execution results
@@ -35,6 +35,6 @@ interface LlmClientInterface
         LlmResponse $previousResponse,
         array $toolResults,
         array $tools,
-        array $options = []
+        array $options = [],
     ): LlmResponse;
 }

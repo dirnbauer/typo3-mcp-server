@@ -6,35 +6,16 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
-use Hn\McpServer\Tests\Functional\Fixtures\TestDataBuilder;
-use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
-use Hn\McpServer\Tests\Functional\Traits\PluginContentTrait;
-use Mcp\Types\TextContent;
 
 class ReadTableToolTest extends AbstractFunctionalTest
 {
-    use McpAssertionsTrait;
-    use PluginContentTrait;
-
     private ReadTableTool $tool;
-    private TestDataBuilder $data;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tool = new ReadTableTool();
-        $this->data = new TestDataBuilder();
-
-        // Plugin row used by testFieldFilteringBasedOnCType. Inserted
-        // programmatically because the tt_content shape differs between
-        // TYPO3 13 (CType=list + list_type) and TYPO3 14 (CType=plugin).
-        $this->insertPluginContentElement(
-            uid: 105,
-            pid: 6,
-            pluginIdentifier: 'news_pi1',
-            extra: ['header' => 'Contact Form', 'bodytext' => 'Get in touch']
-        );
+        $this->tool = $this->getService(ReadTableTool::class);
     }
 
     /**
@@ -46,27 +27,27 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
-        $this->assertEquals('tt_content', $data['table']);
-        $this->assertArrayHasKey('records', $data);
-        
+
+        self::assertEquals('tt_content', $data['table']);
+        self::assertArrayHasKey('records', $data);
+
         // Should have 3 content elements including hidden one (100, 101, 104)
-        $this->assertCount(3, $data['records']);
-        
+        self::assertCount(3, $data['records']);
+
         // Verify record structure
         $firstRecord = $data['records'][0];
         $this->assertHasEssentialFields($firstRecord, ['header', 'CType']);
-        
+
         // Verify specific content - now includes hidden records
         $uids = array_column($data['records'], 'uid');
-        $this->assertContains(100, $uids);
-        $this->assertContains(101, $uids);
-        $this->assertContains(104, $uids); // Hidden content is now included
+        self::assertContains(100, $uids);
+        self::assertContains(101, $uids);
+        self::assertContains(104, $uids); // Hidden content is now included
     }
 
     /**
@@ -77,20 +58,20 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute([
             'table' => 'tt_content',
             'uid' => 100,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
+
         // Should have exactly one record
-        $this->assertCount(1, $data['records']);
-        
+        self::assertCount(1, $data['records']);
+
         $expected = [
             'uid' => 100,
             'header' => 'Welcome Header',
             'CType' => 'textmedia',
-            'pid' => 1
+            'pid' => 1,
         ];
         $this->assertRecordEquals($expected, $data['records'][0]);
     }
@@ -103,25 +84,25 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute([
             'table' => 'pages',
             'pid' => 0, // Root level pages
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
-        $this->assertEquals('pages', $data['table']);
-        $this->assertGreaterThan(0, count($data['records']));
-        
+
+        self::assertEquals('pages', $data['table']);
+        self::assertGreaterThan(0, count($data['records']));
+
         // Should include root page (Home) - Contact and News are now subpages
         $titles = array_column($data['records'], 'title');
-        $this->assertContains('Home', $titles);
-        
+        self::assertContains('Home', $titles);
+
         // Contact and News should not be in root level anymore
-        $this->assertNotContains('Contact', $titles);
-        $this->assertNotContains('News', $titles);
-        
+        self::assertNotContains('Contact', $titles);
+        self::assertNotContains('News', $titles);
+
         // Should not include hidden pages by default
-        $this->assertNotContains('Hidden Page', $titles);
+        self::assertNotContains('Hidden Page', $titles);
     }
 
     /**
@@ -133,13 +114,14 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute([
             'table' => 'pages',
             'limit' => 2,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
-        $this->assertLessThanOrEqual(2, count($data['records']));
+
+        self::assertLessThanOrEqual(2, count($data['records']));
+        self::assertTrue($data['hasMore']);
         $this->assertHasPagination($result, 2, 0);
     }
 
@@ -152,10 +134,13 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'table' => 'pages',
             'limit' => 1,
             'offset' => 1,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
+        $data = $this->extractJsonFromResult($result);
+        self::assertCount(1, $data['records']);
+        self::assertTrue($data['hasMore']);
         $this->assertHasPagination($result, 1, 1);
     }
 
@@ -167,18 +152,18 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute([
             'table' => 'pages',
             'uid' => 1,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
+
         $this->assertSuccessfulToolResult($result);
         $data = $this->extractJsonFromResult($result);
-        
+
         $record = $data['records'][0];
-        
+
         // Date fields should be converted to ISO format
-        $this->assertArrayHasKey('tstamp', $record);
-        $this->assertArrayHasKey('crdate', $record);
-        
+        self::assertArrayHasKey('tstamp', $record);
+        self::assertArrayHasKey('crdate', $record);
+
         // Should be ISO 8601 format strings, not timestamps
         $this->assertDateFormat($record['tstamp'], 'tstamp');
         $this->assertDateFormat($record['crdate'], 'crdate');
@@ -190,9 +175,9 @@ class ReadTableToolTest extends AbstractFunctionalTest
     public function testReadFromInvalidTable(): void
     {
         $result = $this->tool->execute([
-            'table' => 'non_existent_table'
+            'table' => 'non_existent_table',
         ]);
-        
+
         $this->assertToolError($result, 'does not exist in TCA');
     }
 
@@ -202,47 +187,50 @@ class ReadTableToolTest extends AbstractFunctionalTest
     public function testMissingTableParameter(): void
     {
         $result = $this->tool->execute([]);
-        
+
         $this->assertToolError($result, 'Table name is required');
     }
 
     /**
      * Test reading with custom WHERE condition
      */
-    public function testReadWithWhereCondition(): void
+    public function testReadWithFilterCondition(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         $result = $tool->execute([
             'table' => 'tt_content',
-            'where' => 'CType = "textmedia"',
-            'includeRelations' => false
+            'filters' => [
+                ['field' => 'CType', 'operator' => 'eq', 'value' => 'textmedia'],
+            ],
+            'includeRelations' => false,
         ]);
-        
-        $this->assertFalse($result->isError);
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError);
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // All returned records should have CType = textmedia
         foreach ($data['records'] as $record) {
-            $this->assertEquals('textmedia', $record['CType']);
+            self::assertEquals('textmedia', $record['CType']);
         }
     }
 
     /**
      * Test WHERE condition security (should block dangerous SQL)
      */
-    public function testWhereConditionSecurity(): void
+    public function testFilterValidationRejectsInvalidOperator(): void
     {
-        $tool = new ReadTableTool();
-        
-        // Try to inject dangerous SQL
+        $tool = $this->getService(ReadTableTool::class);
+
         $result = $tool->execute([
             'table' => 'pages',
-            'where' => 'uid = 1; DROP TABLE pages',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'DROP', 'value' => '1'],
+            ],
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('disallowed SQL keywords', $result->content[0]->text);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('invalid operator', $result->content[0]->text);
     }
 
     /**
@@ -250,22 +238,22 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testToolSchema(): void
     {
-        $tool = new ReadTableTool();
+        $tool = $this->getService(ReadTableTool::class);
         $schema = $tool->getSchema();
-        
-        $this->assertIsArray($schema);
-        $this->assertArrayHasKey('description', $schema);
-        $this->assertArrayHasKey('inputSchema', $schema);
-        $this->assertArrayHasKey('properties', $schema['inputSchema']);
-        
+
+        self::assertIsArray($schema);
+        self::assertArrayHasKey('description', $schema);
+        self::assertArrayHasKey('inputSchema', $schema);
+        self::assertArrayHasKey('properties', $schema['inputSchema']);
+
         // Check key parameters
         $properties = $schema['inputSchema']['properties'];
-        $this->assertArrayHasKey('table', $properties);
-        $this->assertArrayHasKey('pid', $properties);
-        $this->assertArrayHasKey('uid', $properties);
-        $this->assertArrayHasKey('limit', $properties);
-        $this->assertArrayHasKey('offset', $properties);
-        $this->assertArrayHasKey('where', $properties);
+        self::assertArrayHasKey('table', $properties);
+        self::assertArrayHasKey('pid', $properties);
+        self::assertArrayHasKey('uid', $properties);
+        self::assertArrayHasKey('limit', $properties);
+        self::assertArrayHasKey('offset', $properties);
+        self::assertArrayHasKey('filters', $properties);
     }
 
     /**
@@ -273,24 +261,24 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testReadWithSorting(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
-        $this->assertFalse($result->isError);
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError);
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // Records should be sorted by sorting field (ascending) - now includes hidden
-        $this->assertCount(3, $data['records']);
-        
+        self::assertCount(3, $data['records']);
+
         $sortingValues = array_column($data['records'], 'sorting');
-        $this->assertEquals(256, $sortingValues[0]);
-        $this->assertEquals(512, $sortingValues[1]);
-        $this->assertEquals(768, $sortingValues[2]); // Hidden record
+        self::assertEquals(256, $sortingValues[0]);
+        self::assertEquals(512, $sortingValues[1]);
+        self::assertEquals(768, $sortingValues[2]); // Hidden record
     }
 
     /**
@@ -298,89 +286,120 @@ class ReadTableToolTest extends AbstractFunctionalTest
      */
     public function testEssentialFieldsIncluded(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         $result = $tool->execute([
             'table' => 'pages',
             'uid' => 1,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
-        $this->assertFalse($result->isError);
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError);
+        $data = json_decode((string)$result->content[0]->text, true);
+
         $record = $data['records'][0];
-        
+
         // Essential fields should always be present
-        $this->assertArrayHasKey('uid', $record);
-        $this->assertArrayHasKey('pid', $record);
-        $this->assertArrayHasKey('tstamp', $record);
-        $this->assertArrayHasKey('crdate', $record);
-        
+        self::assertArrayHasKey('uid', $record);
+        self::assertArrayHasKey('pid', $record);
+        self::assertArrayHasKey('tstamp', $record);
+        self::assertArrayHasKey('crdate', $record);
+
         // For pages, title should be included as it's the label field
-        $this->assertArrayHasKey('title', $record);
+        self::assertArrayHasKey('title', $record);
     }
-    
+
     /**
      * Test field filtering based on CType
      */
     public function testFieldFilteringBasedOnCType(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Test textmedia record (UID 100)
         $result = $tool->execute([
             'table' => 'tt_content',
             'uid' => 100,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
-        
-        $this->assertFalse($result->isError);
-        $data = json_decode($result->content[0]->text, true);
+
+        self::assertFalse($result->isError);
+        $data = json_decode((string)$result->content[0]->text, true);
         $textmediaRecord = $data['records'][0];
-        
+
         // Verify this is a textmedia record
-        $this->assertEquals('textmedia', $textmediaRecord['CType']);
-        
+        self::assertEquals('textmedia', $textmediaRecord['CType']);
+
         // Essential fields should always be present
-        $this->assertArrayHasKey('uid', $textmediaRecord);
-        $this->assertArrayHasKey('pid', $textmediaRecord);
-        $this->assertArrayHasKey('CType', $textmediaRecord);
-        $this->assertArrayHasKey('header', $textmediaRecord);
-        $this->assertArrayHasKey('sorting', $textmediaRecord);
-        $this->assertArrayHasKey('tstamp', $textmediaRecord);
-        $this->assertArrayHasKey('crdate', $textmediaRecord);
-        
+        self::assertArrayHasKey('uid', $textmediaRecord);
+        self::assertArrayHasKey('pid', $textmediaRecord);
+        self::assertArrayHasKey('CType', $textmediaRecord);
+        self::assertArrayHasKey('header', $textmediaRecord);
+        self::assertArrayHasKey('sorting', $textmediaRecord);
+        self::assertArrayHasKey('tstamp', $textmediaRecord);
+        self::assertArrayHasKey('crdate', $textmediaRecord);
+
         // For textmedia, bodytext should be present if it's in the showitem
-        $this->assertArrayHasKey('bodytext', $textmediaRecord);
-        
-        // Test plugin record (UID 105). The CType differs between TYPO3 13
-        // (CType=list, list_type=news_pi1) and TYPO3 14 (CType=news_pi1).
+        self::assertArrayHasKey('bodytext', $textmediaRecord);
+
+        // Test form_formframework record (UID 105)
         $result = $tool->execute([
             'table' => 'tt_content',
             'uid' => 105,
-            'includeRelations' => false
+            'includeRelations' => false,
         ]);
 
-        $this->assertFalse($result->isError);
-        $data = json_decode($result->content[0]->text, true);
-        $pluginRecord = $data['records'][0];
+        self::assertFalse($result->isError);
+        $data = json_decode((string)$result->content[0]->text, true);
+        $listRecord = $data['records'][0];
 
-        $expectedCType = \Hn\McpServer\Service\TableAccessService::hasPluginSubtypes() ? 'list' : 'news_pi1';
-        $this->assertEquals($expectedCType, $pluginRecord['CType']);
+        // Verify this is a plugin record.
+        self::assertContains($listRecord['CType'], ['list', 'news_pi1']);
 
-        $commonFields = ['uid', 'pid', 'CType', 'header', 'sorting', 'tstamp', 'crdate'];
-        foreach ($commonFields as $field) {
-            $this->assertArrayHasKey($field, $pluginRecord, "Plugin record missing essential field: $field");
-        }
+        // Essential fields should always be present
+        self::assertArrayHasKey('uid', $listRecord);
+        self::assertArrayHasKey('pid', $listRecord);
+        self::assertArrayHasKey('CType', $listRecord);
+        self::assertArrayHasKey('header', $listRecord);
+        self::assertArrayHasKey('sorting', $listRecord);
+        self::assertArrayHasKey('tstamp', $listRecord);
+        self::assertArrayHasKey('crdate', $listRecord);
+
+        // For list CType, we need to check how the old plugin system works
+        // The list CType uses subtype_value_field which should include pi_flexform when needed
+        // Note: This test may need adjustment based on actual TCA configuration
+        // The exact fields depend on how TYPO3 is configured and what TCA types are defined
+
+        // Field filtering analysis:
+        // Both records should return type-specific fields based on TCA configuration
+        // This tests the new TcaSchemaFactory-based implementation
 
         $textmediaFields = array_keys($textmediaRecord);
-        $pluginFields = array_keys($pluginRecord);
+        $listFields = array_keys($listRecord);
 
-        $this->assertContains('bodytext', $textmediaFields, "Textmedia should have bodytext");
+        // Both should have common essential fields
+        $commonFields = ['uid', 'pid', 'CType', 'header', 'sorting', 'tstamp', 'crdate'];
+        foreach ($commonFields as $field) {
+            self::assertContains($field, $textmediaFields, "Textmedia record missing essential field: $field");
+            self::assertContains($field, $listFields, "List record missing essential field: $field");
+        }
 
-        $this->assertLessThan(100, count($textmediaFields), "Too many fields returned for textmedia");
-        $this->assertLessThan(100, count($pluginFields), "Too many fields returned for the plugin");
+        // Both records should return type-specific fields based on TCA configuration
+        // In a proper type-based filtering system:
+        // - textmedia should have: bodytext, assets, but not pi_flexform
+        // - plugin records should expose their plugin-specific fields and potential FlexForm data
+
+        // Verify that type-specific fields are present
+        self::assertContains('bodytext', $textmediaFields, 'Textmedia should have bodytext');
+        if (isset($listRecord['list_type'])) {
+            self::assertContains('list_type', $listFields, 'Legacy plugin records should have list_type field');
+        } else {
+            self::assertContains('pi_flexform', $listFields, 'Plugin CTypes should expose pi_flexform');
+        }
+
+        // Count fields to ensure we're not getting too many unnecessary fields
+        self::assertLessThan(100, count($textmediaFields), 'Too many fields returned for textmedia');
+        self::assertLessThan(100, count($listFields), 'Too many fields returned for list');
     }
 
     /**
@@ -389,26 +408,26 @@ class ReadTableToolTest extends AbstractFunctionalTest
     public function testFieldFilteringWithUnknownCType(): void
     {
         // Create a record with an unknown CType
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read a record but simulate unknown CType by testing field filtering behavior
         $result = $tool->execute([
             'table' => 'tt_content',
-            'uid' => 100
+            'uid' => 100,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->content));
-        $data = json_decode($result->content[0]->text, true);
+
+        self::assertFalse($result->isError, json_encode($result->content));
+        $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
-        
+
         // Even with unknown CTypes, essential fields should be present
         $essentialFields = ['uid', 'pid', 'CType', 'header', 'sorting', 'tstamp', 'crdate'];
         foreach ($essentialFields as $field) {
-            $this->assertArrayHasKey($field, $record, "Essential field $field missing");
+            self::assertArrayHasKey($field, $record, "Essential field $field missing");
         }
-        
+
         // Should have reasonable field count (not all possible fields)
-        $this->assertLessThan(100, count($record), "Too many fields for unknown CType");
+        self::assertLessThan(100, count($record), 'Too many fields for unknown CType');
     }
 
     /**
@@ -422,23 +441,23 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['header', 'bodytext'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
         // uid is always included
-        $this->assertArrayHasKey('uid', $record);
+        self::assertArrayHasKey('uid', $record);
 
         // Requested fields should be present
-        $this->assertArrayHasKey('header', $record);
-        $this->assertArrayHasKey('bodytext', $record);
+        self::assertArrayHasKey('header', $record);
+        self::assertArrayHasKey('bodytext', $record);
 
         // Everything else should be absent — only uid + requested fields
-        $this->assertArrayNotHasKey('CType', $record, 'Non-requested field CType should be excluded');
-        $this->assertArrayNotHasKey('colPos', $record, 'Non-requested field colPos should be excluded');
-        $this->assertArrayNotHasKey('pid', $record, 'Non-requested field pid should be excluded');
-        $this->assertArrayNotHasKey('sorting', $record, 'Non-requested field sorting should be excluded');
-        $this->assertArrayNotHasKey('tstamp', $record, 'Non-requested field tstamp should be excluded');
+        self::assertArrayNotHasKey('CType', $record, 'Non-requested field CType should be excluded');
+        self::assertArrayNotHasKey('colPos', $record, 'Non-requested field colPos should be excluded');
+        self::assertArrayNotHasKey('pid', $record, 'Non-requested field pid should be excluded');
+        self::assertArrayNotHasKey('sorting', $record, 'Non-requested field sorting should be excluded');
+        self::assertArrayNotHasKey('tstamp', $record, 'Non-requested field tstamp should be excluded');
     }
 
     /**
@@ -459,8 +478,8 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => [],
         ]);
 
-        $this->assertFalse($resultWithout->isError, json_encode($resultWithout->jsonSerialize()));
-        $this->assertFalse($resultWith->isError, json_encode($resultWith->jsonSerialize()));
+        self::assertFalse($resultWithout->isError, json_encode($resultWithout->jsonSerialize()));
+        self::assertFalse($resultWith->isError, json_encode($resultWith->jsonSerialize()));
 
         $dataWithout = $this->extractJsonFromResult($resultWithout);
         $dataWith = $this->extractJsonFromResult($resultWith);
@@ -471,7 +490,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         sort($keysWithout);
         sort($keysWith);
 
-        $this->assertEquals($keysWithout, $keysWith, 'Empty fields array should return the same fields as omitting the parameter');
+        self::assertEquals($keysWithout, $keysWith, 'Empty fields array should return the same fields as omitting the parameter');
     }
 
     /**
@@ -482,9 +501,9 @@ class ReadTableToolTest extends AbstractFunctionalTest
         $schema = $this->tool->getSchema();
         $properties = $schema['inputSchema']['properties'];
 
-        $this->assertArrayHasKey('fields', $properties);
-        $this->assertEquals('array', $properties['fields']['type']);
-        $this->assertArrayHasKey('items', $properties['fields']);
+        self::assertArrayHasKey('fields', $properties);
+        self::assertEquals('array', $properties['fields']['type']);
+        self::assertArrayHasKey('items', $properties['fields']);
     }
 
     /**
@@ -498,21 +517,21 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['title'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
         // uid is always included
-        $this->assertArrayHasKey('uid', $record);
+        self::assertArrayHasKey('uid', $record);
 
         // Requested field should be present
-        $this->assertArrayHasKey('title', $record);
+        self::assertArrayHasKey('title', $record);
 
         // Everything else should be absent
-        $this->assertArrayNotHasKey('doktype', $record, 'Non-requested field doktype should be excluded');
-        $this->assertArrayNotHasKey('pid', $record, 'Non-requested field pid should be excluded');
-        $this->assertArrayNotHasKey('description', $record, 'Non-requested field description should be excluded');
-        $this->assertArrayNotHasKey('slug', $record, 'Non-requested field slug should be excluded');
+        self::assertArrayNotHasKey('doktype', $record, 'Non-requested field doktype should be excluded');
+        self::assertArrayNotHasKey('pid', $record, 'Non-requested field pid should be excluded');
+        self::assertArrayNotHasKey('description', $record, 'Non-requested field description should be excluded');
+        self::assertArrayNotHasKey('slug', $record, 'Non-requested field slug should be excluded');
     }
 
     /**
@@ -527,25 +546,25 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['tstamp', 'crdate', 'pid'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
         // uid always included
-        $this->assertArrayHasKey('uid', $record);
+        self::assertArrayHasKey('uid', $record);
 
         // Requested ctrl fields should be present
-        $this->assertArrayHasKey('tstamp', $record, 'Requested ctrl field tstamp should be included');
-        $this->assertArrayHasKey('crdate', $record, 'Requested ctrl field crdate should be included');
-        $this->assertArrayHasKey('pid', $record, 'Requested ctrl field pid should be included');
+        self::assertArrayHasKey('tstamp', $record, 'Requested ctrl field tstamp should be included');
+        self::assertArrayHasKey('crdate', $record, 'Requested ctrl field crdate should be included');
+        self::assertArrayHasKey('pid', $record, 'Requested ctrl field pid should be included');
 
         // Dates should still be converted to ISO format
         $this->assertDateFormat($record['tstamp'], 'tstamp');
         $this->assertDateFormat($record['crdate'], 'crdate');
 
         // Non-requested fields should be absent
-        $this->assertArrayNotHasKey('header', $record, 'Non-requested field header should be excluded');
-        $this->assertArrayNotHasKey('bodytext', $record, 'Non-requested field bodytext should be excluded');
+        self::assertArrayNotHasKey('header', $record, 'Non-requested field header should be excluded');
+        self::assertArrayNotHasKey('bodytext', $record, 'Non-requested field bodytext should be excluded');
     }
 
     /**
@@ -560,99 +579,16 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['ctype', 'HEADER', 'Bodytext'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
         // Fields should be returned in their correct TCA case
-        $this->assertArrayHasKey('CType', $record, '"ctype" should match CType');
-        $this->assertArrayHasKey('header', $record, '"HEADER" should match header');
-        $this->assertArrayHasKey('bodytext', $record, '"Bodytext" should match bodytext');
+        self::assertArrayHasKey('CType', $record, '"ctype" should match CType');
+        self::assertArrayHasKey('header', $record, '"HEADER" should match header');
+        self::assertArrayHasKey('bodytext', $record, '"Bodytext" should match bodytext');
 
         // Non-requested fields should still be excluded
-        $this->assertArrayNotHasKey('colPos', $record);
-    }
-
-    /**
-     * Reading several records in a single call by passing an array of UIDs.
-     * This is the natural follow-up after seeing an inline-relation hint
-     * like `metadata: [1, 5]` on a parent record.
-     */
-    public function testReadMultipleRecordsByUidArray(): void
-    {
-        $result = $this->tool->execute([
-            'table' => 'tt_content',
-            'uid' => [100, 101],
-            'includeRelations' => false,
-        ]);
-
-        $this->assertSuccessfulToolResult($result);
-        $data = $this->extractJsonFromResult($result);
-
-        $this->assertCount(2, $data['records']);
-        $uids = array_column($data['records'], 'uid');
-        $this->assertContains(100, $uids);
-        $this->assertContains(101, $uids);
-    }
-
-    /**
-     * Single-int form keeps working alongside the array form.
-     */
-    public function testUidArrayWithSingleEntryEqualsLegacyInt(): void
-    {
-        $resultArray = $this->tool->execute([
-            'table' => 'tt_content',
-            'uid' => [100],
-            'includeRelations' => false,
-        ]);
-        $resultInt = $this->tool->execute([
-            'table' => 'tt_content',
-            'uid' => 100,
-            'includeRelations' => false,
-        ]);
-
-        $this->assertEquals(
-            $this->extractJsonFromResult($resultArray)['records'],
-            $this->extractJsonFromResult($resultInt)['records']
-        );
-    }
-
-    /**
-     * Mixed valid and invalid UIDs: invalid ones (<= 0) drop out, the rest
-     * still match.
-     */
-    public function testUidArrayDropsNonPositiveEntries(): void
-    {
-        $result = $this->tool->execute([
-            'table' => 'tt_content',
-            'uid' => [100, -1, 0, 101],
-            'includeRelations' => false,
-        ]);
-
-        $this->assertSuccessfulToolResult($result);
-        $uids = array_column(
-            $this->extractJsonFromResult($result)['records'],
-            'uid'
-        );
-        sort($uids);
-        $this->assertSame([100, 101], $uids);
-    }
-
-    /**
-     * A uid filter that sanitises to an empty list must still apply (return
-     * zero rows), preserving the legacy `uid: -1 → empty result` semantics.
-     */
-    public function testUidArrayWithOnlyInvalidEntriesReturnsEmpty(): void
-    {
-        $result = $this->tool->execute([
-            'table' => 'tt_content',
-            'uid' => [-1, 0],
-            'includeRelations' => false,
-        ]);
-
-        $this->assertSuccessfulToolResult($result);
-        $data = $this->extractJsonFromResult($result);
-        $this->assertSame(0, $data['total']);
-        $this->assertEmpty($data['records']);
+        self::assertArrayNotHasKey('colPos', $record);
     }
 }

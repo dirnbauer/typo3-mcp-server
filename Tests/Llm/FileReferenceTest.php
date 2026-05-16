@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -50,17 +51,24 @@ class FileReferenceTest extends LlmTestCase
             if (($call['arguments']['table'] ?? '') === 'sys_file') {
                 $queriedSysFile = true;
                 $readResult = $this->executeToolCall($call);
-                $this->assertFalse($readResult['isError'] ?? false,
-                    'Reading sys_file failed: ' . $readResult['content']);
+                self::assertFalse(
+                    $readResult['isError'] ?? false,
+                    'Reading sys_file failed: ' . $readResult['content']
+                );
 
-                $this->assertStringContainsString('person.jpg', $readResult['content'],
-                    'sys_file query should return the seeded image files');
+                self::assertStringContainsString(
+                    'person.jpg',
+                    $readResult['content'],
+                    'sys_file query should return the seeded image files'
+                );
                 break;
             }
         }
 
-        $this->assertTrue($queriedSysFile,
-            'Expected LLM to query sys_file. History: ' . implode(' → ', $this->getToolCallHistory()));
+        self::assertTrue(
+            $queriedSysFile,
+            'Expected LLM to query sys_file. History: ' . implode(' → ', $this->getToolCallHistory())
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -82,16 +90,20 @@ class FileReferenceTest extends LlmTestCase
             if (($call['arguments']['table'] ?? '') === 'sys_file') {
                 $queriedSysFile = true;
                 $readResult = $this->executeToolCall($call);
-                $this->assertFalse($readResult['isError'] ?? false,
-                    'Reading sys_file failed: ' . $readResult['content']);
+                self::assertFalse(
+                    $readResult['isError'] ?? false,
+                    'Reading sys_file failed: ' . $readResult['content']
+                );
                 break;
             }
         }
 
-        $this->assertTrue($queriedSysFile,
+        self::assertTrue(
+            $queriedSysFile,
             'Expected LLM to map "fileadmin" to sys_file table. ' .
             'History: ' . implode(' → ', $this->getToolCallHistory()) . "\n" .
-            $this->getFailureContext($response));
+            $this->getFailureContext($response)
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -110,21 +122,26 @@ class FileReferenceTest extends LlmTestCase
         );
 
         $history = $this->getToolCallHistory();
-        $this->assertTrue(
+        self::assertTrue(
             in_array('ReadTable', $history) || in_array('Search', $history),
             'Expected LLM to use ReadTable (sys_file) or Search to discover person.jpg. ' .
             'History: ' . implode(' → ', $history)
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertNotEmpty($writeCalls,
+        self::assertNotEmpty(
+            $writeCalls,
             'Expected WriteTable call. History: ' . implode(' → ', $history) .
-            "\n" . $this->getFailureContext($response));
+            "\n" . $this->getFailureContext($response)
+        );
 
         $writeCall = $writeCalls[0]['arguments'];
-        $this->assertEquals('tt_content', $writeCall['table'],
+        self::assertEquals(
+            'tt_content',
+            $writeCall['table'],
             'Expected write to tt_content (embedded file reference), not sys_file_reference directly. ' .
-            $this->getFailureContext($response));
+            $this->getFailureContext($response)
+        );
 
         // Execute the write. The LLM may need to retry if it initially passes plain UIDs
         // instead of embedded records — we execute tools and let it correct itself.
@@ -138,9 +155,11 @@ class FileReferenceTest extends LlmTestCase
             $createdUid = $this->findCreatedContentElement();
         }
 
-        $this->assertNotNull($createdUid,
+        self::assertNotNull(
+            $createdUid,
             'Expected a new tt_content record to be created. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         // Verify a sys_file_reference was actually created in the workspace.
         // Accept either field (assets for textmedia, image for legacy textpic/image CTypes).
@@ -150,16 +169,21 @@ class FileReferenceTest extends LlmTestCase
             $this->queryFileReferencesForContent($createdUid, 'image')
         );
 
-        $this->assertNotEmpty($allRefs,
+        self::assertNotEmpty(
+            $allRefs,
             'LLM did not create a sys_file_reference (content element uid=' . $createdUid . '). ' .
             'Even after retries, the LLM could not produce embedded file reference records. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $fileUids = array_map(fn($r) => (int)$r['uid_local'], $allRefs);
-        $this->assertContains(3, $fileUids,
+        self::assertContains(
+            3,
+            $fileUids,
             'File reference must point to person.jpg (sys_file uid=3). ' .
             'Got references to uids: ' . implode(', ', $fileUids) . '. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
     }
 
     /**
@@ -204,8 +228,11 @@ class FileReferenceTest extends LlmTestCase
         $history = $this->getToolCallHistory();
 
         // The LLM must read the source first to know about the file references.
-        $this->assertContains('ReadTable', $history,
-            'Expected LLM to read source element before copying. History: ' . implode(' → ', $history));
+        self::assertContains(
+            'ReadTable',
+            $history,
+            'Expected LLM to read source element before copying. History: ' . implode(' → ', $history)
+        );
 
         // Execute all pending tool calls and let the LLM complete the task.
         // Models may create the element first and add file refs in a separate step,
@@ -220,9 +247,11 @@ class FileReferenceTest extends LlmTestCase
             $copiedUid = $this->findCopiedContentElement();
         }
 
-        $this->assertNotNull($copiedUid,
+        self::assertNotNull(
+            $copiedUid,
             'Expected a new tt_content record on the About page. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         // Check if file references were created. If not, give the LLM a nudge —
         // some models create the element first then need prompting to add files.
@@ -234,15 +263,20 @@ class FileReferenceTest extends LlmTestCase
             }
         }
 
-        $this->assertNotEmpty($newRefs,
+        self::assertNotEmpty(
+            $newRefs,
             'Copy has no file references. Original element has 3 (2 assets + 1 media), ' .
             'all pointing to sys_file uid=1. New element uid=' . $copiedUid . ' has none. ' .
-            $this->getFailureContext($currentResponse));
+            $this->getFailureContext($currentResponse)
+        );
 
         $newAssetFileUids = array_map(fn($r) => (int)$r['uid_local'], $newRefs);
-        $this->assertContains(1, $newAssetFileUids,
+        self::assertContains(
+            1,
+            $newAssetFileUids,
             'Copied file references should point to original sys_file (uid=1). ' .
-            'Got uid_local values: ' . implode(', ', $newAssetFileUids));
+            'Got uid_local values: ' . implode(', ', $newAssetFileUids)
+        );
     }
 
     /**
@@ -259,7 +293,7 @@ class FileReferenceTest extends LlmTestCase
             ->where(
                 $qb->expr()->eq('header', $qb->createNamedParameter('Welcome Header')),
                 $qb->expr()->eq('deleted', 0),
-                $qb->expr()->neq('uid', $qb->createNamedParameter(100, \Doctrine\DBAL\ParameterType::INTEGER))
+                $qb->expr()->neq('uid', $qb->createNamedParameter(100, ParameterType::INTEGER))
             )
             ->orderBy('uid', 'DESC')
             ->setMaxResults(1)
@@ -283,7 +317,7 @@ class FileReferenceTest extends LlmTestCase
         );
 
         $readCalls = $response->getToolCallsByName('ReadTable');
-        $this->assertNotEmpty($readCalls, 'Expected ReadTable call');
+        self::assertNotEmpty($readCalls, 'Expected ReadTable call');
 
         $readTtContent = false;
         foreach ($readCalls as $call) {
@@ -291,19 +325,29 @@ class FileReferenceTest extends LlmTestCase
                 $readTtContent = true;
 
                 $readResult = $this->executeToolCall($call);
-                $this->assertFalse($readResult['isError'] ?? false,
-                    'Reading tt_content failed: ' . $readResult['content']);
+                self::assertFalse(
+                    $readResult['isError'] ?? false,
+                    'Reading tt_content failed: ' . $readResult['content']
+                );
 
-                $this->assertStringContainsString('Hero Image', $readResult['content'],
-                    'Should see embedded file reference title');
-                $this->assertStringContainsString('test.jpg', $readResult['content'],
-                    'Should see enriched file name from sys_file');
+                self::assertStringContainsString(
+                    'Hero Image',
+                    $readResult['content'],
+                    'Should see embedded file reference title'
+                );
+                self::assertStringContainsString(
+                    'test.jpg',
+                    $readResult['content'],
+                    'Should see enriched file name from sys_file'
+                );
                 break;
             }
         }
 
-        $this->assertTrue($readTtContent,
-            'Expected LLM to read tt_content. History: ' . implode(' → ', $this->getToolCallHistory()));
+        self::assertTrue(
+            $readTtContent,
+            'Expected LLM to read tt_content. History: ' . implode(' → ', $this->getToolCallHistory())
+        );
     }
 
     /**
@@ -333,8 +377,8 @@ class FileReferenceTest extends LlmTestCase
                 $qb->expr()->eq('tablenames', $qb->createNamedParameter('tt_content')),
                 $qb->expr()->eq('fieldname', $qb->createNamedParameter($fieldName)),
                 $qb->expr()->or(
-                    $qb->expr()->eq('uid_foreign', $qb->createNamedParameter($parentUid, \Doctrine\DBAL\ParameterType::INTEGER)),
-                    $qb->expr()->eq('t3ver_oid', $qb->createNamedParameter($parentUid, \Doctrine\DBAL\ParameterType::INTEGER))
+                    $qb->expr()->eq('uid_foreign', $qb->createNamedParameter($parentUid, ParameterType::INTEGER)),
+                    $qb->expr()->eq('t3ver_oid', $qb->createNamedParameter($parentUid, ParameterType::INTEGER))
                 ),
                 $qb->expr()->eq('deleted', 0)
             )

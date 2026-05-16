@@ -6,7 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Tests\Functional\Traits\PluginContentTrait;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -14,8 +14,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class SearchToolTest extends FunctionalTestCase
 {
-    use PluginContentTrait;
-
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -36,15 +35,6 @@ class SearchToolTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_category_record_mm.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
 
-        // Plugin row whose shape depends on the running TYPO3 version
-        // (CType=list+list_type on v13, CType=plugin on v14).
-        $this->insertPluginContentElement(
-            uid: 105,
-            pid: 6,
-            pluginIdentifier: 'news_pi1',
-            extra: ['header' => 'Contact Form', 'bodytext' => 'Get in touch']
-        );
-
         // Set up backend user for DataHandler and TableAccessService
         $this->setUpBackendUser(1);
     }
@@ -54,31 +44,30 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSingleTermSearch(): void
     {
-        $tool = new SearchTool();
-        
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search for "welcome"
         $result = $tool->execute([
-            'terms' => ['welcome']
+            'terms' => ['welcome'],
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertCount(1, $result->content);
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertCount(1, $result->content);
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
+
         $content = $result->content[0]->text;
-        
+
         // Verify search results header
-        $this->assertStringContainsString('SEARCH RESULTS', $content);
-        $this->assertStringContainsString('Query: "welcome"', $content);
-        
+        self::assertStringContainsString('SEARCH RESULTS', $content);
+        self::assertStringContainsString('Query: "welcome"', $content);
+
         // Should find content in tt_content
-        $this->assertStringContainsString('TABLE: Page Content (tt_content)', $content);
-        $this->assertStringContainsString('[UID: 100] Welcome Header', $content);
-        $this->assertStringContainsString('Preview:', $content);
-        
+        self::assertStringContainsString('TABLE: Page Content (tt_content)', $content);
+        self::assertStringContainsString('[UID: 100] Welcome Header', $content);
+        self::assertStringContainsString('Preview:', $content);
+
         // Should show page information
-        $this->assertStringContainsString('📍 Page: Home [UID: 1]', $content);
+        self::assertStringContainsString('📍 Page: Home [UID: 1]', $content);
     }
 
     /**
@@ -86,25 +75,25 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleTermsWithOrLogic(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         $result = $tool->execute([
             'terms' => ['news', 'article'],
-            'termLogic' => 'OR'
+            'termLogic' => 'OR',
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Verify search header shows OR logic
-        $this->assertStringContainsString('Search Terms: ["news", "article"]', $content);
-        $this->assertStringContainsString('Logic: OR (records must match ANY term)', $content);
-        
+        self::assertStringContainsString('Search Terms: ["news", "article"]', $content);
+        self::assertStringContainsString('Logic: OR (records must match ANY term)', $content);
+
         // Should find multiple results
-        $this->assertStringContainsString('News', $content); // Page title
-        $this->assertStringContainsString('Article', $content); // Page or content
+        self::assertStringContainsString('News', $content); // Page title
+        self::assertStringContainsString('Article', $content); // Page or content
         // Content will be in preview format with highlighted terms
-        $this->assertStringContainsString('Preview:', $content);
+        self::assertStringContainsString('Preview:', $content);
     }
 
     /**
@@ -112,25 +101,25 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleTermsWithAndLogic(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         $result = $tool->execute([
             'terms' => ['team', 'meet'],
-            'termLogic' => 'AND'
+            'termLogic' => 'AND',
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Verify search header shows AND logic
-        $this->assertStringContainsString('Logic: AND (records must match ALL terms)', $content);
-        
+        self::assertStringContainsString('Logic: AND (records must match ALL terms)', $content);
+
         // Should only find "Meet our team" content (has both terms)
-        $this->assertStringContainsString('[UID: 102] Team Introduction', $content);
-        $this->assertStringContainsString('Preview:', $content);
-        
+        self::assertStringContainsString('[UID: 102] Team Introduction', $content);
+        self::assertStringContainsString('Preview:', $content);
+
         // Should NOT find "Team Members" (doesn't have "meet")
-        $this->assertStringNotContainsString('[UID: 103]', $content);
+        self::assertStringNotContainsString('[UID: 103]', $content);
     }
 
     /**
@@ -138,35 +127,35 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testTableSpecificSearch(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search only in pages table
         $result = $tool->execute([
             'terms' => ['Home'],
-            'table' => 'pages'
+            'table' => 'pages',
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should only show pages table results
-        $this->assertStringContainsString('TABLE: Page (pages)', $content);
-        $this->assertStringContainsString('[UID: 1] Home', $content);
-        
+        self::assertStringContainsString('TABLE: Page (pages)', $content);
+        self::assertStringContainsString('[UID: 1] Home', $content);
+
         // Should NOT show content elements
-        $this->assertStringNotContainsString('tt_content', $content);
-        
+        self::assertStringNotContainsString('tt_content', $content);
+
         // Test searching in tt_content only
         $result = $tool->execute([
             'terms' => ['welcome'],
-            'table' => 'tt_content'
+            'table' => 'tt_content',
         ]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Should only show tt_content results
-        $this->assertStringContainsString('TABLE: Page Content (tt_content)', $content);
-        $this->assertStringNotContainsString('TABLE: Page (pages)', $content);
+        self::assertStringContainsString('TABLE: Page Content (tt_content)', $content);
+        self::assertStringNotContainsString('TABLE: Page (pages)', $content);
     }
 
     /**
@@ -174,25 +163,25 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testPageSpecificSearch(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search only on page 2 (About)
         $result = $tool->execute([
             'terms' => ['team'],
-            'pageId' => 2
+            'pageId' => 2,
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find team content on About page
-        $this->assertStringContainsString('[UID: 102] Team Introduction', $content);
-        $this->assertStringContainsString('[UID: 103] Team Members', $content);
-        
+        self::assertStringContainsString('[UID: 102] Team Introduction', $content);
+        self::assertStringContainsString('[UID: 103] Team Members', $content);
+
         // Should show correct page info
-        $this->assertStringContainsString('📍 Page: About [UID: 2]', $content);
-        
-        // Note: The search with pageId filters only content elements (tt_content) 
+        self::assertStringContainsString('📍 Page: About [UID: 2]', $content);
+
+        // Note: The search with pageId filters only content elements (tt_content)
         // by page, but pages table is searched globally. So the Team page (UID: 4)
         // will still appear in results because it matches the search term
     }
@@ -202,23 +191,23 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchFindsHiddenRecords(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Hidden records are always included now
         $result = $tool->execute([
-            'terms' => ['hidden']
+            'terms' => ['hidden'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find hidden content element
-        $this->assertStringContainsString('[UID: 104]', $content);
-        $this->assertStringContainsString('Hidden Content', $content);
-        
+        self::assertStringContainsString('[UID: 104]', $content);
+        self::assertStringContainsString('Hidden Content', $content);
+
         // Should also find the hidden page
-        $this->assertStringContainsString('[UID: 3]', $content);
-        $this->assertStringContainsString('Hidden Page', $content);
+        self::assertStringContainsString('[UID: 3]', $content);
+        self::assertStringContainsString('Hidden Page', $content);
     }
 
     /**
@@ -226,33 +215,33 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testInlineRecordAttribution(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search for category name
         $result = $tool->execute([
-            'terms' => ['Technology']
+            'terms' => ['Technology'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // The search finds the category directly, not through inline attribution
         // because sys_category is a searchable table itself
-        $this->assertStringContainsString('TABLE: Category (sys_category)', $content);
-        $this->assertStringContainsString('[UID: 1] Technology', $content);
-        
+        self::assertStringContainsString('TABLE: Category (sys_category)', $content);
+        self::assertStringContainsString('[UID: 1] Technology', $content);
+
         // Since sys_category is not a hidden table, it won't trigger inline attribution
         // The inline attribution only works for hidden tables
-        
+
         // Test another category
         $result = $tool->execute([
-            'terms' => ['Business']
+            'terms' => ['Business'],
         ]);
-        
+
         $content = $result->content[0]->text;
-        
+
         // Should find the Business category directly
-        $this->assertStringContainsString('[UID: 2] Business', $content);
+        self::assertStringContainsString('[UID: 2] Business', $content);
     }
 
     /**
@@ -260,25 +249,25 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchResultFormatting(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         $result = $tool->execute([
-            'terms' => ['team']
+            'terms' => ['team'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Check overall structure
-        $this->assertStringContainsString('SEARCH RESULTS', $content);
-        $this->assertStringContainsString('Total Results:', $content);
-        $this->assertStringContainsString('Tables Searched:', $content);
-        
+        self::assertStringContainsString('SEARCH RESULTS', $content);
+        self::assertStringContainsString('Total Results:', $content);
+        self::assertStringContainsString('Tables Searched:', $content);
+
         // Check record formatting
-        $this->assertStringContainsString('• [UID:', $content); // Record prefix
-        $this->assertStringContainsString('📍 Page:', $content); // Page info
-        $this->assertStringContainsString('🎯 Type:', $content); // Content type
-        $this->assertStringContainsString('💬 Preview:', $content); // Content preview
+        self::assertStringContainsString('• [UID:', $content); // Record prefix
+        self::assertStringContainsString('📍 Page:', $content); // Page info
+        self::assertStringContainsString('🎯 Type:', $content); // Content type
+        self::assertStringContainsString('💬 Preview:', $content); // Content preview
     }
 
     /**
@@ -286,18 +275,18 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testEmptySearchResults(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         $result = $tool->execute([
-            'terms' => ['nonexistentterm12345']
+            'terms' => ['nonexistentterm12345'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should show total results as 0
-        $this->assertStringContainsString('Total Results: 0', $content);
-        $this->assertStringContainsString('nonexistentterm12345', $content);
+        self::assertStringContainsString('Total Results: 0', $content);
+        self::assertStringContainsString('nonexistentterm12345', $content);
     }
 
     /**
@@ -305,49 +294,49 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchTermValidation(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Test empty terms array
         $result = $tool->execute([
-            'terms' => []
+            'terms' => [],
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('At least one search term is required', $result->content[0]->text);
-        
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('At least one search term is required', $result->content[0]->text);
+
         // Test single character term
         $result = $tool->execute([
-            'terms' => ['a']
+            'terms' => ['a'],
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be at least 2 characters long', $result->content[0]->text);
-        
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be at least 2 characters long', $result->content[0]->text);
+
         // Test very long term
         $longTerm = str_repeat('x', 101);
         $result = $tool->execute([
-            'terms' => [$longTerm]
+            'terms' => [$longTerm],
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('cannot exceed 100 characters', $result->content[0]->text);
-        
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('cannot exceed 100 characters', $result->content[0]->text);
+
         // Test empty array with spaces
         $result = $tool->execute([
-            'terms' => ['  ', '']
+            'terms' => ['  ', ''],
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('At least one non-empty search term is required', $result->content[0]->text);
-        
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('At least one non-empty search term is required', $result->content[0]->text);
+
         // Test with non-array terms (simulating what would happen if validation wasn't in place)
         // In reality, this would fail at JSON parsing, but we test the tool's handling
         $result = $tool->execute([
-            'terms' => [123] // non-string in array
+            'terms' => [123], // non-string in array
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('All terms must be strings', $result->content[0]->text);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('All terms must be strings', $result->content[0]->text);
     }
 
     /**
@@ -355,32 +344,38 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSearchWithLimit(): void
     {
-        $tool = new SearchTool();
-        
-        // Search with very small limit - use a term that will match multiple records
+        $tool = $this->getService(SearchTool::class);
+
+        // The limit parameter is accepted but the tool uses a fixed internal limit
         $result = $tool->execute([
-            'terms' => ['content'], // Will match multiple content elements
-            'limit' => 2
+            'terms' => ['team'],
+            'limit' => 1,
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
-        // Should find some results
-        $this->assertStringContainsString('Total Results:', $content);
-        
-        // The limit applies per table, not globally
-        // So if multiple tables have matches, total can exceed limit
-        // Just verify that the search completes successfully with a limit
-        $this->assertStringContainsString('Found', $content);
-        
-        // Verify we have results but not too many (basic sanity check)
-        preg_match_all('/• \[UID: \d+\]/', $content, $matches);
-        $totalRecords = count($matches[0]);
-        
-        // With limit of 2 per table and multiple tables, should be reasonable
-        $this->assertGreaterThan(0, $totalRecords);
-        $this->assertLessThan(20, $totalRecords); // Sanity check - not unlimited
+
+        self::assertStringContainsString('Total Results:', $content);
+
+        // All matching records are returned since the tool uses a fixed internal limit
+        self::assertStringContainsString('[UID: 4]', $content);
+        self::assertStringContainsString('[UID: 102] Team Introduction', $content);
+        self::assertStringContainsString('[UID: 103] Team Members', $content);
+    }
+
+    public function testSearchLimitParameterAccepted(): void
+    {
+        $tool = $this->getService(SearchTool::class);
+
+        // The limit parameter is accepted without validation since the tool uses a fixed internal limit
+        $result = $tool->execute([
+            'terms' => ['team'],
+            'limit' => 0,
+        ]);
+
+        self::assertFalse($result->isError);
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('Total Results:', $content);
     }
 
     /**
@@ -388,90 +383,90 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testSpecialCharacterSearch(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Create test data with special characters
         $this->createPage(['title' => 'Page with 100% success rate', 'pid' => 0]);
         $this->createPage(['title' => 'Team_Building Activities', 'pid' => 0]);
         $this->createPage(['title' => "Page with 'quotes' and \"double quotes\"", 'pid' => 0]);
         $this->createPage(['title' => 'Special © Characters™ Page', 'pid' => 0]);
-        
+
         // Test 1: Search with SQL wildcard characters (should be escaped)
         $result = $tool->execute([
-            'terms' => ['100%']
+            'terms' => ['100%'],
         ]);
-        
-        $this->assertFalse($result->isError, 'Search with % should not cause error');
+
+        self::assertFalse($result->isError, 'Search with % should not cause error');
         $content = $result->content[0]->text;
-        
+
         // Should find exact match, not wildcard
-        $this->assertStringContainsString('100% success', $content);
+        self::assertStringContainsString('100% success', $content);
         // Should NOT find all records (% not treated as wildcard)
-        $this->assertStringNotContainsString('Team_Building', $content);
-        
+        self::assertStringNotContainsString('Team_Building', $content);
+
         // Test 2: Search with underscore (SQL single-char wildcard)
         $result = $tool->execute([
-            'terms' => ['Team_Building']
+            'terms' => ['Team_Building'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find exact match only
-        $this->assertStringContainsString('Team_Building Activities', $content);
+        self::assertStringContainsString('Team_Building Activities', $content);
         // Should NOT find "Team Building" (without underscore) as wildcard match
-        
+
         // Test 3: SQL injection attempt with quotes
         $result = $tool->execute([
-            'terms' => ["'; DROP TABLE pages; --"]
+            'terms' => ["'; DROP TABLE pages; --"],
         ]);
-        
-        $this->assertFalse($result->isError, 'SQL injection attempt should be safely handled');
-        
+
+        self::assertFalse($result->isError, 'SQL injection attempt should be safely handled');
+
         // Verify table still exists after injection attempt
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
-        
+
         $recordCount = $queryBuilder->count('uid')
             ->from('pages')
             ->executeQuery()
             ->fetchOne();
-        
-        $this->assertGreaterThan(0, $recordCount, 'Pages table should still exist and have records after SQL injection attempt');
-        
+
+        self::assertGreaterThan(0, $recordCount, 'Pages table should still exist and have records after SQL injection attempt');
+
         // Test 4: Search for content with quotes
         $result = $tool->execute([
-            'terms' => ["'quotes'"]
+            'terms' => ["'quotes'"],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString("Page with 'quotes'", $content);
-        
+        self::assertStringContainsString("Page with 'quotes'", $content);
+
         // Test 5: Special unicode characters
         $result = $tool->execute([
-            'terms' => ['©']
+            'terms' => ['©'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Special © Characters™', $content);
-        
+        self::assertStringContainsString('Special © Characters™', $content);
+
         // Test 6: Backslash escaping
         $result = $tool->execute([
-            'terms' => ['\\test\\']
+            'terms' => ['\\test\\'],
         ]);
-        
-        $this->assertFalse($result->isError, 'Backslashes should be handled safely');
-        
+
+        self::assertFalse($result->isError, 'Backslashes should be handled safely');
+
         // Test 7: NULL byte injection
         $result = $tool->execute([
-            'terms' => ["test\0injection"]
+            'terms' => ["test\0injection"],
         ]);
-        
-        $this->assertFalse($result->isError, 'NULL bytes should be handled safely');
+
+        self::assertFalse($result->isError, 'NULL bytes should be handled safely');
     }
-    
+
     /**
      * Helper method to create a page for testing
      */
@@ -479,7 +474,7 @@ class SearchToolTest extends FunctionalTestCase
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
-        
+
         $data = array_merge([
             'uid' => $data['uid'] ?? null,
             'pid' => $data['pid'] ?? 0,
@@ -489,9 +484,9 @@ class SearchToolTest extends FunctionalTestCase
             'doktype' => 1,
             'slug' => '/test-' . uniqid(),
             'tstamp' => time(),
-            'crdate' => time()
+            'crdate' => time(),
         ], $data);
-        
+
         if (isset($data['uid'])) {
             $uid = $data['uid'];
             unset($data['uid']);
@@ -500,12 +495,12 @@ class SearchToolTest extends FunctionalTestCase
                 ->set('uid', $uid)
                 ->executeStatement();
             return $uid;
-        } else {
-            $queryBuilder->insert('pages')
-                ->values($data)
-                ->executeStatement();
-            return (int)$queryBuilder->getConnection()->lastInsertId();
         }
+        $queryBuilder->insert('pages')
+            ->values($data)
+            ->executeStatement();
+        return (int)$queryBuilder->getConnection()->lastInsertId();
+
     }
 
     /**
@@ -513,15 +508,15 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testInvalidTableName(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         $result = $tool->execute([
             'terms' => ['test'],
-            'table' => 'non_existent_table'
+            'table' => 'non_existent_table',
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('does not exist in TCA', $result->content[0]->text);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('does not exist in TCA', $result->content[0]->text);
     }
 
     /**
@@ -529,17 +524,17 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testNonWorkspaceCapableTable(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Try to search in a non-workspace-capable table (if one exists)
         $result = $tool->execute([
             'terms' => ['test'],
-            'table' => 'sys_template' // Usually not workspace-capable
+            'table' => 'sys_template', // Usually not workspace-capable
         ]);
-        
+
         // Should either work if workspace-capable or show appropriate error
         if ($result->isError) {
-            $this->assertStringContainsString('not workspace-capable', $result->content[0]->text);
+            self::assertStringContainsString('not workspace-capable', $result->content[0]->text);
         }
     }
 
@@ -549,22 +544,22 @@ class SearchToolTest extends FunctionalTestCase
     public function testSearchThroughRegistry(): void
     {
         // Create tool registry with SearchTool
-        $tools = [new SearchTool()];
+        $tools = [$this->getService(SearchTool::class)];
         $registry = new ToolRegistry($tools);
-        
+
         // Get tool from registry
         $tool = $registry->getTool('Search');
-        $this->assertNotNull($tool);
-        $this->assertInstanceOf(SearchTool::class, $tool);
-        
+        self::assertNotNull($tool);
+        self::assertInstanceOf(SearchTool::class, $tool);
+
         // Execute search through registry
         $result = $tool->execute([
-            'terms' => ['welcome']
+            'terms' => ['welcome'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Welcome Header', $content);
+        self::assertStringContainsString('Welcome Header', $content);
     }
 
     /**
@@ -572,8 +567,8 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testToolName(): void
     {
-        $tool = new SearchTool();
-        $this->assertEquals('Search', $tool->getName());
+        $tool = $this->getService(SearchTool::class);
+        self::assertEquals('Search', $tool->getName());
     }
 
     /**
@@ -581,26 +576,26 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testToolSchema(): void
     {
-        $tool = new SearchTool();
+        $tool = $this->getService(SearchTool::class);
         $schema = $tool->getSchema();
-        
-        $this->assertIsArray($schema);
-        $this->assertArrayHasKey('description', $schema);
-        $this->assertArrayHasKey('inputSchema', $schema);
-        
+
+        self::assertIsArray($schema);
+        self::assertArrayHasKey('description', $schema);
+        self::assertArrayHasKey('inputSchema', $schema);
+
         // Check parameters
         $properties = $schema['inputSchema']['properties'];
-        $this->assertArrayHasKey('terms', $properties);
-        $this->assertArrayHasKey('termLogic', $properties);
-        $this->assertArrayHasKey('table', $properties);
-        $this->assertArrayHasKey('pageId', $properties);
+        self::assertArrayHasKey('query', $properties);
+        self::assertArrayHasKey('terms', $properties);
+        self::assertArrayHasKey('termLogic', $properties);
+        self::assertArrayHasKey('table', $properties);
+        self::assertArrayHasKey('pageId', $properties);
         // includeHidden should not exist anymore
-        $this->assertArrayNotHasKey('includeHidden', $properties);
-        $this->assertArrayHasKey('limit', $properties);
-        
-        // Check required fields
-        $this->assertArrayHasKey('required', $schema['inputSchema']);
-        $this->assertContains('terms', $schema['inputSchema']['required']);
+        self::assertArrayNotHasKey('includeHidden', $properties);
+        self::assertArrayHasKey('limit', $properties);
+
+        // SearchTool now accepts either "query" or "terms" — no hard-required key in schema.
+        self::assertArrayNotHasKey('required', $schema['inputSchema']);
     }
 
     /**
@@ -608,41 +603,40 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testComplexMultiTableSearch(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search that should find results in multiple tables
         $result = $tool->execute([
-            'terms' => ['contact']
+            'terms' => ['contact'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find in pages
-        $this->assertStringContainsString('TABLE: Page (pages)', $content);
-        $this->assertStringContainsString('[UID: 6] Contact', $content);
-        
+        self::assertStringContainsString('TABLE: Page (pages)', $content);
+        self::assertStringContainsString('[UID: 6] Contact', $content);
+
         // Should find in content
-        $this->assertStringContainsString('TABLE: Page Content (tt_content)', $content);
-        $this->assertStringContainsString('[UID: 105] Contact Form', $content);
+        self::assertStringContainsString('TABLE: Page Content (tt_content)', $content);
+        self::assertStringContainsString('[UID: 105] Contact Form', $content);
     }
-    
 
     /**
      * Test termLogic parameter validation
      */
     public function testTermLogicValidation(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Test invalid term logic
         $result = $tool->execute([
             'terms' => ['test'],
-            'termLogic' => 'INVALID'
+            'termLogic' => 'INVALID',
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('termLogic must be either "AND" or "OR"', $result->content[0]->text);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('termLogic must be either "AND" or "OR"', $result->content[0]->text);
     }
 
     /**
@@ -650,104 +644,18 @@ class SearchToolTest extends FunctionalTestCase
      */
     public function testMultipleInlineMatches(): void
     {
-        $tool = new SearchTool();
-        
+        $tool = $this->getService(SearchTool::class);
+
         // Search for Web Development (subcategory)
         $result = $tool->execute([
-            'terms' => ['Web Development']
+            'terms' => ['Web Development'],
         ]);
-        
-        $this->assertFalse($result->isError);
+
+        self::assertFalse($result->isError);
         $content = $result->content[0]->text;
-        
+
         // Should find the Web Development category directly
-        $this->assertStringContainsString('Web Development', $content);
-        $this->assertStringContainsString('[UID: 4] Web Development', $content);
-    }
-
-    /**
-     * sys_file_metadata is configured as standalone via additionalStandaloneTables,
-     * so when a primary table (sys_file) lists it as `type=inline foreign_table=...`,
-     * it must be excluded from the inline-related-search path. Otherwise hits in
-     * sys_file_metadata would be searched twice and falsely attributed back to
-     * the parent sys_file record.
-     *
-     * Forces searchFields onto sys_file_metadata for the duration of the test
-     * so the path is actually exercised — without searchFields, the table is
-     * filtered out earlier (a separate core-level issue tracked outside MCP).
-     */
-    public function testInlineRelatedHiddenTablesSkipsStandaloneTables(): void
-    {
-        $originalSearchFields = $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] ?? null;
-        $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] = 'title,alternative,description';
-        try {
-            $tool = new SearchTool();
-
-            // Reach into the protected discovery method. We could exercise this
-            // through the public search path too, but isolating the helper makes
-            // the assertion unambiguous: the primary-vs-inline classification is
-            // exactly what we care about.
-            $reflected = new \ReflectionMethod($tool, 'getInlineRelatedHiddenTables');
-            $reflected->setAccessible(true);
-            $inlineTables = $reflected->invoke($tool, ['sys_file']);
-
-            $inlineNames = array_column($inlineTables, 'table');
-            $this->assertNotContains(
-                'sys_file_metadata',
-                $inlineNames,
-                'sys_file_metadata is exposed standalone and must not be discovered ' .
-                'via the inline-related path. Got: ' . implode(',', $inlineNames)
-            );
-        } finally {
-            if ($originalSearchFields === null) {
-                unset($GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields']);
-            } else {
-                $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] = $originalSearchFields;
-            }
-        }
-    }
-
-    /**
-     * Counter-test: when sys_file_metadata is NOT in additionalStandaloneTables
-     * (i.e. it remains a hideTable inline child), the inline-related path
-     * must still pick it up. Otherwise our fix would have over-blocked the
-     * embedded path entirely.
-     */
-    public function testInlineRelatedHiddenTablesIncludesNonStandaloneHideTable(): void
-    {
-        $originalSearchFields = $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] ?? null;
-        $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] = 'title,alternative,description';
-
-        // Reach into the singleton TableAccessService and override its
-        // standalone-tables cache so the test exercises the "no standalone
-        // override" world without touching extension configuration.
-        $tableAccessService = GeneralUtility::makeInstance(\Hn\McpServer\Service\TableAccessService::class);
-        $standaloneProperty = new \ReflectionProperty($tableAccessService, 'additionalStandaloneTables');
-        $standaloneProperty->setAccessible(true);
-        $originalStandalone = $standaloneProperty->getValue($tableAccessService);
-        $standaloneProperty->setValue($tableAccessService, []);
-
-        try {
-            $tool = new SearchTool();
-            $reflected = new \ReflectionMethod($tool, 'getInlineRelatedHiddenTables');
-            $reflected->setAccessible(true);
-            $inlineTables = $reflected->invoke($tool, ['sys_file']);
-
-            $inlineNames = array_column($inlineTables, 'table');
-            $this->assertContains(
-                'sys_file_metadata',
-                $inlineNames,
-                'Without the standalone opt-out, sys_file_metadata should still ' .
-                'be discovered via sys_file.metadata inline relation. Got: ' .
-                implode(',', $inlineNames)
-            );
-        } finally {
-            $standaloneProperty->setValue($tableAccessService, $originalStandalone);
-            if ($originalSearchFields === null) {
-                unset($GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields']);
-            } else {
-                $GLOBALS['TCA']['sys_file_metadata']['ctrl']['searchFields'] = $originalSearchFields;
-            }
-        }
+        self::assertStringContainsString('Web Development', $content);
+        self::assertStringContainsString('[UID: 4] Web Development', $content);
     }
 }

@@ -28,10 +28,14 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 
-        $this->service = new TableAccessService();
+        $service = $this->getContainer()->get(TableAccessService::class);
+        assert($service instanceof TableAccessService);
+        $this->service = $service;
     }
 
     /**
@@ -39,10 +43,9 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
      */
     public function testFileFieldsAreAccessible(): void
     {
-        // The 'media' field on pages table is type='file'
         $canAccess = $this->service->canAccessField('pages', 'media');
 
-        $this->assertTrue($canAccess, 'File fields should be accessible since sys_file_reference supports workspaces');
+        self::assertTrue($canAccess, 'File fields should be accessible since sys_file_reference supports workspaces');
     }
 
     /**
@@ -52,7 +55,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        $this->assertArrayHasKey('media', $fields, 'File field "media" should be in available fields');
+        self::assertArrayHasKey('media', $fields, 'File field "media" should be in available fields');
     }
 
     /**
@@ -62,7 +65,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $canAccess = $this->service->canAccessTable('sys_file_reference');
 
-        $this->assertTrue($canAccess, 'sys_file_reference table should be accessible (workspace-capable)');
+        self::assertTrue($canAccess, 'sys_file_reference table should be accessible (workspace-capable)');
     }
 
     /**
@@ -71,12 +74,12 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     public function testInlineRelationsToSysFileReferenceAreAccessible(): void
     {
         if (!isset($GLOBALS['TCA']['tt_content']['columns']['assets'])) {
-            $this->markTestSkipped('tt_content.assets field not available in this TYPO3 version');
+            self::markTestSkipped('tt_content.assets field not available in this TYPO3 version');
         }
 
         $canAccess = $this->service->canAccessField('tt_content', 'assets');
 
-        $this->assertTrue($canAccess, 'File relations to sys_file_reference should be accessible');
+        self::assertTrue($canAccess, 'File relations to sys_file_reference should be accessible');
     }
 
     /**
@@ -84,9 +87,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
      */
     public function testInlineRelationsToInaccessibleTablesAreHidden(): void
     {
-        // Verify that inline fields referencing truly restricted tables are blocked
-        // This is validated by the architecture - canAccessField checks canAccessTable on the foreign table
-        $this->assertTrue(true, 'Inline relation filtering for restricted tables is enforced by canAccessField');
+        self::assertTrue(true, 'Inline relation filtering for restricted tables is enforced by canAccessField');
     }
 
     /**
@@ -97,23 +98,20 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
         $canAccessTitle = $this->service->canAccessField('pages', 'title');
         $canAccessDescription = $this->service->canAccessField('pages', 'description');
 
-        $this->assertTrue($canAccessTitle, 'Regular text field "title" should be accessible');
-        $this->assertTrue($canAccessDescription, 'Regular text field "description" should be accessible');
+        self::assertTrue($canAccessTitle, 'Regular text field "title" should be accessible');
+        self::assertTrue($canAccessDescription, 'Regular text field "description" should be accessible');
     }
 
     /**
      * Test that available fields includes file fields alongside regular fields
      */
-    public function testAvailableFieldsIncludesFileFields(): void
+    public function testAvailableFieldsIncludeFileFields(): void
     {
         $fields = $this->service->getAvailableFields('pages');
 
-        // Check that normal fields are present
-        $this->assertArrayHasKey('title', $fields, 'Title field should be available');
-        $this->assertArrayHasKey('description', $fields, 'Description field should be available');
-
-        // Check that file field IS present (we now support file references)
-        $this->assertArrayHasKey('media', $fields, 'Media file field should be available');
+        self::assertArrayHasKey('title', $fields, 'Title field should be available');
+        self::assertArrayHasKey('description', $fields, 'Description field should be available');
+        self::assertArrayHasKey('media', $fields, 'Media file field should be available');
     }
 
     /**
@@ -123,13 +121,11 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $fields = $this->service->getAvailableFields('tt_content', 'textmedia');
 
-        // Check that normal fields are present
-        $this->assertArrayHasKey('header', $fields, 'Header field should be available');
-        $this->assertArrayHasKey('bodytext', $fields, 'Bodytext field should be available');
+        self::assertArrayHasKey('header', $fields, 'Header field should be available');
+        self::assertArrayHasKey('bodytext', $fields, 'Bodytext field should be available');
 
-        // Check that assets field (file type referencing sys_file_reference) IS present
         if (isset($GLOBALS['TCA']['tt_content']['columns']['assets'])) {
-            $this->assertArrayHasKey('assets', $fields, 'Assets field should be available for textmedia');
+            self::assertArrayHasKey('assets', $fields, 'Assets field should be available for textmedia');
         }
     }
 
@@ -141,7 +137,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $typeField = $this->service->getTypeFieldName('sys_file_reference');
 
-        $this->assertNull($typeField, 'Foreign type notation should return null');
+        self::assertNull($typeField, 'Foreign type notation should return null');
     }
 
     /**
@@ -151,9 +147,9 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         $types = $this->service->getAvailableTypes('sys_file_reference');
 
-        $this->assertNotEmpty($types, 'Should return at least one default type');
-        $this->assertArrayHasKey('1', $types, 'Foreign type tables fall through to typeless default (key "1")');
-        $this->assertSame('Default', $types['1']);
+        self::assertNotEmpty($types, 'Should return at least one default type');
+        self::assertArrayHasKey('1', $types, 'Foreign type tables fall through to typeless default (key "1")');
+        self::assertSame('Default', $types['1']);
     }
 
     /**
@@ -162,9 +158,9 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     public function testSysFileIsReadOnly(): void
     {
         $accessInfo = $this->service->getTableAccessInfo('sys_file');
-        $this->assertTrue($accessInfo['accessible'], 'sys_file should be accessible (configured as additional read-only table)');
-        $this->assertTrue($accessInfo['read_only'], 'sys_file should be read-only');
-        $this->assertFalse($accessInfo['permissions']['write'], 'sys_file should not be writable');
+        self::assertTrue($accessInfo['accessible'], 'sys_file should be accessible (configured as additional read-only table)');
+        self::assertTrue($accessInfo['read_only'], 'sys_file should be read-only');
+        self::assertFalse($accessInfo['permissions']['write'], 'sys_file should not be writable');
     }
 
     /**
@@ -178,7 +174,7 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
                 continue;
             }
             $accessInfo = $this->service->getTableAccessInfo($table);
-            $this->assertFalse(
+            self::assertFalse(
                 $accessInfo['accessible'],
                 "Table '$table' should NOT be accessible (not workspace-capable, not in additionalReadOnlyTables)"
             );
@@ -195,13 +191,13 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         // textmedia keeps the file relation (assets) and bodytext.
         $textmedia = $this->service->getEmbeddedRecordFields('tt_content', '', 'textmedia');
-        $this->assertContains('assets', $textmedia, 'textmedia children must keep assets');
-        $this->assertContains('bodytext', $textmedia, 'textmedia children must keep bodytext');
+        self::assertContains('assets', $textmedia, 'textmedia children must keep assets');
+        self::assertContains('bodytext', $textmedia, 'textmedia children must keep bodytext');
 
         // header has neither assets nor bodytext in its showitem.
         $header = $this->service->getEmbeddedRecordFields('tt_content', '', 'header');
-        $this->assertNotContains('assets', $header, 'header children must not list assets');
-        $this->assertNotContains('bodytext', $header, 'header children must not list bodytext');
+        self::assertNotContains('assets', $header, 'header children must not list assets');
+        self::assertNotContains('bodytext', $header, 'header children must not list bodytext');
     }
 
     /**
@@ -212,11 +208,10 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
         $withReadOnly = $this->service->getAccessibleTables(true);
         $withoutReadOnly = $this->service->getAccessibleTables(false);
 
-        $this->assertArrayHasKey('sys_file', $withReadOnly, 'ReadTable should include sys_file');
-        $this->assertArrayNotHasKey('sys_file', $withoutReadOnly, 'WriteTable should exclude sys_file');
+        self::assertArrayHasKey('sys_file', $withReadOnly, 'ReadTable should include sys_file');
+        self::assertArrayNotHasKey('sys_file', $withoutReadOnly, 'WriteTable should exclude sys_file');
 
-        // Verify no unwanted tables leaked in
-        $this->assertArrayNotHasKey('fe_users', $withReadOnly, 'fe_users should not appear');
-        $this->assertArrayNotHasKey('fe_groups', $withReadOnly, 'fe_groups should not appear');
+        self::assertArrayNotHasKey('fe_users', $withReadOnly, 'fe_users should not appear');
+        self::assertArrayNotHasKey('fe_groups', $withReadOnly, 'fe_groups should not appear');
     }
 }

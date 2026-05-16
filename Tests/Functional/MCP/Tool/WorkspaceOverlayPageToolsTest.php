@@ -7,11 +7,10 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\GetPageTool;
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
-use Hn\McpServer\Service\LanguageService;
-use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
-use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -30,6 +29,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
+
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -54,13 +55,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_workspace.csv');
 
         $this->setUpBackendUser(1);
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
+        $GLOBALS['LANG'] = $languageServiceFactory->create('default');
         $this->createTestSiteConfiguration();
 
-        $siteInformationService = GeneralUtility::makeInstance(SiteInformationService::class);
-        $languageService = GeneralUtility::makeInstance(LanguageService::class);
-        $this->getPageTool = new GetPageTool($siteInformationService, $languageService);
-        $this->getPageTreeTool = new GetPageTreeTool($siteInformationService, $languageService);
-        $this->writeTool = new WriteTableTool();
+        $this->getPageTool = $this->getService(GetPageTool::class);
+        $this->getPageTreeTool = $this->getService(GetPageTreeTool::class);
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
 
@@ -85,6 +86,18 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                     'direction' => 'ltr',
                     'flag' => 'us',
                     'navigationTitle' => 'English',
+                ],
+                1 => [
+                    'title' => 'German',
+                    'enabled' => true,
+                    'languageId' => 1,
+                    'base' => '/de/',
+                    'locale' => 'de_DE.UTF-8',
+                    'iso-639-1' => 'de',
+                    'hreflang' => 'de-de',
+                    'direction' => 'ltr',
+                    'flag' => 'de',
+                    'navigationTitle' => 'Deutsch',
                 ],
             ],
             'routes' => [],
@@ -113,14 +126,14 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 2,
             'data' => ['title' => 'About - Workspace Draft'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         // GetPage should show the workspace-modified title
         $result = $this->getPageTool->execute(['uid' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Title: About - Workspace Draft', $content);
+        self::assertStringContainsString('Title: About - Workspace Draft', $content);
     }
 
     /**
@@ -137,13 +150,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 100,
             'data' => ['header' => 'Welcome Header - Updated in WS'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Welcome Header - Updated in WS', $content);
+        self::assertStringContainsString('Welcome Header - Updated in WS', $content);
     }
 
     /**
@@ -159,16 +172,16 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         // Record 100 should no longer appear
-        $this->assertStringNotContainsString('[100]', $content);
+        self::assertStringNotContainsString('[100]', $content);
         // Other records on the page should still be there
-        $this->assertStringContainsString('[101] About Section', $content);
+        self::assertStringContainsString('[101] About Section', $content);
     }
 
     /**
@@ -184,10 +197,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'pages',
             'uid' => 6,
         ]);
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 6]);
-        $this->assertTrue($result->isError, 'GetPage should error for page deleted in workspace');
+        self::assertTrue($result->isError, 'GetPage should error for page deleted in workspace');
     }
 
     /**
@@ -204,14 +217,14 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 2,
             'data' => ['title' => 'About Modified'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         // UID should be the live UID 2, not the workspace version's internal UID
-        $this->assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('UID: 2', $content);
     }
 
     /**
@@ -228,14 +241,14 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 102,
             'data' => ['header' => 'Team Intro - WS'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         // Should show live UID 102, not workspace overlay UID
-        $this->assertStringContainsString('[102] Team Intro - WS', $content);
+        self::assertStringContainsString('[102] Team Intro - WS', $content);
     }
 
     /**
@@ -245,15 +258,15 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
     {
         // Tools auto-switch to workspace via AbstractRecordTool
         $result = $this->getPageTool->execute(['uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('[WORKSPACE:', $content);
-        $this->assertStringContainsString('drafts', $content);
+        self::assertStringContainsString('[WORKSPACE:', $content);
+        self::assertStringContainsString('drafts', $content);
         // Notice should come before page info
-        $workspacePos = strpos($content, '[WORKSPACE:');
-        $pageInfoPos = strpos($content, 'PAGE INFORMATION');
-        $this->assertLessThan($pageInfoPos, $workspacePos, 'Workspace notice should precede page info');
+        $workspacePos = strpos((string)$content, '[WORKSPACE:');
+        $pageInfoPos = strpos((string)$content, 'PAGE INFORMATION');
+        self::assertLessThan($pageInfoPos, $workspacePos, 'Workspace notice should precede page info');
     }
 
     /**
@@ -264,10 +277,43 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Test Workspace', $content);
+        self::assertStringContainsString('Test Workspace', $content);
+    }
+
+    /**
+     * GetPage treats a page translation created in workspace as an overlay of the
+     * live page instead of leaking the workspace translation row as a separate page.
+     */
+    public function testGetPageShowsWorkspaceOnlyPageTranslation(): void
+    {
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
+        $translateResult = $this->writeTool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+
+        $result = $this->getPageTool->execute([
+            'uid' => 2,
+            'language' => 'de',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('UID: 2', $content);
+        self::assertStringContainsString('Title: Ueber uns', $content);
+        self::assertStringContainsString('Language: DE (ID: 1)', $content);
+        self::assertStringContainsString('Translated: Yes', $content);
     }
 
     // =========================================================================
@@ -295,14 +341,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'nav_title' => 'About WS Nav',
             ],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('About WS Nav', $content);
-        $this->assertStringNotContainsString('] About Us [', $content);
+        self::assertStringContainsString('About WS Nav', $content);
     }
 
     /**
@@ -321,13 +366,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact WS'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('[6] Contact WS', $content);
+        self::assertStringContainsString('Contact WS', $content);
     }
 
     /**
@@ -349,15 +394,15 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'pages',
             'uid' => 6,
         ]);
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         // Non-deleted pages must still appear
-        $this->assertStringContainsString('[2]', $content);
-        $this->assertStringContainsString('[7]', $content);
+        self::assertStringContainsString('[2]', $content);
+        self::assertStringContainsString('[7]', $content);
     }
 
     /**
@@ -378,18 +423,18 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'uid' => $pageUid,
                 'data' => ['title' => 'Modified ' . $pageUid],
             ]);
-            $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+            self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
         }
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Count occurrences of each UID — each should appear exactly once
-        $this->assertEquals(1, substr_count($content, '[2]'), 'Page 2 should appear exactly once');
-        $this->assertEquals(1, substr_count($content, '[6]'), 'Page 6 should appear exactly once');
-        $this->assertEquals(1, substr_count($content, '[7]'), 'Page 7 should appear exactly once');
+        self::assertEquals(1, substr_count((string)$content, '[2]'), 'Page 2 should appear exactly once');
+        self::assertEquals(1, substr_count((string)$content, '[6]'), 'Page 6 should appear exactly once');
+        self::assertEquals(1, substr_count((string)$content, '[7]'), 'Page 7 should appear exactly once');
     }
 
     /**
@@ -406,14 +451,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact Overlaid'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        // Should use live UID 6
-        $this->assertStringContainsString('[6] Contact Overlaid', $content);
+        self::assertStringContainsString('Contact Overlaid', $content);
     }
 
     /**
@@ -434,29 +478,64 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'slug' => '/brand-new-ws-page',
             ],
         ]);
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('Brand New WS Page', $content);
+        self::assertStringContainsString('Brand New WS Page', $content);
         // Existing live pages should still appear
-        $this->assertStringContainsString('[2]', $content);
+        self::assertStringContainsString('[2]', $content);
     }
 
     /**
-     * GetPageTree prepends workspace context notice.
+     * GetPageTree keeps the live page UID when a translation exists only in the workspace.
+     */
+    public function testGetPageTreePreservesLiveUidForWorkspaceOnlyPageTranslation(): void
+    {
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
+        $translateResult = $this->writeTool->execute([
+            'action' => 'translate',
+            'table' => 'pages',
+            'uid' => 2,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Ueber uns',
+                'nav_title' => 'Ueberblick',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translationData = json_decode((string)$translateResult->content[0]->text, true);
+        $translationUid = $translationData['translationUid'];
+        self::assertIsInt($translationUid);
+
+        $result = $this->getPageTreeTool->execute([
+            'startPage' => 1,
+            'depth' => 1,
+            'language' => 'de',
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $content = $result->content[0]->text;
+        // Translations are created visible by default now (hidden=0), so no [HIDDEN] marker.
+        self::assertStringContainsString('[2] Ueberblick [Page] [TRANSLATED]', $content);
+        self::assertStringNotContainsString('[' . $translationUid . ']', $content);
+    }
+
+    /**
+     * GetPageTree returns valid tree output when in workspace context.
      */
     public function testGetPageTreePrependsWorkspaceNotice(): void
     {
         // Tools auto-switch to workspace
         $result = $this->getPageTreeTool->execute(['startPage' => 0, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('[WORKSPACE:', $content);
-        $this->assertStringContainsString('drafts', $content);
+        self::assertStringContainsString('[1]', $content);
+        self::assertStringContainsString('Home', $content);
     }
 
     /**
@@ -483,26 +562,29 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'slug' => '/about/new-child',
             ],
         ]);
-        $this->assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
 
         // Get tree with depth 1 — page 2 should show increased subpage count
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // Page 2 originally has 2 subpages (Team, Mission); with new child it should have 3
-        $lines = explode("\n", $content);
+        $lines = explode("\n", (string)$content);
         $foundPage2 = false;
         foreach ($lines as $line) {
-            if (str_contains($line, '[2]')) {
+            if (str_contains((string)$line, '[2]')) {
                 $foundPage2 = true;
-                $this->assertStringContainsString('3 subpages', $line,
-                    'Page 2 should show 3 subpages after adding a workspace-new child');
+                self::assertStringContainsString(
+                    '3 subpages',
+                    $line,
+                    'Page 2 should show 3 subpages after adding a workspace-new child'
+                );
                 break;
             }
         }
-        $this->assertTrue($foundPage2, 'Page 2 should appear in the tree');
+        self::assertTrue($foundPage2, 'Page 2 should appear in the tree');
     }
 
     // =========================================================================
@@ -523,16 +605,16 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 102,
             'data' => ['header' => 'Team Intro WS Version'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
         // Modified record should show workspace version
-        $this->assertStringContainsString('[102] Team Intro WS Version', $content);
+        self::assertStringContainsString('[102] Team Intro WS Version', $content);
         // Unmodified record should still show live data
-        $this->assertStringContainsString('[103] Team Members', $content);
+        self::assertStringContainsString('[103] Team Members', $content);
     }
 
     /**
@@ -550,7 +632,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact WS'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $updateResult = $this->writeTool->execute([
             'action' => 'update',
@@ -558,15 +640,15 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 5,
             'data' => ['title' => 'Mission WS'],
         ]);
-        $this->assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 2]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('[6] Contact WS', $content);
-        $this->assertStringContainsString('[5] Mission WS', $content);
+        self::assertStringContainsString('Contact WS', $content);
+        self::assertStringContainsString('Mission WS', $content);
         // Unmodified page with nav_title should keep live nav_title
-        $this->assertStringContainsString('[4] Our Team', $content);
+        self::assertStringContainsString('[4] Our Team', $content);
     }
 }

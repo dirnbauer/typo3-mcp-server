@@ -74,19 +74,19 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ListTablesTool::class);
         $result = $tool->execute([]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $content = $result->content[0]->text;
 
         // sys_file_metadata must appear as core/file, not as "unknown" extension.
-        $this->assertStringContainsString('sys_file_metadata', $content);
-        $this->assertMatchesRegularExpression(
+        self::assertStringContainsString('sys_file_metadata', $content);
+        self::assertMatchesRegularExpression(
             '/CORE TABLES:.*?sys_file_metadata.*?\[file\]/s',
             $content,
             'sys_file_metadata should be listed under CORE TABLES with [file] type. Got: ' . $content
         );
         // Specifically: not read-only.
-        $this->assertDoesNotMatchRegularExpression(
+        self::assertDoesNotMatchRegularExpression(
             '/sys_file_metadata.*?\[READ-ONLY\]/',
             $content,
             'sys_file_metadata should NOT be flagged as read-only'
@@ -97,11 +97,11 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file', 'uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $file = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('metadata', $file);
-        $this->assertSame(
+        $file = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertArrayHasKey('metadata', $file);
+        self::assertSame(
             [1],
             $file['metadata'],
             'metadata should collapse to a list of uids when sys_file_metadata is exposed standalone'
@@ -112,12 +112,12 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $records = json_decode($result->content[0]->text, true)['records'];
-        $this->assertCount(1, $records);
-        $this->assertSame('Test Image Title', $records[0]['title']);
-        $this->assertSame(1, $records[0]['file'], 'foreign key to sys_file is exposed for discovery');
+        $records = json_decode((string)$result->content[0]->text, true)['records'];
+        self::assertCount(1, $records);
+        self::assertSame('Team Photo', $records[0]['title']);
+        self::assertSame(1, $records[0]['file'], 'foreign key to sys_file is exposed for discovery');
     }
 
     public function testUpdateSysFileMetadataDirectly(): void
@@ -133,17 +133,17 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
                 'description' => 'New Description via MCP',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back through the standard read pipeline (workspace overlay applied).
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertSame('New Title via MCP', $record['title']);
-        $this->assertSame('New Alt via MCP', $record['alternative']);
-        $this->assertSame('New Description via MCP', $record['description']);
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertSame('New Title via MCP', $record['title']);
+        self::assertSame('New Alt via MCP', $record['alternative']);
+        self::assertSame('New Description via MCP', $record['description']);
     }
 
     public function testSysFileItselfRemainsReadOnly(): void
@@ -155,7 +155,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
             'uid' => 1,
             'data' => ['name' => 'hacked.jpg'],
         ]);
-        $this->assertTrue($result->isError, 'sys_file must stay read-only — only metadata is editable');
+        self::assertTrue($result->isError, 'sys_file must stay read-only — only metadata is editable');
     }
 
     /**
@@ -176,14 +176,14 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
                 'alternative' => 'DE Alt',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Default-language record is unchanged
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertSame('Test Image Title', $record['title']);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertSame('Team Photo', $record['title']);
     }
 
     /**
@@ -230,17 +230,26 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $payload = $result->content[0]->text;
-        $records = json_decode($payload, true)['records'] ?? [];
+        $records = json_decode((string)$payload, true)['records'] ?? [];
         $fileUids = array_column($records, 'file');
-        $this->assertContains(5, $fileUids,
-            'Metadata for the file in the mount must be visible. Got: ' . $payload);
-        $this->assertNotContains(1, $fileUids,
-            'Metadata of files outside the mount must be hidden');
-        $this->assertNotContains(3, $fileUids,
-            'Metadata of files outside the mount must be hidden');
+        self::assertContains(
+            5,
+            $fileUids,
+            'Metadata for the file in the mount must be visible. Got: ' . $payload
+        );
+        self::assertNotContains(
+            1,
+            $fileUids,
+            'Metadata of files outside the mount must be hidden'
+        );
+        self::assertNotContains(
+            3,
+            $fileUids,
+            'Metadata of files outside the mount must be hidden'
+        );
     }
 
     public function testNonAdminWithoutMountsSeesNoMetadata(): void
@@ -250,10 +259,10 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $data = json_decode($result->content[0]->text, true);
-        $this->assertSame(0, $data['total']);
+        $data = json_decode((string)$result->content[0]->text, true);
+        self::assertSame(0, $data['total']);
     }
 
     /**
@@ -279,13 +288,13 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $titles = array_column(
-            json_decode($result->content[0]->text, true)['records'],
+            json_decode((string)$result->content[0]->text, true)['records'],
             'title'
         );
-        $this->assertNotContains('Orphan', $titles);
+        self::assertNotContains('Orphan', $titles);
     }
 
     private function createNonAdminUserWithMounts(string $fileMountUids): int

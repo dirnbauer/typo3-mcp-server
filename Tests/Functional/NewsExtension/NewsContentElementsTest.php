@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
-use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -28,6 +27,7 @@ class NewsContentElementsTest extends FunctionalTestCase
     {
         parent::setUp();
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
+        $this->importCSVDataSet(__DIR__ . '/../Fixtures/pages.csv');
         $this->setUpBackendUser(1);
     }
 
@@ -47,9 +47,9 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create a news record
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
         $result = $writeTool->execute([
@@ -61,8 +61,8 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'bodytext' => 'Main news text',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create content elements related to the news
         $contentUids = [];
@@ -78,8 +78,8 @@ class NewsContentElementsTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
 
         // Read the news record
@@ -88,42 +88,42 @@ class NewsContentElementsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
         $resultData = $result->jsonSerialize();
-        $this->assertArrayHasKey('content', $resultData);
-        $this->assertNotEmpty($resultData['content']);
-        
-        $decodedContent = json_decode($resultData['content'][0]->text, true);
-        $this->assertNotNull($decodedContent, 'Content should be valid JSON');
-        
+        self::assertArrayHasKey('content', $resultData);
+        self::assertNotEmpty($resultData['content']);
+
+        $decodedContent = json_decode((string)$resultData['content'][0]->text, true);
+        self::assertNotNull($decodedContent, 'Content should be valid JSON');
+
         // Debug output
         if (empty($decodedContent['records'])) {
-            echo "Debug - Read result: " . json_encode($decodedContent, JSON_PRETTY_PRINT) . "\n";
-            echo "Debug - News UID: " . $newsUid . "\n";
+            echo 'Debug - Read result: ' . json_encode($decodedContent, JSON_PRETTY_PRINT) . "\n";
+            echo 'Debug - News UID: ' . $newsUid . "\n";
         }
-        
-        $this->assertArrayHasKey('records', $decodedContent, 'Result should have records');
-        $this->assertNotEmpty($decodedContent['records'], 'Should have at least one record');
-        
+
+        self::assertArrayHasKey('records', $decodedContent, 'Result should have records');
+        self::assertNotEmpty($decodedContent['records'], 'Should have at least one record');
+
         $news = $decodedContent['records'][0];
-        
+
         // Verify content_elements contains only UIDs (not full records)
-        $this->assertArrayHasKey('content_elements', $news, 'News should have content_elements field');
-        $this->assertIsArray($news['content_elements'], 'content_elements should be an array');
-        $this->assertCount(3, $news['content_elements'], 'Should have 3 content elements');
-        
+        self::assertArrayHasKey('content_elements', $news, 'News should have content_elements field');
+        self::assertIsArray($news['content_elements'], 'content_elements should be an array');
+        self::assertCount(3, $news['content_elements'], 'Should have 3 content elements');
+
         // Check that we get UIDs only, not full records
         foreach ($news['content_elements'] as $element) {
-            $this->assertIsInt($element, 'Content element should be an integer UID, not a full record');
-            $this->assertContains($element, $contentUids, 'UID should be one of our created content elements');
+            self::assertIsInt($element, 'Content element should be an integer UID, not a full record');
+            self::assertContains($element, $contentUids, 'UID should be one of our created content elements');
         }
-        
+
         // Verify all UIDs are present (order might vary)
         sort($contentUids);
         $actualUids = $news['content_elements'];
         sort($actualUids);
-        $this->assertEquals($contentUids, $actualUids, 'Should have all created content elements');
+        self::assertEquals($contentUids, $actualUids, 'Should have all created content elements');
     }
 
     /**
@@ -141,8 +141,8 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'title' => 'News without content elements',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read the news record
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -150,13 +150,13 @@ class NewsContentElementsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $news = json_decode((string)$result->content[0]->text, true)['records'][0];
+
         // Verify content_elements is an empty array (since no relations exist)
-        $this->assertArrayHasKey('content_elements', $news, 'News should have content_elements field');
-        $this->assertIsArray($news['content_elements'], 'content_elements should be an array');
-        $this->assertEmpty($news['content_elements'], 'News without content elements should have empty array');
+        self::assertArrayHasKey('content_elements', $news, 'News should have content_elements field');
+        self::assertIsArray($news['content_elements'], 'content_elements should be an array');
+        self::assertEmpty($news['content_elements'], 'News without content elements should have empty array');
     }
 }

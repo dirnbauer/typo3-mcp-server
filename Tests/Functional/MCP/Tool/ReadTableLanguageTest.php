@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
-use Mcp\Types\TextContent;
+use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class ReadTableLanguageTest extends FunctionalTestCase
 {
+    use GetServiceTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'mcp_server',
     ];
@@ -24,15 +25,15 @@ class ReadTableLanguageTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create multi-language site configuration
         $this->createMultiLanguageSiteConfiguration();
-        
+
         // Import test data with translations
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/Fixtures/tt_content_translations.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/be_users.csv');
-        
+
         // Set up backend user
         $this->setUpBackendUser(1);
     }
@@ -91,7 +92,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
         // Write the site configuration
         $configPath = $this->instancePath . '/typo3conf/sites/test-site';
         GeneralUtility::mkdir_deep($configPath);
-        
+
         $yamlContent = Yaml::dump($siteConfiguration, 99, 2);
         GeneralUtility::writeFile($configPath . '/config.yaml', $yamlContent, true);
     }
@@ -101,24 +102,24 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadRecordsWithLanguageFilter(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read German content
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
-            'language' => 'de'
+            'language' => 'de',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        
-        $this->assertEquals('tt_content', $data['table']);
-        $this->assertGreaterThan(0, count($data['records']));
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+
+        self::assertEquals('tt_content', $data['table']);
+        self::assertGreaterThan(0, count($data['records']));
+
         // All records should be in German (sys_language_uid = 1)
         foreach ($data['records'] as $record) {
-            $this->assertEquals(1, $record['sys_language_uid']);
+            self::assertEquals(1, $record['sys_language_uid']);
         }
     }
 
@@ -127,16 +128,16 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadWithInvalidLanguageCode(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
-            'language' => 'xx' // Invalid language code
+            'language' => 'xx', // Invalid language code
         ]);
-        
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('Unknown language code: xx', $result->error ?? $result->content[0]->text ?? '');
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Unknown language code: xx', $result->error ?? $result->content[0]->text ?? '');
     }
 
     /**
@@ -144,21 +145,21 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadDefaultLanguageContent(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read English content (default language)
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
-            'language' => 'en'
+            'language' => 'en',
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // All records should be in English (sys_language_uid = 0)
         foreach ($data['records'] as $record) {
-            $this->assertEquals(0, $record['sys_language_uid']);
+            self::assertEquals(0, $record['sys_language_uid']);
         }
     }
 
@@ -167,41 +168,41 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadTranslationsWithSourceInfo(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read German content with translation source info
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
             'language' => 'de',
-            'includeTranslationSource' => true
+            'includeTranslationSource' => true,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // Should have translation source data
-        $this->assertArrayHasKey('translationSource', $data);
-        $this->assertIsArray($data['translationSource']);
-        
+        self::assertArrayHasKey('translationSource', $data);
+        self::assertIsArray($data['translationSource']);
+
         // Check translation metadata for at least one record
         $foundTranslation = false;
         foreach ($data['records'] as $record) {
             if (!empty($record['l18n_parent'])) {
                 $foundTranslation = true;
                 $uid = $record['uid'];
-                $this->assertArrayHasKey($uid, $data['translationSource']);
-                
+                self::assertArrayHasKey($uid, $data['translationSource']);
+
                 $sourceInfo = $data['translationSource'][$uid];
-                $this->assertArrayHasKey('sourceUid', $sourceInfo);
-                $this->assertArrayHasKey('sourceLanguage', $sourceInfo);
-                $this->assertArrayHasKey('inheritedFields', $sourceInfo);
-                
-                $this->assertEquals($record['l18n_parent'], $sourceInfo['sourceUid']);
-                $this->assertEquals('en', $sourceInfo['sourceLanguage']);
+                self::assertArrayHasKey('sourceUid', $sourceInfo);
+                self::assertArrayHasKey('sourceLanguage', $sourceInfo);
+                self::assertArrayHasKey('inheritedFields', $sourceInfo);
+
+                self::assertEquals($record['l18n_parent'], $sourceInfo['sourceUid']);
+                self::assertEquals('en', $sourceInfo['sourceLanguage']);
             }
         }
-        $this->assertTrue($foundTranslation, 'No translated records found in test data');
+        self::assertTrue($foundTranslation, 'No translated records found in test data');
     }
 
     /**
@@ -209,21 +210,21 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testNoTranslationSourceForDefaultLanguage(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read default language with translation source flag
         $result = $tool->execute([
             'table' => 'tt_content',
             'pid' => 1,
             'language' => 'en',
-            'includeTranslationSource' => true
+            'includeTranslationSource' => true,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // Should not have translation source for default language
-        $this->assertArrayNotHasKey('translationSource', $data);
+        self::assertArrayNotHasKey('translationSource', $data);
     }
 
     /**
@@ -231,22 +232,22 @@ class ReadTableLanguageTest extends FunctionalTestCase
      */
     public function testReadAllLanguages(): void
     {
-        $tool = new ReadTableTool();
-        
+        $tool = $this->getService(ReadTableTool::class);
+
         // Read without language filter
         $result = $tool->execute([
             'table' => 'tt_content',
-            'pid' => 1
+            'pid' => 1,
         ]);
-        
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $data = json_decode($result->content[0]->text, true);
-        
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = json_decode((string)$result->content[0]->text, true);
+
         // Should contain records from multiple languages
         $languageUids = array_unique(array_column($data['records'], 'sys_language_uid'));
-        $this->assertCount(3, $languageUids); // 0, 1, 2
-        $this->assertContains(0, $languageUids);
-        $this->assertContains(1, $languageUids);
-        $this->assertContains(2, $languageUids);
+        self::assertCount(3, $languageUids); // 0, 1, 2
+        self::assertContains(0, $languageUids);
+        self::assertContains(1, $languageUids);
+        self::assertContains(2, $languageUids);
     }
 }

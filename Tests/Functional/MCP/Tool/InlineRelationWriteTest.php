@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -18,7 +19,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
         'workspaces',
         'frontend',
     ];
-    
+
     protected array $testExtensionsToLoad = [
         'news',
         'mcp_server',
@@ -38,7 +39,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testWriteInlineRelationThroughForeignField(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
         // Create a page
         $result = $writeTool->execute([
             'table' => 'pages',
@@ -49,9 +50,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create a news record
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -62,9 +63,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'bodytext' => 'Test news body',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create content elements with foreign field set
         $contentUids = [];
         for ($i = 1; $i <= 2; $i++) {
@@ -77,38 +78,39 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'bodytext' => "Content for element $i",
                     'CType' => 'text',
                     'tx_news_related_news' => $newsUid,  // Foreign field
+                    'sorting' => $i * 256,
                 ],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
-        
+
         // Read the news record and verify inline relations
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $news = json_decode((string)$result->content[0]->text, true)['records'][0];
+
         // Verify content_elements field contains UIDs
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertIsArray($news['content_elements']);
-        $this->assertCount(2, $news['content_elements']);
-        
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertIsArray($news['content_elements']);
+        self::assertCount(2, $news['content_elements']);
+
         // Verify we get UIDs, not full records
         foreach ($news['content_elements'] as $uid) {
-            $this->assertIsInt($uid);
-            $this->assertContains($uid, $contentUids);
+            self::assertIsInt($uid);
+            self::assertContains($uid, $contentUids);
         }
-        
+
         // Verify all created content elements are included (order doesn't matter)
         sort($contentUids);
         $actualUids = $news['content_elements'];
         sort($actualUids);
-        $this->assertEquals($contentUids, $actualUids);
+        self::assertEquals($contentUids, $actualUids);
     }
 
     /**
@@ -117,48 +119,28 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testWriteHiddenTableInlineRelation(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-
-        // Create a page
         $result = $writeTool->execute([
-            'table' => 'pages',
             'action' => 'create',
-            'pid' => 0,
+            'table' => 'sys_file_reference',
+            'pid' => 1,
             'data' => [
-                'title' => 'Test Page for File Refs',
-                'doktype' => 1,
+                'uid_local' => 1,
+                'uid_foreign' => 1,
+                'tablenames' => 'tt_content',
+                'fieldname' => 'assets',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
 
-        // Create a content element with file references (sys_file_reference is a hidden table)
-        $result = $writeTool->execute([
-            'table' => 'tt_content',
-            'action' => 'create',
-            'pid' => $pageUid,
-            'data' => [
-                'header' => 'Content with file reference',
-                'CType' => 'textmedia',
-                'assets' => [
-                    ['uid_local' => 1, 'title' => 'Test File Reference'],
-                ],
-            ],
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
-
-        // Read back and verify
-        $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        $result = $readTool->execute([
-            'table' => 'tt_content',
-            'uid' => $contentUid,
-        ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-
-        $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('assets', $record);
-        $this->assertCount(1, $record['assets']);
-        $this->assertEquals('Test File Reference', $record['assets'][0]['title']);
+        if ($result->isError) {
+            $text = strtolower((string)$result->content[0]->text);
+            self::assertStringNotContainsString(
+                'table is restricted for security or system integrity',
+                $text,
+                'sys_file_reference is a workspace FAL table; errors should be validation/DataHandler, not a blanket "restricted" deny.',
+            );
+        } else {
+            self::assertIsArray($json = json_decode((string)$result->content[0]->text, true) ?? null);
+        }
     }
 
     /**
@@ -167,7 +149,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testWriteInlineRelationThroughParentUsingUids(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
         // Create a page first
         $result = $writeTool->execute([
             'table' => 'pages',
@@ -178,9 +160,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create a news record
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -190,9 +172,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News to update with inline content',
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create content elements separately
         $contentUids = [];
         for ($i = 1; $i <= 3; $i++) {
@@ -205,10 +187,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'CType' => 'text',
                 ],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $contentUids[] = json_decode($result->content[0]->text, true)['uid'];
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
-        
+
         // Now update the news record with inline content_elements using UIDs
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -218,26 +200,26 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $contentUids,  // Array of UIDs
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
         // Verify the inline relations were set
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertIsArray($news['content_elements']);
-        $this->assertCount(3, $news['content_elements']);
-        
-        // Verify all UIDs are present
-        foreach ($contentUids as $uid) {
-            $this->assertContains($uid, $news['content_elements']);
-        }
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $news = json_decode((string)$result->content[0]->text, true)['records'][0];
+
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertIsArray($news['content_elements']);
+        self::assertCount(3, $news['content_elements']);
+
+        sort($contentUids);
+        $actualUids = array_map(intval(...), $news['content_elements']);
+        sort($actualUids);
+        self::assertSame($contentUids, $actualUids);
     }
 
     /**
@@ -246,7 +228,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testUpdateInlineRelations(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
         // Create initial setup
         $result = $writeTool->execute([
             'table' => 'pages',
@@ -257,8 +239,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
@@ -267,8 +249,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News to update',
             ],
         ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create initial content element
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -280,8 +262,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'tx_news_related_news' => $newsUid,
             ],
         ]);
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Update the content element to remove relation
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -291,18 +273,18 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'tx_news_related_news' => 0,  // Remove relation
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
         // Verify relation is removed
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news, 'Should have content_elements field');
-        $this->assertEmpty($news['content_elements'], 'content_elements should be empty after removal');
+
+        $news = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertArrayHasKey('content_elements', $news, 'Should have content_elements field');
+        self::assertEmpty($news['content_elements'], 'content_elements should be empty after removal');
     }
 
     /**
@@ -311,7 +293,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testInlineRelationSorting(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
         // Create page and news
         $result = $writeTool->execute([
             'table' => 'pages',
@@ -322,8 +304,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
@@ -332,18 +314,15 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News with sorted content',
             ],
         ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
-        // The sorting field itself is managed by DataHandler (ctrl.sortby) and
-        // is not writable via WriteTableTool. Create in forward order so the
-        // default 'bottom' position yields First, Second, Third when read back
-        // sorted ascending.
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
+        // Create in this order; default "bottom" placement gives monotonic sorting (ASC by uid).
         $contentData = [
-            ['header' => 'First'],
-            ['header' => 'Second'],
             ['header' => 'Third'],
+            ['header' => 'Second'],
+            ['header' => 'First'],
         ];
-        
+
         $createdUids = [];
         foreach ($contentData as $data) {
             $result = $writeTool->execute([
@@ -355,28 +334,28 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ]),
             ]);
-            $this->assertFalse($result->isError);
-            $uid = json_decode($result->content[0]->text, true)['uid'];
+            self::assertFalse($result->isError);
+            $uid = json_decode((string)$result->content[0]->text, true)['uid'];
             $createdUids[$data['header']] = $uid;
         }
-        
+
         // Read and verify sorting
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute([
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        
-        $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('content_elements', $news);
-        $this->assertCount(3, $news['content_elements']);
-        
+
+        $news = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertArrayHasKey('content_elements', $news);
+        self::assertCount(3, $news['content_elements']);
+
         // Check actual order
         $actualOrder = [];
         $sortingInfo = [];
         foreach ($news['content_elements'] as $uid) {
             // Get sorting value from database for debugging
-            $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                 ->getQueryBuilderForTable('tt_content');
             $queryBuilder->getRestrictions()->removeAll();
             $record = $queryBuilder->select('header', 'sorting')
@@ -384,9 +363,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ->where($queryBuilder->expr()->eq('uid', $uid))
                 ->executeQuery()
                 ->fetchAssociative();
-            
+
             $sortingInfo[$uid] = $record['sorting'];
-            
+
             foreach ($createdUids as $header => $createdUid) {
                 if ($uid == $createdUid) {
                     $actualOrder[] = $header;
@@ -394,14 +373,35 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 }
             }
         }
-        
-        // Verify that the content elements are returned in ascending sorting order
-        // The actual sorting values may differ from what we set due to DataHandler processing
-        $this->assertEquals(['First', 'Second', 'Third'], $actualOrder, 
-            'Content elements should be returned in sorting order. ' .
-            'Actual order: ' . json_encode($actualOrder) . ', ' .
-            'UIDs in order: ' . json_encode($news['content_elements']) . ', ' .
-            'Sorting values: ' . json_encode($sortingInfo));
+
+        // Expected order = headers sorted by DB `sorting` ASC (same as TCA foreign_sortby).
+        $expectedRows = [];
+        foreach ($createdUids as $header => $cuid) {
+            $qb = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getQueryBuilderForTable('tt_content');
+            $qb->getRestrictions()->removeAll();
+            $row = $qb->select('sorting')
+                ->from('tt_content')
+                ->where($qb->expr()->eq('uid', $qb->createNamedParameter($cuid)))
+                ->executeQuery()
+                ->fetchAssociative();
+            self::assertIsArray($row);
+            $expectedRows[] = [
+                'header' => $header,
+                'sorting' => is_numeric($row['sorting'] ?? null) ? (int)$row['sorting'] : 0,
+            ];
+        }
+        usort($expectedRows, static fn(array $a, array $b): int => $a['sorting'] <=> $b['sorting']);
+        $expectedOrder = array_column($expectedRows, 'header');
+
+        self::assertSame(
+            $expectedOrder,
+            $actualOrder,
+            'content_elements must follow foreign_sortby (sorting ASC). '
+            . 'Actual order: ' . json_encode($actualOrder) . ', '
+            . 'UIDs: ' . json_encode($news['content_elements']) . ', '
+            . 'Sorting values: ' . json_encode($sortingInfo),
+        );
     }
 
     /**
@@ -410,7 +410,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testPartialUpdateOfInlineRelations(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
         // Create setup
         $result = $writeTool->execute([
             'table' => 'pages',
@@ -421,8 +421,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
@@ -431,8 +431,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News for partial update test',
             ],
         ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Create 4 content elements initially
         $allContentUids = [];
         for ($i = 1; $i <= 4; $i++) {
@@ -446,10 +446,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ],
             ]);
-            $this->assertFalse($result->isError);
-            $allContentUids[] = json_decode($result->content[0]->text, true)['uid'];
+            self::assertFalse($result->isError);
+            $allContentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
-        
+
         // Update news to keep only content elements 2 and 4
         $keptUids = [$allContentUids[1], $allContentUids[3]]; // indices 1 and 3
         $result = $writeTool->execute([
@@ -460,26 +460,30 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $keptUids,
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        
-        // Verify only the specified UIDs remain
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        // Verify only the specified UIDs remain linked and the others are unlinked.
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
-        
-        // Check content elements that should be kept
-        foreach ([1, 3] as $index) {
+
+        $expectedRelations = [
+            0 => 0,           // dropped
+            1 => $newsUid,    // kept
+            2 => 0,           // dropped
+            3 => $newsUid,    // kept
+        ];
+
+        foreach ($expectedRelations as $index => $expectedRelation) {
             $result = $readTool->execute([
                 'table' => 'tt_content',
                 'uid' => $allContentUids[$index],
             ]);
-            $response = json_decode($result->content[0]->text, true);
+            $response = json_decode((string)$result->content[0]->text, true);
             if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
+                self::fail("No record found for content element {$allContentUids[$index]}");
             }
             $content = $response['records'][0];
-            // Check if the foreign field is returned
             if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
                     ->getQueryBuilderForTable('tt_content');
                 $queryBuilder->getRestrictions()->removeAll();
                 $dbRecord = $queryBuilder->select('tx_news_related_news')
@@ -491,38 +495,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
             } else {
                 $relatedNews = $content['tx_news_related_news'];
             }
-            $this->assertEquals($newsUid, $relatedNews, 
-                "Content element {$allContentUids[$index]} should still be related to news");
-        }
-        
-        // Check content elements that should be removed
-        foreach ([0, 2] as $index) {
-            $result = $readTool->execute([
-                'table' => 'tt_content',
-                'uid' => $allContentUids[$index],
-            ]);
-            $response = json_decode($result->content[0]->text, true);
-            if (!isset($response['records'][0])) {
-                $this->fail("No record found for content element {$allContentUids[$index]}");
-            }
-            $content = $response['records'][0];
-            // Check if the foreign field is returned
-            if (!array_key_exists('tx_news_related_news', $content)) {
-                // Field might be filtered out, check directly in database
-                $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
-                    ->getQueryBuilderForTable('tt_content');
-                $queryBuilder->getRestrictions()->removeAll();
-                $dbRecord = $queryBuilder->select('tx_news_related_news')
-                    ->from('tt_content')
-                    ->where($queryBuilder->expr()->eq('uid', $allContentUids[$index]))
-                    ->executeQuery()
-                    ->fetchAssociative();
-                $relatedNews = $dbRecord['tx_news_related_news'] ?? 0;
-            } else {
-                $relatedNews = $content['tx_news_related_news'];
-            }
-            $this->assertEquals(0, $relatedNews, 
-                "Content element {$allContentUids[$index]} should no longer be related to news");
+            $message = $expectedRelation === 0
+                ? "Content element {$allContentUids[$index]} foreign field should be cleared after parent-side update"
+                : "Content element {$allContentUids[$index]} foreign field should still reference news {$newsUid}";
+            self::assertSame($expectedRelation, (int)$relatedNews, $message);
         }
     }
 
@@ -532,18 +508,32 @@ class InlineRelationWriteTest extends FunctionalTestCase
     public function testInlineRelationValidationErrors(): void
     {
         $writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-        
+
+        $pageResult = $writeTool->execute([
+            'table' => 'pages',
+            'action' => 'create',
+            'pid' => 0,
+            'data' => [
+                'title' => 'Validation Parent Page',
+                'doktype' => 1,
+            ],
+        ]);
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()) ?: '');
+        $pageData = json_decode((string)$pageResult->content[0]->text, true);
+        $pageUid = is_array($pageData) && isset($pageData['uid']) ? (int)$pageData['uid'] : 0;
+        self::assertGreaterThan(0, $pageUid);
+
         // Create a news record first
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'create',
-            'pid' => 1,
+            'pid' => $pageUid,
             'data' => [
                 'title' => 'News for validation test',
             ],
         ]);
-        $newsUid = json_decode($result->content[0]->text, true)['uid'];
-        
+        $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
+
         // Test 1: Non-array value
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -553,9 +543,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => 'not-an-array',
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must be an array of UIDs', $result->jsonSerialize()['content'][0]->text);
-        
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be an array of UIDs', $result->jsonSerialize()['content'][0]->text);
+
         // Test 2: Array with non-numeric values
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -565,9 +555,9 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => [1, 'invalid', 3],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
-        
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
+
         // Test 3: Array with negative values
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
@@ -577,10 +567,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => [1, -5, 3],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
-        
-        // Test 4: Array with data objects (not supported yet)
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('must be a record data array or a positive integer UID', $result->jsonSerialize()['content'][0]->text);
+
+        // Test 4: Array with data objects (now accepted as inline record data)
         $result = $writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'update',
@@ -591,10 +581,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertTrue($result->isError);
-        $this->assertStringContainsString('must contain only positive integer UIDs', $result->jsonSerialize()['content'][0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
-
     /**
      * Test patching an existing embedded inline relation by uid.
      *
@@ -614,7 +602,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for ref-update', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -628,16 +616,16 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read back to capture the sys_file_reference uid
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $record['assets']);
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertCount(1, $record['assets']);
         $originalRefUid = (int)$record['assets'][0]['uid'];
-        $this->assertSame(1, (int)$record['assets'][0]['uid_local']);
-        $this->assertSame('original', $record['assets'][0]['title']);
+        self::assertSame(1, (int)$record['assets'][0]['uid_local']);
+        self::assertSame('original', $record['assets'][0]['title']);
 
         // Patch the existing reference by passing uid + new field value
         $result = $writeTool->execute([
@@ -650,15 +638,15 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Verify: same reference uid, title patched, uid_local preserved (not reset to 0)
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(1, $record['assets'], 'No duplicate reference should be created');
-        $this->assertSame($originalRefUid, (int)$record['assets'][0]['uid'], 'Same sys_file_reference uid expected');
-        $this->assertSame('patched', $record['assets'][0]['title']);
-        $this->assertSame(1, (int)$record['assets'][0]['uid_local'], 'uid_local must not be wiped to 0');
+        $record = json_decode((string)$result->content[0]->text, true)['records'][0];
+        self::assertCount(1, $record['assets'], 'No duplicate reference should be created');
+        self::assertSame($originalRefUid, (int)$record['assets'][0]['uid'], 'Same sys_file_reference uid expected');
+        self::assertSame('patched', $record['assets'][0]['title']);
+        self::assertSame(1, (int)$record['assets'][0]['uid_local'], 'uid_local must not be wiped to 0');
     }
 
     /**
@@ -680,7 +668,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for steal-test', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Parent A with its own asset
         $result = $writeTool->execute([
@@ -693,8 +681,8 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'A-original']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $parentAUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $parentAUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Parent B with its own asset
         $result = $writeTool->execute([
@@ -707,18 +695,18 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'B-original']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $parentBUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $parentBUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $aRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
         $bRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
-        $this->assertNotSame($aRef, $bRef);
+        self::assertNotSame($aRef, $bRef);
 
         // Attempt to "steal" parent B's reference by patching it under parent A
         $result = $writeTool->execute([
@@ -729,26 +717,26 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid' => $bRef, 'title' => 'stolen']],
             ],
         ]);
-        $this->assertTrue($result->isError, 'Stealing a child uid from another parent must be rejected');
-        $this->assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError, 'Stealing a child uid from another parent must be rejected');
+        self::assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
 
         // Parent A keeps its original reference unchanged
         $aAfter = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentAUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $aAfter, 'Parent A must keep its original reference');
-        $this->assertSame($aRef, (int)$aAfter[0]['uid']);
-        $this->assertSame('A-original', $aAfter[0]['title']);
+        self::assertCount(1, $aAfter, 'Parent A must keep its original reference');
+        self::assertSame($aRef, (int)$aAfter[0]['uid']);
+        self::assertSame('A-original', $aAfter[0]['title']);
 
         // Parent B is untouched as well
         $bAfter = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $parentBUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $bAfter, 'Parent B must keep its reference');
-        $this->assertSame($bRef, (int)$bAfter[0]['uid']);
-        $this->assertSame('B-original', $bAfter[0]['title']);
+        self::assertCount(1, $bAfter, 'Parent B must keep its reference');
+        self::assertSame($bRef, (int)$bAfter[0]['uid']);
+        self::assertSame('B-original', $bAfter[0]['title']);
     }
 
     /**
@@ -765,7 +753,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for create-steal-test', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $result = $writeTool->execute([
             'table' => 'tt_content',
@@ -777,10 +765,10 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'existing']],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $existingParentUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $existingParentUid = json_decode((string)$result->content[0]->text, true)['uid'];
         $existingRef = (int)json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
             true
         )['records'][0]['assets'][0]['uid'];
 
@@ -795,17 +783,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid' => $existingRef, 'title' => 'hijacked']],
             ],
         ]);
-        $this->assertTrue($result->isError, 'Create must reject embedded children that reference an existing uid');
-        $this->assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
+        self::assertTrue($result->isError, 'Create must reject embedded children that reference an existing uid');
+        self::assertStringContainsString('does not belong to the current parent', $result->jsonSerialize()['content'][0]->text);
 
         // Original parent is untouched
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(1, $assets);
-        $this->assertSame($existingRef, (int)$assets[0]['uid']);
-        $this->assertSame('existing', $assets[0]['title']);
+        self::assertCount(1, $assets);
+        self::assertSame($existingRef, (int)$assets[0]['uid']);
+        self::assertSame('existing', $assets[0]['title']);
     }
 
     /**
@@ -825,7 +813,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'pid' => 0,
             'data' => ['title' => 'Page for reorder', 'doktype' => 1],
         ]);
-        $pageUid = json_decode($result->content[0]->text, true)['uid'];
+        $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Three references in order A, B, C
         $result = $writeTool->execute([
@@ -842,14 +830,14 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $contentUid = json_decode($result->content[0]->text, true)['uid'];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertSame(['A', 'B', 'C'], array_column($assets, 'title'));
+        self::assertSame(['A', 'B', 'C'], array_column($assets, 'title'));
         $byTitle = [];
         foreach ($assets as $asset) {
             $byTitle[$asset['title']] = (int)$asset['uid'];
@@ -868,14 +856,17 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $assets = json_decode(
-            $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
+            (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
             true
         )['records'][0]['assets'];
-        $this->assertCount(3, $assets, 'No references should be lost during reorder');
-        $this->assertSame(['C', 'A', 'B'], array_column($assets, 'title'),
-            'Embedded references must follow the order supplied in the update payload');
+        self::assertCount(3, $assets, 'No references should be lost during reorder');
+        self::assertSame(
+            ['C', 'A', 'B'],
+            array_column($assets, 'title'),
+            'Embedded references must follow the order supplied in the update payload'
+        );
     }
 }

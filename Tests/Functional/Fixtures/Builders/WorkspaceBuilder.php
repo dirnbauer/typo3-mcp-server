@@ -11,8 +11,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class WorkspaceBuilder
 {
-    private ConnectionPool $connectionPool;
-    
     private array $data = [
         'pid' => 0,
         'title' => 'Test Workspace',
@@ -23,6 +21,7 @@ class WorkspaceBuilder
         'file_mountpoints' => '',
         'publish_time' => 0,
         'unpublish_time' => 0,
+        'freeze' => 0,
         'live_edit' => 0,
         'swap_modes' => 0,
         'publish_access' => 0,
@@ -30,12 +29,9 @@ class WorkspaceBuilder
         'custom_stages' => 0,
         'deleted' => 0,
     ];
-    
-    public function __construct(ConnectionPool $connectionPool)
-    {
-        $this->connectionPool = $connectionPool;
-    }
-    
+
+    public function __construct(private readonly ConnectionPool $connectionPool) {}
+
     /**
      * Set workspace title
      */
@@ -44,7 +40,7 @@ class WorkspaceBuilder
         $this->data['title'] = $title;
         return $this;
     }
-    
+
     /**
      * Set workspace description
      */
@@ -53,7 +49,7 @@ class WorkspaceBuilder
         $this->data['description'] = $description;
         return $this;
     }
-    
+
     /**
      * Set admin users (comma-separated UIDs)
      */
@@ -62,7 +58,7 @@ class WorkspaceBuilder
         $this->data['adminusers'] = $adminUsers;
         return $this;
     }
-    
+
     /**
      * Set member users (comma-separated UIDs)
      */
@@ -71,7 +67,7 @@ class WorkspaceBuilder
         $this->data['members'] = $members;
         return $this;
     }
-    
+
     /**
      * Set DB mount points
      */
@@ -80,7 +76,7 @@ class WorkspaceBuilder
         $this->data['db_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Set file mount points
      */
@@ -89,7 +85,7 @@ class WorkspaceBuilder
         $this->data['file_mountpoints'] = $mountPoints;
         return $this;
     }
-    
+
     /**
      * Enable live editing
      */
@@ -98,7 +94,16 @@ class WorkspaceBuilder
         $this->data['live_edit'] = 1;
         return $this;
     }
-    
+
+    /**
+     * Freeze workspace
+     */
+    public function frozen(): self
+    {
+        $this->data['freeze'] = 1;
+        return $this;
+    }
+
     /**
      * Set publish time
      */
@@ -107,7 +112,7 @@ class WorkspaceBuilder
         $this->data['publish_time'] = $timestamp;
         return $this;
     }
-    
+
     /**
      * Set unpublish time
      */
@@ -116,7 +121,7 @@ class WorkspaceBuilder
         $this->data['unpublish_time'] = $timestamp;
         return $this;
     }
-    
+
     /**
      * Set swap mode
      */
@@ -125,7 +130,7 @@ class WorkspaceBuilder
         $this->data['swap_modes'] = $mode;
         return $this;
     }
-    
+
     /**
      * Set custom data field
      */
@@ -134,7 +139,7 @@ class WorkspaceBuilder
         $this->data[$field] = $value;
         return $this;
     }
-    
+
     /**
      * Create the workspace record and return its UID
      */
@@ -143,10 +148,10 @@ class WorkspaceBuilder
         // Set timestamps
         $this->data['tstamp'] = time();
         $this->data['crdate'] = time();
-        
+
         $connection = $this->connectionPool->getConnectionForTable('sys_workspace');
         $connection->insert('sys_workspace', $this->data);
-        
+
         return (int)$connection->lastInsertId();
     }
 }

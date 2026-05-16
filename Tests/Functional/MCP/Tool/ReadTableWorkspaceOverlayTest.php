@@ -24,8 +24,8 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
     {
         parent::setUp();
 
-        $this->readTool = new ReadTableTool();
-        $this->writeTool = new WriteTableTool();
+        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
 
@@ -35,11 +35,11 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
 
         // Sanity-check the live state.
         $live = $this->readSingle('tt_content', $liveUid, ['CType', 'header']);
-        $this->assertSame('textmedia', $live['CType']);
-        $this->assertSame('Welcome Header', $live['header']);
+        self::assertSame('textmedia', $live['CType']);
+        self::assertSame('Welcome Header', $live['header']);
 
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         $writeResult = $this->writeTool->execute([
             'table' => 'tt_content',
@@ -50,16 +50,16 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
                 'header' => 'Patched in workspace',
             ],
         ]);
-        $this->assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
 
         $workspaceView = $this->readSingle('tt_content', $liveUid, ['CType', 'header']);
 
-        $this->assertSame(
+        self::assertSame(
             'text',
             $workspaceView['CType'],
             'ReadTable must report the workspace-overlaid CType, not the live value.'
         );
-        $this->assertSame(
+        self::assertSame(
             'Patched in workspace',
             $workspaceView['header'],
             'ReadTable must report the workspace-overlaid header, not the live value.'
@@ -78,27 +78,27 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'uid' => $liveUid,
             'data' => ['header' => 'WS Header'],
         ]);
-        $this->assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
 
         $result = $this->readTool->execute([
             'table' => 'tt_content',
             'pid' => 1,
             'fields' => ['uid', 'header'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $payload = json_decode((string)$result->content[0]->text, true);
 
         $rowsForLive = array_values(array_filter(
             $payload['records'],
             static fn(array $record): bool => (int)$record['uid'] === $liveUid
         ));
 
-        $this->assertCount(
+        self::assertCount(
             1,
             $rowsForLive,
             'Workspace-aware ReadTable must collapse live + workspace rows into a single logical record.'
         );
-        $this->assertSame('WS Header', $rowsForLive[0]['header']);
+        self::assertSame('WS Header', $rowsForLive[0]['header']);
     }
 
     public function testReadReturnsLiveValueWhenNoWorkspaceVersionExists(): void
@@ -108,8 +108,8 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         $view = $this->readSingle('tt_content', $liveUid, ['CType', 'header']);
-        $this->assertSame('textmedia', $view['CType']);
-        $this->assertSame('About Section', $view['header']);
+        self::assertSame('textmedia', $view['CType']);
+        self::assertSame('About Section', $view['header']);
     }
 
     public function testReadHidesRecordsDeletedInCurrentWorkspace(): void
@@ -123,17 +123,17 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'action' => 'delete',
             'uid' => $liveUid,
         ]);
-        $this->assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
 
         $result = $this->readTool->execute([
             'table' => 'tt_content',
             'uid' => $liveUid,
             'fields' => ['uid', 'header'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $payload = json_decode((string)$result->content[0]->text, true);
 
-        $this->assertSame(
+        self::assertSame(
             [],
             $payload['records'],
             'A record marked for deletion in the current workspace must not appear in ReadTable output.'
@@ -150,9 +150,9 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'uid' => $uid,
             'fields' => $fields,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
-        $this->assertCount(1, $payload['records'], 'Expected exactly one record for uid ' . $uid);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $payload = json_decode((string)$result->content[0]->text, true);
+        self::assertCount(1, $payload['records'], 'Expected exactly one record for uid ' . $uid);
         return $payload['records'][0];
     }
 }

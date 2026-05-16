@@ -8,7 +8,6 @@ use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Symfony\Component\Yaml\Yaml;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -52,8 +51,8 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
         // Required by DataHandler for localization operations
         $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('en');
 
-        $this->writeTool = new WriteTableTool();
-        $this->readTool = new ReadTableTool();
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $this->readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $this->workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
     }
 
@@ -121,14 +120,14 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'Live News',
                 'datetime' => time(),
                 'categories' => [1, 2],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         // Update categories in workspace
         $result = $this->writeTool->execute([
@@ -137,7 +136,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'data' => ['categories' => [3, 4, 5]],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back — should see workspace categories
         $result = $this->readTool->execute([
@@ -145,12 +144,12 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $news = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $news = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertEquals($newsUid, $news->uid, 'Client should see live UID');
-        $this->assertCount(3, $news->categories, 'Should see 3 workspace categories, not 2 live');
-        $this->assertEquals([3, 4, 5], $news->categories);
+        self::assertEquals($newsUid, $news->uid, 'Client should see live UID');
+        self::assertCount(3, $news->categories, 'Should see 3 workspace categories, not 2 live');
+        self::assertEquals([3, 4, 5], $news->categories);
     }
 
     /**
@@ -168,8 +167,8 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'pid' => 1,
                 'data' => ['title' => $title],
             ]);
-            $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-            $tagUids[] = json_decode($result->content[0]->text)->uid;
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            $tagUids[] = json_decode((string)$result->content[0]->text)->uid;
         }
 
         // Create news with tags A,B in live
@@ -181,10 +180,10 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'Live News with Tags',
                 'datetime' => time(),
                 'tags' => [$tagUids[0], $tagUids[1]],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace and change to tags C,D
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
@@ -195,7 +194,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'data' => ['tags' => [$tagUids[2], $tagUids[3]]],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back — should see workspace tags C,D
         $result = $this->readTool->execute([
@@ -203,12 +202,12 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $news = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $news = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertEquals($newsUid, $news->uid);
-        $this->assertCount(2, $news->tags);
-        $this->assertEquals([$tagUids[2], $tagUids[3]], $news->tags);
+        self::assertEquals($newsUid, $news->uid);
+        self::assertCount(2, $news->tags);
+        self::assertEquals([$tagUids[2], $tagUids[3]], $news->tags);
     }
 
     /**
@@ -224,20 +223,20 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'English News',
                 'datetime' => time(),
                 'categories' => [1, 2, 3],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Translate to German
         $result = $this->writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translationUid = json_decode($result->content[0]->text)->translationUid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
 
         // Translation should have the same categories as the source
         $result = $this->readTool->execute([
@@ -245,12 +244,12 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $translationUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translation = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translation = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertIsArray($translation->categories);
-        $this->assertCount(3, $translation->categories);
-        $this->assertEquals([1, 2, 3], $translation->categories);
+        self::assertIsArray($translation->categories);
+        self::assertCount(3, $translation->categories);
+        self::assertEquals([1, 2, 3], $translation->categories);
     }
 
     /**
@@ -271,20 +270,20 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'English News',
                 'datetime' => time(),
                 'categories' => [1, 2],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Translate to German
         $result = $this->writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translationUid = json_decode($result->content[0]->text)->translationUid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
 
         // Update translation's categories to different values
         $result = $this->writeTool->execute([
@@ -293,7 +292,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $translationUid,
             'data' => ['categories' => [3, 4, 5]],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Source should still have [1,2]
         $result = $this->readTool->execute([
@@ -301,9 +300,9 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $source = json_decode($result->content[0]->text)->records[0];
-        $this->assertEquals([1, 2], $source->categories, 'Source should be unchanged');
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $source = json_decode((string)$result->content[0]->text)->records[0];
+        self::assertEquals([1, 2], $source->categories, 'Source should be unchanged');
 
         // Translation should have [3,4,5]
         $result = $this->readTool->execute([
@@ -311,9 +310,9 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $translationUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translation = json_decode($result->content[0]->text)->records[0];
-        $this->assertEquals([3, 4, 5], $translation->categories, 'Translation should have independent categories');
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translation = json_decode((string)$result->content[0]->text)->records[0];
+        self::assertEquals([3, 4, 5], $translation->categories, 'Translation should have independent categories');
     }
 
     /**
@@ -333,10 +332,10 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'Live English News',
                 'datetime' => time(),
                 'categories' => [1, 2],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
@@ -346,10 +345,10 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translationUid = json_decode($result->content[0]->text)->translationUid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
 
         // Update source record's categories in workspace
         $result = $this->writeTool->execute([
@@ -358,7 +357,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'data' => ['categories' => [3, 4, 5]],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Source should see workspace categories
         $result = $this->readTool->execute([
@@ -366,9 +365,9 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $source = json_decode($result->content[0]->text)->records[0];
-        $this->assertEquals([3, 4, 5], $source->categories);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $source = json_decode((string)$result->content[0]->text)->records[0];
+        self::assertEquals([3, 4, 5], $source->categories);
 
         // Translation should have its own categories (copied at translation time)
         $result = $this->readTool->execute([
@@ -376,9 +375,9 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $translationUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translation = json_decode($result->content[0]->text)->records[0];
-        $this->assertIsArray($translation->categories, 'Translation should have categories');
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translation = json_decode((string)$result->content[0]->text)->records[0];
+        self::assertIsArray($translation->categories, 'Translation should have categories');
     }
 
     /**
@@ -403,14 +402,14 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'related_links' => [
                     ['uri' => 'https://example.com', 'title' => 'Example'],
                 ],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         // Update both MM and inline in workspace
         $result = $this->writeTool->execute([
@@ -425,7 +424,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back — should see workspace data
         $result = $this->readTool->execute([
@@ -433,13 +432,13 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $news = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $news = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertEquals($newsUid, $news->uid, 'Client should see live UID');
-        $this->assertEquals('Updated News in Workspace', $news->title);
-        $this->assertCount(3, $news->categories, 'Should see 3 workspace categories');
-        $this->assertEquals([3, 4, 5], $news->categories);
+        self::assertEquals($newsUid, $news->uid, 'Client should see live UID');
+        self::assertEquals('Updated News in Workspace', $news->title);
+        self::assertCount(3, $news->categories, 'Should see 3 workspace categories');
+        self::assertEquals([3, 4, 5], $news->categories);
     }
 
     /**
@@ -461,25 +460,25 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'Live News to Translate',
                 'datetime' => time(),
                 'categories' => [1, 2, 3],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
-        $this->assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
+        self::assertGreaterThan(0, $GLOBALS['BE_USER']->workspace);
 
         // Translate in workspace
         $result = $this->writeTool->execute([
             'table' => 'tx_news_domain_model_news',
             'action' => 'translate',
             'uid' => $newsUid,
-            'data' => ['sys_language_uid' => 'de'],
+            'data' => ['sys_language_uid' => 'de', 'title' => 'Deutsch'],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translationUid = json_decode($result->content[0]->text)->translationUid;
-        $this->assertNotEmpty($translationUid, 'Should get a translation UID');
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translationUid = json_decode((string)$result->content[0]->text)->translationUid;
+        self::assertNotEmpty($translationUid, 'Should get a translation UID');
 
         // Translation should have categories copied from source
         $result = $this->readTool->execute([
@@ -487,12 +486,12 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $translationUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $translation = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $translation = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertIsArray($translation->categories, 'Translation should have categories');
-        $this->assertCount(3, $translation->categories, 'Translation should have same categories as source');
-        $this->assertEquals([1, 2, 3], $translation->categories);
+        self::assertIsArray($translation->categories, 'Translation should have categories');
+        self::assertCount(3, $translation->categories, 'Translation should have same categories as source');
+        self::assertEquals([1, 2, 3], $translation->categories);
     }
 
     /**
@@ -513,10 +512,10 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
                 'title' => 'News with only MM update',
                 'datetime' => time(),
                 'categories' => [1],
-            ]
+            ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $newsUid = json_decode($result->content[0]->text)->uid;
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $newsUid = json_decode((string)$result->content[0]->text)->uid;
 
         // Switch to workspace
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
@@ -528,7 +527,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'data' => ['categories' => [2, 3, 4, 5]],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         // Read back
         $result = $this->readTool->execute([
@@ -536,10 +535,10 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
             'uid' => $newsUid,
             'includeRelations' => true,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $news = json_decode($result->content[0]->text)->records[0];
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $news = json_decode((string)$result->content[0]->text)->records[0];
 
-        $this->assertCount(4, $news->categories, 'Should see 4 workspace categories');
-        $this->assertEquals([2, 3, 4, 5], $news->categories);
+        self::assertCount(4, $news->categories, 'Should see 4 workspace categories');
+        self::assertEquals([2, 3, 4, 5], $news->categories);
     }
 }

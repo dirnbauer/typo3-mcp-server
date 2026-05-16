@@ -29,7 +29,7 @@ class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
     protected function setUp(): void
     {
         parent::setUp();
-        $this->writeTool = new WriteTableTool();
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
     }
 
     protected function tearDown(): void
@@ -55,6 +55,7 @@ class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
                 $event->setData($data);
             }
         });
+        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
 
         $result = $this->writeTool->execute([
             'action' => 'create',
@@ -67,16 +68,16 @@ class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $payload = json_decode($result->content[0]->text, true);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $payload = json_decode((string)$result->content[0]->text, true);
         $newUid = (int)($payload['uid'] ?? 0);
-        $this->assertGreaterThan(0, $newUid, 'Expected a created record uid in the response');
+        self::assertGreaterThan(0, $newUid, 'Expected a created record uid in the response');
 
         // Confirm the record landed on the listener's chosen page, not the
         // page the caller originally specified.
         $record = BackendUtility::getRecord('tt_content', $newUid, 'pid');
-        $this->assertNotNull($record, "Created record $newUid not found");
-        $this->assertSame(
+        self::assertNotNull($record, "Created record $newUid not found");
+        self::assertSame(
             $reroutedPid,
             (int)$record['pid'],
             'Listener edited data.pid but the record landed on the originally requested page — '
@@ -88,7 +89,7 @@ class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
     {
         // Implement SingletonInterface so GeneralUtility::setSingletonInstance
         // accepts our anonymous dispatcher as a stand-in for the container's.
-        $dispatcher = new class($listener) implements EventDispatcherInterface, SingletonInterface {
+        $dispatcher = new class ($listener) implements EventDispatcherInterface, SingletonInterface {
             public function __construct(private $listener) {}
 
             public function dispatch(object $event): object

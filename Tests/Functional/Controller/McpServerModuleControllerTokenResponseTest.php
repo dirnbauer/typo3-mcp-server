@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Functional\Controller;
 
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -27,7 +26,7 @@ class McpServerModuleControllerTokenResponseTest extends AbstractFunctionalTest
     {
         $plainToken = $this->service->createDirectAccessToken(1, 'test-client');
 
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/^[0-9a-f]{64}$/',
             $plainToken,
             'createDirectAccessToken must return a 64-char hex string'
@@ -39,9 +38,9 @@ class McpServerModuleControllerTokenResponseTest extends AbstractFunctionalTest
         $plainToken = $this->service->createDirectAccessToken(1, 'test-client');
         $result = $this->service->validateToken($plainToken);
 
-        $this->assertNotNull($result, 'Plain token returned by createDirectAccessToken must validate');
-        $this->assertEquals(1, $result['be_user_uid']);
-        $this->assertEquals('test-client', $result['client_name']);
+        self::assertNotNull($result, 'Plain token returned by createDirectAccessToken must validate');
+        self::assertEquals(1, $result['be_user_uid']);
+        self::assertEquals('test-client', $result['client_name']);
     }
 
     public function testGetUserTokensReturnsHashedTokenNotPlainToken(): void
@@ -51,16 +50,16 @@ class McpServerModuleControllerTokenResponseTest extends AbstractFunctionalTest
 
         $tokens = $this->service->getUserTokens(1);
 
-        $this->assertNotEmpty($tokens, 'getUserTokens must return at least one token');
+        self::assertNotEmpty($tokens, 'getUserTokens must return at least one token');
 
         $latestToken = $tokens[0];
-        $this->assertArrayHasKey('token', $latestToken, 'Token row must have a "token" column');
-        $this->assertEquals(
+        self::assertArrayHasKey('token', $latestToken, 'Token row must have a "token" column');
+        self::assertEquals(
             $expectedHash,
             $latestToken['token'],
             'The "token" field in getUserTokens must be the SHA-256 hash, not the plain token'
         );
-        $this->assertNotEquals(
+        self::assertNotEquals(
             $plainToken,
             $latestToken['token'],
             'getUserTokens must never expose the plain token'
