@@ -132,6 +132,28 @@ Check:
 - Confirm that the MCP client reuses the existing token; some clients
   default to a fresh token per launch.
 
+Cursor reports ``Unexpected content type: text/html``
+====================================================
+
+Symptom: Cursor connects with ``streamableHttp`` and then fails with
+``Streamable HTTP error: Unexpected content type: text/html; charset=UTF-8``.
+
+Check:
+
+- Cursor is talking to the remote HTTP endpoint and received a TYPO3 HTML
+  response, such as a backend login, error page, redirect target, or a site
+  route instead of an MCP protocol response.
+- For local development, remove that HTTP MCP server from Cursor and use the
+  **Install in Cursor** button in the backend module. The generated config
+  uses local stdio and starts ``vendor/bin/typo3 mcp:server`` directly, so no
+  OAuth token or reachable public URL is needed.
+- In Cursor settings, the local server should have a ``command``/``args``
+  config, not a ``url``/``streamableHttp`` config. For DDEV the command starts
+  with ``ddev exec -p <project>``.
+- Startup lines like ``[MCP Server] Starting MCP server`` may appear in
+  Cursor's MCP log because they are written to stderr. They do not corrupt the
+  stdio protocol; the actual MCP messages are written to stdout.
+
 Local ``vendor/bin/typo3 mcp:server`` connects but tools fail
 =============================================================
 

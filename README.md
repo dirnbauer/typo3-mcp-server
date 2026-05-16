@@ -383,11 +383,12 @@ nets, never authentication or capability-policy.
 Two connection models:
 
 - **Remote HTTP** at `/mcp`, protected by OAuth 2.1 + PKCE.
-  Recommended for everything non-local: Cursor, Claude Desktop, n8n,
-  Manus, MCP Inspector.
+  Recommended for clients that cannot start a local process: Claude
+  Desktop, n8n, Manus, MCP Inspector.
 - **Local stdio** via `vendor/bin/typo3 mcp:server`.
-  Runs as your OS user; TYPO3 gates CMS operations but does not contain
-  the host. Use stdio with trusted local clients only.
+  Recommended for Cursor during local development. It runs as your OS user;
+  TYPO3 gates CMS operations but does not contain the host. Use stdio with
+  trusted local clients only.
 
 The **User → MCP Server** backend module handles token creation, per-client
 instructions, and endpoint health checks.

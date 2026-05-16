@@ -105,8 +105,7 @@ For everything-local-on-one-machine, skip OAuth entirely:
   "mcpServers": {
     "typo3-local": {
       "command": "ddev",
-      "args": ["exec", "./vendor/bin/typo3", "mcp:server"],
-      "cwd": "/absolute/path/to/your/typo3-project"
+      "args": ["exec", "-p", "your-ddev-project", "--raw", "--", "php", "vendor/bin/typo3", "mcp:server"]
     }
   }
 }
@@ -116,9 +115,24 @@ This bypasses HTTP completely and runs the MCP server inside DDEV via
 stdio. The generated backend-module config uses `ddev exec -p <project>` so
 it does not depend on Cursor's working directory.
 
-In stdio mode, the server runs as the OS user that owns the DDEV project.
-Capability-manifest enforcement and TYPO3 permissions still apply, but
-there is no OAuth ceremony.
+For non-DDEV installs, use the project-local TYPO3 binary with `cwd` set:
+
+```json
+{
+  "mcpServers": {
+    "typo3-local": {
+      "command": "php",
+      "args": ["/absolute/path/to/your/typo3-project/vendor/bin/typo3", "mcp:server"],
+      "cwd": "/absolute/path/to/your/typo3-project"
+    }
+  }
+}
+```
+
+In stdio mode, the server runs as the OS user that starts it, or inside the
+DDEV web container when launched through `ddev exec`. Capability-manifest
+enforcement and TYPO3 permissions still apply, but there is no OAuth
+ceremony.
 
 ## 6. Comparing model behavior
 
