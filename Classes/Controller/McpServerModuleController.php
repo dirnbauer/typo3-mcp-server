@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
@@ -54,6 +55,7 @@ final readonly class McpServerModuleController
         $endpointUrl = $baseUrl . '/mcp';
         $siteName = $this->getSiteName();
         $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
+        $localStdioConfig = $this->buildLocalStdioConfig();
 
         $tools = [];
         foreach ($this->toolRegistry->getTools() as $tool) {
@@ -81,7 +83,8 @@ final readonly class McpServerModuleController
             'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
             'endpointUrl' => $endpointUrl,
-            'cursorInstallUrl' => $this->buildCursorInstallUrl($siteName, $endpointUrl),
+            'cursorInstallUrl' => $this->buildCursorInstallUrl($siteName, $localStdioConfig),
+            'localStdioConfigJson' => $this->buildMcpServersConfigJson($siteName, $localStdioConfig),
             'tools' => $tools,
             'username' => is_string($backendUser->user['username'] ?? null) ? $backendUser->user['username'] : 'unknown',
             'userId' => $userId,
@@ -235,20 +238,72 @@ final readonly class McpServerModuleController
     }
 
     /**
+     * @return array{command: string, args: list<string>, cwd?: string}
+     */
+    private function buildLocalStdioConfig(): array
+    {
+        $ddevProject = getenv('DDEV_PROJECT');
+        if ($this->isTruthyEnvironmentValue(getenv('IS_DDEV_PROJECT')) && is_string($ddevProject) && $ddevProject !== '') {
+            return [
+                'command' => 'ddev',
+                'args' => [
+                    'exec',
+                    '-p',
+                    $ddevProject,
+                    '--raw',
+                    '--',
+                    'php',
+                    'vendor/bin/typo3',
+                    'mcp:server',
+                ],
+            ];
+        }
+
+        return [
+            'command' => 'php',
+            'args' => [
+                Environment::getProjectPath() . '/vendor/bin/typo3',
+                'mcp:server',
+            ],
+            'cwd' => Environment::getProjectPath(),
+        ];
+    }
+
+    private function isTruthyEnvironmentValue(mixed $value): bool
+    {
+        return is_string($value)
+            && $value !== ''
+            && strtolower($value) !== 'false'
+            && $value !== '0';
+    }
+
+    /**
      * Cursor "Install in Cursor" deeplink (Cursor v3+ format).
      *
-     * - Config is the single-server object that becomes one entry in mcp.json (HTTP: `url` only).
-     * - Cursor expects **standard** base64 (not URL-safe) with literal `=` padding, exactly as
-     *   shown in the official documentation example.
-     * - The `+`, `/`, `=` characters are valid in a URL query value and must NOT be percent-encoded
-     *   (Cursor's decoder rejects `%2B`/`%2F`/`%3D`).
+     * - Config is the single-server object that becomes one entry in mcp.json.
+     * - Cursor expects standard base64 (not URL-safe) with literal `=` padding.
+     * - The `+`, `/`, `=` characters are valid in a URL query value and must not be percent-encoded.
      *
      * @see https://cursor.com/docs/context/mcp/install-links
+     *
+     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
      */
-    private function buildCursorInstallUrl(string $serverName, string $endpointUrl): string
+    private function buildMcpServersConfigJson(string $serverName, array $serverConfig): string
     {
-        $config = ['url' => $endpointUrl];
-        $json = json_encode($config, JSON_UNESCAPED_SLASHES);
+        $json = json_encode(
+            ['mcpServers' => [$serverName => $serverConfig]],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
+        );
+
+        return is_string($json) ? $json : '{}';
+    }
+
+    /**
+     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
+     */
+    private function buildCursorInstallUrl(string $serverName, array $serverConfig): string
+    {
+        $json = json_encode($serverConfig, JSON_UNESCAPED_SLASHES);
         $json = is_string($json) ? $json : '{}';
         $configParam = base64_encode($json);
 

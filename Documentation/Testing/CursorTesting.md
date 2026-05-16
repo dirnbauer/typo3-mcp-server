@@ -6,9 +6,10 @@ tools while you watch the workspace fill up.
 
 ## Why Cursor?
 
-- The official MCP-over-HTTP support is the most polished of the
-  general-purpose IDE clients.
-- OAuth (with refresh tokens) is wired in — no manual token rotation.
+- The local stdio connection starts this extension's MCP server directly, so
+  there is no OAuth ceremony during development.
+- DDEV projects can be launched by project name, so Cursor does not need to
+  know the container path.
 - The chat panel shows every tool call and response, so you can see exactly
   which arguments the LLM picked.
 - You can ask Claude or GPT, side by side, against the same MCP — useful
@@ -17,19 +18,18 @@ tools while you watch the workspace fill up.
 ## 1. Connect Cursor
 
 1. Open the **MCP Server backend module** (TYPO3 backend → System → MCP
-   Server). The page renders a "Connect Cursor" button if your TYPO3 is on a
-   reachable URL (Cursor needs to reach your `/mcp` endpoint by HTTPS).
-2. Click the button. Cursor opens, asks for permission, and runs the OAuth
-   flow against your TYPO3 backend session. After the redirect Cursor stores
-   an access + refresh token; you don't need to re-authenticate later.
+   Server).
+2. Click the "Install in Cursor" button. Cursor opens, asks for permission,
+   and stores a local stdio MCP config. DDEV projects use `ddev exec -p
+   <project> ...`; other local installs use the project-local
+   `vendor/bin/typo3` binary with `cwd` set.
 3. Verify the connection inside Cursor: open Settings → MCP → the new server
    should appear and list its tools (look for `ReadTable`, `WriteTable`,
    `GetCapabilities`, etc.).
 
-If the install button is greyed out, your TYPO3 instance probably has no
-public hostname (e.g. it's only reachable as `http://localhost`). In that
-case use the **Manual configuration** card on the same page — it gives you
-the JSON to paste into `~/.cursor/mcp.json`.
+If the install link is not available in your client, use the manual
+configuration shown in the Cursor card. It gives you the JSON to paste into
+`~/.cursor/mcp.json`.
 
 ## 2. Sanity check
 
@@ -47,8 +47,9 @@ You should see:
 - `localMode.enabled: true` if the TYPO3 instance is in DDEV (DDEV env vars
   detected) or in the Development context; `false` on production.
 
-If you get an authentication error: re-trigger the install button — the
-refresh token may have rotated and the old one was cached locally.
+If Cursor cannot start the server, check the MCP server log in Cursor
+settings. For DDEV, `ddev` must be available on the host and the project name
+in the generated config must match `ddev list`.
 
 ## 3. Drive the FullFeatureChatbotScript
 
@@ -84,14 +85,15 @@ show what would happen, then ask the LLM to confirm before re-running with
 
 ## 5. Local-only testing without OAuth
 
-If your DDEV TYPO3 isn't reachable from the public internet (which is the
-common case for development), there are two options:
+The backend module's Cursor card already uses this mode. For manual setup,
+there are two useful variants:
 
 ### Option A — `mcp-remote` proxy
 
-The MCP backend module shows the JSON for this. It runs `npx mcp-remote
+The MCP backend module still shows the JSON for this. It runs `npx mcp-remote
 https://your-site/mcp` from your machine, exposing it to Cursor via stdio.
-Works behind any firewall but adds Node.js as a dependency.
+This keeps the HTTP transport and therefore still needs a token, but it can
+help with clients that only understand stdio.
 
 ### Option B — `vendor/bin/typo3 mcp:server` over stdio
 
@@ -111,8 +113,8 @@ For everything-local-on-one-machine, skip OAuth entirely:
 ```
 
 This bypasses HTTP completely and runs the MCP server inside DDEV via
-stdio. The `cwd` matters — DDEV resolves the project from the working
-directory.
+stdio. The generated backend-module config uses `ddev exec -p <project>` so
+it does not depend on Cursor's working directory.
 
 In stdio mode, the server runs as the OS user that owns the DDEV project.
 Capability-manifest enforcement and TYPO3 permissions still apply, but

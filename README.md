@@ -99,7 +99,7 @@ In the TYPO3 backend, go to **User → MCP Server**. The module shows:
 
 | Client | Transport | Setup |
 |---|---|---|
-| **Cursor** | Remote HTTP + OAuth | One-click install button (see [`Documentation/Testing/CursorTesting.md`](Documentation/Testing/CursorTesting.md)) |
+| **Cursor** | Local stdio | One-click install button starts `vendor/bin/typo3 mcp:server` without OAuth; DDEV projects use `ddev exec -p <project>` |
 | **Claude Desktop** | Via `mcp-remote` proxy | Paste JSON config from the module |
 | **n8n** | Remote HTTP + OAuth | Paste endpoint URL into the MCP Client node |
 | **Manus** | Remote HTTP + OAuth | Paste endpoint URL |

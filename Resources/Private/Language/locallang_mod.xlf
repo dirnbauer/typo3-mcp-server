@@ -94,7 +94,7 @@
 
       <!-- Main tabs -->
       <trans-unit id="tab.remoteSetup">
-        <source>Remote MCP Setup</source>
+        <source>Client Setup</source>
       </trans-unit>
       <trans-unit id="tab.localMcpRemote">
         <source>Local Setup (mcp-remote)</source>
@@ -105,7 +105,7 @@
 
       <!-- Remote setup -->
       <trans-unit id="remote.description">
-        <source>Connect MCP clients to this TYPO3 instance over the internet using OAuth authentication. This is the recommended method for most use cases.</source>
+        <source>Use local stdio for Cursor's AI chat by default. Remote HTTP clients can still connect to this TYPO3 instance with OAuth.</source>
       </trans-unit>
       <trans-unit id="remote.serverUrl">
         <source>Server URL</source>
@@ -142,13 +142,13 @@
         <source>Cursor IDE Integration</source>
       </trans-unit>
       <trans-unit id="cursor.description">
-        <source>The fastest way to connect Cursor to this TYPO3 instance:</source>
+        <source>Connect Cursor's AI chat through the local TYPO3 CLI MCP server:</source>
       </trans-unit>
       <trans-unit id="cursor.installButton">
         <source>Install in Cursor</source>
       </trans-unit>
       <trans-unit id="cursor.authReuseNote">
-        <source>Note: The install link only passes the MCP server URL. If Cursor already has a valid token for this server, it may connect without asking you to authenticate again.</source>
+        <source>The install link uses local stdio and starts vendor/bin/typo3 mcp:server in this project. No OAuth token is needed.</source>
       </trans-unit>
       <trans-unit id="cursor.manualConfig">
         <source>Or add to your ~/.cursor/mcp.json manually:</source>
@@ -160,13 +160,13 @@
         <source>What happens next:</source>
       </trans-unit>
       <trans-unit id="cursor.step1">
-        <source>Cursor connects to the MCP endpoint and receives a 401 challenge</source>
+        <source>Cursor starts the TYPO3 CLI MCP server from this project</source>
       </trans-unit>
       <trans-unit id="cursor.step2">
-        <source>OAuth authentication starts automatically in your browser</source>
+        <source>The AI chat talks to the server over stdin/stdout</source>
       </trans-unit>
       <trans-unit id="cursor.step3">
-        <source>After logging in to this TYPO3 backend, Cursor receives an access token</source>
+        <source>TYPO3 tools are available without an extra OAuth flow</source>
       </trans-unit>
       <trans-unit id="cursor.step4">
         <source>MCP tools become available in Cursor's agent</source>

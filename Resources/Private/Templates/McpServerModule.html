@@ -199,13 +199,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                     </p>
 
                                     <p class="text-muted"><f:translate id="cursor.manualConfig" domain="mcp_server.mod" /></p>
-                                    <textarea class="form-control mb-2" rows="7" readonly id="cursor-config" style="font-family: monospace; font-size: 12px; white-space: pre"><f:format.raw>{
-  "mcpServers": {
-    "</f:format.raw>{siteName}<f:format.raw>": {
-      "url": "</f:format.raw>{baseUrl}<f:format.raw>/mcp"
-    }
-  }
-}</f:format.raw></textarea>
+                                    <textarea class="form-control mb-2" rows="9" readonly id="cursor-config" style="font-family: monospace; font-size: 12px; white-space: pre"><f:format.raw>{localStdioConfigJson}</f:format.raw></textarea>
                                     <button class="btn btn-sm btn-outline-secondary copy-button" type="button" data-copy-target="cursor-config">
                                         <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
                                             <span class="icon-markup">📋</span>
@@ -351,14 +345,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
 
                             <div class="row">
                                 <div class="col-md-12">
-                                    <textarea class="form-control mb-2" rows="8" readonly id="cli-config" style="font-family: monospace; font-size: 12px;"><f:format.raw>{
-  "mcpServers": {
-    "</f:format.raw>{siteName}<f:format.raw>": {
-      "command": "php",
-      "args": ["vendor/bin/typo3","mcp:server"]
-    }
-  }
-}</f:format.raw></textarea>
+                                    <textarea class="form-control mb-2" rows="9" readonly id="cli-config" style="font-family: monospace; font-size: 12px;"><f:format.raw>{localStdioConfigJson}</f:format.raw></textarea>
                                     <button class="btn btn-sm btn-outline-secondary copy-button" type="button" data-copy-target="cli-config">
                                         <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
                                             <span class="icon-markup">📋</span>
