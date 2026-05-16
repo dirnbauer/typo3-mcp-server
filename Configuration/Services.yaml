@@ -6,7 +6,13 @@ services:
 
   Hn\McpServer\:
     resource: '../Classes/*'
-    exclude: '../Classes/Domain/Model/*'
+    exclude:
+      # Instantiated only via `new` in ToolRegistry — not a DI service (constructor uses `object`).
+      - '../Classes/MCP/Tool/CompatibleToolAdapter.php'
+
+  _instanceof:
+    Hn\McpServer\MCP\Tool\ToolInterface:
+      public: true
 
   # Explicitly register command controllers
   Hn\McpServer\Command\McpServerCommand:
@@ -26,6 +32,346 @@ services:
       - name: 'console.command'
         command: 'mcp:oauth'
         description: 'Manage OAuth tokens for MCP server'
+
+  # Generic MCP tool runner + per-tool ergonomic shortcuts.
+  # The typo3-mcp-cli skill walks through adding more.
+  Hn\McpServer\Command\McpToolRunCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:tool'
+        description: 'Run any registered MCP tool by name (use mcp:tool:list to discover them).'
+  Hn\McpServer\Command\McpToolListCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:tool:list'
+        description: 'List MCP tools registered in this TYPO3 instance.'
+  Hn\McpServer\Command\Tool\ReadTableToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:read-table'
+        description: 'Read records from a TCA table (workspace-aware, language-aware).'
+  Hn\McpServer\Command\Tool\WriteTableToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:write-table'
+        description: 'Create / update / move / translate / delete a TCA record (workspace-staged).'
+  Hn\McpServer\Command\Tool\GetPageToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-page'
+        description: 'Fetch a TYPO3 page including content elements (workspace-aware).'
+  Hn\McpServer\Command\Tool\GetPageTreeToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-page-tree'
+        description: 'Print the page tree as text (workspace-aware).'
+  Hn\McpServer\Command\Tool\SearchToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:search'
+        description: 'Full-text search across workspace-capable TCA tables.'
+  Hn\McpServer\Command\Tool\ListTablesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-tables'
+        description: 'List MCP-accessible TCA tables and their access info.'
+  Hn\McpServer\Command\Tool\GetTableSchemaToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-table-schema'
+        description: 'Return the TCA-derived schema for a table (fields, types, validation).'
+  Hn\McpServer\Command\Tool\ListWorkspacesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-workspaces'
+        description: 'List workspaces accessible to the current backend user.'
+  Hn\McpServer\Command\Tool\PublishWorkspaceToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:publish-workspace'
+        description: 'Publish workspace changes to live (defaults to dryRun=true).'
+  Hn\McpServer\Command\Tool\GetCapabilitiesToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-capabilities'
+        description: 'Show the active capability manifest + runtime mode.'
+  Hn\McpServer\Command\Tool\RenderRecordToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:render-record'
+        description: 'Render a page (or single content element) through the FE in workspace context.'
+  Hn\McpServer\Command\Tool\GetPreviewUrlToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-preview-url'
+        description: 'Build a workspace preview URL for a page or content element.'
+  Hn\McpServer\Command\Tool\SiteSetToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:site-set'
+        description: 'Find, add, or remove TYPO3 Site Sets on an existing site.'
+  Hn\McpServer\Command\Tool\ApplyShadcnPresetToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:apply-shadcn-preset'
+        description: 'Apply a shadcn/ui preset to an existing frontend project.'
+
+  Hn\McpServer\Command\Tool\AttachImageToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'AttachImage'
+      $description: 'Stage an image in the sandbox and attach it to a TCA file field.'
+      $exposedOptions: ['table', 'uid', 'field', 'fileUid', 'url']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:attach-image'
+        description: 'Stage an image in the sandbox and attach it to a TCA file field.'
+  Hn\McpServer\Command\Tool\BrowseFilesToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'BrowseFiles'
+      $description: 'Browse the MCP file sandbox.'
+      $exposedOptions: ['path', 'recursive']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:browse-files'
+        description: 'Browse the MCP file sandbox.'
+  Hn\McpServer\Command\Tool\BrowseFolderToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'BrowseFolder'
+      $description: 'Browse a TYPO3 FAL folder.'
+      $exposedOptions: ['folder', 'recursive']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:browse-folder'
+        description: 'Browse a TYPO3 FAL folder.'
+  Hn\McpServer\Command\Tool\BulkWriteToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'BulkWrite'
+      $description: 'Run multiple write operations in one MCP call.'
+    tags:
+      - name: 'console.command'
+        command: 'mcp:bulk-write'
+        description: 'Run multiple write operations in one MCP call.'
+  Hn\McpServer\Command\Tool\ContentAuditToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ContentAudit'
+      $description: 'Audit page-tree content for SEO and quality issues.'
+      $exposedOptions: ['startPage', 'depth', 'limit']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:content-audit'
+        description: 'Audit page-tree content for SEO and quality issues.'
+  Hn\McpServer\Command\Tool\CopyContentToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'CopyContent'
+      $description: 'Copy TYPO3 content while preserving relations.'
+    tags:
+      - name: 'console.command'
+        command: 'mcp:copy-content'
+        description: 'Copy TYPO3 content while preserving relations.'
+  Hn\McpServer\Command\Tool\CreateSiteToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'CreateSite'
+      $description: 'Create or update TYPO3 site configuration.'
+    tags:
+      - name: 'console.command'
+        command: 'mcp:create-site'
+        description: 'Create or update TYPO3 site configuration.'
+  Hn\McpServer\Command\Tool\GetFlexFormSchemaToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetFlexFormSchema'
+      $description: 'Return a plugin/content element FlexForm schema.'
+      $exposedOptions: ['table', 'field', 'identifier', 'recordUid']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-flex-form-schema'
+        description: 'Return a plugin/content element FlexForm schema.'
+  Hn\McpServer\Command\Tool\GetPaidContentToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetPaidContent'
+      $description: 'Retrieve x402-gated content or payment requirements.'
+      $exposedOptions: ['pageUid', 'paymentProof']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-paid-content'
+        description: 'Retrieve x402-gated content or payment requirements.'
+  Hn\McpServer\Command\Tool\GetPaymentStatsToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetPaymentStats'
+      $description: 'Summarize x402 payment statistics.'
+      $exposedOptions: ['period', 'groupBy']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-payment-stats'
+        description: 'Summarize x402 payment statistics.'
+  Hn\McpServer\Command\Tool\GetSystemLogToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetSystemLog'
+      $description: 'Read TYPO3 system log entries.'
+      $exposedOptions: ['limit', 'offset']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:get-system-log'
+        description: 'Read TYPO3 system log entries.'
+  Hn\McpServer\Command\Tool\ImportContentToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ImportContent'
+      $description: 'Analyze raw content and optionally create TYPO3 records.'
+    tags:
+      - name: 'console.command'
+        command: 'mcp:import-content'
+        description: 'Analyze raw content and optionally create TYPO3 records.'
+  Hn\McpServer\Command\Tool\ImportFromUrlToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ImportFromUrl'
+      $description: 'Fetch URL content and optionally create a TYPO3 page.'
+      $exposedOptions: ['url', 'pid']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:import-from-url'
+        description: 'Fetch URL content and optionally create a TYPO3 page.'
+  Hn\McpServer\Command\Tool\InstallExtensionToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'InstallExtension'
+      $description: 'Install, activate, or search TYPO3 extensions.'
+      $exposedOptions: ['action', 'extensionKey']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:install-extension'
+        description: 'Install, activate, or search TYPO3 extensions.'
+  Hn\McpServer\Command\Tool\ListPaidContentToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListPaidContent'
+      $description: 'List pages gated by x402 payment.'
+      $exposedOptions: ['limit', 'offset', 'parentPageUid']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-paid-content'
+        description: 'List pages gated by x402 payment.'
+  Hn\McpServer\Command\Tool\ListStoragesToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListStorages'
+      $description: 'List TYPO3 FAL storages.'
+      $exposedOptions: ['includeOffline']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-storages'
+        description: 'List TYPO3 FAL storages.'
+  Hn\McpServer\Command\Tool\ManageRedirectsToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ManageRedirects'
+      $description: 'List and explain TYPO3 redirects.'
+      $exposedOptions: ['action', 'limit', 'offset']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:manage-redirects'
+        description: 'List and explain TYPO3 redirects.'
+  Hn\McpServer\Command\Tool\ReadFileMetadataToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ReadFileMetadata'
+      $description: 'Read metadata for a file in the MCP sandbox.'
+      $exposedOptions: ['uid', 'identifier']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:read-file-metadata'
+        description: 'Read metadata for a file in the MCP sandbox.'
+  Hn\McpServer\Command\Tool\RollbackWorkspaceToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'RollbackWorkspace'
+      $description: 'Discard workspace changes, dry-run by default.'
+      $exposedOptions: ['workspace_id', 'dryRun']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:rollback-workspace'
+        description: 'Discard workspace changes, dry-run by default.'
+  Hn\McpServer\Command\Tool\SafeCliToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SafeCli'
+      $description: 'Run a whitelisted TYPO3 CLI command.'
+      $exposedOptions: ['command']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:safe-cli'
+        description: 'Run a whitelisted TYPO3 CLI command.'
+  Hn\McpServer\Command\Tool\SearchFileToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SearchFile'
+      $description: 'Search TYPO3 FAL files.'
+      $exposedOptions: ['name', 'extension', 'folder', 'mimeType', 'storage', 'limit', 'thumbnails']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:search-file'
+        description: 'Search TYPO3 FAL files.'
+  Hn\McpServer\Command\Tool\SearchMediaToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SearchMedia'
+      $description: 'Search media across TYPO3 file storages.'
+      $exposedOptions: ['keyword', 'mimeType', 'extension', 'folder', 'limit', 'offset']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:search-media'
+        description: 'Search media across TYPO3 file storages.'
+  Hn\McpServer\Command\Tool\UploadFileToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'UploadFile'
+      $description: 'Upload a base64 file into the MCP sandbox.'
+      $exposedOptions: ['path', 'content_base64']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:upload-file'
+        description: 'Upload a base64 file into the MCP sandbox.'
+  Hn\McpServer\Command\Tool\UploadFileFromUrlToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'UploadFileFromUrl'
+      $description: 'Download a public URL into the MCP sandbox.'
+      $exposedOptions: ['url', 'path']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:upload-file-from-url'
+        description: 'Download a public URL into the MCP sandbox.'
+  Hn\McpServer\Command\Tool\WorkspaceReviewToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'WorkspaceReview'
+      $description: 'Review pending workspace changes.'
+      $exposedOptions: ['table', 'limit', 'offset', 'workspace_id']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:workspace-review'
+        description: 'Review pending workspace changes.'
+  Hn\McpServer\Command\Tool\WriteFileToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'WriteFile'
+      $description: 'Write or update a text file in the MCP sandbox.'
+      $exposedOptions: ['path', 'content']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:write-file'
+        description: 'Write or update a text file in the MCP sandbox.'
         
   # Make ToolRegistry public for eID access
   Hn\McpServer\MCP\ToolRegistry:
@@ -46,28 +392,18 @@ services:
   # Make SiteInformationService public for eID access
   Hn\McpServer\Service\SiteInformationService:
     public: true
-    
-  # Make SiteInstructionsService public for server access
-  Hn\McpServer\Server\SiteInstructionsService:
+
+  # Make LanguageService public for functional tests and eID access
+  Hn\McpServer\Service\LanguageService:
+    public: true
+
+  # Make TableAccessService public for functional tests
+  Hn\McpServer\Service\TableAccessService:
     public: true
     
-  # Event listeners
-  Hn\McpServer\EventListener\FileEnrichmentListener:
-    tags:
-      - name: event.listener
-        event: Hn\McpServer\Event\AfterSchemaLoadEvent
-        method: onSchemaLoad
-        identifier: 'mcp-server/file-enrichment-schema'
-      - name: event.listener
-        event: Hn\McpServer\Event\AfterRecordReadEvent
-        method: onRecordRead
-        identifier: 'mcp-server/file-enrichment-read'
-
-  Hn\McpServer\EventListener\SysFileMountRestrictionListener:
-    tags:
-      - name: event.listener
-        event: Hn\McpServer\Event\BeforeRecordReadEvent
-        identifier: 'mcp-server/sys-file-mount-restriction'
+  # Event listeners are registered via the #[AsEventListener] attribute
+  # on the listener classes themselves (TYPO3 v13+ pattern). Services.yaml
+  # tags are no longer needed — autoconfigure: true picks them up.
 
   Hn\McpServer\EventListener\SysFileMetadataRestrictionListener:
     tags:
@@ -78,8 +414,3 @@ services:
   # Explicitly configure the module controller
   Hn\McpServer\Controller\McpServerModuleController:
     public: true
-    arguments:
-      $moduleTemplateFactory: '@TYPO3\CMS\Backend\Template\ModuleTemplateFactory'
-      $toolRegistry: '@Hn\McpServer\MCP\ToolRegistry'
-      $pageRenderer: '@TYPO3\CMS\Core\Page\PageRenderer'
-      $oauthService: '@Hn\McpServer\Service\OAuthService'

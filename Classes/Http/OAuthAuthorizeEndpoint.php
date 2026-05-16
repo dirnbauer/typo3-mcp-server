@@ -8,6 +8,8 @@ use Hn\McpServer\Service\OAuthService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Crypto\HashAlgo;
+use TYPO3\CMS\Core\Crypto\HashService;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -15,25 +17,43 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * OAuth authorization endpoint
  */
-class OAuthAuthorizeEndpoint
+final readonly class OAuthAuthorizeEndpoint
 {
-    
+    public function __construct(
+        private OAuthService $oauthService,
+        private HashService $hashService,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $queryParams = $request->getQueryParams();
-            $postParams = $request->getParsedBody() ?: [];
-            
+            $postParams = $this->getRequestData($request->getParsedBody());
+            $queryParams = $this->getRequestData($request->getQueryParams());
+
             // Initialize backend user context for eID
             $this->initializeBackendUserContext($request);
-            
+
+            $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
+            // RFC 9700 §2.1.1 makes PKCE mandatory for the authorization-code
+            // grant. Reject the flow if the client did not send a challenge.
+            $challengeRaw = $queryParams['code_challenge'] ?? '';
+            if (!is_string($challengeRaw) || $challengeRaw === '') {
+                return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
+            }
+            $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+            if ($challengeMethod !== 'S256') {
+                return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+            }
+
             // Check if user is authenticated
             if (!$this->isBackendUserAuthenticated()) {
                 return $this->redirectToLogin($request);
             }
 
-            $beUser = $GLOBALS['BE_USER'];
+            $beUser = $GLOBALS['BE_USER'] ?? null;
+            if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+                return $this->createErrorResponse('server_error', 'Backend user context could not be initialized');
+            }
             $beUserId = (int)$beUser->user['uid'];
 
             // Handle authorization approval
@@ -44,8 +64,10 @@ class OAuthAuthorizeEndpoint
             // Show consent form
             return $this->showConsentForm($request);
 
-        } catch (\Throwable $e) {
-            return $this->createErrorResponse('server_error', $e->getMessage());
+        } catch (\InvalidArgumentException) {
+            return $this->createErrorResponse('invalid_request', 'Invalid redirect_uri');
+        } catch (\Throwable) {
+            return $this->createErrorResponse('server_error', 'Authorization failed');
         }
     }
 
@@ -57,14 +79,14 @@ class OAuthAuthorizeEndpoint
             $GLOBALS['BE_USER']->start($request);
         }
     }
-    
+
     private function isBackendUserAuthenticated(): bool
     {
         $beUser = $GLOBALS['BE_USER'] ?? null;
-        return $beUser instanceof BackendUserAuthentication && 
-               is_array($beUser->user) && 
-               isset($beUser->user['uid']) && 
-               $beUser->user['uid'] > 0;
+        return $beUser instanceof BackendUserAuthentication
+               && is_array($beUser->user)
+               && isset($beUser->user['uid'])
+               && $beUser->user['uid'] > 0;
     }
 
     /**
@@ -72,13 +94,13 @@ class OAuthAuthorizeEndpoint
      */
     private function resolveClientName(ServerRequestInterface $request): string
     {
-        $queryParams = $request->getQueryParams();
-        
+        $queryParams = $this->getRequestData($request->getQueryParams());
+
         // Check query params
-        if (!empty($queryParams['client_name'])) {
+        if (isset($queryParams['client_name']) && is_string($queryParams['client_name']) && $queryParams['client_name'] !== '') {
             return $queryParams['client_name'];
         }
-        
+
         // Fall back to hostname from Referer header
         $referer = $request->getHeaderLine('Referer');
         if (!empty($referer)) {
@@ -87,7 +109,7 @@ class OAuthAuthorizeEndpoint
                 return $hostname;
             }
         }
-        
+
         // Ultimate fallback
         return 'MCP Client';
     }
@@ -101,43 +123,47 @@ class OAuthAuthorizeEndpoint
         if (empty($url)) {
             return '';
         }
-        
+
         // Add protocol if missing to make parse_url work properly
         if (!preg_match('/^https?:\/\//', $url)) {
             $url = 'http://' . $url;
         }
-        
-        $parsed = parse_url($url);
-        
-        // Return hostname or empty string if parsing failed
-        return $parsed['host'] ?? $url;
-    }
 
+        $parsed = parse_url($url);
+
+        // Return hostname or empty string if parsing failed
+        if (is_array($parsed) && isset($parsed['host']) && is_string($parsed['host'])) {
+            return $parsed['host'];
+        }
+
+        return $url;
+    }
 
     private function redirectToLogin(ServerRequestInterface $request): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
-        
+        $queryParams = $this->getRequestData($request->getQueryParams());
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
+
         // Store OAuth parameters in cookie
         $oauthData = [
             'client_id' => $queryParams['client_id'] ?? '',
             'client_name' => $this->resolveClientName($request),
-            'redirect_uri' => $queryParams['redirect_uri'] ?? '',
+            'redirect_uri' => $redirectUri,
             'code_challenge' => $queryParams['code_challenge'] ?? '',
             'code_challenge_method' => $queryParams['code_challenge_method'] ?? '',
-            'state' => $queryParams['state'] ?? ''
+            'state' => $queryParams['state'] ?? '',
         ];
-        
-        $oauthDataEncoded = base64_encode(json_encode($oauthData));
+
+        $oauthDataEncoded = $this->encodeOAuthCookie($oauthData);
         $loginUrl = '/typo3/index.php?loginProvider=1450629977&login_status=login';
-        
+
         // Build cookie string with environment-aware security flags
         $isHttps = $request->getUri()->getScheme() === 'https';
         $cookieFlags = 'Max-Age=600; Path=/; HttpOnly; SameSite=Lax';
         if ($isHttps) {
             $cookieFlags .= '; Secure';
         }
-        
+
         $stream = new Stream('php://temp', 'rw');
         $stream->write('');
         $stream->rewind();
@@ -147,46 +173,49 @@ class OAuthAuthorizeEndpoint
             302,
             [
                 'Location' => $loginUrl,
-                'Set-Cookie' => 'tx_mcpserver_oauth=' . $oauthDataEncoded . '; ' . $cookieFlags
-            ]
+                'Set-Cookie' => 'tx_mcpserver_oauth=' . $oauthDataEncoded . '; ' . $cookieFlags,
+            ],
         );
     }
 
     private function handleApproval(ServerRequestInterface $request, int $beUserId): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
-        $postParams = $request->getParsedBody() ?: [];
+        $queryParams = $this->getRequestData($request->getQueryParams());
+        $postParams = $this->getRequestData($request->getParsedBody());
 
         $clientName = $postParams['client_name'] ?? $this->resolveClientName($request);
-        $redirectUri = $queryParams['redirect_uri'] ?? '';
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $pkceChallenge = $queryParams['code_challenge'] ?? '';
         $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+        // RFC 9700 §2.1.1 — PKCE is mandatory; no plain method, no missing
+        // challenge. The GET handler already rejects missing challenges; we
+        // re-check here so a forged POST cannot bypass.
+        if (!is_string($pkceChallenge) || $pkceChallenge === '') {
+            return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
+        }
+        if ($challengeMethod !== 'S256') {
+            return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+        }
         $state = $postParams['state'] ?? $queryParams['state'] ?? '';
 
-        // Only S256 is supported for PKCE
-        if (!empty($pkceChallenge) && $challengeMethod !== 'S256') {
-            return $this->createErrorResponse('invalid_request', 'Only S256 code_challenge_method is supported');
-        }
-
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $code = $oauthService->createAuthorizationCode(
+        $code = $this->oauthService->createAuthorizationCode(
             $beUserId,
             $clientName,
             $redirectUri,
             $pkceChallenge,
-            $challengeMethod
+            $challengeMethod,
         );
 
         // If redirect_uri is provided, redirect there with the code
         if (!empty($redirectUri)) {
-            $separator = strpos($redirectUri, '?') !== false ? '&' : '?';
+            $separator = str_contains($redirectUri, '?') ? '&' : '?';
             $redirectUrl = $redirectUri . $separator . 'code=' . urlencode($code);
-            
+
             // Add state parameter if provided
             if (!empty($state)) {
                 $redirectUrl .= '&state=' . urlencode($state);
             }
-            
+
             $stream = new Stream('php://temp', 'rw');
             $stream->write('');
             $stream->rewind();
@@ -194,13 +223,13 @@ class OAuthAuthorizeEndpoint
             return new Response(
                 $stream,
                 302,
-                ['Location' => $redirectUrl]
+                ['Location' => $redirectUrl],
             );
         }
 
         // Otherwise, show the code to the user
         $html = $this->generateCodeDisplayTemplate($code, $clientName);
-        
+
         $stream = new Stream('php://temp', 'rw');
         $stream->write($html);
         $stream->rewind();
@@ -208,17 +237,17 @@ class OAuthAuthorizeEndpoint
         return new Response(
             $stream,
             200,
-            ['Content-Type' => 'text/html; charset=utf-8']
+            ['Content-Type' => 'text/html; charset=utf-8'],
         );
     }
 
     private function showConsentForm(ServerRequestInterface $request): ResponseInterface
     {
-        $queryParams = $request->getQueryParams();
-        
+        $queryParams = $this->getRequestData($request->getQueryParams());
+
         $clientId = $queryParams['client_id'] ?? '';
         $clientName = $this->resolveClientName($request);
-        $redirectUri = $queryParams['redirect_uri'] ?? '';
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $codeChallenge = $queryParams['code_challenge'] ?? '';
         $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
         $state = $queryParams['state'] ?? '';
@@ -228,18 +257,28 @@ class OAuthAuthorizeEndpoint
             return $this->createErrorResponse('invalid_client', 'Invalid client_id');
         }
 
-        $beUser = $GLOBALS['BE_USER'];
-        $username = $beUser->user['username'] ?? 'Unknown';
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+            return $this->createErrorResponse('server_error', 'Backend user context missing');
+        }
+        $username = is_string($beUser->user['username'] ?? null) ? $beUser->user['username'] : 'Unknown';
+        $userId = is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0;
 
+        // ENT_QUOTES escapes single AND double quotes — required because the
+        // consent template embeds these into HTML attributes; the default
+        // (ENT_HTML_QUOTES = ENT_QUOTES on PHP 8.1+) is on but make it
+        // explicit so a future template tweak with single-quoted attributes
+        // does not regress.
+        $esc = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
         $html = $this->generateConsentTemplate([
-            'username' => htmlspecialchars($username),
-            'client_name' => htmlspecialchars($clientName),
-            'client_id' => htmlspecialchars($clientId),
-            'redirect_uri' => htmlspecialchars($redirectUri),
-            'code_challenge' => htmlspecialchars($codeChallenge),
-            'code_challenge_method' => htmlspecialchars($challengeMethod),
-            'state' => htmlspecialchars($state),
-            'user_id' => $beUser->user['uid'],
+            'username' => $esc($username),
+            'client_name' => $esc($clientName),
+            'client_id' => $esc($clientId),
+            'redirect_uri' => $esc($redirectUri),
+            'code_challenge' => $esc($codeChallenge),
+            'code_challenge_method' => $esc($challengeMethod),
+            'state' => $esc($state),
+            'user_id' => $userId,
         ]);
 
         $stream = new Stream('php://temp', 'rw');
@@ -258,31 +297,41 @@ class OAuthAuthorizeEndpoint
             200,
             [
                 'Content-Type' => 'text/html; charset=utf-8',
-                'Set-Cookie' => 'tx_mcpserver_oauth=; ' . $cookieCleanupFlags
-            ]
+                'Set-Cookie' => 'tx_mcpserver_oauth=; ' . $cookieCleanupFlags,
+            ],
         );
     }
-
 
     private function createErrorResponse(string $error, string $description = ''): ResponseInterface
     {
         $errorData = [
             'error' => $error,
-            'error_description' => $description
+            'error_description' => $description,
         ];
 
         $stream = new Stream('php://temp', 'rw');
-        $stream->write(json_encode($errorData));
+        $stream->write($this->encodeJson($errorData));
         $stream->rewind();
 
         return new Response(
             $stream,
             400,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         );
     }
 
-
+    /**
+     * @param array{
+     *   username: string,
+     *   client_name: string,
+     *   client_id: string,
+     *   redirect_uri: string,
+     *   code_challenge: string,
+     *   code_challenge_method: string,
+     *   state: string,
+     *   user_id: int
+     * } $data
+     */
     private function generateConsentTemplate(array $data): string
     {
         return '<!DOCTYPE html>
@@ -491,9 +540,9 @@ class OAuthAuthorizeEndpoint
     <div class="container">
         <div class="success">✓ Authorization Successful</div>
         
-        <p>Authorization code for <strong>' . htmlspecialchars($clientName) . '</strong>:</p>
-        
-        <div class="code" id="authCode">' . htmlspecialchars($code) . '</div>
+        <p>Authorization code for <strong>' . htmlspecialchars($clientName, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8') . '</strong>:</p>
+
+        <div class="code" id="authCode">' . htmlspecialchars($code, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8') . '</div>
         
         <button class="copy-button" onclick="copyCode()">Copy Code</button>
         
@@ -526,5 +575,85 @@ class OAuthAuthorizeEndpoint
     </script>
 </body>
 </html>';
+    }
+
+    /**
+     * @param mixed $source
+     * @return array<string, string|null>
+     */
+    private function getRequestData(mixed $source): array
+    {
+        if (!is_array($source)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($source as $key => $value) {
+            if (!is_string($key) || (!is_string($value) && $value !== null)) {
+                continue;
+            }
+            $result[$key] = $value;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data);
+        return is_string($json) ? $json : '{}';
+    }
+
+    /**
+     * @param array<string, string|null> $oauthData
+     */
+    private function encodeOAuthCookie(array $oauthData): string
+    {
+        $payload = $this->encodeJson($oauthData);
+        $signature = $this->hashService->hmac($payload, 'mcpserver-oauth', HashAlgo::SHA3_256);
+
+        return base64_encode($payload) . '.' . $signature;
+    }
+
+    private function validateRedirectUri(?string $redirectUri): string
+    {
+        $trimmedRedirectUri = trim((string)$redirectUri);
+        if ($trimmedRedirectUri === '') {
+            return '';
+        }
+
+        // CRLF / NUL byte rejection (header-injection defense). The validated
+        // URL is later concatenated into a Location: response header; any
+        // unescaped \r\n would split the header. parse_url() does not strip
+        // these for non-http schemes (cursor://, vscode://, …), so we
+        // gate explicitly here.
+        if (preg_match('/[\r\n\0]/', $trimmedRedirectUri) === 1) {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
+        $parsedUrl = parse_url($trimmedRedirectUri);
+        if (!is_array($parsedUrl)) {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
+        $scheme = is_string($parsedUrl['scheme'] ?? null) ? strtolower($parsedUrl['scheme']) : '';
+        if ($scheme === '') {
+            throw new \InvalidArgumentException('Invalid redirect_uri');
+        }
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return $trimmedRedirectUri;
+        }
+
+        $host = is_string($parsedUrl['host'] ?? null) ? strtolower($parsedUrl['host']) : '';
+        $allowedHosts = ['localhost', '127.0.0.1', '::1'];
+        if ($host !== '' && (in_array($host, $allowedHosts, true) || str_ends_with($host, '.localhost'))) {
+            return $trimmedRedirectUri;
+        }
+
+        throw new \InvalidArgumentException('Invalid redirect_uri');
     }
 }

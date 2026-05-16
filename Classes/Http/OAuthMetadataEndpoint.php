@@ -9,20 +9,23 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * OAuth metadata discovery endpoint
  */
-class OAuthMetadataEndpoint
+final readonly class OAuthMetadataEndpoint
 {
     use CorsHeadersTrait;
+
+    public function __construct(
+        private OAuthService $oauthService,
+    ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         // Handle preflight OPTIONS request
         if ($request->getMethod() === 'OPTIONS') {
-            return $this->handlePreflightRequest($request);
+            return $this->handlePreflightRequest();
         }
 
         try {
@@ -34,15 +37,19 @@ class OAuthMetadataEndpoint
             }
 
             // Override base URL for development if needed
-            if (isset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'])) {
-                $baseUrl = rtrim($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'], '/');
+            /** @var mixed $confVars */
+            $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+            $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+                ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+                : null;
+            if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
+                $baseUrl = rtrim($configuredBaseUrl, '/');
             }
 
-            $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-            $metadata = $oauthService->getMetadata($baseUrl);
+            $metadata = $this->oauthService->getMetadata($baseUrl);
 
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($metadata, JSON_PRETTY_PRINT));
+            $stream->write($this->encodeJson($metadata));
             $stream->rewind();
 
             $response = new Response(
@@ -50,29 +57,38 @@ class OAuthMetadataEndpoint
                 200,
                 [
                     'Content-Type' => 'application/json',
-                    'Cache-Control' => 'public, max-age=3600' // Cache for 1 hour
-                ]
+                    'Cache-Control' => 'public, max-age=3600', // Cache for 1 hour
+                ],
             );
-            
-            return $this->addCorsHeaders($response, $request);
+
+            return $this->addCorsHeaders($response);
 
         } catch (\Throwable $e) {
             $errorData = [
                 'error' => 'server_error',
-                'error_description' => $e->getMessage()
+                'error_description' => $e->getMessage(),
             ];
 
             $stream = new Stream('php://temp', 'rw');
-            $stream->write(json_encode($errorData));
+            $stream->write($this->encodeJson($errorData));
             $stream->rewind();
 
             $response = new Response(
                 $stream,
                 500,
-                ['Content-Type' => 'application/json']
+                ['Content-Type' => 'application/json'],
             );
-            
-            return $this->addCorsHeaders($response, $request);
+
+            return $this->addCorsHeaders($response);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeJson(array $data): string
+    {
+        $json = json_encode($data, JSON_PRETTY_PRINT);
+        return is_string($json) ? $json : '{}';
     }
 }

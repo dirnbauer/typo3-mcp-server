@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
+use Hn\McpServer\MCP\McpServerFactory;
 use Mcp\Server\ServerRunner;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
-use Hn\McpServer\MCP\McpServerFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP Server Command - Uses logiscape/mcp-sdk-php
  */
-class McpServerCommand extends Command
+final class McpServerCommand extends Command
 {
     public function __construct(
-        private readonly McpServerFactory $serverFactory
+        private readonly McpServerFactory $serverFactory,
     ) {
         parent::__construct();
     }
@@ -38,6 +38,9 @@ class McpServerCommand extends Command
 
             // Ensure TCA is loaded using proper TYPO3 core method
             $tcaFactory = GeneralUtility::getContainer()->get(TcaFactory::class);
+            if (!$tcaFactory instanceof TcaFactory) {
+                throw new \RuntimeException('TcaFactory service is not available');
+            }
             $GLOBALS['TCA'] = $tcaFactory->get();
 
             // Set up debugging to stderr
@@ -75,7 +78,7 @@ class McpServerCommand extends Command
         if (!$beUser) {
             // Create an admin backend user
             $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-            // Set admin flag directly since setTemporaryAdminFlag doesn't exist in TYPO3 v12
+            // This command runs outside a normal backend login, so bootstrap a synthetic admin user.
             $beUser->user['admin'] = 1;
             $beUser->user['uid'] = 1; // Add a UID for the fake user to prevent DataHandler errors
             $beUser->user['workspace_id'] = 0; // Set workspace ID to live workspace
@@ -90,5 +93,7 @@ class McpServerCommand extends Command
             $beUser->user['workspace_id'] = 0; // Set workspace ID to live workspace
             $beUser->workspace = 0; // Set workspace to live workspace
         }
+
+        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
     }
 }

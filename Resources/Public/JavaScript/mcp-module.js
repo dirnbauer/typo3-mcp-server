@@ -18,6 +18,8 @@ class McpModule {
     }
 
     initialize() {
+        this.initTabs();
+
         // Copy buttons
         document.querySelectorAll('.copy-button[data-copy-target]').forEach(button => {
             const targetId = button.getAttribute('data-copy-target');
@@ -53,17 +55,17 @@ class McpModule {
             if (!tokenId) return;
 
             Modal.advanced({
-                title: 'Revoke Token',
-                content: 'Are you sure you want to revoke this token? The associated MCP client will lose access immediately.',
+                title: TYPO3.lang['js.revokeToken'],
+                content: TYPO3.lang['js.revokeTokenConfirm'],
                 severity: Severity.warning,
                 buttons: [
                     {
-                        text: 'Cancel',
+                        text: TYPO3.lang['js.cancel'],
                         btnClass: 'btn-default',
                         trigger: () => Modal.dismiss()
                     },
                     {
-                        text: 'Revoke',
+                        text: TYPO3.lang['js.revoke'],
                         btnClass: 'btn-warning',
                         trigger: () => {
                             Modal.dismiss();
@@ -76,6 +78,35 @@ class McpModule {
 
         // Check endpoint statuses
         this.checkEndpointStatuses();
+    }
+
+    // =========================================================================
+    // Tabs — custom panel switching, no Bootstrap dependency
+    // =========================================================================
+
+    initTabs() {
+        document.querySelectorAll('[data-mcp-target]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const targetId = button.getAttribute('data-mcp-target');
+                const targetPanel = document.getElementById(targetId);
+                if (!targetPanel) return;
+
+                const nav = button.closest('.nav');
+                if (nav) {
+                    nav.querySelectorAll('[data-mcp-target]').forEach(b => b.classList.remove('active'));
+                }
+                button.classList.add('active');
+
+                const panelGroup = targetPanel.parentElement;
+                if (panelGroup) {
+                    panelGroup.querySelectorAll(':scope > .mcp-panel').forEach(p => p.classList.remove('mcp-active'));
+                }
+                targetPanel.classList.add('mcp-active');
+            });
+        });
     }
 
     // =========================================================================
@@ -116,10 +147,10 @@ class McpModule {
                 if (success) {
                     this.showCopyFeedback(button);
                 } else {
-                    Notification.warning('Copy failed', 'Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).');
+                    Notification.warning(TYPO3.lang['js.copyFailed'], TYPO3.lang['js.copyFailedMessage']);
                 }
             } catch {
-                Notification.warning('Copy failed', 'Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).');
+                Notification.warning(TYPO3.lang['js.copyFailed'], TYPO3.lang['js.copyFailedMessage']);
             }
         }
     }
@@ -170,10 +201,10 @@ class McpModule {
             if (success) {
                 this.showCopyFeedback(button);
             } else {
-                Notification.warning('Copy failed', 'Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).');
+                Notification.warning(TYPO3.lang['js.copyFailed'], TYPO3.lang['js.copyFailedMessage']);
             }
         } catch {
-            Notification.warning('Copy failed', 'Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).');
+            Notification.warning(TYPO3.lang['js.copyFailed'], TYPO3.lang['js.copyFailedMessage']);
         } finally {
             document.body.removeChild(tempTextarea);
         }
@@ -193,7 +224,7 @@ class McpModule {
         button.style.width = originalWidth + 'px';
 
         if (iconMarkup) iconMarkup.textContent = '✅';
-        if (lastTextNode) lastTextNode.textContent = ' Copied!';
+        if (lastTextNode) lastTextNode.textContent = ' ' + TYPO3.lang['js.copied'];
 
         button.classList.add('btn-success');
         button.classList.remove('btn-outline-secondary');
@@ -211,6 +242,11 @@ class McpModule {
     // Token CRUD
     // =========================================================================
 
+    getCsrfToken() {
+        const container = document.getElementById('tokens-container');
+        return container ? container.dataset.csrfToken || '' : '';
+    }
+
     refreshTokens() {
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_get_tokens)
             .post({})
@@ -219,11 +255,11 @@ class McpModule {
                 if (data.success) {
                     this.updateTokensTable(data.tokens);
                 } else {
-                    Notification.error('Refresh failed', 'Failed to refresh tokens: ' + data.message);
+                    Notification.error(TYPO3.lang['js.refreshFailed'], TYPO3.lang['js.refreshFailedMessage'].replace('%s', data.message));
                 }
             })
             .catch((error) => {
-                Notification.error('Network error', 'Error refreshing tokens: ' + (error.message || 'Unknown error'));
+                Notification.error(TYPO3.lang['js.networkError'], error.message || '');
             });
     }
 
@@ -231,55 +267,55 @@ class McpModule {
         const tokenIdInt = parseInt(tokenId, 10);
 
         if (!tokenIdInt || tokenIdInt <= 0) {
-            Notification.error('Invalid token', 'Invalid token ID: ' + tokenId);
+            Notification.error(TYPO3.lang['js.invalidToken'], tokenId);
             return;
         }
 
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_revoke_token)
-            .post({ tokenId: tokenIdInt })
+            .post({ tokenId: String(tokenIdInt), csrfToken: this.getCsrfToken() })
             .then(async (response) => {
                 const data = await response.resolve();
                 if (data.success) {
-                    Notification.success('Token revoked', data.message);
+                    Notification.success(TYPO3.lang['js.tokenRevoked'], data.message);
                     this.refreshTokens();
                 } else {
-                    Notification.error('Revoke failed', 'Failed to revoke token: ' + data.message);
+                    Notification.error(TYPO3.lang['js.revokeFailed'], TYPO3.lang['js.revokeFailedMessage'].replace('%s', data.message));
                 }
             })
             .catch((error) => {
-                Notification.error('Network error', 'Error revoking token: ' + (error.message || 'Unknown error'));
+                Notification.error(TYPO3.lang['js.networkError'], error.message || '');
             });
     }
 
     revokeAllTokens() {
         Modal.advanced({
-            title: 'Revoke All Tokens',
-            content: 'Are you sure you want to revoke ALL tokens? This will disconnect all MCP clients and require re-authentication.',
+            title: TYPO3.lang['js.revokeAllTokens'],
+            content: TYPO3.lang['js.revokeAllConfirm'],
             severity: Severity.warning,
             buttons: [
                 {
-                    text: 'Cancel',
+                    text: TYPO3.lang['js.cancel'],
                     btnClass: 'btn-default',
                     trigger: () => Modal.dismiss()
                 },
                 {
-                    text: 'Revoke All',
+                    text: TYPO3.lang['js.revokeAll'],
                     btnClass: 'btn-warning',
                     trigger: () => {
                         Modal.dismiss();
                         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_revoke_all_tokens)
-                            .post({})
+                            .post({ csrfToken: this.getCsrfToken() })
                             .then(async (response) => {
                                 const data = await response.resolve();
                                 if (data.success) {
-                                    Notification.success('Tokens revoked', data.message);
+                                    Notification.success(TYPO3.lang['js.tokensRevoked'], data.message);
                                     this.refreshTokens();
                                 } else {
-                                    Notification.error('Revoke failed', 'Failed to revoke all tokens: ' + data.message);
+                                    Notification.error(TYPO3.lang['js.revokeFailed'], TYPO3.lang['js.revokeAllFailed'].replace('%s', data.message));
                                 }
                             })
                             .catch((error) => {
-                                Notification.error('Network error', 'Error revoking all tokens: ' + (error.message || 'Unknown error'));
+                                Notification.error(TYPO3.lang['js.networkError'], error.message || '');
                             });
                     }
                 }
@@ -297,7 +333,7 @@ class McpModule {
         const label = document.createElement('label');
         label.className = 'form-label';
         label.setAttribute('for', 'modal-token-name-input');
-        label.textContent = 'Token name';
+        label.textContent = TYPO3.lang['js.tokenName'];
         container.appendChild(label);
 
         const input = document.createElement('input');
@@ -305,18 +341,18 @@ class McpModule {
         input.className = 'form-control';
         input.id = 'modal-token-name-input';
         input.maxLength = 100;
-        input.placeholder = 'e.g. n8n, manus, my-app';
+        input.placeholder = TYPO3.lang['js.tokenNamePlaceholder'];
         container.appendChild(input);
 
         const hint = document.createElement('p');
         hint.className = 'text-muted small mt-2 mb-0';
-        hint.textContent = 'Choose a name to identify this token later. It will appear in the token list.';
+        hint.textContent = TYPO3.lang['js.tokenNameHint'];
         container.appendChild(hint);
 
         const submit = () => {
             const name = input.value.trim();
             if (!name) {
-                Notification.warning('Name required', 'Please enter a name for the token.');
+                Notification.warning(TYPO3.lang['js.nameRequired'], TYPO3.lang['js.nameRequiredMessage']);
                 return;
             }
             Modal.dismiss();
@@ -331,17 +367,17 @@ class McpModule {
         });
 
         Modal.advanced({
-            title: 'Create Token',
+            title: TYPO3.lang['js.createToken'],
             content: container,
             severity: Severity.info,
             buttons: [
                 {
-                    text: 'Cancel',
+                    text: TYPO3.lang['js.cancel'],
                     btnClass: 'btn-default',
                     trigger: () => Modal.dismiss()
                 },
                 {
-                    text: 'Create',
+                    text: TYPO3.lang['js.create'],
                     btnClass: 'btn-primary',
                     trigger: submit
                 }
@@ -364,18 +400,18 @@ class McpModule {
      */
     createToken(clientName) {
         new AjaxRequest(TYPO3.settings.ajaxUrls.mcp_server_create_token)
-            .post({ clientName })
+            .post({ clientName, csrfToken: this.getCsrfToken() })
             .then(async (response) => {
                 const data = await response.resolve();
                 if (data.success && data.token) {
                     this.showTokenModal(data.token, clientName);
                     this.refreshTokens();
                 } else {
-                    Notification.error('Token creation failed', data.message || 'Unknown error');
+                    Notification.error(TYPO3.lang['js.tokenCreationFailed'], data.message || '');
                 }
             })
             .catch((error) => {
-                Notification.error('Network error', 'Error creating token: ' + (error.message || 'Unknown error'));
+                Notification.error(TYPO3.lang['js.networkError'], error.message || '');
             });
     }
 
@@ -389,15 +425,15 @@ class McpModule {
         const warning = document.createElement('div');
         warning.className = 'alert alert-warning';
         const warningStrong = document.createElement('strong');
-        warningStrong.textContent = 'This token will only be shown once.';
+        warningStrong.textContent = TYPO3.lang['js.tokenShownOnce'];
         warning.appendChild(warningStrong);
-        warning.appendChild(document.createTextNode(' Copy it now and store it securely. You will not be able to see it again.'));
+        warning.appendChild(document.createTextNode(' ' + TYPO3.lang['js.tokenCopyWarning']));
         container.appendChild(warning);
 
         if (clientName) {
             const label = document.createElement('p');
             const strong = document.createElement('strong');
-            strong.textContent = 'Token name: ';
+            strong.textContent = TYPO3.lang['js.tokenNameLabel'] + ' ';
             label.appendChild(strong);
             label.appendChild(document.createTextNode(clientName));
             container.appendChild(label);
@@ -418,10 +454,10 @@ class McpModule {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn btn-outline-secondary';
         copyBtn.type = 'button';
-        copyBtn.textContent = 'Copy';
+        copyBtn.textContent = TYPO3.lang['js.copy'];
         copyBtn.addEventListener('click', () => {
             const onSuccess = () => {
-                copyBtn.textContent = 'Copied!';
+                copyBtn.textContent = TYPO3.lang['js.copied'];
                 copyBtn.classList.add('btn-success');
                 copyBtn.classList.remove('btn-outline-secondary');
             };
@@ -441,7 +477,7 @@ class McpModule {
                 if (doc.execCommand('copy')) {
                     onSuccess();
                 } else {
-                    copyBtn.textContent = 'Select & copy with Ctrl+C';
+                    copyBtn.textContent = TYPO3.lang['js.selectAndCopy'];
                 }
             }
         });
@@ -449,13 +485,13 @@ class McpModule {
         container.appendChild(inputGroup);
 
         Modal.advanced({
-            title: 'Token Created',
+            title: TYPO3.lang['js.tokenCreated'],
             content: container,
             severity: Severity.ok,
             staticBackdrop: true,
             buttons: [
                 {
-                    text: 'I have copied the token',
+                    text: TYPO3.lang['js.iHaveCopiedToken'],
                     btnClass: 'btn-primary',
                     trigger: () => {
                         Modal.dismiss();
@@ -497,8 +533,8 @@ class McpModule {
         if (!tokens || tokens.length === 0) {
             container.innerHTML = `
                 <div id="no-tokens-message" class="text-center text-muted py-4">
-                    <p>No active tokens found.</p>
-                    <p class="small">Click <strong>Create Token</strong> above to create your first token.</p>
+                    <p>${this.escapeHtml(TYPO3.lang['tokens.noTokens'])}</p>
+                    <p class="small">${this.escapeHtml(TYPO3.lang['tokens.noTokensHint'])}</p>
                 </div>
             `;
         } else {
@@ -508,11 +544,11 @@ class McpModule {
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Client Name</th>
-                                <th>Created</th>
-                                <th>Last Used</th>
-                                <th>Expires</th>
-                                <th>Actions</th>
+                                <th>${esc(TYPO3.lang['tokens.clientName'])}</th>
+                                <th>${esc(TYPO3.lang['tokens.created'])}</th>
+                                <th>${esc(TYPO3.lang['tokens.lastUsed'])}</th>
+                                <th>${esc(TYPO3.lang['tokens.expires'])}</th>
+                                <th>${esc(TYPO3.lang['tokens.actions'])}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -524,8 +560,8 @@ class McpModule {
                                     <td><small class="text-muted">${esc(token.expires)}</small></td>
                                     <td>
                                         <button class="btn btn-sm btn-danger revoke-token-btn" data-token-id="${esc(token.uid)}" aria-label="Revoke token for ${esc(token.client_name)}">
-                                            <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-delete" data-identifier="actions-delete"><span class="icon-markup">🗑️</span></span>
-                                            Revoke
+                                            <span class="mcp-btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                                            ${esc(TYPO3.lang['tokens.revoke'])}
                                         </button>
                                     </td>
                                 </tr>
@@ -572,20 +608,20 @@ class McpModule {
                     if (checkContent) {
                         return response.text().then(text => {
                             if (text.includes('/mcp')) {
-                                this.setEndpointStatus(element, 'success', 'Endpoint is working correctly');
+                                this.setEndpointStatus(element, 'success', TYPO3.lang['js.endpointWorking']);
                             } else {
-                                this.setEndpointStatus(element, 'warning', 'Endpoint is reachable but does not mention MCP endpoint');
+                                this.setEndpointStatus(element, 'warning', TYPO3.lang['js.endpointNoMcp']);
                             }
                         });
                     }
-                    return this.setEndpointStatus(element, 'success', 'Endpoint is reachable');
+                    return this.setEndpointStatus(element, 'success', TYPO3.lang['js.endpointReachable']);
                 } else {
                     this.setEndpointStatus(element, 'error', `Endpoint returned ${response.status} ${response.statusText}`);
                 }
             })
             .catch(error => {
                 if (error.message.includes('CORS') || error.message.includes('blocked')) {
-                    this.setEndpointStatus(element, 'error', 'Endpoint may be blocked by CORS policy or security settings');
+                    this.setEndpointStatus(element, 'error', TYPO3.lang['js.endpointCorsBlocked']);
                 } else {
                     this.setEndpointStatus(element, 'error', `Network error: ${error.message}`);
                 }
@@ -613,22 +649,26 @@ class McpModule {
                 'Authorization': 'Bearer test-header-check-12345'
             },
             mode: 'cors',
-            credentials: 'same-origin'
+            credentials: 'omit'
         })
             .then(response => {
                 return response.json().then(data => {
                     if (data.headers_received && data.headers_received.authorization) {
-                        this.setEndpointStatus(element, 'success', 'MCP endpoint is accessible and can receive Authorization headers');
+                        this.setEndpointStatus(element, 'success', TYPO3.lang['js.endpointAuthOk']);
                         const warningDiv = document.getElementById('auth-header-warning');
                         if (warningDiv) warningDiv.style.display = 'none';
                     } else {
-                        this.setEndpointStatus(element, 'error', 'MCP endpoint cannot receive Authorization headers - see warning above');
+                        this.setEndpointStatus(element, 'error', TYPO3.lang['js.endpointAuthFail']);
                         const warningDiv = document.getElementById('auth-header-warning');
                         if (warningDiv) warningDiv.style.display = 'block';
                     }
                 }).catch(() => {
                     if (response.status === 401) {
-                        this.setEndpointStatus(element, 'warning', 'MCP endpoint is reachable but Authorization header status unknown');
+                        this.setEndpointStatus(element, 'warning', TYPO3.lang['js.endpointHttpBasicAuth']);
+                        const warningDiv = document.getElementById('auth-header-warning');
+                        if (warningDiv) {
+                            warningDiv.style.display = 'block';
+                        }
                     } else {
                         this.setEndpointStatus(element, 'error', `MCP endpoint returned ${response.status} ${response.statusText}`);
                     }
@@ -636,7 +676,7 @@ class McpModule {
             })
             .catch(error => {
                 if (error.message.includes('CORS') || error.message.includes('blocked')) {
-                    this.setEndpointStatus(element, 'error', 'MCP endpoint may be blocked by CORS policy or security settings');
+                    this.setEndpointStatus(element, 'error', TYPO3.lang['js.endpointCorsBlocked']);
                 } else {
                     this.setEndpointStatus(element, 'error', `Network error: ${error.message}`);
                 }

@@ -4,33 +4,30 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
+use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Mcp\Types\CallToolResult;
+use Mcp\Types\TextContent;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Service\WorkspaceContextService;
-use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 
 /**
  * MCP Test Command - For testing MCP tools directly
  */
-class McpTestCommand extends Command
+final class McpTestCommand extends Command
 {
-    /**
-     * @var ToolRegistry
-     */
-    protected ToolRegistry $toolRegistry;
-
     /**
      * Constructor
      */
-    public function __construct(ToolRegistry $toolRegistry)
-    {
-        $this->toolRegistry = $toolRegistry;
+    public function __construct(
+        protected ToolRegistry $toolRegistry,
+        private readonly TcaFactory $tcaFactory,
+    ) {
         parent::__construct();
     }
 
@@ -45,13 +42,13 @@ class McpTestCommand extends Command
             ->addArgument(
                 'tool',
                 InputArgument::REQUIRED,
-                'The tool to test (e.g., "record/schema")'
+                'The tool to test (e.g., "record/schema")',
             )
             ->addArgument(
                 'params',
                 InputArgument::OPTIONAL,
                 'JSON-encoded parameters for the tool',
-                '{}'
+                '{}',
             );
     }
 
@@ -63,21 +60,31 @@ class McpTestCommand extends Command
         try {
             // Ensure we have admin rights for the backend user
             $this->ensureAdminRights();
-            
+
             // Ensure TCA is loaded
             $this->ensureTcaLoaded();
-            
+
             // Get command arguments
             $toolName = $input->getArgument('tool');
             $paramsJson = $input->getArgument('params');
-            
+            if (!is_string($toolName) || $toolName === '') {
+                $output->writeln('<error>Tool argument must be a non-empty string.</error>');
+                return Command::FAILURE;
+            }
+            if (!is_string($paramsJson)) {
+                $output->writeln('<error>Parameters argument must be a JSON string.</error>');
+                return Command::FAILURE;
+            }
+
             // Parse parameters
-            $params = json_decode($paramsJson, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            $decodedParams = json_decode($paramsJson, true);
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($decodedParams)) {
                 $output->writeln('<error>Invalid JSON parameters: ' . json_last_error_msg() . '</error>');
                 return Command::FAILURE;
             }
-            
+            /** @var array<string, mixed> $params */
+            $params = $decodedParams;
+
             // List all available tools if requested
             if ($toolName === 'list') {
                 $output->writeln('<info>Available MCP tools:</info>');
@@ -86,7 +93,7 @@ class McpTestCommand extends Command
                 }
                 return Command::SUCCESS;
             }
-            
+
             // Find the tool
             $tool = $this->toolRegistry->getTool($toolName);
             if (!$tool) {
@@ -97,27 +104,27 @@ class McpTestCommand extends Command
                 }
                 return Command::FAILURE;
             }
-            
+
             // Execute the tool
             $output->writeln('<info>Executing tool: ' . $toolName . '</info>');
             $output->writeln('<info>Parameters: ' . $paramsJson . '</info>');
             $output->writeln('');
-            
+
             $result = $tool->execute($params);
-            
+
             // Display the result
             $output->writeln('<info>Result:</info>');
-            
+
             // Check if the result is an error
             $isError = $result->isError ?? false;
-            
+
             if ($isError) {
                 $output->writeln('<error>Error: ' . $this->getResultText($result) . '</error>');
                 return Command::FAILURE;
             }
-            
+
             $output->writeln($this->getResultText($result));
-            
+
             return Command::SUCCESS;
         } catch (\Throwable $e) {
             $output->writeln('<error>Error: ' . $e->getMessage() . '</error>');
@@ -127,25 +134,26 @@ class McpTestCommand extends Command
             return Command::FAILURE;
         }
     }
-    
+
     /**
      * Extract text content from a CallToolResult
      */
     protected function getResultText(CallToolResult $result): string
     {
         $text = '';
-        
+
         foreach ($result->content as $item) {
             if ($item instanceof TextContent) {
                 $text .= $item->text;
             } else {
-                $text .= json_encode($item, JSON_PRETTY_PRINT);
+                $json = json_encode($item, JSON_PRETTY_PRINT);
+                $text .= is_string($json) ? $json : '';
             }
         }
-        
+
         return $text;
     }
-    
+
     /**
      * Ensure we have admin rights for the backend user
      */
@@ -156,64 +164,48 @@ class McpTestCommand extends Command
         if (!$beUser) {
             // Create an admin backend user
             $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-            // Set admin flag directly since setTemporaryAdminFlag doesn't exist in TYPO3 v12
+            // This command runs outside a normal backend login, so bootstrap a synthetic admin user.
             $beUser->user['admin'] = 1;
             $beUser->user['uid'] = 1; // Add a UID for the fake user to prevent DataHandler errors
             $GLOBALS['BE_USER'] = $beUser;
-            
+
             // Set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
-        } else if (!$beUser->isAdmin()) {
+            $workspaceService->switchToOptimalWorkspace($beUser);
+        } elseif (!$beUser->isAdmin()) {
             // If user exists but is not admin, set admin flag directly
             $beUser->user['admin'] = 1;
             if (!isset($beUser->user['uid'])) {
                 $beUser->user['uid'] = 1; // Ensure UID is set
             }
-            
+
             // Set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceService->switchToOptimalWorkspace($beUser);
         } else {
             // User exists and is admin, still set up workspace context
             $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceId = $workspaceService->switchToOptimalWorkspace($beUser);
+            $workspaceService->switchToOptimalWorkspace($beUser);
         }
+
+        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
     }
-    
+
     /**
      * Ensure TCA is loaded
      */
     protected function ensureTcaLoaded(): void
     {
-        // Check if TCA is already loaded
-        if (empty($GLOBALS['TCA']) || empty($GLOBALS['TCA']['tt_content']['columns']['pi_flexform'])) {
-            // Load the TCA directly
-            $tcaPath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3/sysext/core/Configuration/TCA/';
-            if (is_dir($tcaPath)) {
-                $files = glob($tcaPath . '*.php');
-                foreach ($files as $file) {
-                    require_once $file;
-                }
-            }
-            
-            // Load extension TCA
-            $extTcaPath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/';
-            $extFiles = glob($extTcaPath . '*.php');
-            if (is_array($extFiles)) {
-                foreach ($extFiles as $file) {
-                    require_once $file;
-                }
-            }
-            
-            // Load TCA overrides
-            $overridePath = \TYPO3\CMS\Core\Core\Environment::getPublicPath() . '/typo3conf/ext/*/Configuration/TCA/Overrides/';
-            $overrideFiles = glob($overridePath . '*.php');
-            if (is_array($overrideFiles)) {
-                foreach ($overrideFiles as $file) {
-                    require_once $file;
-                }
-            }
+        /** @var mixed $globalTca */
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        $tca = is_array($globalTca) ? $globalTca : [];
+        $ttContent = $tca['tt_content'] ?? null;
+        $ttContentColumns = is_array($ttContent) && is_array($ttContent['columns'] ?? null)
+            ? $ttContent['columns']
+            : [];
+
+        if ($tca === [] || !isset($ttContentColumns['pi_flexform'])) {
+            $GLOBALS['TCA'] = $this->tcaFactory->get();
         }
     }
 }

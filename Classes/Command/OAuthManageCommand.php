@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
+use Hn\McpServer\Service\OAuthService;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use Hn\McpServer\Service\OAuthService;
 
 /**
  * OAuth token management for MCP server
  */
-class OAuthManageCommand extends Command
+final class OAuthManageCommand extends Command
 {
+    public function __construct(
+        private readonly OAuthService $oauthService,
+        private readonly ConnectionPool $connectionPool,
+    ) {
+        parent::__construct();
+    }
     protected function configure(): void
     {
         $this->setDescription('Manage OAuth tokens for MCP server')
@@ -31,9 +36,11 @@ class OAuthManageCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $action = $input->getArgument('action');
-        $username = $input->getArgument('username');
-        
+        $actionArgument = $input->getArgument('action');
+        $usernameArgument = $input->getArgument('username');
+        $action = is_string($actionArgument) ? $actionArgument : '';
+        $username = is_string($usernameArgument) ? $usernameArgument : null;
+
         try {
             switch ($action) {
                 case 'url':
@@ -45,7 +52,7 @@ class OAuthManageCommand extends Command
                 case 'cleanup':
                     return $this->cleanupTokens($input, $output);
                 default:
-                    $output->writeln("<error>Invalid action. Use: url, list, revoke, or cleanup</error>");
+                    $output->writeln('<error>Invalid action. Use: url, list, revoke, or cleanup</error>');
                     return Command::FAILURE;
             }
         } catch (\Throwable $e) {
@@ -57,7 +64,7 @@ class OAuthManageCommand extends Command
     private function generateAuthUrl(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for URL generation</error>");
+            $output->writeln('<error>Username is required for URL generation</error>');
             return Command::FAILURE;
         }
 
@@ -68,20 +75,20 @@ class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $clientName = $input->getOption('client-name');
-        $baseUrl = $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] ?? 'https://your-domain.com';
+        $clientNameOption = $input->getOption('client-name');
+        $clientName = is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
+        $baseUrl = $this->getConfiguredBaseUrl();
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $authUrl = $oauthService->generateAuthorizationUrl($baseUrl, $clientName);
+        $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, $clientName);
 
         $output->writeln("<info>OAuth Authorization URL for user '$username':</info>");
         $output->writeln("<info>$authUrl</info>");
-        $output->writeln("");
-        $output->writeln("Instructions:");
-        $output->writeln("1. Open this URL in your browser");
-        $output->writeln("2. Log in to TYPO3 backend if not already logged in");
-        $output->writeln("3. Authorize the MCP client access");
-        $output->writeln("4. Use the generated token in your MCP client configuration");
+        $output->writeln('');
+        $output->writeln('Instructions:');
+        $output->writeln('1. Open this URL in your browser');
+        $output->writeln('2. Log in to TYPO3 backend if not already logged in');
+        $output->writeln('3. Authorize the MCP client access');
+        $output->writeln('4. Use the generated token in your MCP client configuration');
 
         return Command::SUCCESS;
     }
@@ -89,7 +96,7 @@ class OAuthManageCommand extends Command
     private function listTokens(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for token listing</error>");
+            $output->writeln('<error>Username is required for token listing</error>');
             return Command::FAILURE;
         }
 
@@ -99,8 +106,8 @@ class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $tokens = $oauthService->getUserTokens($user['uid']);
+        /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
+        $tokens = $this->oauthService->getUserTokens($user['uid']);
 
         if (empty($tokens)) {
             $output->writeln("<info>No active tokens found for user '$username'</info>");
@@ -108,7 +115,7 @@ class OAuthManageCommand extends Command
         }
 
         $output->writeln("<info>Active tokens for user '$username':</info>");
-        $output->writeln("");
+        $output->writeln('');
 
         foreach ($tokens as $token) {
             $created = date('Y-m-d H:i:s', $token['crdate']);
@@ -120,8 +127,8 @@ class OAuthManageCommand extends Command
             $output->writeln("Created: <info>$created</info>");
             $output->writeln("Expires: <info>$expires</info>");
             $output->writeln("Last Used: <info>$lastUsed</info>");
-            $output->writeln("Token Hash: <comment>" . substr($token['token'], 0, 16) . "...</comment> (hash — original token shown only at creation)");
-            $output->writeln("");
+            $output->writeln('Token: <comment>' . substr($token['token'], 0, 20) . '...</comment>');
+            $output->writeln('');
         }
 
         return Command::SUCCESS;
@@ -130,7 +137,7 @@ class OAuthManageCommand extends Command
     private function revokeTokens(InputInterface $input, OutputInterface $output, ?string $username): int
     {
         if (empty($username)) {
-            $output->writeln("<error>Username is required for token revocation</error>");
+            $output->writeln('<error>Username is required for token revocation</error>');
             return Command::FAILURE;
         }
 
@@ -140,15 +147,15 @@ class OAuthManageCommand extends Command
             return Command::FAILURE;
         }
 
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
         $revokeAll = $input->getOption('all');
-        $tokenId = $input->getOption('token-id');
+        $tokenIdOption = $input->getOption('token-id');
+        $tokenId = is_string($tokenIdOption) || is_int($tokenIdOption) ? (string)$tokenIdOption : null;
 
         if ($revokeAll) {
-            $count = $oauthService->revokeAllUserTokens($user['uid']);
+            $count = $this->oauthService->revokeAllUserTokens($user['uid']);
             $output->writeln("<info>Revoked $count tokens for user '$username'</info>");
         } elseif ($tokenId) {
-            $success = $oauthService->revokeToken((int)$tokenId, $user['uid']);
+            $success = $this->oauthService->revokeToken((int)$tokenId, $user['uid']);
             if ($success) {
                 $output->writeln("<info>Token $tokenId revoked successfully</info>");
             } else {
@@ -156,7 +163,7 @@ class OAuthManageCommand extends Command
                 return Command::FAILURE;
             }
         } else {
-            $output->writeln("<error>Either --token-id or --all option is required for revocation</error>");
+            $output->writeln('<error>Either --token-id or --all option is required for revocation</error>');
             return Command::FAILURE;
         }
 
@@ -165,29 +172,55 @@ class OAuthManageCommand extends Command
 
     private function cleanupTokens(InputInterface $input, OutputInterface $output): int
     {
-        $oauthService = GeneralUtility::makeInstance(OAuthService::class);
-        $oauthService->cleanupExpired();
-        
-        $output->writeln("<info>Cleanup completed - expired tokens and authorization codes removed</info>");
+        $this->oauthService->cleanupExpired();
+
+        $output->writeln('<info>Cleanup completed - expired tokens and authorization codes removed</info>');
         return Command::SUCCESS;
     }
 
+    /**
+     * @return array{uid: int, username: string}|null
+     */
     private function findUser(string $username): ?array
     {
-        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+        $connection = $this->connectionPool
             ->getConnectionForTable('be_users');
-            
+
         $queryBuilder = $connection->createQueryBuilder();
         $user = $queryBuilder
             ->select('uid', 'username')
             ->from('be_users')
             ->where(
                 $queryBuilder->expr()->eq('username', $queryBuilder->createNamedParameter($username)),
-                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0))
+                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0)),
             )
             ->executeQuery()
             ->fetchAssociative();
 
-        return $user ?: null;
+        if (!is_array($user)) {
+            return null;
+        }
+
+        $uid = $user['uid'] ?? 0;
+        $resolvedUsername = $user['username'] ?? '';
+
+        return [
+            'uid' => is_int($uid) ? $uid : (is_numeric($uid) ? (int)$uid : 0),
+            'username' => is_string($resolvedUsername) ? $resolvedUsername : '',
+        ];
+    }
+
+    private function getConfiguredBaseUrl(): string
+    {
+        /** @var mixed $confVars */
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
+            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
+            : null;
+        if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
+            return $configuredBaseUrl;
+        }
+
+        return 'https://your-domain.com';
     }
 }
