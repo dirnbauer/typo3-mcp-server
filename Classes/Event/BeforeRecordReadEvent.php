@@ -27,7 +27,7 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  * checks, child lookups during save), since those must see all rows to
  * prevent corrupt writes.
  */
-final class BeforeRecordReadEvent
+final readonly class BeforeRecordReadEvent
 {
     public const SOURCE_READ = 'read';
     public const SOURCE_READ_INLINE = 'read-inline';
@@ -41,10 +41,10 @@ final class BeforeRecordReadEvent
      * @param string $source The originating call site, e.g. self::SOURCE_READ, self::SOURCE_SEARCH
      */
     public function __construct(
-        private readonly string $table,
-        private readonly QueryBuilder $queryBuilder,
-        private readonly string $queryType,
-        private readonly string $source = self::SOURCE_READ,
+        private string $table,
+        private QueryBuilder $queryBuilder,
+        private string $queryType,
+        private string $source = self::SOURCE_READ,
     ) {}
 
     public function getTable(): string

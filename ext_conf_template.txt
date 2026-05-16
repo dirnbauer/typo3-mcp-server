@@ -1,5 +1,23 @@
-# cat=mcp/tables; type=string; label=Additional read-only tables: Comma-separated list of non-workspace-capable tables to expose as read-only via MCP tools. These tables become available in ReadTable but cannot be written. Example: tx_blog_domain_model_author,tx_myext_domain_model_setting
+# cat=mcp/tables; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.additionalReadOnlyTables
 additionalReadOnlyTables = sys_file
 
-# cat=mcp/tables; type=string; label=Additional standalone tables: Comma-separated list of tables marked as hideTable=true in TCA that should still be exposed as independent tables instead of being embedded into their parent's inline relation. Use this for hideTable tables whose inline structure is too complex (translations, mounts, ...) to be safely edited through the parent. Example: sys_file_metadata,tx_myext_complex_child
+# cat=mcp/tables; type=string; label=Additional standalone hidden tables
 additionalStandaloneTables = sys_file_metadata
+
+# cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileSandboxRoot
+fileSandboxRoot = 1:/mcp/
+
+# cat=paths//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.workspaceUploadSubfolders
+workspaceUploadSubfolders = 1
+
+# cat=security//a; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.allowMcpTokenInQueryString
+allowMcpTokenInQueryString = 0
+
+# cat=security//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enableMcpAuthHeaderDiagnostic
+enableMcpAuthHeaderDiagnostic = 0
+
+# cat=security//c; type=options[Auto-detect (DDEV / Development context)=auto, Always on (UNSAFE — local dev only)=on, Always off (production default)=off]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode
+localUnsafeMode = auto
+
+# cat=security//d; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enforceCapabilityManifest
+enforceCapabilityManifest = 1

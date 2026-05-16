@@ -7,6 +7,7 @@ namespace Hn\McpServer\EventListener;
 use Hn\McpServer\Event\AfterRecordReadEvent;
 use Hn\McpServer\Event\AfterSchemaLoadEvent;
 use Hn\McpServer\Service\SiteInformationService;
+use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
@@ -42,6 +43,7 @@ final class FileEnrichmentListener
         'public_url',
     ];
 
+    #[AsEventListener(identifier: 'mcp-server/file-enrichment-schema')]
     public function onSchemaLoad(AfterSchemaLoadEvent $event): void
     {
         match ($event->getTable()) {
@@ -52,6 +54,7 @@ final class FileEnrichmentListener
         };
     }
 
+    #[AsEventListener(identifier: 'mcp-server/file-enrichment-read')]
     public function onRecordRead(AfterRecordReadEvent $event): void
     {
         match ($event->getTable()) {
@@ -140,8 +143,8 @@ final class FileEnrichmentListener
 
         $fileUids = [];
         foreach ($records as $record) {
-            $fileUid = (int)($record['uid_local'] ?? 0);
-            if ($fileUid > 0) {
+            $fileUid = $this->positiveIntValue($record['uid_local'] ?? null);
+            if ($fileUid !== null) {
                 $fileUids[$fileUid] = true;
             }
         }
@@ -167,19 +170,23 @@ final class FileEnrichmentListener
 
         $fileMap = [];
         foreach ($fileRecords as $fileRecord) {
-            $fileMap[(int)$fileRecord['uid']] = $fileRecord;
+            $fileUid = $this->positiveIntValue($fileRecord['uid'] ?? null);
+            if ($fileUid !== null) {
+                $fileMap[$fileUid] = $fileRecord;
+            }
         }
 
         $resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
 
         foreach ($records as &$record) {
-            $fileUid = (int)($record['uid_local'] ?? 0);
-            if ($fileUid > 0 && isset($fileMap[$fileUid])) {
+            $fileUid = $this->positiveIntValue($record['uid_local'] ?? null);
+            if ($fileUid !== null && isset($fileMap[$fileUid])) {
                 $file = $fileMap[$fileUid];
                 $record['file_name'] = $file['name'];
                 $record['file_identifier'] = $file['identifier'];
                 $record['file_mime_type'] = $file['mime_type'];
-                $record['file_size'] = (int)$file['size'];
+                $size = $file['size'] ?? 0;
+                $record['file_size'] = is_numeric($size) ? (int)$size : 0;
                 $record['public_url'] = $this->resolvePublicUrl($resourceFactory, $fileUid);
             }
         }
@@ -201,8 +208,8 @@ final class FileEnrichmentListener
 
         $resourceFactory = GeneralUtility::makeInstance(ResourceFactory::class);
         foreach ($records as &$record) {
-            $fileUid = (int)($record['uid'] ?? 0);
-            if ($fileUid > 0) {
+            $fileUid = $this->positiveIntValue($record['uid'] ?? null);
+            if ($fileUid !== null) {
                 $record['public_url'] = $this->resolvePublicUrl($resourceFactory, $fileUid);
             }
         }
@@ -222,5 +229,14 @@ final class FileEnrichmentListener
         // absolute URL to actually fetch the file from the outside.
         $siteInfo = GeneralUtility::makeInstance(SiteInformationService::class);
         return $siteInfo->makeAbsoluteUrl($url);
+    }
+
+    private function positiveIntValue(mixed $value): ?int
+    {
+        if (!is_numeric($value)) {
+            return null;
+        }
+        $intValue = (int)$value;
+        return $intValue > 0 ? $intValue : null;
     }
 }

@@ -6,7 +6,7 @@ namespace Hn\McpServer\Exception;
 
 /**
  * Exception for database-related errors
- * 
+ *
  * Thrown when database operations fail. Maps to HTTP 500
  * Internal Server Error status as these are typically
  * system-level issues.
@@ -25,7 +25,7 @@ class DatabaseException extends McpException
             "Failed to {$operation} record",
             500,
             $previous,
-            ['operation' => $operation, 'table' => $table]
+            ['operation' => $operation, 'table' => $table],
         );
     }
 }

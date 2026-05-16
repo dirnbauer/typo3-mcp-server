@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Utility\TcaFormattingUtility;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Service\FlexFormService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Utility\TcaFormattingUtility;
-use Hn\McpServer\Service\TableAccessService;
 
 /**
  * Tool for getting FlexForm schema information
  */
-class GetFlexFormSchemaTool extends AbstractRecordTool
+final class GetFlexFormSchemaTool extends AbstractRecordTool
 {
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'Get schema information for a specific FlexForm field. Returns field definitions, types, and configuration options for the FlexForm DataStructure.',
@@ -48,8 +48,8 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
             ],
             'annotations' => [
                 'readOnlyHint' => true,
-                'idempotentHint' => true
-            ]
+                'idempotentHint' => true,
+            ],
         ];
     }
 
@@ -58,7 +58,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
+
         // Get parameters
         $table = $params['table'] ?? 'tt_content';
         $field = $params['field'] ?? 'pi_flexform';
@@ -105,24 +105,24 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         if ($dsValue !== null) {
 
             // Handle FILE: references
-            if (is_string($dsValue) && strpos($dsValue, 'FILE:') === 0) {
+            if (is_string($dsValue) && str_starts_with($dsValue, 'FILE:')) {
                 $file = substr($dsValue, 5);
                 $file = GeneralUtility::getFileAbsFileName($file);
-                $prefix = "Schema defined in file: " . $file . "\n\n";
+                $prefix = 'Schema defined in file: ' . $file . "\n\n";
 
                 if (file_exists($file)) {
                     $content = file_get_contents($file);
                     if (!empty($content)) {
                         // Parse the XML content using TYPO3's built-in method
                         $xmlArray = GeneralUtility::xml2array($content);
-                        
+
                         if ($xmlArray) {
                             $processedData = $this->processFlexFormXml($xmlArray);
                             $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                             return $this->createSuccessResult($result);
-                        } else {
-                            throw new \RuntimeException("Failed to parse XML schema from file: $file");
                         }
+                        throw new \RuntimeException("Failed to parse XML schema from file: $file");
+
                     } else {
                         throw new \RuntimeException("FlexForm file is empty: $file");
                     }
@@ -134,14 +134,14 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
 
                 // Parse the XML content using TYPO3's built-in method
                 $xmlArray = GeneralUtility::xml2array($dsValue);
-                
+
                 if ($xmlArray) {
                     $processedData = $this->processFlexFormXml($xmlArray);
                     $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                     return $this->createSuccessResult($result);
-                } else {
-                    throw new \RuntimeException("Failed to parse inline XML schema");
                 }
+                throw new \RuntimeException('Failed to parse inline XML schema');
+
             } elseif (is_array($dsValue)) {
                 // PHP array format - process directly
                 $processedData = $this->processFlexFormXml($dsValue);
@@ -183,7 +183,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
      */
     protected function getJsonPath(string $fieldName): string
     {
-        if (strpos($fieldName, '.') === false) {
+        if (!str_contains($fieldName, '.')) {
             return 'pi_flexform.' . $fieldName;
         }
 
@@ -206,15 +206,15 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
             'label' => $fieldName,
             'description' => '',
             'config' => [],
-            'jsonPath' => $this->getJsonPath($fieldName)
+            'jsonPath' => $this->getJsonPath($fieldName),
         ];
 
         // Check if field uses TCEforms structure (older format) or direct configuration (newer format)
-        $fieldConfig = isset($field['TCEforms']) ? $field['TCEforms'] : $field;
+        $fieldConfig = $field['TCEforms'] ?? $field;
 
         // Get field label
         if (isset($fieldConfig['label'])) {
-            $fieldData['label'] = TableAccessService::translateLabel($fieldConfig['label']);
+            $fieldData['label'] = $this->translateFlexLabel($fieldConfig['label']);
         }
 
         // Get field type and config
@@ -225,7 +225,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
 
         // Get field description
         if (isset($fieldConfig['description'])) {
-            $fieldData['description'] = TableAccessService::translateLabel($fieldConfig['description']);
+            $fieldData['description'] = $this->translateFlexLabel($fieldConfig['description']);
         }
 
         return $fieldData;
@@ -261,7 +261,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         foreach ($sheets as $sheetName => $sheet) {
             $sheetData = [
                 'name' => $sheetName,
-                'fields' => []
+                'fields' => [],
             ];
 
             if (isset($sheet['ROOT']['el'])) {
@@ -285,7 +285,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         $data = [
             'sheets' => [],
             'fields' => [],
-            'hasSheets' => false
+            'hasSheets' => false,
         ];
 
         if (isset($xmlArray['sheets'])) {
@@ -307,7 +307,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
             // Store as single unnamed sheet for consistency
             $data['sheets'][] = [
                 'name' => null,
-                'fields' => $processedFields
+                'fields' => $processedFields,
             ];
         }
 
@@ -365,7 +365,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         }
 
         $result .= "\n\nNote: Field names with dots (e.g., \"settings.orderBy\") are automatically\n";
-        $result .= "converted to nested structures by TYPO3.";
+        $result .= 'converted to nested structures by TYPO3.';
 
         return $result;
     }
@@ -411,11 +411,11 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
 
         foreach ($fieldNames as $fieldName) {
             // Skip non-field entries
-            if (strpos($fieldName, '.') === false) {
+            if (!str_contains((string)$fieldName, '.')) {
                 $example['pi_flexform'][$fieldName] = '<' . $fieldName . ' value>';
             } else {
                 // Handle nested structure
-                $parts = explode('.', $fieldName);
+                $parts = explode('.', (string)$fieldName);
                 $current = &$example['pi_flexform'];
 
                 // Navigate/create the nested structure
@@ -532,7 +532,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         $tceForms = $fieldConfig['TCEforms'] ?? [];
         $config = $tceForms['config'] ?? [];
         $type = $config['type'] ?? 'unknown';
-        $label = TableAccessService::translateLabel($tceForms['label'] ?? $fieldName);
+        $label = $this->translateFlexLabel($tceForms['label'] ?? null, $fieldName);
 
         // Handle section containers
         if (isset($fieldConfig['type']) && $fieldConfig['type'] === 'array') {
@@ -582,11 +582,11 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
                     $itemValue = '';
 
                     if (isset($item['label'])) {
-                        $itemLabel = TableAccessService::translateLabel($item['label']);
-                        $itemValue = $item['value'] ?? '';
+                        $itemLabel = $this->translateFlexLabel($item['label']);
+                        $itemValue = is_scalar($item['value'] ?? null) ? (string)$item['value'] : '';
                     } elseif (isset($item[0])) {
-                        $itemLabel = TableAccessService::translateLabel($item[0]);
-                        $itemValue = $item[1] ?? '';
+                        $itemLabel = $this->translateFlexLabel($item[0]);
+                        $itemValue = is_scalar($item[1] ?? null) ? (string)$item[1] : '';
                     }
 
                     $result .= "$indent    - $itemValue: $itemLabel\n";
@@ -637,7 +637,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         // Handle ds configuration (TYPO3 14 removed ds_pointerField)
         if (!empty($flexFormConfig['ds']) && is_array($flexFormConfig['ds'])) {
             foreach ($flexFormConfig['ds'] as $key => $ds) {
-                if (is_string($ds) && strpos($ds, 'FILE:') === 0) {
+                if (is_string($ds) && str_starts_with($ds, 'FILE:')) {
                     $file = substr($ds, 5);
                     $result[$key] = [
                         'id' => $key,
@@ -684,7 +684,7 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
             $flexFormDS = $ds[$identifier];
 
             // Handle FILE: references
-            if (is_string($flexFormDS) && strpos($flexFormDS, 'FILE:') === 0) {
+            if (is_string($flexFormDS) && str_starts_with($flexFormDS, 'FILE:')) {
                 $file = substr($flexFormDS, 5);
                 $file = GeneralUtility::getFileAbsFileName($file);
 
@@ -716,9 +716,9 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         // Process sheets
         if (isset($flexFormDS['sheets']) && is_array($flexFormDS['sheets'])) {
             foreach ($flexFormDS['sheets'] as $sheetName => $sheetConfig) {
-                $sheetLabel = TableAccessService::translateLabel($sheetName);
+                $sheetLabel = $this->translateFlexLabel($sheetName);
                 $result .= "SHEET: $sheetLabel\n";
-                $result .= str_repeat("-", strlen("SHEET: $sheetLabel")) . "\n";
+                $result .= str_repeat('-', strlen("SHEET: $sheetLabel")) . "\n";
 
                 // Process the fields
                 if (isset($sheetConfig['ROOT']['el']) && is_array($sheetConfig['ROOT']['el'])) {
@@ -740,4 +740,12 @@ class GetFlexFormSchemaTool extends AbstractRecordTool
         return $result;
     }
 
+    private function translateFlexLabel(mixed $label, string $fallback = ''): string
+    {
+        if (is_scalar($label)) {
+            return TableAccessService::translateLabel((string)$label);
+        }
+
+        return $fallback;
+    }
 }

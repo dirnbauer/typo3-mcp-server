@@ -23,14 +23,14 @@ interface ToolInterface
     /**
      * Get the tool schema (JSON Schema format)
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function getSchema(): array;
 
     /**
      * Execute the tool with the given parameters
      *
-     * @param array $params
+     * @param array<string, mixed> $params
      * @return CallToolResult
      */
     public function execute(array $params): CallToolResult;

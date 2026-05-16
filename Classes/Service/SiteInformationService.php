@@ -4,24 +4,23 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Doctrine\DBAL\ParameterType;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Exception\SiteNotFoundException;
-use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Service for centralizing site and domain information
  */
-class SiteInformationService
+final class SiteInformationService
 {
-    protected SiteFinder $siteFinder;
-    protected ?ServerRequestInterface $currentRequest = null;
+    private ?ServerRequestInterface $currentRequest = null;
 
-    public function __construct()
-    {
-        $this->siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-    }
+    public function __construct(
+        private readonly SiteFinder $siteFinder,
+        private readonly ConnectionPool $connectionPool,
+    ) {}
 
     /**
      * Set the current HTTP request for context
@@ -64,9 +63,11 @@ class SiteInformationService
 
     /**
      * Returns "<scheme>://<host>" from the active request, or the first site
-     * whose base has a host, or TYPO3_REQUEST_HOST as a last resort.
+     * whose base has a host. The PSR-7 request is the v14.3+ source of truth
+     * (replaces the deprecated `GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST')`
+     * fallback, removed in v15).
      */
-    protected function resolveRequestOrSiteBase(): ?string
+    private function resolveRequestOrSiteBase(): ?string
     {
         if ($this->currentRequest !== null) {
             $uri = $this->currentRequest->getUri();
@@ -74,6 +75,12 @@ class SiteInformationService
             $scheme = $uri->getScheme() ?: 'https';
             if (!empty($host)) {
                 return $scheme . '://' . $host;
+            }
+
+            // PSR-7 attribute set by NormalizedParamsAttribute middleware.
+            $params = $this->currentRequest->getAttribute('normalizedParams');
+            if ($params instanceof NormalizedParams && $params->getRequestHost() !== '') {
+                return $params->getRequestHost();
             }
         }
 
@@ -86,26 +93,16 @@ class SiteInformationService
                 }
             }
         } catch (\Throwable) {
-            // Ignore and fall through to the env-based fallback
+            // No sites configured (CLI/install) — caller falls back to the relative URL.
         }
 
-        $envHost = GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST');
-        if (is_string($envHost) && $envHost !== '') {
-            // TYPO3_REQUEST_HOST is "<scheme>://<host>" — accept only when the host
-            // segment is actually populated, otherwise we'd build URLs like
-            // "http:///fileadmin/x.jpg" in CLI/test contexts without a server name.
-            $parts = parse_url($envHost);
-            if (!empty($parts['host'])) {
-                return $envHost;
-            }
-        }
         return null;
     }
 
     /**
      * Get all configured domains from TYPO3 sites
      *
-     * @return array Array of unique domain names
+     * @return list<string> Array of unique domain names
      */
     public function getAllDomains(): array
     {
@@ -115,20 +112,10 @@ class SiteInformationService
         foreach ($sites as $site) {
             $base = $site->getBase();
             $host = $base->getHost();
-            
+
             // Add main domain if it's not empty and not just a path
             if (!empty($host) && $host !== '/') {
                 $domains[] = $host;
-            }
-            
-            // Check if the site has base variants (method may not exist in all TYPO3 versions)
-            if (method_exists($site, 'getBaseVariants')) {
-                foreach ($site->getBaseVariants() ?? [] as $variant) {
-                    $variantHost = $variant->getBase()->getHost();
-                    if (!empty($variantHost) && $variantHost !== '/' && !in_array($variantHost, $domains)) {
-                        $domains[] = $variantHost;
-                    }
-                }
             }
         }
 
@@ -140,12 +127,14 @@ class SiteInformationService
             }
         }
 
-        return array_unique($domains);
+        /** @var list<string> $uniqueDomains */
+        $uniqueDomains = array_values(array_unique($domains));
+        return $uniqueDomains;
     }
 
     /**
      * Generate URL for a page with multiple fallback strategies
-     * 
+     *
      * @param int $pageId The page ID
      * @param int $languageId The language ID (default: 0)
      * @return string|null The generated URL or null if generation fails
@@ -154,139 +143,136 @@ class SiteInformationService
     {
         try {
             $site = $this->siteFinder->getSiteByPageId($pageId);
-            
-            if ($site instanceof Site) {
-                // Get the appropriate language
-                try {
-                    $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
-                } catch (\Throwable $e) {
-                    // Fall back to default language if specified language not found
-                    $language = $site->getDefaultLanguage();
-                }
-                
-                // Generate the URI
-                $uri = $site->getRouter()->generateUri($pageId, ['_language' => $language]);
-                $generatedUrl = (string)$uri;
-                
-                // Check if the generated URL is missing a host (e.g., just a path like "/page")
-                if (!empty($generatedUrl) && strpos($generatedUrl, 'http') !== 0) {
-                    // Try to add host from site configuration
-                    $host = $site->getBase()->getHost();
-                    
-                    // If site base is just "/" or empty, try to get host from current request
-                    if (empty($host) || $host === '/') {
-                        $host = $this->getHostFromRequest();
-                    }
-                    
-                    if (!empty($host)) {
-                        // Determine scheme
-                        $scheme = 'https';
-                        if ($this->currentRequest !== null) {
-                            $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
-                        }
-                        
-                        // Build full URL
-                        $generatedUrl = $scheme . '://' . $host . $generatedUrl;
-                    }
-                }
-                
-                return $generatedUrl;
+
+            // Get the appropriate language
+            try {
+                $language = $languageId > 0 ? $site->getLanguageById($languageId) : $site->getDefaultLanguage();
+            } catch (\Throwable) {
+                // Fall back to default language if specified language not found
+                $language = $site->getDefaultLanguage();
             }
-        } catch (\Throwable $e) {
-            // Log error but continue to fallback strategies
-            // error_log('SiteInformationService: Error generating URL for page ' . $pageId . ': ' . $e->getMessage());
+
+            // Generate the URI
+            $uri = $site->getRouter()->generateUri($pageId, ['_language' => $language]);
+            $generatedUrl = (string)$uri;
+
+            // Check if the generated URL is missing a host (e.g., just a path like "/page")
+            if ($generatedUrl !== '' && !str_starts_with($generatedUrl, 'http')) {
+                // Try to add host from site configuration
+                $host = $site->getBase()->getHost();
+
+                // If site base is just "/" or empty, try to get host from current request
+                if ($host === '' || $host === '/') {
+                    $host = $this->getHostFromRequest();
+                }
+
+                if (!empty($host)) {
+                    // Determine scheme
+                    $scheme = 'https';
+                    if ($this->currentRequest !== null) {
+                        $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
+                    }
+
+                    // Build full URL
+                    $generatedUrl = $scheme . '://' . $host . $generatedUrl;
+                }
+            }
+
+            return $generatedUrl;
+        } catch (\Throwable) {
+            // Continue to fallback strategies
         }
-        
+
         // Fallback: Try to get page record and build URL from slug
         try {
             $page = $this->getPageRecord($pageId);
-            if ($page && !empty($page['slug'])) {
+            $slug = is_scalar($page['slug'] ?? null) ? (string)$page['slug'] : '';
+            if ($page !== null && $slug !== '') {
                 $host = $this->getHostFromRequest();
                 if (!empty($host)) {
                     $scheme = 'https';
                     if ($this->currentRequest !== null) {
                         $scheme = $this->currentRequest->getUri()->getScheme() ?: 'https';
                     }
-                    return $scheme . '://' . $host . $page['slug'];
+                    return $scheme . '://' . $host . $slug;
                 }
-                
+
                 // If no host available, return just the slug
-                return $page['slug'];
+                return $slug;
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // Ignore and return null
         }
-        
+
         return null;
     }
 
     /**
      * Get formatted text listing all available domains for tool descriptions
-     * 
+     *
      * @return string Formatted text describing available domains
      */
     public function getAvailableDomainsText(): string
     {
         $domains = $this->getAllDomains();
-        
+
         if (empty($domains)) {
             return 'No specific domains configured. Use page IDs or relative paths.';
         }
-        
+
         if (count($domains) === 1) {
             return 'Available domain: ' . $domains[0];
         }
-        
+
         return 'Available domains: ' . implode(', ', $domains);
     }
 
     /**
      * Get host from current request
-     * 
+     *
      * @return string|null
      */
-    protected function getHostFromRequest(): ?string
+    private function getHostFromRequest(): ?string
     {
         if ($this->currentRequest === null) {
             return null;
         }
-        
+
         // Try Host header first
         $host = $this->currentRequest->getHeaderLine('Host');
         if (!empty($host)) {
             return $host;
         }
-        
+
         // Try to get from URI
         $uri = $this->currentRequest->getUri();
         $host = $uri->getHost();
         if (!empty($host)) {
             return $host;
         }
-        
+
         return null;
     }
 
     /**
      * Get page record by ID
-     * 
+     *
      * @param int $pageId
-     * @return array|null
+     * @return array<string, mixed>|null
      */
-    protected function getPageRecord(int $pageId): ?array
+    private function getPageRecord(int $pageId): ?array
     {
-        $connectionPool = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class);
-        $queryBuilder = $connectionPool->getQueryBuilderForTable('pages');
-        
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
+
         $page = $queryBuilder
             ->select('uid', 'slug', 'title')
             ->from('pages')
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($pageId, \Doctrine\DBAL\ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($pageId, ParameterType::INTEGER)),
             )
             ->executeQuery()
             ->fetchAssociative();
-            
+
         return $page ?: null;
     }
 }

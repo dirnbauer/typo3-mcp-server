@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Abstract base class for MCP tools
- * 
+ *
  * Implements the Template Method pattern for consistent error handling
  * across all tools. The execute() method is final and handles all
  * exceptions, while subclasses implement doExecute() for their logic.
@@ -18,7 +23,7 @@ use Mcp\Types\TextContent;
 abstract class AbstractTool implements ToolInterface
 {
     use ExceptionHandlerTrait;
-    
+
     /**
      * Get the tool name based on the class name
      */
@@ -27,55 +32,73 @@ abstract class AbstractTool implements ToolInterface
         $className = (new \ReflectionClass($this))->getShortName();
         return str_replace('Tool', '', $className);
     }
-    
+
     /**
-     * Execute the tool with the given parameters
-     * 
-     * This method is final to ensure consistent error handling across all tools.
-     * Subclasses should implement doExecute() for their specific logic.
-     *
-     * @param array $params
-     * @return CallToolResult
+     * @param array<string, mixed> $params
      */
-    final public function execute(array $params): CallToolResult
+    public function execute(array $params): CallToolResult
+    {
+        return $this->executeInternal($params);
+    }
+
+    /**
+     * Internal execution with consistent error handling.
+     * Subclasses that override execute() call this to preserve the template method.
+     *
+     * @param array<string, mixed> $params
+     */
+    protected function executeInternal(array $params): CallToolResult
     {
         try {
-            // Initialize any necessary context (overridden in subclasses)
+            $this->enforceCapabilityManifest();
+            $this->enforceAdminOnly();
             $this->initialize();
-            
-            // Execute the actual tool logic
             return $this->doExecute($params);
         } catch (\Throwable $e) {
-            // Use the trait's exception handler for consistent logging and messaging
             return $this->handleException($e, $this->getName());
         }
     }
-    
+
     /**
-     * Initialize any necessary context before execution
-     * 
-     * Override this method in subclasses to perform initialization
-     * such as workspace context setup.
+     * Refuse to execute when Configuration/Capabilities.yaml has not declared
+     * this tool's required subsystems. Disabling the manifest setting bypasses
+     * the check (see CapabilityManifestService::isEnforced()).
      */
-    protected function initialize(): void
+    private function enforceCapabilityManifest(): void
     {
-        // Default implementation does nothing
-        // Subclasses can override to add initialization logic
+        try {
+            $manifest = GeneralUtility::makeInstance(CapabilityManifestService::class);
+        } catch (\Throwable) {
+            // DI not booted (e.g. very early CLI); skip — the runtime
+            // execution path will eventually hit the manifest in normal calls.
+            return;
+        }
+        $manifest->assertToolAllowed($this->getName());
     }
-    
+
+    protected function initialize(): void {}
+
     /**
-     * Execute the tool logic
-     * 
-     * This method must be implemented by subclasses to provide
-     * the actual tool functionality. Any exceptions thrown will
-     * be handled by the execute() method.
-     *
-     * @param array $params
-     * @return CallToolResult
-     * @throws \Exception Any exception thrown will be handled by execute()
+     * Enforce the #[AdminOnly] attribute if present on the concrete tool class.
+     */
+    private function enforceAdminOnly(): void
+    {
+        $reflection = new \ReflectionClass($this);
+        if ($reflection->getAttributes(AdminOnly::class) === []) {
+            return;
+        }
+
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication || !$backendUser->isAdmin()) {
+            throw new ValidationException(['This tool requires admin privileges.']);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $params
      */
     abstract protected function doExecute(array $params): CallToolResult;
-    
+
     /**
      * Create an error result (required by ExceptionHandlerTrait)
      */

@@ -7,65 +7,97 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
-use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
+use Mcp\Types\TextContent;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for writing records to TYPO3 tables
+ *
+ * @phpstan-type RecordData array<string, mixed>
+ * @phpstan-type InlineRelation array{config: array<string, mixed>, value: mixed}
+ * @phpstan-type InlineRelations array<string, InlineRelation>
+ * @phpstan-type SearchReplaceOperation array{search: string, replace: string, replaceAll?: bool}
+ * @phpstan-type SearchReplaceMap array<string, list<SearchReplaceOperation>>
+ * @phpstan-type DataMap array<string, array<int|string, array<string, mixed>>>
  */
-class WriteTableTool extends AbstractRecordTool
+final class WriteTableTool extends AbstractRecordTool
 {
-    protected LanguageService $languageService;
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        protected readonly LanguageService $languageService,
+        private readonly ConnectionPool $connectionPool,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly SiteFinder $siteFinder,
+        private readonly FileMetadataIndexService $fileMetadataIndexService,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
 
-    public function __construct()
+    private function getBackendUser(): BackendUserAuthentication
     {
-        parent::__construct();
-        $this->languageService = GeneralUtility::makeInstance(LanguageService::class);
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new \RuntimeException('No backend user available', 1748000002);
+        }
+        return $backendUser;
     }
 
     /**
-     * Get the tool schema
+     * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         // Get all accessible tables for enum (exclude read-only tables for write operations)
         $accessibleTables = $this->tableAccessService->getAccessibleTables(false);
         $tableNames = array_keys($accessibleTables);
         sort($tableNames); // Sort alphabetically for better readability
 
-        $hasMultipleLanguages = count($this->languageService->getAvailableIsoCodes()) > 1;
-        $languageHint = $hasMultipleLanguages
-            ? ' Language fields (sys_language_uid) can be provided as ISO codes (e.g., "de", "fr") instead of numeric IDs.'
-            : '';
-
         return [
-            'description' => 'Create, update, translate, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live.' . $languageHint . ' ' .
-                'Before creating or updating content, always use GetPage to understand the page structure, existing content, and writing style. ' .
-                'Check existing content elements with ReadTable to ensure new content fits the page\'s tone and doesn\'t duplicate existing elements. ' .
-                'For content creation, verify the appropriate colPos by examining existing content layout. ' .
-                'Note: If you encounter plugins (CType=list) that reference non-workspace capable tables, ' .
-                'look for record storage folders (doktype=254) where the actual records are stored.',
+            'description' => 'Create, update, translate, move, or delete records in TYPO3 tables. In strict mode, all changes are made in workspace context and require publishing to become live. In DDEV/local mode, live writes and non-workspace tables are allowed for local development. ' .
+                'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). ' .
+                'REQUIRED PARAMETERS PER ACTION: ' .
+                'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). ' .
+                'translate: table, uid, data. data MUST contain sys_language_uid AND translated values for every text field you want localized ' .
+                '(header, bodytext, title, nav_title, subheader, …). Sending only sys_language_uid leaves TYPO3 placeholders like "[Translate to DE:] Original" ' .
+                'because DataHandler\'s localize command copies source values verbatim; your translated values replace them in a follow-up update. ' .
+                'Run GetTableSchema first to see which fields are translatable for the table. ' .
+                'INLINE RELATIONS (CRITICAL): On update, passing an inline field REPLACES ALL existing children — omitted children are deleted (embedded) or unlinked (independent). ' .
+                'To keep existing children, include their UIDs: [2546, 2547, {"CType": "textmedia", "header": "New"}]. To update an existing child: {"uid": 2546, "header": "Updated"}. Order in the array defines sorting. ' .
+                'Nested inline relations are supported: child record data may itself contain inline arrays. ' .
+                'FLEXFORM FIELDS: Pass as JSON objects (auto-converted to XML). Use "settings.fieldName" keys for plugin settings. ' .
+                'ORDERING: When creating multiple elements on a page, chain positions: create first with "bottom", then "after:{uid}" for each next. ' .
+                'Before creating content, use GetPage + ReadTable to understand page structure and existing content.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'action' => [
                         'type' => 'string',
-                        'description' => 'Action to perform: "create", "update", "translate", or "delete"',
-                        'enum' => ['create', 'update', 'translate', 'delete'],
+                        'description' => 'Action to perform: "create", "update", "move", "translate", or "delete"',
+                        'enum' => ['create', 'update', 'move', 'translate', 'delete'],
                     ],
                     'table' => [
                         'type' => 'string',
                         'description' => 'The table name to write records to',
                         'enum' => $tableNames,
+                    ],
+                    'pid' => [
+                        'type' => 'integer',
+                        'description' => 'Page ID — required for "create" action, optional for "move" action (target page for cross-page moves)',
                     ],
                     'uid' => [
                         'type' => 'integer',
@@ -73,39 +105,51 @@ class WriteTableTool extends AbstractRecordTool
                     ],
                     'data' => [
                         'type' => 'object',
-                        'description' => 'Record data with field names as keys and their values (required for "create", "update", and "translate" actions). ' .
-                            'Uses the same field syntax as ReadTable output. ' .
-                            'The target page is also specified here as "pid" — required on "create" (the page the record is created on); ' .
-                            'on "update" setting "pid" moves the record to that page (combine with "position" to control where on the new page it lands; e.g. data: {"pid": 1} moves the record to page 1). ' .
-                            ($hasMultipleLanguages ? 'Language fields (sys_language_uid) accept ISO codes like "de", "fr" instead of numeric IDs. ' : '') .
-                            'Inline relations can be specified as arrays - UIDs for independent tables, record data for embedded tables. ' .
-                            'For embedded tables (e.g. file references), the array fully replaces the existing list: ' .
-                            'children present in the previous record but missing from the new array are deleted. ' .
-                            'To keep an existing child include it as {"uid": <existing>, ...}; only the fields you set are patched. ' .
-                            'Array order drives display order. ' .
-                            'For text fields in update actions, instead of providing the full text, you can provide an array of search-and-replace operations: ' .
-                            '[{"search": "old text", "replace": "new text"}]. Each operation can optionally include "replaceAll": true. ' .
-                            'Operations are applied sequentially. Each search string must match exactly once unless replaceAll is true.',
+                        'description' => 'Record data as field-value pairs. ' .
+                            'INLINE RELATIONS: For embedded tables, pass record data arrays to create new children or {"uid": N} to reference existing ones (optionally with fields to update). ' .
+                            'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. Array order drives display order. ' .
+                            'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. ' .
+                            'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. ' .
+                            'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. ' .
+                            'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML.',
                         'additionalProperties' => true,
                         'examples' => [
-                            ['pid' => 42, 'title' => 'News Title', 'bodytext' => 'News <b>content</b>', 'datetime' => '2024-01-01 10:00:00'],
-                            ['pid' => 1, 'header' => 'Content Element Header', 'bodytext' => 'Content <b>text</b>', 'CType' => 'text'],
-                            ['pid' => 5],
+                            ['title' => 'News Title', 'bodytext' => 'News <b>content</b>', 'datetime' => '2024-01-01 10:00:00'],
+                            ['header' => 'Content Element Header', 'bodytext' => 'Content <b>text</b>', 'CType' => 'text'],
                             ['sys_language_uid' => 'de', 'title' => 'German translation'],
                             ['header' => [['search' => 'Welcom', 'replace' => 'Welcome'], ['search' => 'Compnay', 'replace' => 'Company']]],
-                        ]
+                            ['header' => 'With images', 'CType' => 'textmedia', 'assets' => [3, 4]],
+                            ['image' => [['uid_local' => 5, 'title' => 'Photo', 'alternative' => 'Alt text']]],
+                        ],
                     ],
                     'position' => [
                         'type' => 'string',
-                        'description' => 'Sorting position within a page: "top", "bottom", "after:UID", or "before:UID". For create: defaults to "bottom" if omitted. For update: omit to keep the current sort order, or specify to reorder. To move a record to a DIFFERENT page, set "pid" in the data parameter instead (or together with "position" for fine-grained placement on the new page).',
+                        'description' => 'Position for "create" and "move" actions: "bottom" (default, append after last), "top" (prepend before first), '
+                            . '"after:UID" (insert after specific element), "before:UID" (insert before specific element). '
+                            . 'For "move", position is required unless moving to bottom of same page. '
+                            . 'To create elements in order, chain "after:UID" with the UID from the previous response.',
+                        'default' => 'bottom',
+                    ],
+                    'translateChildren' => [
+                        'type' => 'boolean',
+                        'description' => 'translate action only. When true (default), TYPO3 auto-localizes inline children with source-language content (DataHandler localize). '
+                            . 'Set to false if you plan to translate child records yourself in follow-up calls — avoids "already been localized" errors when inline child fields are included in data.',
+                        'default' => true,
+                    ],
+                    'hidden' => [
+                        'type' => 'boolean',
+                        'description' => 'translate action only. Whether the newly created translation should be hidden. '
+                            . 'Defaults to false so translations are visible immediately (matches editor expectation). '
+                            . 'Set to true to keep translations hidden for review.',
+                        'default' => false,
                     ],
                 ],
                 'required' => ['action', 'table'],
             ],
             'annotations' => [
                 'readOnlyHint' => false,
-                'idempotentHint' => false
-            ]
+                'idempotentHint' => false,
+            ],
         ];
     }
 
@@ -114,22 +158,23 @@ class WriteTableTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        
-        // Some models (e.g. OpenAI GPT) place record fields at the top level
-        // instead of nesting them inside the 'data' parameter.
-        // Collect any unknown top-level keys into 'data' so the tool works regardless.
-        $knownKeys = ['action', 'table', 'uid', 'data', 'position'];
-        $extraData = array_diff_key($params, array_flip($knownKeys));
-        if (!empty($extraData) && empty($params['data'])) {
-            $params['data'] = $extraData;
-        }
 
         // Get parameters
-        $action = $params['action'] ?? '';
-        $table = $params['table'] ?? '';
+        $action = is_string($params['action'] ?? null) ? $params['action'] : '';
+        $table = is_string($params['table'] ?? null) ? $params['table'] : '';
+        $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uid = isset($params['uid']) ? (int)$params['uid'] : null;
         $data = $params['data'] ?? [];
-        $position = $params['position'] ?? null;
+        $rawPosition = $params['position'] ?? null;
+        $position = is_string($rawPosition) ? $rawPosition : null;
+        if ($action === 'create' && $position === null) {
+            $position = 'bottom';
+        }
+        $positionExplicit = array_key_exists('position', $params) && is_string($params['position']) && $params['position'] !== '';
+
+        if ($action === 'update' && isset($params['pid']) && is_array($data) && !array_key_exists('pid', $data)) {
+            $data['pid'] = $params['pid'];
+        }
 
         // Validate parameters
         if (empty($action)) {
@@ -146,40 +191,19 @@ class WriteTableTool extends AbstractRecordTool
                 $dataType = gettype($params['data']);
                 throw new ValidationException([
                     "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. " .
-                    "The data parameter must be an object like {\"title\": \"My Title\", \"bodytext\": \"Content\"}, " .
-                    "not a plain string. Each field name should be a key with its corresponding value."
+                    'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, ' .
+                    'not a plain string. Each field name should be a key with its corresponding value.',
                 ]);
             }
-        }
-
-        // Older callers (and the previous schema) put `pid` at the top level.
-        // The schema now scopes it to `data`, but if a caller still sends it
-        // at the top level, fold it in transparently rather than silently
-        // losing it. `data.pid` always wins if both are set.
-        if (isset($params['pid']) && is_array($data) && !array_key_exists('pid', $data)) {
-            $data['pid'] = $params['pid'];
-        }
-
-        // pid lives inside `data` (it's a record column). On create it picks
-        // the target page; on update it triggers a move to that page.
-        $pid = is_array($data) && isset($data['pid']) ? (int)$data['pid'] : null;
-
-        if (in_array($action, ['create', 'update', 'translate'], true)) {
-            $positionProvided = $position !== null;
-            // pid alone doesn't count as "real" record content — it's a placement
-            // hint, not a field write. Strip it for the empty check so a payload
-            // of {pid: 1} still fails with "data must contain record fields" on
-            // create/translate.
-            $dataWithoutPid = is_array($data) ? array_diff_key($data, ['pid' => null]) : $data;
-            // On update, an empty data parameter is allowed when the caller is
-            // only changing position or moving the record to a new pid.
-            $isUpdateMoveOnly = $action === 'update' && ($positionProvided || $pid !== null);
-            if (empty($dataWithoutPid) && !$isUpdateMoveOnly) {
+            if (empty($data) && !($action === 'update' && $positionExplicit)) {
                 throw new ValidationException([
                     "The data parameter must contain record fields for {$action} actions. " .
-                    "Provide field names as keys, e.g. {\"title\": \"Page Title\", \"bodytext\": \"Content\"}."
+                    'Provide field names as keys, e.g. {"title": "Page Title", "bodytext": "Content"}.',
                 ]);
             }
+        }
+        if ($action === 'create' && $pid === null && is_array($data) && array_key_exists('pid', $data)) {
+            $pid = (int)$data['pid'];
         }
 
         // Extract search/replace operations from data (arrays of {search, replace} objects
@@ -199,23 +223,17 @@ class WriteTableTool extends AbstractRecordTool
          * This conversion happens automatically for any table that has a sys_language_uid field.
          * The available ISO codes depend on the site configuration.
          */
-        // Convert sys_language_uid from ISO code to UID if present
-        if (!empty($data) && isset($data['sys_language_uid']) && is_string($data['sys_language_uid'])) {
-            $languageUid = $this->languageService->getUidFromIsoCode($data['sys_language_uid']);
-            if ($languageUid === null) {
-                throw new ValidationException(['Unknown language code: ' . $data['sys_language_uid']]);
-            }
-            $data['sys_language_uid'] = $languageUid;
-        }
+        // Convert sys_language_uid from ISO code to UID if present (per-site when page context is known)
+        $data = $this->convertSysLanguageUidFromIsoIfNeeded($action, $table, $uid, $pid, $data);
 
         // Validate table access using TableAccessService
         $this->ensureTableAccess($table, $action === 'delete' ? 'delete' : 'write');
-        
+
         // Validate action-specific parameters
         switch ($action) {
             case 'create':
                 if ($pid === null) {
-                    throw new ValidationException(['Page ID (pid) is required for create action — include it in the data parameter, e.g. data: {pid: 1, title: "..."}']);
+                    throw new ValidationException(['Page ID (pid) is required for create action']);
                 }
 
                 if (empty($data)) {
@@ -228,18 +246,28 @@ class WriteTableTool extends AbstractRecordTool
                     throw new ValidationException(['Record UID is required for update action']);
                 }
 
-                $hasPosition = $position !== null;
-                if (empty($data) && empty($searchReplace) && !$hasPosition) {
+                if (empty($data) && empty($searchReplace) && !$positionExplicit) {
                     throw new ValidationException(['Data is required for update action']);
                 }
                 break;
-                
+
             case 'delete':
                 if ($uid === null) {
                     throw new ValidationException(['Record UID is required for delete action']);
                 }
                 break;
-                
+
+            case 'move':
+                if ($uid === null) {
+                    throw new ValidationException(['Record UID is required for move action']);
+                }
+                if ($pid === null && $position === 'bottom') {
+                    // Same-page bottom move is a no-op, but allowed
+                } elseif (!preg_match('/^(after|before):\d+$/', (string)$position) && $position !== 'top' && $position !== 'bottom') {
+                    throw new ValidationException(['Position is required for move action. Use "after:UID", "before:UID", "top", or "bottom". For cross-page moves, also provide pid.']);
+                }
+                break;
+
             case 'translate':
                 if ($uid === null) {
                     throw new ValidationException(['Record UID is required for translate action']);
@@ -252,33 +280,31 @@ class WriteTableTool extends AbstractRecordTool
                 if (!isset($data['sys_language_uid'])) {
                     throw new ValidationException(['sys_language_uid is required in data for translate action']);
                 }
+
+                $this->assertTranslationIntent($table, $data);
                 break;
 
             default:
-                throw new ValidationException(['Invalid action: ' . $action . '. Valid actions are: create, update, translate, delete']);
+                throw new ValidationException(['Invalid action: ' . $action . '. Valid actions are: create, update, move, translate, delete']);
         }
 
-        // Allow listeners to modify data or veto the operation
+        // Dispatch BeforeRecordWriteEvent — allows listeners to modify data or veto
         $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $beforeEvent = new BeforeRecordWriteEvent($table, $action, $data, $uid, $pid);
         $eventDispatcher->dispatch($beforeEvent);
+
         if ($beforeEvent->isVetoed()) {
             return $this->createErrorResult('Operation vetoed: ' . ($beforeEvent->getVetoReason() ?? 'No reason given'));
         }
         $data = $beforeEvent->getData();
-        // Listeners may have rerouted the target page by editing data.pid —
-        // re-extract so the create path honours their change. (For update,
-        // updateRecord pulls pid from data itself, so it's already covered.)
-        if (is_array($data) && array_key_exists('pid', $data)) {
+        if ($action === 'create' && is_array($data) && array_key_exists('pid', $data)) {
             $pid = (int)$data['pid'];
+            unset($data['pid']);
         }
 
         // Execute the action
         switch ($action) {
             case 'create':
-                // pid is consumed as a separate argument; remove it from data so
-                // it doesn't reach DataHandler as a field write.
-                unset($data['pid']);
                 return $this->createRecord($table, $pid, $data, $position);
 
             case 'update':
@@ -287,24 +313,45 @@ class WriteTableTool extends AbstractRecordTool
                     $resolvedFields = $this->resolveSearchReplace($table, $uid, $searchReplace);
                     $data = array_merge($data, $resolvedFields);
                 }
-                // pid stays inside `data` here — updateRecord extracts it and
-                // turns it into a DataHandler `move` cmdmap.
-                return $this->updateRecord($table, $uid, $data, $position);
-                
+                $updateResult = null;
+                if (!empty($data) || !empty($searchReplace)) {
+                    $updateResult = $this->updateRecord($table, $uid, $data, $positionExplicit ? $position : null);
+                    if ($updateResult->isError) {
+                        return $updateResult;
+                    }
+                    return $updateResult;
+                }
+                if ($positionExplicit) {
+                    if ($uid === null) {
+                        throw new \LogicException('update with position requires uid (validated in switch case update)');
+                    }
+                    if (!is_string($position) || $position === '') {
+                        throw new \LogicException('positionExplicit is true but position is not a non-empty string');
+                    }
+                    return $this->moveRecord($table, $uid, $position, $pid);
+                }
+
+                throw new \LogicException('WriteTable update without data/search_replace/position should have been rejected by validation');
+
+            case 'move':
+                return $this->moveRecord($table, $uid, $position, $pid);
+
             case 'delete':
                 return $this->deleteRecord($table, $uid);
 
             case 'translate':
                 // The language UID has already been converted from ISO code if needed
                 $targetLanguageUid = (int)$data['sys_language_uid'];
-                return $this->translateRecord($table, $uid, $targetLanguageUid);
-                
+                $translateChildren = !isset($params['translateChildren']) || $params['translateChildren'] !== false;
+                $hiddenFlag = isset($params['hidden']) ? (bool)$params['hidden'] : false;
+                return $this->translateRecord($table, $uid, $targetLanguageUid, $data, $translateChildren, $hiddenFlag);
+
             default:
                 // This should never happen due to earlier validation
                 throw new \LogicException('Invalid action: ' . $action);
         }
     }
-    
+
     /**
      * Create a new record
      */
@@ -330,25 +377,26 @@ class WriteTableTool extends AbstractRecordTool
         if ($validationResult !== true) {
             return $this->createErrorResult('Validation error: ' . $validationResult);
         }
-        
-        // Extract inline relations before converting data
+
+        // Extract inline relations and build unified dataMap
         $inlineRelations = $this->extractInlineRelations($table, $data);
-        
+
         // Convert data for storage
         $data = $this->convertDataForStorage($table, $data);
-        
+
         // Prepare the data array
         $newRecordData = $data;
+        $newRecordData['pid'] = $pid;
 
         // Use DataHandler's native pid-based positioning:
         // - Positive pid → record is placed at the TOP of that page (DataHandler default)
         // - Negative pid (-uid) → record is placed AFTER the record with that uid
-        if ($position === 'bottom' || $position === null) {
+        // This avoids the need for a separate move command after creation.
+        if ($position === 'bottom') {
             $sortingField = $this->tableAccessService->getSortingFieldName($table);
             if ($sortingField !== null && !isset($data[$sortingField])) {
                 // Find the last record on this page to insert after it
-                $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-                    ->getQueryBuilderForTable($table);
+                $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
                 $queryBuilder->getRestrictions()->removeAll()
                     ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
 
@@ -365,22 +413,20 @@ class WriteTableTool extends AbstractRecordTool
                     ->fetchAssociative();
 
                 if ($lastRecord) {
-                    // Negative pid tells DataHandler to insert after this record
                     $newRecordData['pid'] = -(int)$lastRecord['uid'];
                 } else {
-                    // No records exist yet — positive pid inserts as first record
                     $newRecordData['pid'] = $pid;
                 }
             } else {
                 $newRecordData['pid'] = $pid;
             }
-        } elseif (strpos($position, 'after:') === 0) {
-            $referenceUid = (int)substr($position, strlen('after:'));
+        } elseif (str_starts_with((string)$position, 'after:')) {
+            $referenceUid = (int)substr((string)$position, strlen('after:'));
             // Resolve live UID to workspace UID if needed, since DataHandler works with real UIDs
             $wsUid = $this->resolveToWorkspaceUid($table, $referenceUid);
             $newRecordData['pid'] = -$wsUid;
-        } elseif (strpos($position, 'before:') === 0) {
-            $referenceUid = (int)substr($position, strlen('before:'));
+        } elseif (str_starts_with((string)$position, 'before:')) {
+            $referenceUid = (int)substr((string)$position, strlen('before:'));
             $sortingField = $this->tableAccessService->getSortingFieldName($table);
 
             if ($sortingField !== null) {
@@ -396,8 +442,7 @@ class WriteTableTool extends AbstractRecordTool
                     $refUid = (int)$refRecord['uid'];
 
                     // Find the predecessor: workspace-aware, with UID tiebreak for equal sorting
-                    $qb2 = GeneralUtility::makeInstance(ConnectionPool::class)
-                        ->getQueryBuilderForTable($table);
+                    $qb2 = $this->connectionPool->getQueryBuilderForTable($table);
                     $qb2->getRestrictions()->removeAll()
                         ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                         ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
@@ -429,249 +474,153 @@ class WriteTableTool extends AbstractRecordTool
                         $newRecordData['pid'] = $refPid;
                     }
                 } else {
-                    // Reference record not found — fall back to user-provided pid
                     $newRecordData['pid'] = $pid;
                 }
             } else {
-                // Table has no sorting field — fall back to user-provided pid
                 $newRecordData['pid'] = $pid;
             }
-        } else {
-            // 'top' or default — use positive pid (DataHandler inserts at top)
-            $newRecordData['pid'] = $pid;
         }
+        // 'top' or default — use the positive pid already assigned above
 
         // Create a unique ID for this new record
-        $newId = 'NEW' . uniqid();
-        
-        // Initialize DataHandler
-        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-        
-        // First, create the parent record without inline relations
+        $newId = 'NEW' . bin2hex(random_bytes(8));
+
+        // Build unified dataMap: parent + all inline children in one structure.
+        // DataHandler resolves NEW keys, sets foreign_field, and handles workspace
+        // versioning atomically in a single process_datamap() call.
         $dataMap = [];
         $dataMap[$table][$newId] = $newRecordData;
-        
-        // Process the parent record first
+
+        // Add inline children to the same dataMap and set CSV references on parent
+        if (!empty($inlineRelations)) {
+            $this->buildInlineDataMap($dataMap, $table, $newId, $pid, $inlineRelations);
+        }
+
+        // Process everything in a single DataHandler call
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
         $dataHandler->start($dataMap, []);
         $dataHandler->process_datamap();
-        
-        // Check for errors in parent creation
+
+        // Check for errors
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating record: ' . $this->formatDataHandlerErrors($dataHandler->errorLog));
         }
-        
+
         // Get the UID of the newly created parent record
         $parentUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
-        
+
         if (!$parentUid) {
             return $this->createErrorResult('Error creating record: No UID returned');
         }
-        
-        // Get the live UID for inline relations if we're in a workspace
-        $liveParentUid = $this->getLiveUid($table, $parentUid);
-        
-        // Now process inline relations with the resolved parent UID
-        if (!empty($inlineRelations)) {
-            $childDataMap = [];
-            $this->processInlineRelations($childDataMap, $table, $parentUid, $pid, $inlineRelations);
-            
-            
-            if (!empty($childDataMap)) {
-                // Create a new DataHandler instance for child records
-                $childDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $childDataHandler->BE_USER = $GLOBALS['BE_USER'];
-                $childDataHandler->start($childDataMap, []);
-                $childDataHandler->process_datamap();
-                
-                
-                // Check for errors in child creation
-                if (!empty($childDataHandler->errorLog)) {
-                    // Parent was created but children failed
-                    return $this->createErrorResult(
-                        'Parent record created but error creating child records: ' . 
-                        implode(', ', $childDataHandler->errorLog)
-                    );
-                }
-                
-                // Update foreign fields for embedded relations
-                foreach ($inlineRelations as $fieldName => $relationData) {
-                    $config = $relationData['config'];
-                    $foreignTable = $config['foreign_table'] ?? '';
-                    $foreignField = $config['foreign_field'] ?? '';
-                    
-                    if (empty($foreignTable) || empty($foreignField)) {
-                        continue;
-                    }
-                    
-                    // Check if this is an embedded table
-                    $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
-                    if ($isHiddenTable) {
-                        // Collect the UIDs of created child records
-                        $childUids = [];
-                        foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (strpos($newId, 'NEW') === 0 && isset($childDataMap[$foreignTable][$newId])) {
-                                $childUids[] = $realId;
-                            }
-                        }
-                        
-                        if (!empty($childUids)) {
-                            // Update foreign field directly in database
-                            // RelationHandler's writeForeignField is for MM relations, not direct foreign fields
-                            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-                                ->getConnectionForTable($foreignTable);
-                            
-                            foreach ($childUids as $childUid) {
-                                $connection->update(
-                                    $foreignTable,
-                                    [$foreignField => $liveParentUid],
-                                    ['uid' => $childUid]
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-        // Get the live UID for workspace transparency
+        // Positioning is already applied via the negative pid set above before process_datamap().
+        // Get the live UID for workspace transparency.
         $liveUid = $this->getLiveUid($table, $parentUid);
 
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $pid));
+        $actualPid = $pid;
+        $record = BackendUtility::getRecord($table, $liveUid);
+        if ($record !== null && is_numeric($record['pid'] ?? null)) {
+            $actualPid = (int)$record['pid'];
+        }
 
-        // Return the result with live UID
-        return $this->createJsonResult([
+        // Dispatch AfterRecordWriteEvent
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
+        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $actualPid));
+
+        // Build response with additional useful info
+        $result = [
             'action' => 'create',
             'table' => $table,
             'uid' => $liveUid,
-        ]);
+            'pid' => $actualPid,
+        ];
+        if ($record !== null) {
+            $sortingField = $this->getTableCtrlArray($table)['sortby'] ?? null;
+            if (is_string($sortingField) && isset($record[$sortingField])) {
+                $result['sorting'] = (int)$record[$sortingField];
+            }
+        }
+
+        return $this->createJsonResult($result);
     }
-    
+
     /**
      * Update an existing record
      */
     protected function updateRecord(string $table, int $uid, array $data, ?string $position = null): CallToolResult
     {
-        // Validate the data
-        $validationResult = $this->validateRecordData($table, $data, 'update', $uid);
-        if ($validationResult !== true) {
-            return $this->createErrorResult('Validation error: ' . $validationResult);
-        }
-
-        // Extract pid as a special field — it's not a TCA column, but setting it
-        // on update should move the record to the new page via DataHandler's cmdmap.
         $targetPid = null;
         if (array_key_exists('pid', $data)) {
             $targetPid = (int)$data['pid'];
             unset($data['pid']);
         }
+        if ($table === 'pages' && $targetPid === $uid) {
+            return $this->createErrorResult('Validation error: Page cannot be moved below itself');
+        }
 
-        // Extract inline relations before converting data
+        // Validate the data
+        $validationResult = $this->validateRecordData($table, $data, 'update', $uid, $targetPid ?? 0);
+        if ($validationResult !== true) {
+            return $this->createErrorResult('Validation error: ' . $validationResult);
+        }
+
+        // Extract inline relations and build unified dataMap
         $inlineRelations = $this->extractInlineRelations($table, $data);
-        
+
         // Convert data for storage
         $data = $this->convertDataForStorage($table, $data);
-
-        // For translation records, add l10n_state overrides so DataHandler treats
-        // explicitly updated fields as "custom" (not synced from parent)
-        $data = $this->ensureL10nStateForTranslation($table, $uid, $data);
 
         // Resolve the live UID to workspace UID (once, used throughout)
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
 
-        // Only run the field datamap if there are actual fields to write.
-        // A pid-only move with no field changes leaves $data empty, and
-        // calling DataHandler with an empty datamap is a no-op at best.
-        if (!empty($data)) {
-            $dataMap = [$table => [$workspaceUid => $data]];
+        // For translation records, add l10n_state overrides so DataHandler treats
+        // explicitly updated fields as "custom" (not synced from parent)
+        $data = $this->ensureL10nStateForTranslation($table, $workspaceUid, $data);
 
-            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-            $dataHandler->start($dataMap, []);
-            $dataHandler->process_datamap();
+        // Build unified dataMap: parent update + all inline children
+        $dataMap = !empty($data) ? [$table => [$workspaceUid => $data]] : [];
+        $cmdMap = [];
 
-            if (!empty($dataHandler->errorLog)) {
-                return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
-            }
-        }
-        
-        // Now process inline relations with the resolved parent UID
         if (!empty($inlineRelations)) {
             // Get record's pid for creating new inline records
             $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
             $pid = $record['pid'] ?? 0;
-            
-            $childDataMap = [];
-            $this->processInlineRelations($childDataMap, $table, $workspaceUid, $pid, $inlineRelations, $uid);
-            
-            if (!empty($childDataMap)) {
-                // Create a new DataHandler instance for child records
-                $childDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $childDataHandler->BE_USER = $GLOBALS['BE_USER'];
-                $childDataHandler->start($childDataMap, []);
-                $childDataHandler->process_datamap();
-                
-                // Check for errors in child processing
-                if (!empty($childDataHandler->errorLog)) {
-                    return $this->createErrorResult('Error processing inline relations: ' . implode(', ', $childDataHandler->errorLog));
-                }
-                
-                // Update foreign fields for embedded relations
-                foreach ($inlineRelations as $fieldName => $relationData) {
-                    $config = $relationData['config'];
-                    $foreignTable = $config['foreign_table'] ?? '';
-                    $foreignField = $config['foreign_field'] ?? '';
-                    
-                    if (empty($foreignTable) || empty($foreignField)) {
-                        continue;
-                    }
-                    
-                    // Check if this is an embedded table
-                    $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
-                    if ($isHiddenTable) {
-                        // Collect the UIDs of created child records
-                        $childUids = [];
-                        foreach ($childDataHandler->substNEWwithIDs as $newId => $realId) {
-                            if (strpos($newId, 'NEW') === 0 && isset($childDataMap[$foreignTable][$newId])) {
-                                $childUids[] = $realId;
-                            }
-                        }
-                        
-                        if (!empty($childUids)) {
-                            // Update foreign field directly in database
-                            // RelationHandler's writeForeignField is for MM relations, not direct foreign fields
-                            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-                                ->getConnectionForTable($foreignTable);
-                            
-                            // In update context, $uid is already the live UID
-                            foreach ($childUids as $childUid) {
-                                $connection->update(
-                                    $foreignTable,
-                                    [$foreignField => $uid],
-                                    ['uid' => $childUid]
-                                );
-                            }
-                        }
-                    }
-                }
+            $this->buildInlineDataMap($dataMap, $table, $workspaceUid, $pid, $inlineRelations);
+
+            // Sync inline relations: remove children that are no longer in the new list.
+            // DataHandler's raw dataMap processing does not automatically delete absent
+            // children (that's FormEngine's job), so we handle it explicitly via cmdMap.
+            $this->syncInlineRelations($dataMap, $cmdMap, $table, $uid, $inlineRelations);
+        }
+
+        if (!empty($dataMap) || !empty($cmdMap)) {
+            // Process everything in a single DataHandler call (dataMap + cmdMap)
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+            $dataHandler->start($dataMap, $cmdMap);
+            if (!empty($dataMap)) {
+                $dataHandler->process_datamap();
+            }
+            if (!empty($cmdMap)) {
+                $dataHandler->process_cmdmap();
+            }
+
+            // Check for errors
+            if (!empty($dataHandler->errorLog)) {
+                return $this->createErrorResult('Error updating record: ' . implode(', ', $dataHandler->errorLog));
             }
         }
-        
-        // Handle pid change (move to another page) and/or position reordering.
-        // pid is a special TYPO3 control field; setting it on update means "move
-        // this record to that page". The position parameter (if given) refines
-        // where on the new page the record lands.
+
         if ($targetPid !== null || $position !== null) {
-            $moveResult = $this->moveRecord($table, $workspaceUid, $position, $targetPid);
-            if ($moveResult !== null) {
+            $moveResult = $this->moveRecord($table, $uid, $position ?? 'top', $targetPid);
+            if ($moveResult->isError) {
                 return $moveResult;
             }
         }
 
+        // Dispatch AfterRecordWriteEvent
         $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
 
@@ -682,7 +631,7 @@ class WriteTableTool extends AbstractRecordTool
             'uid' => $uid, // Return the live UID that was passed in
         ]);
     }
-    
+
     /**
      * Delete a record
      */
@@ -690,18 +639,19 @@ class WriteTableTool extends AbstractRecordTool
     {
         // Resolve the live UID to workspace UID
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
-        
+
         // Delete the record using DataHandler
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $GLOBALS['BE_USER'];
         $dataHandler->start([], [$table => [$workspaceUid => ['delete' => 1]]]);
         $dataHandler->process_cmdmap();
-        
+
         // Check for errors
         if ($dataHandler->errorLog) {
             return $this->createErrorResult('Error deleting record: ' . implode(', ', $dataHandler->errorLog));
         }
-        
+
+        // Dispatch AfterRecordWriteEvent
         $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
 
@@ -711,183 +661,199 @@ class WriteTableTool extends AbstractRecordTool
             'uid' => $uid, // Return the live UID that was passed in
         ]);
     }
-    
+
     /**
-     * Move a record to a new position using DataHandler's cmdmap.
-     *
-     * @param string|null $position Position vocabulary: "top", "bottom",
-     *                              "before:UID", "after:UID". Null means
-     *                              "default placement on $targetPid" (top).
-     * @param int|null    $targetPid Destination page UID. Null means "stay on
-     *                               current page and just reorder".
-     * @return CallToolResult|null Error result on failure, null on success
+     * Move/reorder an existing record
      */
-    protected function moveRecord(string $table, int $uid, ?string $position, ?int $targetPid = null): ?CallToolResult
+    protected function moveRecord(string $table, int $uid, string $position, ?int $targetPid = null): CallToolResult
     {
-        $destination = $this->resolvePositionToDestination($table, $uid, $position, $targetPid);
-        if ($destination === null) {
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
+        if (!$record) {
+            return $this->createErrorResult('Record not found');
+        }
+
+        // Use target pid for cross-page moves, or current pid for same-page moves
+        $pid = $targetPid ?? (int)$record['pid'];
+
+        $error = $this->applyPosition($table, $workspaceUid, $pid, $position);
+        if ($error !== null) {
+            return $this->createErrorResult('Error moving record: ' . $error);
+        }
+
+        return $this->createJsonResult([
+            'action' => 'move',
+            'table' => $table,
+            'uid' => $uid,
+            'pid' => $pid,
+        ]);
+    }
+
+    /**
+     * Apply a position to a record via DataHandler move command
+     *
+     * @return string|null Error message, or null on success
+     */
+    protected function applyPosition(string $table, int $recordUid, int $pid, string $position): ?string
+    {
+        if ($position === 'top') {
+            // DataHandler: positive pid = first position on that page
+            $cmdMap = [$table => [$recordUid => ['move' => $pid]]];
+        } elseif ($position === 'bottom') {
+            // Find the last record on the page and move after it
+            $sortingField = $this->tableAccessService->getSortingFieldName($table);
+            $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
+            $queryBuilder = $this->connectionPool
+                ->getQueryBuilderForTable($table);
+            $queryBuilder->getRestrictions()->removeAll()
+                ->add(new DeletedRestriction())
+                ->add(new WorkspaceRestriction($currentWorkspace));
+
+            $orderField = $sortingField ?? 'uid';
+            $lastUid = $queryBuilder
+                ->select('uid')
+                ->from($table)
+                ->where(
+                    $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->neq('uid', $queryBuilder->createNamedParameter($recordUid, ParameterType::INTEGER))
+                )
+                ->orderBy($orderField, 'DESC')
+                ->setMaxResults(1)
+                ->executeQuery()
+                ->fetchOne();
+
+            if ($lastUid) {
+                // DataHandler: negative uid = after that record
+                $cmdMap = [$table => [$recordUid => ['move' => -(int)$lastUid]]];
+            } else {
+                // No other records on page — move to first position on target page
+                $cmdMap = [$table => [$recordUid => ['move' => $pid]]];
+            }
+        } elseif (str_starts_with($position, 'after:')) {
+            // DataHandler: negative uid = after that record
+            $referenceUid = (int)substr($position, 6);
+            $cmdMap = [$table => [$recordUid => ['move' => -$referenceUid]]];
+        } elseif (str_starts_with($position, 'before:')) {
+            // DataHandler has no native "before" — find the previous sibling and insert after it,
+            // or move to first position on the page if the reference is already first.
+            $referenceUid = (int)substr($position, 7);
+            $cmdMap = $this->buildBeforePositionCmdMap($table, $recordUid, $pid, $referenceUid);
+        } else {
+            // Unknown position — skip
             return null;
         }
 
-        $cmdMap = [$table => [$uid => ['move' => $destination]]];
-        $moveDataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $moveDataHandler->BE_USER = $GLOBALS['BE_USER'];
-        $moveDataHandler->start([], $cmdMap);
-        try {
-            $moveDataHandler->process_cmdmap();
-        } catch (\Throwable $e) {
-            // DataHandler can raise RuntimeException for impossible moves
-            // (e.g. moving a page into itself). Surface the cause as a tool
-            // error rather than letting the global handler swallow it into a
-            // generic "Operation failed" message.
-            return $this->createErrorResult('Error moving record: ' . $e->getMessage());
-        }
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
+        $dataHandler->start([], $cmdMap);
+        $dataHandler->process_cmdmap();
 
-        if (!empty($moveDataHandler->errorLog)) {
-            return $this->createErrorResult('Error moving record: ' . implode(', ', $moveDataHandler->errorLog));
+        if (!empty($dataHandler->errorLog)) {
+            return implode(', ', $dataHandler->errorLog);
         }
 
         return null;
     }
 
     /**
-     * Convert a position string ("top", "bottom", "after:UID", "before:UID")
-     * into a DataHandler move destination integer.
+     * Build a cmdMap for "before:X" positioning.
      *
-     * @param string|null $position Position vocabulary, or null for "default
-     *                              placement on $targetPid".
-     * @param int|null    $targetPid Override the page the move targets. When
-     *                               null, the record's current pid is used.
-     * @return int|null Destination pid (positive=page, negative=after record), null if no move needed
+     * DataHandler has no native "before" concept. We find the previous sibling of the
+     * reference record (same pid, lower sorting) and insert after it. If the reference
+     * is already the first record on the page, we insert at the top of the page instead.
+     *
+     * @return array cmdMap ready for DataHandler::start()
      */
-    protected function resolvePositionToDestination(string $table, int $uid, ?string $position, ?int $targetPid = null): ?int
+    protected function buildBeforePositionCmdMap(string $table, int $recordUid, int $pid, int $referenceUid): array
     {
-        if ($targetPid !== null) {
-            $pid = $targetPid;
-        } else {
-            $record = BackendUtility::getRecord($table, $uid, 'pid');
-            if ($record === null) {
-                return null;
-            }
-            $pid = (int)$record['pid'];
-        }
+        $sortingField = $this->tableAccessService->getSortingFieldName($table);
 
-        // No position vocabulary given: a positive destination pid tells
-        // DataHandler "move to this page (at top)". This is the natural
-        // default for a pid-only move.
-        if ($position === null) {
-            return $pid;
-        }
+        // Resolve reference record's pid and sorting in workspace context
+        $refRecord = BackendUtility::getRecord($table, $referenceUid, 'pid' . ($sortingField ? ',' . $sortingField : ''));
+        BackendUtility::workspaceOL($table, $refRecord);
 
-        if ($position === 'bottom') {
-            $sortingField = $this->tableAccessService->getSortingFieldName($table);
-            if ($sortingField === null) {
-                // Without a sortby field there's no meaningful "bottom" within
-                // the same page; only return the target pid when we're actually
-                // moving across pages, so the cross-page move still happens.
-                return $targetPid !== null ? $pid : null;
-            }
-            $qb = GeneralUtility::makeInstance(ConnectionPool::class)
+        $refPid = $refRecord ? (int)$refRecord['pid'] : $pid;
+        $refSorting = $sortingField && $refRecord ? (int)$refRecord[$sortingField] : 0;
+
+        if ($sortingField && $refSorting > 0) {
+            // Find the record just before the reference in sort order on the same page
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
-            $qb->getRestrictions()->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-                ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
+            $queryBuilder->getRestrictions()->removeAll()
+                ->add(new DeletedRestriction());
 
-            $lastRecord = $qb
+            $prevUid = $queryBuilder
                 ->select('uid')
                 ->from($table)
                 ->where(
-                    $qb->expr()->eq('pid', $qb->createNamedParameter($pid, ParameterType::INTEGER)),
-                    $qb->expr()->neq('uid', $qb->createNamedParameter($uid, ParameterType::INTEGER))
+                    $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($refPid, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->lt($sortingField, $queryBuilder->createNamedParameter($refSorting, ParameterType::INTEGER)),
+                    $queryBuilder->expr()->neq('uid', $queryBuilder->createNamedParameter($recordUid, ParameterType::INTEGER))
                 )
                 ->orderBy($sortingField, 'DESC')
-                ->addOrderBy('uid', 'DESC')
                 ->setMaxResults(1)
                 ->executeQuery()
-                ->fetchAssociative();
+                ->fetchOne();
 
-            if ($lastRecord) {
-                return -(int)$lastRecord['uid'];
+            if ($prevUid) {
+                // Insert after the previous sibling
+                return [$table => [$recordUid => ['move' => -(int)$prevUid]]];
             }
-            // Empty target page. For a same-page reorder there's nothing to do;
-            // for a cross-page move we still need to issue the move, so return
-            // the target pid (DataHandler treats positive = top of that page,
-            // which is also the bottom on an empty page).
-            return $targetPid !== null ? $pid : null;
         }
 
-        if ($position === 'top') {
-            return $pid;
+        // No previous sibling (or no sorting field) — insert as first on the page
+        return [$table => [$recordUid => ['move' => $refPid]]];
+    }
+
+    /**
+     * Reject translate calls that do not carry any translatable content.
+     *
+     * Without this, a caller passing only sys_language_uid (or only non-translatable
+     * fields like hidden/starttime) would silently get DataHandler's "[Translate to X:]"
+     * placeholder copy — indistinguishable from a plain localize and not an actual
+     * translation.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function assertTranslationIntent(string $table, array $data): void
+    {
+        $translatable = $this->tableAccessService->getTranslatableContentFields($table);
+        foreach (array_keys($data) as $field) {
+            if ($field === 'sys_language_uid') {
+                continue;
+            }
+            if (in_array($field, $translatable, true)) {
+                return;
+            }
         }
 
-        if (strpos($position, 'after:') === 0) {
-            $referenceUid = (int)substr($position, strlen('after:'));
-            $wsUid = $this->resolveToWorkspaceUid($table, $referenceUid);
-            return -$wsUid;
-        }
+        $hint = $translatable === []
+            ? 'No translatable text/FlexForm/inline fields are defined for this table.'
+            : 'Include translated values for at least one of: ' . implode(', ', $translatable) . '.';
 
-        if (strpos($position, 'before:') === 0) {
-            $referenceUid = (int)substr($position, strlen('before:'));
-            $sortingField = $this->tableAccessService->getSortingFieldName($table);
-            if ($sortingField === null) {
-                return $pid;
-            }
-
-            // Workspace-aware lookup: resolve to workspace version for correct pid/sorting
-            $refRecord = BackendUtility::getRecord($table, $referenceUid);
-            if ($refRecord) {
-                BackendUtility::workspaceOL($table, $refRecord);
-            }
-            if ($refRecord === null) {
-                return $pid;
-            }
-
-            $refPid = (int)$refRecord['pid'];
-            $refSorting = (int)$refRecord[$sortingField];
-            $refUid = (int)$refRecord['uid'];
-
-            // Find the predecessor: workspace-aware, with UID tiebreak for equal sorting
-            $qb = GeneralUtility::makeInstance(ConnectionPool::class)
-                ->getQueryBuilderForTable($table);
-            $qb->getRestrictions()->removeAll()
-                ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-                ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
-
-            $predecessorRecord = $qb
-                ->select('uid')
-                ->from($table)
-                ->where(
-                    $qb->expr()->eq('pid', $qb->createNamedParameter($refPid, ParameterType::INTEGER)),
-                    $qb->expr()->or(
-                        $qb->expr()->lt($sortingField, $qb->createNamedParameter($refSorting, ParameterType::INTEGER)),
-                        $qb->expr()->and(
-                            $qb->expr()->eq($sortingField, $qb->createNamedParameter($refSorting, ParameterType::INTEGER)),
-                            $qb->expr()->lt('uid', $qb->createNamedParameter($refUid, ParameterType::INTEGER))
-                        )
-                    )
-                )
-                ->orderBy($sortingField, 'DESC')
-                ->addOrderBy('uid', 'DESC')
-                ->setMaxResults(1)
-                ->executeQuery()
-                ->fetchAssociative();
-
-            if ($predecessorRecord) {
-                return -(int)$predecessorRecord['uid'];
-            }
-
-            // No previous record — target is at the top of the page
-            return $refPid;
-        }
-
-        return null;
+        throw new ValidationException([
+            'Translate requires translated field values in "data" (beyond sys_language_uid). '
+            . 'DataHandler\'s localize command copies source values and only prefixes the label with "[Translate to X:]"; '
+            . 'your translated values are applied in a follow-up update. ' . $hint,
+        ]);
     }
 
     /**
      * Translate a record to another language
+     *
+     * @param array<string, mixed> $translationData
+     * @param bool $translateChildren If true, DataHandler auto-localizes inline children with source-language content.
+     *                                If false, inline children are not copied so the caller can translate them manually.
+     * @param bool $hiddenFlag If true, the new translation is created hidden. Default false so translations are visible immediately.
      */
-    protected function translateRecord(string $table, int $uid, int $targetLanguageUid): CallToolResult
-    {
+    protected function translateRecord(
+        string $table,
+        int $uid,
+        int $targetLanguageUid,
+        array $translationData = [],
+        bool $translateChildren = true,
+        bool $hiddenFlag = false,
+    ): CallToolResult {
         // Check if table supports translations
         $languageField = $this->tableAccessService->getLanguageFieldName($table);
         if (!$languageField) {
@@ -906,13 +872,19 @@ class WriteTableTool extends AbstractRecordTool
             return $this->createErrorResult('Record not found');
         }
 
+        // DataHandler's localize command creates the translation shell record, but it
+        // does not apply translated field values passed by the MCP caller. Those values
+        // need a follow-up update, otherwise TYPO3 keeps placeholder labels like
+        // "[Translate to English:] Original title" in the workspace tree.
+        unset($translationData['sys_language_uid']);
+
         // Check if this is already a translation
         if (!empty($record[$translationParentField]) && $record[$translationParentField] > 0) {
             return $this->createErrorResult('Cannot translate a record that is already a translation. Translate the original record instead.');
         }
 
         // Check if translation already exists
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
 
         $existingTranslation = $queryBuilder
@@ -927,8 +899,24 @@ class WriteTableTool extends AbstractRecordTool
             ->fetchOne();
 
         if ($existingTranslation) {
-            $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
+            $targetIsoCode = $this->resolveIsoCodeForTranslation($table, $uid, $targetLanguageUid);
             return $this->createErrorResult('Translation already exists for language "' . $targetIsoCode . '" (UID: ' . $existingTranslation . ')');
+        }
+
+        if ($translationData !== []) {
+            $validationResult = $this->validateRecordData($table, $translationData, 'update', $uid);
+            if ($validationResult !== true) {
+                return $this->createErrorResult('Validation error: ' . $validationResult);
+            }
+        }
+
+        // If the caller opted out of auto-localizing inline children, temporarily null out
+        // child field UIDs on the parent row. DataHandler localize only copies children
+        // referenced by the parent — restoring the UIDs afterwards leaves the original
+        // record untouched.
+        $skippedInlineBackup = [];
+        if (!$translateChildren) {
+            $skippedInlineBackup = $this->stripInlineChildReferences($table, $uid);
         }
 
         // Use DataHandler to create the translation
@@ -939,15 +927,21 @@ class WriteTableTool extends AbstractRecordTool
         $cmdMap = [
             $table => [
                 $uid => [
-                    'localize' => $targetLanguageUid
-                ]
-            ]
+                    'localize' => $targetLanguageUid,
+                ],
+            ],
         ];
 
         $dataHandler->start([], $cmdMap);
-        $dataHandler->process_cmdmap();
+        try {
+            $dataHandler->process_cmdmap();
+        } finally {
+            if ($skippedInlineBackup !== []) {
+                $this->restoreInlineChildReferences($table, $uid, $skippedInlineBackup);
+            }
+        }
 
-        // Check for errors
+        // Check for errors — no translation row was created yet, so nothing to roll back.
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating translation: ' . implode(', ', $dataHandler->errorLog));
         }
@@ -960,7 +954,7 @@ class WriteTableTool extends AbstractRecordTool
 
         if (!$newTranslationUid) {
             // Try to find the translation we just created
-            $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($table);
 
             $newTranslationUid = $queryBuilder
@@ -976,25 +970,253 @@ class WriteTableTool extends AbstractRecordTool
                 ->fetchOne();
         }
 
-        $targetIsoCode = $this->languageService->getIsoCodeFromUid($targetLanguageUid) ?? $targetLanguageUid;
-
-        if ($newTranslationUid) {
-            $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-            $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'translate', (int)$newTranslationUid, [], null));
+        // Apply hidden flag + translated fields in a single follow-up update.
+        // Default is hidden=false so translations are visible immediately. The
+        // TYPO3 core localize command sets hidden=1 on translations by default,
+        // which means every translation starts invisible — surprising for MCP
+        // callers who just asked to "translate" a record.
+        $followUpData = $translationData;
+        $hiddenFieldName = $this->getHiddenFieldName($table);
+        if ($hiddenFieldName !== null && !array_key_exists($hiddenFieldName, $followUpData)) {
+            $followUpData[$hiddenFieldName] = $hiddenFlag ? 1 : 0;
         }
 
-        return $this->createJsonResult([
+        $translationWorkspaceUid = null;
+        if ($newTranslationUid && $followUpData !== []) {
+            $updateResult = $this->updateRecord($table, (int)$newTranslationUid, $followUpData);
+            if ($updateResult->isError) {
+                $firstContent = $updateResult->content[0] ?? null;
+                $updateError = $firstContent instanceof TextContent ? $firstContent->text : 'Unknown error';
+
+                // Roll back the parent translation so the caller doesn't end up with an
+                // orphan record in the source language. We keep the UID in the error to
+                // help callers clean up if rollback itself fails.
+                $rollbackMessage = $this->rollbackTranslation($table, (int)$newTranslationUid);
+
+                return $this->createErrorResult(
+                    'Translation created (UID: ' . $newTranslationUid . ') but applying translated fields failed: '
+                    . $updateError
+                    . ($rollbackMessage !== null ? ' — Rolled back: ' . $rollbackMessage : ' — Automatic rollback failed; delete this record manually.'),
+                );
+            }
+            $translationWorkspaceUid = $this->resolveToWorkspaceUid($table, (int)$newTranslationUid);
+        }
+
+        $targetIsoCode = $this->resolveIsoCodeForTranslation($table, $uid, $targetLanguageUid);
+        $response = [
             'action' => 'translate',
             'table' => $table,
             'sourceUid' => $uid,
             'translationUid' => $newTranslationUid ?: 'Translation created but UID not found',
             'targetLanguage' => $targetIsoCode,
-        ]);
+            'hidden' => $hiddenFlag,
+        ];
+
+        $siteIdentifier = $this->resolveSiteIdentifierForTranslation($table, $uid);
+        if ($siteIdentifier !== null) {
+            $response['siteIdentifier'] = $siteIdentifier;
+        }
+
+        if ($translationWorkspaceUid !== null && $newTranslationUid) {
+            $slugFieldName = $this->tableAccessService->getFieldConfig($table, 'slug') !== null ? 'slug' : null;
+            if ($slugFieldName !== null) {
+                $slugRow = BackendUtility::getRecord($table, $translationWorkspaceUid, $slugFieldName);
+                if (is_array($slugRow) && isset($slugRow[$slugFieldName])) {
+                    $response['slug'] = (string)$slugRow[$slugFieldName];
+                }
+            }
+        }
+
+        return $this->createJsonResult($response);
+    }
+
+    /**
+     * Return the hidden-field name from TCA (usually "hidden") or null if the table has none.
+     */
+    private function getHiddenFieldName(string $table): ?string
+    {
+        $ctrl = $this->getTableCtrlArray($table);
+        $enablecolumns = isset($ctrl['enablecolumns']) && is_array($ctrl['enablecolumns']) ? $ctrl['enablecolumns'] : [];
+        $fieldName = $enablecolumns['disabled'] ?? null;
+        return is_string($fieldName) && $fieldName !== '' ? $fieldName : null;
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table]['ctrl'] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableCtrlArray(string $table): array
+    {
+        $tableTca = $this->getTableTcaArray($table);
+        $ctrl = $tableTca['ctrl'] ?? null;
+        return is_array($ctrl) ? $ctrl : [];
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableTcaArray(string $table): array
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($tca) || !isset($tca[$table]) || !is_array($tca[$table])) {
+            return [];
+        }
+        $tableTca = [];
+        foreach ($tca[$table] as $key => $value) {
+            if (is_string($key)) {
+                $tableTca[$key] = $value;
+            }
+        }
+        return $tableTca;
+    }
+
+    /**
+     * Safely access $GLOBALS['TCA'][$table]['columns'] with proper guards.
+     *
+     * @return array<string, mixed>
+     */
+    private function getTableColumnsArray(string $table): array
+    {
+        $tca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($tca) || !isset($tca[$table]) || !is_array($tca[$table])) {
+            return [];
+        }
+        $columns = $tca[$table]['columns'] ?? null;
+        return is_array($columns) ? $columns : [];
+    }
+
+    /**
+     * Temporarily blank inline child references on the parent row so DataHandler localize
+     * does not clone child records. Returns the original values so they can be restored.
+     *
+     * @return array<string, mixed>
+     */
+    private function stripInlineChildReferences(string $table, int $uid): array
+    {
+        $columns = $this->getTableColumnsArray($table);
+
+        $inlineFields = [];
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (!is_string($fieldName) || !is_array($fieldConfig)) {
+                continue;
+            }
+            $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $type = is_string($config['type'] ?? null) ? $config['type'] : '';
+            if (in_array($type, ['inline', 'file'], true)) {
+                $inlineFields[] = $fieldName;
+            }
+        }
+        if ($inlineFields === []) {
+            return [];
+        }
+
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $record = BackendUtility::getRecord($table, $workspaceUid, implode(',', $inlineFields));
+        if (!is_array($record)) {
+            return [];
+        }
+
+        $backup = [];
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        foreach ($inlineFields as $fieldName) {
+            if (!array_key_exists($fieldName, $record)) {
+                continue;
+            }
+            $backup[$fieldName] = $record[$fieldName];
+            $connection->update(
+                $table,
+                [$fieldName => 0],
+                ['uid' => $workspaceUid],
+            );
+        }
+
+        return $backup;
+    }
+
+    /**
+     * Restore inline child reference values that were blanked by stripInlineChildReferences().
+     *
+     * @param array<string, mixed> $backup
+     */
+    private function restoreInlineChildReferences(string $table, int $uid, array $backup): void
+    {
+        if ($backup === []) {
+            return;
+        }
+        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        foreach ($backup as $fieldName => $value) {
+            if (!is_string($fieldName)) {
+                continue;
+            }
+            $connection->update($table, [$fieldName => $value], ['uid' => $workspaceUid]);
+        }
+    }
+
+    /**
+     * Delete a translation record that was created but subsequently failed to receive
+     * translated field values. Keeps the parent record intact. Returns a message
+     * describing the rollback or null when rollback itself failed.
+     */
+    private function rollbackTranslation(string $table, int $translationUid): ?string
+    {
+        try {
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->BE_USER = $this->getBackendUser();
+            $dataHandler->start([], [
+                $table => [
+                    $translationUid => ['delete' => 1],
+                ],
+            ]);
+            $dataHandler->process_cmdmap();
+            if ($dataHandler->errorLog !== []) {
+                return null;
+            }
+            return 'translation record UID ' . $translationUid . ' deleted.';
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolve the site identifier that owns the given source record, if any.
+     */
+    private function resolveSiteIdentifierForTranslation(string $table, int $sourceUid): ?string
+    {
+        $pageId = $table === 'pages' ? $sourceUid : $this->getPageIdForLanguageResolution($table, $sourceUid);
+        if ($pageId === null || $pageId <= 0) {
+            return null;
+        }
+        try {
+            $site = $this->siteFinder->getSiteByPageId($pageId);
+            return $site->getIdentifier();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Reverse-map a language UID to its ISO code using the site that owns the source record.
+     * Falls back to the global (first-wins) map if no site context is available.
+     */
+    private function resolveIsoCodeForTranslation(string $table, int $sourceUid, int $languageUid): string
+    {
+        $pageId = $table === 'pages' ? $sourceUid : $this->getPageIdForLanguageResolution($table, $sourceUid);
+        if ($pageId !== null && $pageId > 0) {
+            $iso = $this->languageService->getIsoCodeFromUidForPage($pageId, $languageUid);
+            if (is_string($iso) && $iso !== '') {
+                return $iso;
+            }
+        }
+        return $this->languageService->getIsoCodeFromUid($languageUid) ?? (string)$languageUid;
     }
 
     /**
      * Validate record data against TCA
-     * 
+     *
      * @param int|null $uid Record UID (required for update actions)
      * @return true|string True if valid, error message if invalid
      */
@@ -1007,21 +1229,30 @@ class WriteTableTool extends AbstractRecordTool
         if (isset($data['uid'])) {
             return "Field 'uid' cannot be modified directly";
         }
-        // 'pid' is a special TYPO3 control field, not a TCA columns entry.
-        // On create it's passed as a separate argument; on update it triggers
-        // a move via DataHandler's cmdmap (handled by the caller). Either way
-        // it must skip the TCA columns check below.
+        if ($table === 'pages' && $action === 'update' && $uid !== null && isset($data['pid']) && (int)$data['pid'] === $uid) {
+            return 'Page cannot be moved below itself';
+        }
+        if (isset($data['pid']) && !in_array($action, ['create', 'update'], true)) {
+            return "Field 'pid' can only be set during record creation";
+        }
 
-        // Reject fields without a TCA columns entry. DataHandler silently drops
-        // such fields on update/create (control-only fields like 'sorting' live in
-        // TCA ctrl.sortby, not columns; typos have no entry at all), so returning
-        // success without writing them would be a lying response.
-        foreach (array_keys($data) as $fieldName) {
-            if ($fieldName === 'pid') {
-                continue;
-            }
-            if (!$this->tableAccessService->getFieldConfig($table, $fieldName)) {
-                return "Field '{$fieldName}' does not exist in table '{$table}' and cannot be written";
+        // Mass-assignment defense (defense in depth on top of DataHandler):
+        // refuse workspace plumbing, audit columns, and page perms even though
+        // DataHandler sanitizes most of these — gives the caller a structured
+        // error instead of a silently-dropped value.
+        $forbiddenSystemFields = [
+            't3ver_oid', 't3ver_wsid', 't3ver_state',
+            't3ver_stage', 't3ver_tstamp', 't3ver_count',
+            'deleted', 'tstamp', 'crdate', 'cruser_id',
+            'perms_userid', 'perms_groupid',
+            'perms_user', 'perms_group', 'perms_everybody',
+        ];
+        foreach ($forbiddenSystemFields as $forbiddenField) {
+            if (array_key_exists($forbiddenField, $data)) {
+                return sprintf(
+                    'Field "%s" cannot be set directly via MCP — it is a system column.',
+                    $forbiddenField,
+                );
             }
         }
 
@@ -1033,48 +1264,39 @@ class WriteTableTool extends AbstractRecordTool
             $mergedRecord = array_merge($data, ['pid' => $pid]);
         }
 
-        // Effective pid for TSconfig context (page where the record will live)
-        $effectivePid = isset($mergedRecord['pid']) ? (int)$mergedRecord['pid'] : 0;
-        if ($effectivePid < 0) {
-            // Negative pid in DataHandler datamap means "after this record uid";
-            // resolve to the referenced record's actual page id.
-            $refRecord = BackendUtility::getRecord($table, abs($effectivePid), 'pid');
-            $effectivePid = $refRecord['pid'] ?? 0;
-        }
-
-        // tt_content additionally honours TCEMAIN.table.tt_content.disableCTypes.
-        // FormDataCompiler doesn't apply this — it's used by the New Content
-        // Element Wizard — so reject those values explicitly so the LLM gets a
-        // clear error instead of a silent success.
-        if ($table === 'tt_content' && isset($data['CType'])) {
-            $TSconfig = BackendUtility::getPagesTSconfig($this->tableAccessService->resolveTSconfigPid($effectivePid));
-            $disableCTypes = $TSconfig['TCEMAIN.']['table.']['tt_content.']['disableCTypes'] ?? '';
-            if (!empty($disableCTypes)) {
-                $disabled = GeneralUtility::trimExplode(',', $disableCTypes, true);
-                if (in_array((string)$data['CType'], $disabled, true)) {
-                    return "Field 'CType' value '{$data['CType']}' is disabled by TCEMAIN.table.tt_content.disableCTypes for this page";
-                }
-            }
-        }
-
         // Validate and convert field values
         foreach ($data as $fieldName => $value) {
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
             if (!$fieldConfig) {
                 continue;
             }
+            $typeField = $this->tableAccessService->getTypeFieldName($table);
+            if ($typeField !== null && $fieldName === $typeField) {
+                $allowedTypes = $this->tableAccessService->getAvailableTypes($table, $pid > 0 ? $pid : null);
+                $rawConfig = $fieldConfig['config'] ?? [];
+                $rawItems = isset($rawConfig['items']) && is_array($rawConfig['items'])
+                    ? $this->tableAccessService->parseSelectItems($rawConfig['items'])
+                    : ['values' => []];
+                if (!isset($allowedTypes[(string)$value]) && in_array((string)$value, array_map(strval(...), $rawItems['values']), true)) {
+                    return sprintf(
+                        "Field '%s' value '%s' is disabled by page TSconfig (removeItems/disableCTypes) or not available for this page",
+                        $fieldName,
+                        (string)$value
+                    );
+                }
+            }
 
             // Check if field is accessible (filters out inaccessible inline relations)
-            if (!$this->tableAccessService->canAccessField($table, $fieldName, '', $effectivePid)) {
+            if (!$this->tableAccessService->canAccessField($table, $fieldName, '', $pid > 0 ? $pid : null)) {
                 return "Field '{$fieldName}' is not accessible";
             }
 
             // Validate field value (with record context for dynamic select item resolution)
-            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value, $mergedRecord);
+            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value);
             if ($validationError !== null) {
                 return $validationError;
             }
-            
+
             // Handle date/time fields - convert ISO 8601 to timestamp for TYPO3
             if (!empty($fieldConfig['config']['eval'])) {
                 $evalRules = GeneralUtility::trimExplode(',', $fieldConfig['config']['eval'], true);
@@ -1090,9 +1312,11 @@ class WriteTableTool extends AbstractRecordTool
                     }
                 }
             }
-            
-            // Validate inline/file field type
-            if ($fieldConfig['config']['type'] === 'inline' || $fieldConfig['config']['type'] === 'file') {
+
+            // Validate inline and file field types (file fields are inline to sys_file_reference)
+            $fieldConfigSettings = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
+            $fieldType = $fieldConfigSettings['type'] ?? '';
+            if (in_array($fieldType, ['inline', 'file'], true)) {
                 // Validate inline relation data
                 $validationError = $this->validateInlineRelationData($fieldConfig, $value);
                 if ($validationError !== null) {
@@ -1101,15 +1325,15 @@ class WriteTableTool extends AbstractRecordTool
                 continue;
             }
             // Convert arrays to comma-separated strings for multi-value fields
-            elseif (is_array($value)) {
+            if (is_array($value)) {
                 $fieldType = $fieldConfig['config']['type'] ?? '';
-                if (in_array($fieldType, ['select', 'category']) || 
+                if (in_array($fieldType, ['select', 'category']) ||
                     ($fieldType === 'group' && !empty($fieldConfig['config']['multiple']))) {
-                    $data[$fieldName] = implode(',', array_map('strval', $value));
+                    $data[$fieldName] = implode(',', array_map(strval(...), $value));
                 }
             }
         }
-        
+
         // After validating all field values, check field availability based on record type
         // This ensures type field validation happens first
         $recordType = '';
@@ -1130,10 +1354,10 @@ class WriteTableTool extends AbstractRecordTool
                 $recordType = isset($data[$typeField]) ? (string)$data[$typeField] : '';
             }
         }
-        
+
         // Get available fields for this record type
-        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType);
-        
+        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType, $pid > 0 ? $pid : null);
+
         // The type field itself should always be available if it exists
         if ($typeField) {
             $typeFieldConfig = $this->tableAccessService->getFieldConfig($table, $typeField);
@@ -1141,7 +1365,7 @@ class WriteTableTool extends AbstractRecordTool
                 $availableFields[$typeField] = $typeFieldConfig;
             }
         }
-        
+
         // If we have type-specific configuration, validate field availability
         if (!empty($availableFields) || !empty($typeField)) {
             // Check each field in data is available
@@ -1150,13 +1374,13 @@ class WriteTableTool extends AbstractRecordTool
                 if (!$this->tableAccessService->getFieldConfig($table, $fieldName)) {
                     continue;
                 }
-                
+
                 // Special handling for FlexForm fields which are dynamically added
                 if ($this->isFlexFormField($table, $fieldName)) {
                     // FlexForm fields are valid if they exist in TCA, even if not in showitem
                     continue;
                 }
-                
+
                 // Special handling for passthrough fields (often used for inline relations)
                 $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
                 if ($fieldConfig && isset($fieldConfig['config']['type']) && $fieldConfig['config']['type'] === 'passthrough') {
@@ -1164,39 +1388,49 @@ class WriteTableTool extends AbstractRecordTool
                     // Example: tx_news_related_news stores the foreign key for inline relations
                     continue;
                 }
-                
-                
+
                 // If we have available fields configured and this field is not in the list
                 if (!empty($availableFields) && !isset($availableFields[$fieldName])) {
                     return "Field '{$fieldName}' is not available for this record type";
                 }
             }
         }
-        
+
         return true;
     }
-    
-    
+
     /**
-     * Extract inline relations from data array
+     * Extract inline relations from data array.
+     *
+     * Removes inline/file fields from $data and returns them separately
+     * so they can be processed via buildInlineDataMap().
      */
     protected function extractInlineRelations(string $table, array &$data): array
     {
         $inlineRelations = [];
-        
+
         if (!isset($GLOBALS['TCA'][$table]['columns'])) {
             return $inlineRelations;
         }
-        
+
         foreach ($data as $fieldName => $value) {
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            $fieldType = $fieldConfig['config']['type'] ?? '';
-            if ($fieldConfig && ($fieldType === 'inline' || $fieldType === 'file')) {
+            $fieldType = is_array($fieldConfig) ? ($fieldConfig['config']['type'] ?? '') : '';
+            // Handle both inline and file fields (file is inline to sys_file_reference)
+            if ($fieldConfig && in_array($fieldType, ['inline', 'file'], true)) {
+                $config = $fieldConfig['config'];
+                // For file fields, ensure foreign_table defaults to sys_file_reference
+                if ($fieldType === 'file' && empty($config['foreign_table'])) {
+                    $config['foreign_table'] = 'sys_file_reference';
+                }
+                if ($fieldType === 'file' && empty($config['foreign_field'])) {
+                    $config['foreign_field'] = 'uid_foreign';
+                }
                 $inlineRelations[$fieldName] = [
-                    'config' => $fieldConfig['config'],
-                    'value' => $value
+                    'config' => $config,
+                    'value' => $value,
                 ];
-                // Remove from data array as we'll process it separately
+                // Remove from data array as we'll process it via buildInlineDataMap
                 unset($data[$fieldName]);
             }
         }
@@ -1205,312 +1439,311 @@ class WriteTableTool extends AbstractRecordTool
     }
 
     /**
-     * Process inline relations for DataHandler
+     * Build a unified DataHandler dataMap for parent + all inline children.
+     *
+     * Instead of creating parent and children in separate DataHandler calls,
+     * this builds a single dataMap where the parent's inline field is set to
+     * a comma-separated list of child NEW keys (or existing UIDs). DataHandler
+     * natively resolves these references, sets foreign_field values, handles
+     * workspace versioning, and manages relation sync — all atomically.
+     *
+     * @param array &$dataMap The dataMap to add inline children to (parent entry must already exist)
+     * @param string $parentTable The parent table name
+     * @param string|int $parentId The parent's key in the dataMap (NEW key or existing UID)
+     * @param int $pid Page ID for new child records
+     * @param array $inlineRelations Extracted inline relations from extractInlineRelations()
      */
-    protected function processInlineRelations(
+    protected function buildInlineDataMap(
         array &$dataMap,
         string $parentTable,
-        $parentUid,
+        $parentId,
         int $pid,
-        array $inlineRelations,
-        ?int $liveUid = null
+        array $inlineRelations
     ): void {
         foreach ($inlineRelations as $fieldName => $relationData) {
             $config = $relationData['config'];
             $value = $relationData['value'];
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
-            
+
             if (empty($foreignTable) || empty($foreignField)) {
                 continue;
             }
-            
-            // Check if foreign table is treated as embedded inline child
-            $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
-            if ($isHiddenTable) {
-                // Process embedded inline relations (e.g., tx_news_domain_model_link)
-                $this->processEmbeddedInlineRelations($dataMap, $foreignTable, $foreignField, $parentUid, $pid, $value, $config, $liveUid);
-            } else {
-                // Process independent inline relations (e.g., tt_content)
-                $this->processIndependentInlineRelations($foreignTable, $foreignField, $parentUid, $value, $liveUid);
+            $isFileReference = ($foreignTable === 'sys_file_reference');
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
+
+            // Build the list of child identifiers (NEW keys for new records, UIDs for existing)
+            $childIdentifiers = [];
+
+            // Allowed sys_file_reference metadata fields that callers may set per attachment.
+            $allowedFileRefMetaFields = ['title', 'description', 'alternative', 'link', 'crop', 'autoplay', 'showinpreview'];
+
+            foreach ($value as $index => $item) {
+                if (is_string($parentId) && $isEmbeddedTable && is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
+                    throw new ValidationException([
+                        sprintf(
+                            'Inline relation %s.%s at index %d references uid %d which does not belong to the current parent record. Embedded relations cannot be moved between parents.',
+                            $foreignTable,
+                            $foreignField,
+                            $index,
+                            (int)$item['uid']
+                        ),
+                    ]);
+                }
+
+                if ($isFileReference) {
+                    // File field accepts:
+                    //  1) plain sys_file UID (shorthand): 5
+                    //  2) object with uid_local + optional metadata: {"uid_local": 5, "title": "...", "alternative": "..."}
+                    //  3) reference to existing sys_file_reference UID with optional updates: {"uid": 12, "title": "..."}
+                    if (is_numeric($item) && (int)$item > 0) {
+                        $this->fileMetadataIndexService->ensureImageMetadataForFileUid((int)$item);
+
+                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
+                        $refData = [
+                            'uid_local' => (int)$item,
+                            'pid' => $pid,
+                            'tablenames' => $parentTable,
+                            'fieldname' => $fieldName,
+                            'table_local' => 'sys_file',
+                        ];
+                        if (isset($config['foreign_sortby'])) {
+                            $refData[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $dataMap[$foreignTable][$childNewId] = $refData;
+                        $childIdentifiers[] = $childNewId;
+                        continue;
+                    }
+
+                    if (is_array($item) && isset($item['uid_local']) && is_numeric($item['uid_local']) && (int)$item['uid_local'] > 0) {
+                        $this->fileMetadataIndexService->ensureImageMetadataForFileUid((int)$item['uid_local']);
+
+                        $childNewId = 'NEW' . bin2hex(random_bytes(8));
+                        $refData = [
+                            'uid_local' => (int)$item['uid_local'],
+                            'pid' => $pid,
+                            'tablenames' => $parentTable,
+                            'fieldname' => $fieldName,
+                            'table_local' => 'sys_file',
+                        ];
+                        foreach ($allowedFileRefMetaFields as $metaField) {
+                            if (!array_key_exists($metaField, $item)) {
+                                continue;
+                            }
+                            $metaValue = $item[$metaField];
+                            $metaFieldConfig = $this->tableAccessService->getFieldConfig($foreignTable, $metaField);
+                            if (($metaFieldConfig['config']['type'] ?? '') === 'imageManipulation' && is_array($metaValue)) {
+                                $refData[$metaField] = $metaValue;
+                                continue;
+                            }
+                            if (is_string($metaValue) || is_numeric($metaValue) || is_bool($metaValue) || $metaValue === null) {
+                                $refData[$metaField] = is_bool($metaValue) ? (int)$metaValue : $metaValue;
+                            }
+                        }
+                        if (isset($config['foreign_sortby'])) {
+                            $refData[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $refData = $this->convertDataForStorage($foreignTable, $refData);
+                        $dataMap[$foreignTable][$childNewId] = $refData;
+                        $childIdentifiers[] = $childNewId;
+                        continue;
+                    }
+
+                    if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
+                        $existingUid = (int)$item['uid'];
+                        unset($item['uid'], $item[$foreignField]);
+                        if (isset($config['foreign_sortby'])) {
+                            $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                        }
+                        $item = $this->convertDataForStorage($foreignTable, $item);
+                        if (!empty($item)) {
+                            $dataMap[$foreignTable][$existingUid] = $item;
+                        }
+                        $childIdentifiers[] = $existingUid;
+                        continue;
+                    }
+                    // Invalid items were already caught by validateInlineRelationData
+                    continue;
+                }
+
+                if (is_array($item) && isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0) {
+                    // Existing record reference via {"uid": N, ...} — keep or update
+                    $existingUid = (int)$item['uid'];
+                    unset($item['uid'], $item[$foreignField]);
+                    if (isset($config['foreign_sortby'])) {
+                        $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                    }
+                    $item = $this->convertDataForStorage($foreignTable, $item);
+
+                    // If additional fields provided, add as update to dataMap
+                    if (!empty($item)) {
+                        $dataMap[$foreignTable][$existingUid] = $item;
+                    }
+
+                    $childIdentifiers[] = $existingUid;
+                } elseif (is_array($item)) {
+                    // Embedded record data — create a new child record
+                    $childNewId = 'NEW' . bin2hex(random_bytes(8));
+
+                    // Remove foreign field — DataHandler sets it via inline parent context
+                    unset($item[$foreignField]);
+                    $item['pid'] = $pid;
+                    if (isset($config['foreign_sortby'])) {
+                        $item[$config['foreign_sortby']] = ($index + 1) * 256;
+                    }
+                    $item = $this->convertDataForStorage($foreignTable, $item);
+
+                    $dataMap[$foreignTable][$childNewId] = $item;
+                    $childIdentifiers[] = $childNewId;
+                } elseif (is_numeric($item) && (int)$item > 0) {
+                    // Plain UID — reference an existing independent inline child directly
+                    $childIdentifiers[] = (int)$item;
+                }
+                // Invalid items were already caught by validateInlineRelationData
             }
+
+            // Set the inline field on the parent to the CSV of child identifiers.
+            // DataHandler resolves NEW keys, sets foreign_field values, and handles
+            // workspace versioning. For creates, this is sufficient. For updates,
+            // syncInlineRelations() must also be called to delete absent children
+            // (DataHandler's raw dataMap does not handle relation sync automatically).
+            $dataMap[$parentTable][$parentId][$fieldName] = implode(',', $childIdentifiers);
         }
     }
-    
+
     /**
-     * Process embedded inline relations (hideTable=true)
+     * Sync inline relations on update: delete/unlink children absent from the new list.
+     *
+     * DataHandler's raw dataMap processing does not automatically remove children
+     * that are no longer referenced (that behavior is part of FormEngine, not DataHandler).
+     * This method explicitly builds cmdMap entries to delete embedded children (hideTable)
+     * or unlink independent children (clear foreign_field) that are absent from the new list.
+     *
+     * @param array &$dataMap The dataMap (read to extract new child identifiers per field)
+     * @param array &$cmdMap The cmdMap to add deletion commands to
+     * @param string $parentTable The parent table name
+     * @param int $parentLiveUid The parent's live UID (used to query existing children)
+     * @param array $inlineRelations The extracted inline relations
      */
-    protected function processEmbeddedInlineRelations(
+    protected function syncInlineRelations(
         array &$dataMap,
-        string $foreignTable,
-        string $foreignField,
-        $parentUid,
-        int $pid,
-        array $records,
-        array $config,
-        ?int $liveUid = null
+        array &$cmdMap,
+        string $parentTable,
+        int $parentLiveUid,
+        array $inlineRelations
     ): void {
-        $foreignMatchFields = $config['foreign_match_fields'] ?? [];
+        foreach ($inlineRelations as $fieldName => $relationData) {
+            $config = $relationData['config'];
+            $value = is_array($relationData['value'] ?? null) ? $relationData['value'] : [];
+            $foreignTable = $config['foreign_table'] ?? '';
+            $foreignField = $config['foreign_field'] ?? '';
 
-        // Existing children of this parent (live uids). Empty for the create path.
-        $existingChildUids = $liveUid !== null
-            ? $this->fetchEmbeddedRelationChildUids($foreignTable, $foreignField, $liveUid, $foreignMatchFields)
-            : [];
-
-        // Reject any uid that does not currently belong to this parent. Otherwise a caller
-        // could "steal" a child by sending another parent's child uid — combined with the
-        // orphan-deletion below this would silently delete this parent's real children and
-        // mutate an unrelated record.
-        foreach ($records as $index => $recordData) {
-            if (!is_array($recordData) || !isset($recordData['uid'])) {
-                continue;
-            }
-            if (!is_numeric($recordData['uid']) || (int)$recordData['uid'] <= 0) {
-                continue;
-            }
-            $childUid = (int)$recordData['uid'];
-            if (!in_array($childUid, $existingChildUids, true)) {
-                throw new ValidationException([
-                    sprintf(
-                        'Inline relation %s.%s at index %d references uid %d which does not belong to the current parent record. Embedded relations cannot be moved between parents.',
-                        $foreignTable,
-                        $foreignField,
-                        $index,
-                        $childUid
-                    )
-                ]);
-            }
-        }
-
-        if ($liveUid !== null) {
-            $this->deleteOrphanedEmbeddedRelations($foreignTable, $existingChildUids, $records);
-        }
-
-        foreach ($records as $index => $recordData) {
-            if (!is_array($recordData)) {
+            if (empty($foreignTable) || empty($foreignField)) {
                 continue;
             }
 
-            // Existing record carries a numeric uid → update in place instead of inserting a new row.
-            // Without this, payloads like image: [{uid: 42, alternative: "..."}] silently created a
-            // broken sys_file_reference with uid_local=0 instead of patching the existing one.
-            $existingUid = (isset($recordData['uid']) && is_numeric($recordData['uid']) && (int)$recordData['uid'] > 0)
-                ? (int)$recordData['uid']
-                : null;
-            unset($recordData['uid']);
-
-            // Don't set the foreign field here - it will be handled by RelationHandler
-            // Remove it if it was accidentally included
-            unset($recordData[$foreignField]);
-
-            // Run the same field-level conversions we apply to top-level records
-            // (notably JSON-encoding imageManipulation values) so embedded children
-            // like sys_file_reference.crop survive the round trip.
-            $recordData = $this->convertDataForStorage($foreignTable, $recordData);
-
-            if ($existingUid === null) {
-                // New record: pid + foreign_match_fields are required for proper insertion
-                $recordData['pid'] = $pid;
-
-                // Set foreign_match_fields (e.g., tablenames/fieldname for sys_file_reference)
-                if (!empty($config['foreign_match_fields'])) {
-                    foreach ($config['foreign_match_fields'] as $matchField => $matchValue) {
-                        $recordData[$matchField] = $matchValue;
+            $newChildUids = [];
+            foreach ($dataMap[$parentTable] as $parentData) {
+                if (!isset($parentData[$fieldName])) {
+                    continue;
+                }
+                $csv = (string)$parentData[$fieldName];
+                if ($csv === '') {
+                    continue;
+                }
+                foreach (explode(',', $csv) as $identifier) {
+                    if (is_numeric($identifier)) {
+                        $newChildUids[] = (int)$identifier;
                     }
                 }
+            }
+            $newChildUids = array_values(array_unique($newChildUids));
 
-                $key = 'NEW' . uniqid() . '_' . $index;
-            } else {
-                // Update path: target the workspace version so DataHandler patches the existing
-                // reference instead of touching the live record outside the workspace overlay.
-                $key = $this->resolveToWorkspaceUid($foreignTable, $existingUid);
+            $foreignMatchFields = $config['foreign_match_fields'] ?? [];
+            $queryBuilder = $this->connectionPool
+                ->getQueryBuilderForTable($foreignTable);
+            $queryBuilder->getRestrictions()
+                ->removeAll()
+                ->add(new DeletedRestriction());
+
+            $existingChildren = $queryBuilder
+                ->select('uid')
+                ->from($foreignTable)
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        $foreignField,
+                        $queryBuilder->createNamedParameter($parentLiveUid, ParameterType::INTEGER)
+                    ),
+                    // Only live records (not workspace overlays which have t3ver_oid > 0)
+                    $queryBuilder->expr()->eq('t3ver_oid', 0)
+                );
+
+            foreach ($foreignMatchFields as $matchField => $matchValue) {
+                if (!is_string($matchField) || $matchField === '') {
+                    continue;
+                }
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq(
+                        $matchField,
+                        $queryBuilder->createNamedParameter($matchValue)
+                    )
+                );
             }
 
-            // Drive sort order from array position for both new and existing records.
-            // foreign_sortby is hidden from the schema (auto-managed), so reordering is
-            // only possible via the order in which the caller lists the children here.
-            if (isset($config['foreign_sortby'])) {
-                $recordData[$config['foreign_sortby']] = ($index + 1) * 256;
-            }
+            $existingChildren = $queryBuilder->executeQuery()->fetchAllAssociative();
 
-            if ($existingUid !== null && empty($recordData)) {
-                // Caller only sent a uid with no field changes and the table has no
-                // foreign_sortby — nothing to patch.
-                continue;
-            }
+            $isEmbeddedTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
+            $existingChildUids = [];
 
-            // Add to data map
-            if (!isset($dataMap[$foreignTable])) {
-                $dataMap[$foreignTable] = [];
-            }
-            $dataMap[$foreignTable][$key] = $recordData;
-        }
-    }
-    
-    /**
-     * Process independent inline relations (UIDs only)
-     */
-    protected function processIndependentInlineRelations(
-        string $foreignTable,
-        string $foreignField,
-        $parentUid,
-        array $uids,
-        ?int $liveUid = null
-    ): void {
-        // For updates, we need to handle existing relations
-        if ($liveUid !== null) {
-            // First, clear existing relations
-            $this->clearExistingInlineRelations($foreignTable, $foreignField, $liveUid);
-        }
-        
-        // Update foreign field on specified records
-        if (!empty($uids)) {
-            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-            
-            $updateMap = [];
-            foreach ($uids as $uid) {
-                if (is_numeric($uid) && $uid > 0) {
-                    $updateMap[$foreignTable][$uid] = [
-                        $foreignField => $liveUid ?? $parentUid
-                    ];
+            foreach ($existingChildren as $existingChild) {
+                $childUid = $existingChild['uid'] ?? null;
+                if (is_numeric($childUid)) {
+                    $existingChildUids[] = (int)$childUid;
                 }
             }
-            
-            if (!empty($updateMap)) {
-                $dataHandler->start($updateMap, []);
-                $dataHandler->process_datamap();
+
+            if ($isEmbeddedTable) {
+                foreach ($value as $index => $item) {
+                    if (!is_array($item) || !isset($item['uid']) || !is_numeric($item['uid']) || (int)$item['uid'] <= 0) {
+                        continue;
+                    }
+                    $childUid = (int)$item['uid'];
+                    if (!in_array($childUid, $existingChildUids, true)) {
+                        throw new ValidationException([
+                            sprintf(
+                                'Inline relation %s.%s at index %d references uid %d which does not belong to the current parent record. Embedded relations cannot be moved between parents.',
+                                $foreignTable,
+                                $foreignField,
+                                $index,
+                                $childUid
+                            ),
+                        ]);
+                    }
+                }
+            }
+
+            foreach ($existingChildren as $existingChild) {
+                $childUid = $existingChild['uid'] ?? null;
+                if (!is_numeric($childUid)) {
+                    continue;
+                }
+                $childLiveUid = (int)$childUid;
+                if (!in_array($childLiveUid, $newChildUids, true)) {
+                    if ($isEmbeddedTable) {
+                        // Embedded (hideTable) children: delete via DataHandler cmdMap.
+                        // DataHandler handles workspace versioning (creates delete placeholder).
+                        $cmdMap[$foreignTable][$childLiveUid]['delete'] = 1;
+                    } else {
+                        // Independent children: clear foreign_field via DataHandler dataMap.
+                        // DataHandler handles workspace versioning (creates workspace overlay).
+                        $dataMap[$foreignTable][$childLiveUid] = [$foreignField => 0];
+                    }
+                }
             }
         }
     }
-    
-    /**
-     * Clear existing inline relations
-     */
-    protected function clearExistingInlineRelations(string $foreignTable, string $foreignField, int $parentUid): void
-    {
-        // Get all records that currently have this parent
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable($foreignTable);
-        
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
-        
-        $existingRecords = $queryBuilder
-            ->select('uid')
-            ->from($foreignTable)
-            ->where(
-                $queryBuilder->expr()->eq($foreignField, $queryBuilder->createNamedParameter($parentUid, ParameterType::INTEGER))
-            )
-            ->executeQuery()
-            ->fetchAllAssociative();
-        
-        if (!empty($existingRecords)) {
-            // Use DataHandler to clear relations to respect workspaces
-            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-            $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-            
-            $updateMap = [];
-            foreach ($existingRecords as $record) {
-                $updateMap[$foreignTable][$record['uid']] = [
-                    $foreignField => 0
-                ];
-            }
-            
-            if (!empty($updateMap)) {
-                $dataHandler->start($updateMap, []);
-                $dataHandler->process_datamap();
-            }
-        }
-    }
-    
-    /**
-     * Fetch the live uids of embedded children currently attached to a parent.
-     *
-     * Workspace overlays are folded onto their live uid (t3ver_oid) so the result
-     * matches the uids visible to the MCP client.
-     *
-     * @return int[]
-     */
-    protected function fetchEmbeddedRelationChildUids(
-        string $foreignTable,
-        string $foreignField,
-        int $parentUid,
-        array $foreignMatchFields = []
-    ): array {
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable($foreignTable);
 
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
-            ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $GLOBALS['BE_USER']->workspace ?? 0));
-
-        $queryBuilder
-            ->select('uid', 't3ver_oid')
-            ->from($foreignTable)
-            ->where(
-                $queryBuilder->expr()->eq($foreignField, $queryBuilder->createNamedParameter($parentUid, ParameterType::INTEGER))
-            );
-
-        // Scope to specific field when foreign_match_fields are present (e.g., sys_file_reference)
-        foreach ($foreignMatchFields as $matchField => $matchValue) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq($matchField, $queryBuilder->createNamedParameter($matchValue))
-            );
-        }
-
-        $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
-
-        $liveUids = [];
-        foreach ($rows as $row) {
-            $liveUids[] = (int)($row['t3ver_oid'] ?: $row['uid']);
-        }
-        return array_values(array_unique($liveUids));
-    }
-
-    /**
-     * Delete embedded children that the caller dropped from the new record list.
-     *
-     * @param int[] $existingChildUids live uids previously attached to the parent
-     * @param array $newRecords records as supplied by the caller
-     */
-    protected function deleteOrphanedEmbeddedRelations(
-        string $foreignTable,
-        array $existingChildUids,
-        array $newRecords
-    ): void {
-        if (empty($existingChildUids)) {
-            return;
-        }
-
-        $keepUids = [];
-        foreach ($newRecords as $record) {
-            if (is_array($record) && isset($record['uid']) && is_numeric($record['uid'])) {
-                $keepUids[] = (int)$record['uid'];
-            }
-        }
-
-        $deleteUids = array_values(array_diff($existingChildUids, $keepUids));
-        if (empty($deleteUids)) {
-            return;
-        }
-
-        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-
-        $cmdMap = [];
-        foreach ($deleteUids as $deleteUid) {
-            $cmdMap[$foreignTable][$deleteUid]['delete'] = 1;
-        }
-
-        $dataHandler->start([], $cmdMap);
-        $dataHandler->process_cmdmap();
-    }
-    
     /**
      * Validate inline relation data
      */
@@ -1520,38 +1753,49 @@ class WriteTableTool extends AbstractRecordTool
         if (!is_array($value)) {
             return 'Inline relation field must be an array of UIDs or record data';
         }
-        
+
         // Get foreign table
         $foreignTable = $fieldConfig['config']['foreign_table'] ?? '';
         if (empty($foreignTable)) {
             return 'Invalid inline relation configuration: missing foreign_table';
         }
-        
-        // Check if foreign table is treated as embedded inline child
-        $isHiddenTable = $this->tableAccessService->isEmbeddedChildTable($foreignTable);
 
-        // Validate each item
+        $isFileReference = ($foreignTable === 'sys_file_reference');
+
+        // Validate each item - accept both record data arrays and UIDs
         foreach ($value as $index => $item) {
-            if ($isHiddenTable) {
-                // For hidden tables, expect record data arrays
-                if (!is_array($item)) {
-                    return 'Embedded inline relations must contain record data arrays';
+            if ($isFileReference) {
+                // File references accept plain sys_file UIDs, new reference data,
+                // or an existing sys_file_reference UID to patch/keep.
+                if (is_numeric($item) && (int)$item > 0) {
+                    continue;
                 }
-                // Basic validation - must have at least one field
+                if (is_array($item)) {
+                    $hasExistingReferenceUid = isset($item['uid']) && is_numeric($item['uid']) && (int)$item['uid'] > 0;
+                    $hasFileUid = isset($item['uid_local']) && is_numeric($item['uid_local']) && (int)$item['uid_local'] > 0;
+                    if (!$hasExistingReferenceUid && !$hasFileUid) {
+                        return 'File reference at index ' . $index . ' must contain uid_local (sys_file UID) or uid (existing sys_file_reference UID)';
+                    }
+                    continue;
+                }
+                return 'File reference at index ' . $index . ' must be a sys_file UID or an object with uid_local/uid';
+            }
+            if (is_array($item)) {
+                // Record data arrays for embedded inline relations
                 if (empty($item)) {
                     return 'Embedded inline relation record at index ' . $index . ' is empty';
                 }
+            } elseif (is_numeric($item) && $item > 0) {
+                // UIDs for independent inline relations
+                continue;
             } else {
-                // For independent tables, expect UIDs
-                if (!is_numeric($item) || $item <= 0) {
-                    return 'Independent inline relations must contain only positive integer UIDs';
-                }
+                return 'Inline relation at index ' . $index . ' must be a record data array or a positive integer UID';
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Check if a field is a FlexForm field
      */
@@ -1559,7 +1803,7 @@ class WriteTableTool extends AbstractRecordTool
     {
         return $this->tableAccessService->isFlexFormField($table, $fieldName);
     }
-    
+
     /**
      * Extract search-and-replace operations from the data array.
      *
@@ -1584,8 +1828,7 @@ class WriteTableTool extends AbstractRecordTool
 
             // Check if this is an inline/file relation field — those genuinely use arrays
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            $fieldType = $fieldConfig['config']['type'] ?? '';
-            if ($fieldConfig && ($fieldType === 'inline' || $fieldType === 'file')) {
+            if ($fieldConfig && in_array($fieldConfig['config']['type'] ?? '', ['inline', 'file'], true)) {
                 continue;
             }
 
@@ -1702,7 +1945,7 @@ class WriteTableTool extends AbstractRecordTool
                 $replaceAll = !empty($operation['replaceAll']);
                 $replace = $operation['replace'];
 
-                $count = substr_count($currentValue, $search);
+                $count = substr_count($currentValue, (string)$search);
 
                 if ($count === 0) {
                     throw new ValidationException(["search_replace field '{$fieldName}' operation {$index}: Search string not found in current field value"]);
@@ -1716,8 +1959,8 @@ class WriteTableTool extends AbstractRecordTool
                     $currentValue = str_replace($search, $replace, $currentValue);
                 } else {
                     // Replace only the first (and only) occurrence
-                    $pos = strpos($currentValue, $search);
-                    $currentValue = substr_replace($currentValue, $replace, $pos, strlen($search));
+                    $pos = strpos($currentValue, (string)$search);
+                    $currentValue = substr_replace($currentValue, $replace, $pos, strlen((string)$search));
                 }
             }
 
@@ -1745,7 +1988,8 @@ class WriteTableTool extends AbstractRecordTool
             // with trailing slashes or missing leading slashes, so we normalize here.
             // The root page slug "/" is handled correctly: trim('/', '/') = '' → '/' + '' = '/'.
             $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && ($fieldConfig['config']['type'] ?? '') === 'slug' && is_string($value)) {
+            $fieldConfigSettings = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
+            if (($fieldConfigSettings['type'] ?? '') === 'slug' && is_string($value)) {
                 $data[$fieldName] = '/' . trim($value, '/');
             }
 
@@ -1754,7 +1998,7 @@ class WriteTableTool extends AbstractRecordTool
             // gets cast to the literal string "Array" on the way to the DB. Encode
             // here so the round trip with ReadTableTool (which json_decodes the value
             // back into an array) is symmetric.
-            $fieldType = $fieldConfig['config']['type'] ?? '';
+            $fieldType = $fieldConfigSettings['type'] ?? '';
             if ($fieldType === 'imageManipulation' && is_array($value)) {
                 $data[$fieldName] = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                 continue;
@@ -1763,49 +2007,49 @@ class WriteTableTool extends AbstractRecordTool
             // Handle FlexForm fields
             if ($this->isFlexFormField($table, $fieldName)) {
                 // If the value is already a string (XML), keep it as is
-                if (is_string($value) && strpos($value, '<?xml') === 0) {
+                if (is_string($value) && str_starts_with($value, '<?xml')) {
                     continue;
                 }
-                
+
                 // If the value is an array or JSON string, convert it to XML
-                $flexFormArray = is_array($value) ? $value : (is_string($value) && strpos($value, '{') === 0 ? json_decode($value, true) : null);
-                
+                $flexFormArray = is_array($value) ? $value : (is_string($value) && str_starts_with($value, '{') ? json_decode($value, true) : null);
+
                 if (is_array($flexFormArray)) {
                     // Prepare the data structure for TYPO3's XML conversion
                     $flexFormData = [
                         'data' => [
                             'sDEF' => [
-                                'lDEF' => []
-                            ]
-                        ]
+                                'lDEF' => [],
+                            ],
+                        ],
                     ];
-                    
+
                     // Process settings fields
                     if (isset($flexFormArray['settings']) && is_array($flexFormArray['settings'])) {
                         foreach ($flexFormArray['settings'] as $settingKey => $settingValue) {
                             $flexFormData['data']['sDEF']['lDEF']['settings.' . $settingKey]['vDEF'] = $settingValue;
                         }
                     }
-                    
+
                     // Process other fields
                     foreach ($flexFormArray as $key => $val) {
                         if ($key !== 'settings' && !is_array($val)) {
                             $flexFormData['data']['sDEF']['lDEF'][$key]['vDEF'] = $val;
                         }
                     }
-                    
+
                     // Use TYPO3's GeneralUtility::array2xml to convert the array to XML
                     $xml = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?>' . "\n";
                     $xml .= GeneralUtility::array2xml($flexFormData, '', 0, 'T3FlexForms');
-                    
+
                     $data[$fieldName] = $xml;
                 }
             }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * For translation records, set l10n_state to "custom" for fields that
      * have allowLanguageSynchronization enabled and are being explicitly updated.
@@ -1863,13 +2107,13 @@ class WriteTableTool extends AbstractRecordTool
         if ($currentWorkspace === 0) {
             return $workspaceUid;
         }
-        
+
         // Look up the record to get its t3ver_oid
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+        $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable($table);
-        
+
         $queryBuilder->getRestrictions()->removeAll();
-        
+
         $record = $queryBuilder
             ->select('t3ver_oid', 't3ver_state', 't3ver_wsid')
             ->from($table)
@@ -1878,54 +2122,83 @@ class WriteTableTool extends AbstractRecordTool
             )
             ->executeQuery()
             ->fetchAssociative();
-        
+
         if (!$record) {
             // Record not found, return the original UID
             return $workspaceUid;
         }
-        
+
         // If this is a workspace record with an original, return the original UID
-        if ($record['t3ver_oid'] > 0) {
-            return (int)$record['t3ver_oid'];
+        $originalUid = $record['t3ver_oid'] ?? null;
+        if (is_numeric($originalUid) && (int)$originalUid > 0) {
+            return (int)$originalUid;
         }
-        
+
         // For new records (t3ver_state = 1), the workspace UID IS the UID we should use
         // New records don't have a live counterpart until published
         if ($record['t3ver_state'] == 1) {
             return $workspaceUid;
         }
-        
+
         // Default: return the workspace UID
         return $workspaceUid;
     }
-    
+
     /**
      * Resolve a live UID to its workspace version
      * Used for update/delete operations where we receive a live UID but need the workspace version
      */
     protected function resolveToWorkspaceUid(string $table, int $liveUid): int
     {
-        $currentWorkspace = $GLOBALS['BE_USER']->workspace ?? 0;
-        
+        $currentWorkspace = $this->getBackendUser()->workspace;
+
         // If we're in live workspace, no resolution needed
         if ($currentWorkspace === 0) {
             return $liveUid;
         }
-        
+
+        // If the caller already passed a record that belongs to the current workspace
+        // (for example a freshly localized translation shell with t3ver_state=1),
+        // keep that UID as-is. Re-resolving it as if it were a live UID can create
+        // follow-up writes against the wrong record.
+        $queryBuilder = $this->connectionPool
+            ->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $rawRecord = $queryBuilder
+            ->select('uid', 't3ver_wsid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER))
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        $workspaceId = $rawRecord['t3ver_wsid'] ?? null;
+        if (is_array($rawRecord) && is_numeric($workspaceId) && (int)$workspaceId === $currentWorkspace) {
+            return $liveUid;
+        }
+
+        $versionUid = $this->workspaceContextService->findWorkspaceVersionRowUid($table, $liveUid, $currentWorkspace);
+        if ($versionUid !== null) {
+            return $versionUid;
+        }
+
         // Use BackendUtility to get the workspace version
         $record = BackendUtility::getRecord($table, $liveUid);
         if (!$record) {
             return $liveUid;
         }
-        
+
         // Let BackendUtility handle the workspace overlay
         BackendUtility::workspaceOL($table, $record);
-        
-        // If we got a different UID, that's the workspace version
-        if (isset($record['_ORIG_uid']) && $record['_ORIG_uid'] != $liveUid) {
+
+        // If the overlaid record has a different primary key, that is the row DataHandler will update
+        if (isset($record['uid']) && (int)$record['uid'] !== $liveUid) {
             return (int)$record['uid'];
         }
-        
+
         return $liveUid;
     }
 
@@ -2110,18 +2383,18 @@ class WriteTableTool extends AbstractRecordTool
 
         foreach ($errorLog as $error) {
             // Parse common TYPO3 DataHandler error patterns
-            if (strpos($error, 'Attempt to insert record on pages:') !== false) {
-                if (strpos($error, 'not allowed') !== false) {
+            if (str_contains((string)$error, 'Attempt to insert record on pages:')) {
+                if (str_contains((string)$error, 'not allowed')) {
                     $errors[] = 'Cannot create record on this page. Check that you have database mount point access ' .
                         'and the necessary table permissions.';
                     continue;
                 }
             }
 
-            if (strpos($error, 'recordEditAccessInternals()') !== false) {
-                if (strpos($error, 'authMode') !== false) {
+            if (str_contains((string)$error, 'recordEditAccessInternals()')) {
+                if (str_contains((string)$error, 'authMode')) {
                     // Already handled by validateAuthModePermissions, but show if it slipped through
-                    preg_match('/field "([^"]+)" with value "([^"]+)"/', $error, $matches);
+                    preg_match('/field "([^"]+)" with value "([^"]+)"/', (string)$error, $matches);
                     if (count($matches) === 3) {
                         $errors[] = sprintf(
                             'Permission denied for %s="%s". Your user group needs explicit permission for this value.',
@@ -2132,7 +2405,7 @@ class WriteTableTool extends AbstractRecordTool
                     }
                 }
 
-                if (strpos($error, 'languageField') !== false) {
+                if (str_contains((string)$error, 'languageField')) {
                     $errors[] = 'Language permission check failed. Ensure sys_language_uid is set in your data.';
                     continue;
                 }
@@ -2143,5 +2416,56 @@ class WriteTableTool extends AbstractRecordTool
         }
 
         return implode(' | ', $errors);
+    }
+
+    /**
+     * @param RecordData $data
+     * @return RecordData
+     */
+    private function convertSysLanguageUidFromIsoIfNeeded(string $action, string $table, ?int $uid, ?int $pid, array $data): array
+    {
+        if (empty($data) || !isset($data['sys_language_uid']) || !is_string($data['sys_language_uid'])) {
+            return $data;
+        }
+
+        $isoCode = $data['sys_language_uid'];
+        $pageId = null;
+
+        if ($action === 'translate' && $uid !== null && $uid > 0) {
+            $pageId = $table === 'pages' ? $uid : $this->getPageIdForLanguageResolution($table, $uid);
+        } elseif ($action === 'create' && $pid !== null && $pid > 0) {
+            $pageId = $pid;
+        } elseif ($action === 'update' && $uid !== null && $uid > 0) {
+            $pageId = $this->getPageIdForLanguageResolution($table, $uid);
+        }
+
+        $languageUid = null;
+        if ($pageId !== null && $pageId > 0) {
+            $languageUid = $this->languageService->getUidFromIsoCodeForPage($pageId, $isoCode);
+        }
+        if ($languageUid === null) {
+            $languageUid = $this->languageService->getUidFromIsoCode($isoCode);
+        }
+        if ($languageUid === null) {
+            throw new ValidationException(['Unknown language code: ' . $isoCode]);
+        }
+
+        $data['sys_language_uid'] = $languageUid;
+
+        return $data;
+    }
+
+    private function getPageIdForLanguageResolution(string $table, int $uid): ?int
+    {
+        if ($table === 'pages') {
+            return $uid;
+        }
+
+        $row = BackendUtility::getRecord($table, $uid, 'pid');
+        if (!is_array($row) || !array_key_exists('pid', $row)) {
+            return null;
+        }
+
+        return is_numeric($row['pid']) ? (int)$row['pid'] : null;
     }
 }

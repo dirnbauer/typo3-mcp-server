@@ -6,7 +6,7 @@ namespace Hn\McpServer\Exception;
 
 /**
  * Exception for access-related errors
- * 
+ *
  * Thrown when a user attempts to access a resource without
  * proper permissions. Maps to HTTP 403 Forbidden status.
  */
@@ -24,7 +24,7 @@ class AccessDeniedException extends McpException
             "You don't have permission to {$operation} this resource",
             403,
             $previous,
-            ['resource' => $resource, 'operation' => $operation]
+            ['resource' => $resource, 'operation' => $operation],
         );
     }
 }

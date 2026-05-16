@@ -9,41 +9,97 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-/**
- * Abstract base class for record-related MCP tools
- */
 abstract class AbstractRecordTool extends AbstractTool
 {
-    
-    protected TableAccessService $tableAccessService;
-    protected WorkspaceContextService $workspaceContextService;
-    
-    public function __construct()
-    {
-        $this->tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
-        $this->workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-    }
-    
     /**
-     * Initialize workspace context before execution
-     * 
-     * This method is called automatically by AbstractTool::execute()
-     * before doExecute() is invoked.
+     * Workspace ID requested by the current tool call (null = auto-select).
      */
+    private ?int $requestedWorkspaceId = null;
+
+    public function __construct(
+        protected readonly TableAccessService $tableAccessService,
+        protected readonly WorkspaceContextService $workspaceContextService,
+    ) {}
+
+    /**
+     * Override execute to extract workspace_id before initialize() runs.
+     *
+     * @param array<string, mixed> $params
+     */
+    final public function execute(array $params): CallToolResult
+    {
+        if (isset($params['workspace_id']) && is_numeric($params['workspace_id'])) {
+            $this->requestedWorkspaceId = (int)$params['workspace_id'];
+            unset($params['workspace_id']);
+        } else {
+            $this->requestedWorkspaceId = null;
+        }
+        return parent::executeInternal($params);
+    }
+
+    /**
+     * Wraps the concrete schema with the optional workspace_id property.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSchema(): array
+    {
+        $schema = $this->getToolSchema();
+        $inputSchema = isset($schema['inputSchema']) && is_array($schema['inputSchema']) ? $schema['inputSchema'] : [];
+
+        if (isset($inputSchema['properties']) && $inputSchema['properties'] instanceof \stdClass) {
+            $props = (array)$inputSchema['properties'];
+        } elseif (isset($inputSchema['properties']) && is_array($inputSchema['properties'])) {
+            $props = $inputSchema['properties'];
+        } else {
+            $props = [];
+        }
+
+        $props['workspace_id'] = [
+            'type' => 'integer',
+            'description' => 'Optional workspace ID for this call. Changes are staged in that workspace (not live). '
+                . 'Use the ListWorkspaces tool to list IDs. Omit to use the server-selected draft workspace. '
+                . 'workspace_id=0 is accepted only in DDEV/local mode.',
+        ];
+        $inputSchema['properties'] = $props;
+        $schema['inputSchema'] = $inputSchema;
+
+        return $schema;
+    }
+
+    /**
+     * Concrete tools implement this instead of getSchema().
+     *
+     * @return array<string, mixed>
+     */
+    abstract protected function getToolSchema(): array;
+
     protected function initialize(): void
     {
         parent::initialize();
-        
-        if (isset($GLOBALS['BE_USER'])) {
-            $this->workspaceContextService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            return;
+        }
+
+        $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
+        $GLOBALS['LANG'] = $languageServiceFactory->createFromUserPreferences($backendUser);
+
+        if ($this->requestedWorkspaceId !== null) {
+            $this->workspaceContextService->switchToWorkspace($backendUser, $this->requestedWorkspaceId);
+        } else {
+            $this->workspaceContextService->switchToOptimalWorkspace($backendUser);
         }
     }
-    
+
     /**
      * Ensure a table can be accessed for the given operation
-     * 
+     *
      * @param string $table Table name
      * @param string $operation Operation type (read, write, delete)
      * @throws \InvalidArgumentException If access is denied
@@ -61,14 +117,14 @@ abstract class AbstractRecordTool extends AbstractTool
     }
 
     /**
-     * Create a successful result with JSON content
+     * Create a successful result with JSON content.
      *
      * Workspace overlays can surface raw column values that DataHandler chose
      * not to sanitize (binary garbage smuggled into a string field, broken
-     * UTF-8 sequences, etc.). Without JSON_INVALID_UTF8_SUBSTITUTE, json_encode
-     * returns false on those bytes and TextContent then dies with a TypeError
-     * because it expects a string. Substitute mode replaces the offending byte
-     * with U+FFFD so the response is well-formed.
+     * UTF-8 sequences, etc.). Substitute invalid bytes so the response remains
+     * valid JSON instead of failing with a TextContent type error.
+     *
+     * @param array<string, mixed> $data
      */
     protected function createJsonResult(array $data): CallToolResult
     {
@@ -89,7 +145,7 @@ abstract class AbstractRecordTool extends AbstractTool
     {
         return new CallToolResult([new TextContent($message)], true);
     }
-    
+
     /**
      * Check if a table exists and is accessible
      */
@@ -97,7 +153,7 @@ abstract class AbstractRecordTool extends AbstractTool
     {
         return $this->tableAccessService->canAccessTable($table);
     }
-    
+
     /**
      * Get extension key from table name
      */
@@ -107,18 +163,18 @@ abstract class AbstractRecordTool extends AbstractTool
         if (in_array($table, ['pages', 'tt_content', 'sys_category', 'sys_file', 'sys_file_reference', 'sys_file_metadata'])) {
             return 'core';
         }
-        
+
         // Extension tables usually have a prefix like tx_news_domain_model_news
-        if (strpos($table, 'tx_') === 0) {
+        if (str_starts_with($table, 'tx_')) {
             $parts = explode('_', $table);
             if (count($parts) >= 2) {
                 return $parts[1]; // Return the extension name
             }
         }
-        
+
         return 'unknown';
     }
-    
+
     /**
      * Check if a table is workspace-capable
      */
@@ -127,29 +183,31 @@ abstract class AbstractRecordTool extends AbstractTool
         $accessInfo = $this->tableAccessService->getTableAccessInfo($table);
         return $accessInfo['workspace_capable'];
     }
-    
+
     /**
      * Get workspace capability information for a table
+     *
+     * @return array{workspace_capable: bool, reason: string}
      */
     protected function getWorkspaceCapabilityInfo(string $table): array
     {
         $accessInfo = $this->tableAccessService->getTableAccessInfo($table);
-        
+
         if (!$accessInfo['accessible']) {
             return [
                 'workspace_capable' => false,
-                'reason' => implode(', ', $accessInfo['reasons'])
+                'reason' => implode(', ', $accessInfo['reasons']),
             ];
         }
-        
+
         return [
             'workspace_capable' => $accessInfo['workspace_capable'],
-            'reason' => $accessInfo['workspace_capable'] 
-                ? 'Table supports workspace operations' 
-                : 'Table is not workspace-capable'
+            'reason' => $accessInfo['workspace_capable']
+                ? 'Table supports workspace operations'
+                : 'Table is not workspace-capable',
         ];
     }
-    
+
     /**
      * Get a human-readable label for a table
      */
@@ -158,11 +216,10 @@ abstract class AbstractRecordTool extends AbstractTool
         if (!$this->tableExists($table)) {
             return $table;
         }
-        
+
         return TableAccessService::translateLabel($this->tableAccessService->getTableTitle($table));
     }
-    
-    
+
     /**
      * Check if a table is hidden (not accessible through TableAccessService)
      */
@@ -185,5 +242,4 @@ abstract class AbstractRecordTool extends AbstractTool
         }
         return '[WORKSPACE: "' . $info['title'] . '" — Edits are staged as drafts, not yet live.]' . "\n\n";
     }
-
 }
