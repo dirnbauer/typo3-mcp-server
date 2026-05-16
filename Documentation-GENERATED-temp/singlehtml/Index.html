@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
-<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
-<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -147,7 +147,7 @@
 
         <dd class="field-odd">
 
-    <p>Tue, 12 May 2026 17:51:54 +0000</p>
+    <p>Sat, 16 May 2026 14:39:19 +0000</p>
         </dd>
     </dl>
             <hr />
@@ -614,6 +614,11 @@ deeper architecture notes</li>
 </li>
             <li class="toc-item">
     <a href="#cursor-claude-n8n-ask-to-authorize-again-every-time">Cursor / Claude / n8n ask to authorize again every time</a>
+
+
+</li>
+            <li class="toc-item">
+    <a href="#cursor-reports-unexpected-content-type-text-html">Cursor reports Unexpected content type: text/html</a>
 
 
 </li>
@@ -1693,6 +1698,7 @@ file-sandbox, and outbound-HTTP safety nets relax:</p>
 
 <ul>
     <li class="dash">record writes accept <code>workspace_id: 0</code> (live writes)</li>
+    <li class="dash">record writes can target writable non-workspace-capable TCA tables</li>
     <li class="dash">file tools reach any storage / folder, not only <code>fileSandboxRoot</code></li>
     <li class="dash">outbound HTTP (<code>UploadFileFromUrl</code>, <code>RenderRecord</code>) bypasses
 the manifest&#039;s <code>network.outbound</code> allowlist AND the SSRF
@@ -1718,6 +1724,49 @@ automatically.</p>
     <p>Authentication (OAuth + backend session) and the capability manifest
 stay enforced even with this on; only the workspace-staging and
 file-sandbox checks are skipped.</p>
+
+    <p>User TSconfig can override the extension setting, which makes TYPO3
+conditions usable for this policy:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs typoscript"><span class="hljs-meta">[applicationContext == "Development/DDEV"]</span>
+options.mcpServer.localUnsafeMode = on
+<span class="hljs-meta">[else]</span>
+options.mcpServer.localUnsafeMode = off
+<span class="hljs-meta">[end]</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>To force the production safety nets even in DDEV, set either the TYPO3
+feature flag <code>mcpServer.strictSandbox</code>:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs php">$GLOBALS[<span class="hljs-string">'TYPO3_CONF_VARS'</span>][<span class="hljs-string">'SYS'</span>][<span class="hljs-string">'features'</span>][<span class="hljs-string">'mcpServer.strictSandbox'</span>] = <span class="hljs-keyword">true</span>;</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>Or set User TSconfig:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs typoscript">options.mcpServer.strictSandbox = 1</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>Strict sandbox mode has priority over <code>localUnsafeMode</code> and DDEV
+auto-detection. File tools stay inside <code>fileSandboxRoot</code> and record
+writes stay in TYPO3 workspaces.</p>
 
             </div>
         </dd>
@@ -2002,6 +2051,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
             <td><code>WorkspaceReview</code></td>            <td>Read</td>            <td>Review pending workspace changes with field-level diffs</td>    </tr>    <tr>
             <td><code>CopyContent</code></td>            <td>Write</td>            <td>Duplicate records preserving relations and file references</td>    </tr>    <tr>
             <td><code>SafeCli</code></td>            <td>Execute</td>            <td>Run whitelisted TYPO3 CLI commands</td>    </tr>    <tr>
+            <td><code>ApplyShadcnPreset</code></td>            <td>Execute</td>            <td>Apply a shadcn/ui preset code from <code>ui.shadcn.com/create</code> to an existing frontend project</td>    </tr>    <tr>
             <td><code>PublishWorkspace</code></td>            <td>Write</td>            <td>Publish pending workspace changes to live (dry-run by default)</td>    </tr>    <tr>
             <td><code>BulkWrite</code></td>            <td>Write</td>            <td>Execute multiple write operations in a single transaction</td>    </tr>    <tr>
             <td><code>ImportContent</code></td>            <td>Read/Write</td>            <td>Analyze raw content and propose or create TYPO3 content elements</td>    </tr>    <tr>
@@ -2869,6 +2919,39 @@ characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.</p>
 
     </section>
+            <section class="section" id="applyshadcnpreset">
+            <h3>ApplyShadcnPreset<a class="headerlink" href="#applyshadcnpreset" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>Apply a shadcn/ui preset to an existing frontend project via
+<code>shadcn apply --preset</code>. Use this when a preset is copied from
+<code>https://ui.shadcn.com/create</code> and should change the current project theme,
+fonts, icons, and related shadcn files.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+
+
+<ul>
+    <li class="dash"><code>preset</code> (string, required): preset code such as <code>b0</code> or
+<code>bkqYkPSa0</code>, or a full
+<code>https://ui.shadcn.com/create?preset=...</code> URL</li>
+    <li class="dash"><code>only</code> (string or array): optional partial apply; allowed values are
+<code>theme</code> and <code>font</code></li>
+    <li class="dash"><code>cwd</code> (string): optional project-root-relative frontend directory for
+monorepos</li>
+    <li class="dash"><code>packageManager</code> (string): <code>auto</code> (default), <code>npx</code>, <code>pnpm</code>,
+<code>yarn</code>, or <code>bun</code></li>
+</ul>
+        </dd>
+    </dl>
+
+    <p>The tool is admin-only because it rewrites local project files. It runs
+non-interactively with <code>--yes</code> and returns stdout, stderr, exit code, working
+directory, selected package runner, and execution time.</p>
+
+    </section>
     </section>
             <section class="section" id="workspace-publishing">
             <h2>Workspace publishing<a class="headerlink" href="#workspace-publishing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -3148,10 +3231,11 @@ ranges are rejected after DNS resolution.</p>
     <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
     <li class="dash"><code>base</code> (string): base URL (required for create)</li>
     <li class="dash"><code>dependencies</code> (array): Site Set names to attach, e.g.
-<code>[&quot;vendor/site-package&quot;]</code>. Without at least one Site Set (or a
-<code>sys_template</code> record), the frontend will throw &quot;No site configuration
-or TypoScript template record found&quot;. Supported on <code>create</code> and
-<code>update</code>.</li>
+<code>[&quot;vendor/site-package&quot;]</code>. Supported on <code>create</code> and <code>update</code>.
+If <code>create</code> has no Site Set, no root-page <code>sys_template</code>, and no
+installed theme/site-package-like Site Set, CreateSite writes a minimal
+site-level <code>setup.typoscript</code> fallback in TYPO3&#039;s active site
+configuration path.</li>
     <li class="dash"><code>sets</code> (array): alias for <code>dependencies</code> (some templates expect this
 name). Merged with <code>dependencies</code>.</li>
     <li class="dash"><code>settings</code> (object): top-level <code>settings</code> dictionary merged into the
@@ -3207,8 +3291,9 @@ created without one:</p>
 
 
     <p>If the resulting configuration has no rendering definition (neither a
-<code>dependencies</code> entry nor a <code>sys_template</code> record on the root page), the
-response includes a <code>warning</code> pointing to <code>action=update</code> with a Site Set.</p>
+<code>dependencies</code> entry, a site-level <code>setup.typoscript</code>, nor a
+<code>sys_template</code> record on the root page), the response includes a <code>warning</code>
+pointing to <code>action=update</code> with a Site Set.</p>
 
 
     <p><code>create</code>, <code>update</code>, <code>addLanguage</code>, and <code>replaceLanguages</code> all reset
@@ -5402,16 +5487,17 @@ redirects/size limits apply. Extend functional coverage when changing this
 code path.</p>
 </li>
     <li value="6">
-    <p><code>localUnsafeMode</code> (extension config; default <code>auto</code>) relaxes
-workspace-only writes and the file sandbox when DDEV / Development
-context is detected.</p>
+    <p><code>localUnsafeMode</code> (extension config or User TSconfig; default
+<code>auto</code>) relaxes workspace-only writes, the workspace-capable table
+requirement, outbound HTTP, and the file sandbox when DDEV /
+Development context is detected.</p>
 
     <p>Rationale: production never sets <code>IS_DDEV_PROJECT</code> or runs in the
 Development context. The pre-existing OAuth, capability manifest, and
 TYPO3 permission checks remain enforced regardless of local mode.
 Operators that want belt-and-braces gating can pin
-<code>localUnsafeMode = off</code> so even an accidentally-set DDEV env var
-cannot relax the safety nets.</p>
+<code>localUnsafeMode = off</code> or set <code>mcpServer.strictSandbox</code> so even
+an accidentally-set DDEV env var cannot relax the safety nets.</p>
 </li>
 </ol>
 
@@ -5454,8 +5540,8 @@ method returns false and the strict gates remain active.</p>
     </section>
             <section class="section" id="2026-05-03-security-audit-skill-pass-owasp-cwe">
             <h2>2026-05-03 (security-audit skill pass — OWASP / CWE)<a class="headerlink" href="#2026-05-03-security-audit-skill-pass-owasp-cwe" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            <section class="section" id="fixed-findings">
-            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="fixed-findings-1">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1">
@@ -5537,8 +5623,8 @@ PR (composer.lock + sha256 manifest + cosign).</li>
     </section>
             <section class="section" id="2026-05-03-typo3-security-skill-pass-rfc-9700-alignment">
             <h2>2026-05-03 (typo3-security skill pass — RFC 9700 alignment)<a class="headerlink" href="#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            <section class="section" id="fixed-findings">
-            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="fixed-findings-2">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings-2" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1">
@@ -5599,8 +5685,8 @@ request — same protection model as <code>UploadFileFromUrl</code>.</p>
 </ol>
 
     </section>
-            <section class="section" id="accepted-risks-added">
-            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="accepted-risks-added-1">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1" type="1">
@@ -5757,6 +5843,11 @@ most cases.</p>
 </li>
     <li class="toc-item">
     <a href="#cursor-claude-n8n-ask-to-authorize-again-every-time">Cursor / Claude / n8n ask to authorize again every time</a>
+
+
+</li>
+    <li class="toc-item">
+    <a href="#cursor-reports-unexpected-content-type-text-html">Cursor reports Unexpected content type: text/html</a>
 
 
 </li>
@@ -5964,6 +6055,34 @@ additional config.</li>
 tokens issued from <code>http://</code>.</li>
     <li class="dash">Confirm that the MCP client reuses the existing token; some clients
 default to a fresh token per launch.</li>
+</ul>
+
+    </section>
+            <section class="section" id="cursor-reports-unexpected-content-type-text-html">
+            <h2>Cursor reports <code>Unexpected content type: text/html</code><a class="headerlink" href="#cursor-reports-unexpected-content-type-text-html" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Symptom: Cursor connects with <code>streamableHttp</code> and then fails with
+<code>Streamable HTTP error: Unexpected content type: text/html; charset=UTF-8</code>.</p>
+
+
+    <p>Check:</p>
+
+
+
+<ul>
+    <li class="dash">Cursor is talking to the remote HTTP endpoint and received a TYPO3 HTML
+response, such as a backend login, error page, redirect target, or a site
+route instead of an MCP protocol response.</li>
+    <li class="dash">For local development, remove that HTTP MCP server from Cursor and use the
+<strong>Install in Cursor</strong> button in the backend module. The generated config
+uses local stdio and starts <code>vendor/bin/typo3 mcp:server</code> directly, so no
+OAuth token or reachable public URL is needed.</li>
+    <li class="dash">In Cursor settings, the local server should have a <code>command</code>/<code>args</code>
+config, not a <code>url</code>/<code>streamableHttp</code> config. For DDEV the command starts
+with <code>ddev exec -p &lt;project&gt;</code>.</li>
+    <li class="dash">Startup lines like <code>[MCP Server] Starting MCP server</code> may appear in
+Cursor&#039;s MCP log because they are written to stderr. They do not corrupt the
+stdio protocol; the actual MCP messages are written to stdout.</li>
 </ul>
 
     </section>
@@ -6228,7 +6347,7 @@ is designed to cover.</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">
@@ -6240,7 +6359,6 @@ is designed to cover.</li>
         </div>
     </div>
 </footer>
-<script src="../_resources/js/popper.min.js"></script>
 <script src="../_resources/js/bootstrap.min.js"></script>
 <script src="../_resources/js/theme.min.js"></script>
 

@@ -31,6 +31,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         // Import fixtures
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');

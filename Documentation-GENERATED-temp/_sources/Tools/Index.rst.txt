@@ -153,6 +153,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``SafeCli``
      - Execute
      - Run whitelisted TYPO3 CLI commands
+   * - ``ApplyShadcnPreset``
+     - Execute
+     - Apply a shadcn/ui preset code from ``ui.shadcn.com/create`` to an existing frontend project
    * - ``PublishWorkspace``
      - Write
      - Publish pending workspace changes to live (dry-run by default)
@@ -765,6 +768,29 @@ Arguments are validated against a per-command allowlist, and shell injection
 characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.
 
+ApplyShadcnPreset
+-----------------
+
+Apply a shadcn/ui preset to an existing frontend project via
+``shadcn apply --preset``. Use this when a preset is copied from
+``https://ui.shadcn.com/create`` and should change the current project theme,
+fonts, icons, and related shadcn files.
+
+:Parameters:
+   - ``preset`` (string, required): preset code such as ``b0`` or
+     ``bkqYkPSa0``, or a full
+     ``https://ui.shadcn.com/create?preset=...`` URL
+   - ``only`` (string or array): optional partial apply; allowed values are
+     ``theme`` and ``font``
+   - ``cwd`` (string): optional project-root-relative frontend directory for
+     monorepos
+   - ``packageManager`` (string): ``auto`` (default), ``npx``, ``pnpm``,
+     ``yarn``, or ``bun``
+
+The tool is admin-only because it rewrites local project files. It runs
+non-interactively with ``--yes`` and returns stdout, stderr, exit code, working
+directory, selected package runner, and execution time.
+
 Workspace publishing
 ====================
 
@@ -962,10 +988,11 @@ Create or update TYPO3 site configurations.
    - ``rootPageId`` (integer): root page UID (required for create)
    - ``base`` (string): base URL (required for create)
    - ``dependencies`` (array): Site Set names to attach, e.g.
-     ``["vendor/site-package"]``. Without at least one Site Set (or a
-     ``sys_template`` record), the frontend will throw "No site configuration
-     or TypoScript template record found". Supported on ``create`` and
-     ``update``.
+     ``["vendor/site-package"]``. Supported on ``create`` and ``update``.
+     If ``create`` has no Site Set, no root-page ``sys_template``, and no
+     installed theme/site-package-like Site Set, CreateSite writes a minimal
+     site-level ``setup.typoscript`` fallback in TYPO3's active site
+     configuration path.
    - ``sets`` (array): alias for ``dependencies`` (some templates expect this
      name). Merged with ``dependencies``.
    - ``settings`` (object): top-level ``settings`` dictionary merged into the
@@ -1008,8 +1035,9 @@ created without one:
 ``languages`` section.
 
 If the resulting configuration has no rendering definition (neither a
-``dependencies`` entry nor a ``sys_template`` record on the root page), the
-response includes a ``warning`` pointing to ``action=update`` with a Site Set.
+``dependencies`` entry, a site-level ``setup.typoscript``, nor a
+``sys_template`` record on the root page), the response includes a ``warning``
+pointing to ``action=update`` with a Site Set.
 
 ``create``, ``update``, ``addLanguage``, and ``replaceLanguages`` all reset
 the internal ISO⇄UID mapping cache so subsequent translate calls see the new

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -71,6 +72,7 @@ final class ImportFromUrlTool extends AbstractRecordTool
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
         private readonly RequestFactory $requestFactory,
+        private readonly LocalModeService $localMode,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -247,6 +249,10 @@ final class ImportFromUrlTool extends AbstractRecordTool
      */
     private function validateHostSafety(string $host): void
     {
+        if ($this->localMode->allowsUnrestrictedOutbound()) {
+            return;
+        }
+
         // Reject literal IPv6 loopback
         $cleanHost = trim($host, '[]');
         if (in_array($cleanHost, ['::1', '::'], true)) {

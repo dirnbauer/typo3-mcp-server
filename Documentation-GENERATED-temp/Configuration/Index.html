@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
-<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
-<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -522,6 +522,7 @@ file-sandbox, and outbound-HTTP safety nets relax:</p>
 
 <ul>
     <li class="dash">record writes accept <code>workspace_id: 0</code> (live writes)</li>
+    <li class="dash">record writes can target writable non-workspace-capable TCA tables</li>
     <li class="dash">file tools reach any storage / folder, not only <code>fileSandboxRoot</code></li>
     <li class="dash">outbound HTTP (<code>UploadFileFromUrl</code>, <code>RenderRecord</code>) bypasses
 the manifest&#039;s <code>network.outbound</code> allowlist AND the SSRF
@@ -547,6 +548,49 @@ automatically.</p>
     <p>Authentication (OAuth + backend session) and the capability manifest
 stay enforced even with this on; only the workspace-staging and
 file-sandbox checks are skipped.</p>
+
+    <p>User TSconfig can override the extension setting, which makes TYPO3
+conditions usable for this policy:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs typoscript"><span class="hljs-meta">[applicationContext == "Development/DDEV"]</span>
+options.mcpServer.localUnsafeMode = on
+<span class="hljs-meta">[else]</span>
+options.mcpServer.localUnsafeMode = off
+<span class="hljs-meta">[end]</span></code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>To force the production safety nets even in DDEV, set either the TYPO3
+feature flag <code>mcpServer.strictSandbox</code>:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs php">$GLOBALS[<span class="hljs-string">'TYPO3_CONF_VARS'</span>][<span class="hljs-string">'SYS'</span>][<span class="hljs-string">'features'</span>][<span class="hljs-string">'mcpServer.strictSandbox'</span>] = <span class="hljs-keyword">true</span>;</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>Or set User TSconfig:</p>
+<div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs typoscript">options.mcpServer.strictSandbox = 1</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+    <p>Strict sandbox mode has priority over <code>localUnsafeMode</code> and DDEV
+auto-detection. File tools stay inside <code>fileSandboxRoot</code> and record
+writes stay in TYPO3 workspaces.</p>
 
             </div>
         </dd>
@@ -813,7 +857,7 @@ physical file versioning.</p>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">
@@ -825,7 +869,6 @@ physical file versioning.</p>
         </div>
     </div>
 </footer>
-<script src="../_resources/js/popper.min.js"></script>
 <script src="../_resources/js/bootstrap.min.js"></script>
 <script src="../_resources/js/theme.min.js"></script>
 

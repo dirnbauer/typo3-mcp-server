@@ -206,6 +206,7 @@ final class UploadFileFromUrlTool extends AbstractTool
     {
         $response = $this->requestFactory->request($url, 'GET', [
             'timeout' => self::REQUEST_TIMEOUT,
+            'http_errors' => false,
             'headers' => [
                 'User-Agent' => 'TYPO3-MCP-Server/1.0',
             ],

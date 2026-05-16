@@ -712,6 +712,12 @@
             "Architecture\/SecurityAudit.html#2026-05-03-security-audit-skill-pass-owasp-cwe",
             "2026-05-03 (security-audit skill pass \u2014 OWASP \/ CWE)"
         ],
+        "fixed-findings-1": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#fixed-findings-1",
+            "Fixed findings"
+        ],
         "accepted-risks-added": [
             "-",
             "-",
@@ -723,6 +729,18 @@
             "-",
             "Architecture\/SecurityAudit.html#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment",
             "2026-05-03 (typo3-security skill pass \u2014 RFC 9700 alignment)"
+        ],
+        "fixed-findings-2": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#fixed-findings-2",
+            "Fixed findings"
+        ],
+        "accepted-risks-added-1": [
+            "-",
+            "-",
+            "Architecture\/SecurityAudit.html#accepted-risks-added-1",
+            "Accepted risks (added)"
         ],
         "2026-05-03-capability-manifest-ddev-aware-local-mode": [
             "-",
@@ -1456,6 +1474,12 @@
             "Tools\/Index.html#safecli",
             "SafeCli"
         ],
+        "applyshadcnpreset": [
+            "-",
+            "-",
+            "Tools\/Index.html#applyshadcnpreset",
+            "ApplyShadcnPreset"
+        ],
         "workspace-publishing": [
             "-",
             "-",
@@ -1647,6 +1671,12 @@
             "-",
             "Troubleshooting\/Index.html#cursor-claude-n8n-ask-to-authorize-again-every-time",
             "Cursor \/ Claude \/ n8n ask to authorize again every time"
+        ],
+        "cursor-reports-unexpected-content-type-text-html": [
+            "-",
+            "-",
+            "Troubleshooting\/Index.html#cursor-reports-unexpected-content-type-text-html",
+            "Cursor reports Unexpected content type: text\/html"
         ],
         "local-vendor-bin-typo3-mcp-server-connects-but-tools-fail": [
             "-",

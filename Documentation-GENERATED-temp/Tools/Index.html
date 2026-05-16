@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
-<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
-<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -300,6 +300,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):</
             <td><code>WorkspaceReview</code></td>            <td>Read</td>            <td>Review pending workspace changes with field-level diffs</td>    </tr>    <tr>
             <td><code>CopyContent</code></td>            <td>Write</td>            <td>Duplicate records preserving relations and file references</td>    </tr>    <tr>
             <td><code>SafeCli</code></td>            <td>Execute</td>            <td>Run whitelisted TYPO3 CLI commands</td>    </tr>    <tr>
+            <td><code>ApplyShadcnPreset</code></td>            <td>Execute</td>            <td>Apply a shadcn/ui preset code from <code>ui.shadcn.com/create</code> to an existing frontend project</td>    </tr>    <tr>
             <td><code>PublishWorkspace</code></td>            <td>Write</td>            <td>Publish pending workspace changes to live (dry-run by default)</td>    </tr>    <tr>
             <td><code>BulkWrite</code></td>            <td>Write</td>            <td>Execute multiple write operations in a single transaction</td>    </tr>    <tr>
             <td><code>ImportContent</code></td>            <td>Read/Write</td>            <td>Analyze raw content and propose or create TYPO3 content elements</td>    </tr>    <tr>
@@ -1167,6 +1168,39 @@ characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.</p>
 
     </section>
+            <section class="section" id="applyshadcnpreset">
+            <h3>ApplyShadcnPreset<a class="headerlink" href="#applyshadcnpreset" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>Apply a shadcn/ui preset to an existing frontend project via
+<code>shadcn apply --preset</code>. Use this when a preset is copied from
+<code>https://ui.shadcn.com/create</code> and should change the current project theme,
+fonts, icons, and related shadcn files.</p>
+
+            <dl class="field-list simple ">
+            <dt class="field-odd">Parameters</dt>
+
+        <dd class="field-odd">
+
+
+<ul>
+    <li class="dash"><code>preset</code> (string, required): preset code such as <code>b0</code> or
+<code>bkqYkPSa0</code>, or a full
+<code>https://ui.shadcn.com/create?preset=...</code> URL</li>
+    <li class="dash"><code>only</code> (string or array): optional partial apply; allowed values are
+<code>theme</code> and <code>font</code></li>
+    <li class="dash"><code>cwd</code> (string): optional project-root-relative frontend directory for
+monorepos</li>
+    <li class="dash"><code>packageManager</code> (string): <code>auto</code> (default), <code>npx</code>, <code>pnpm</code>,
+<code>yarn</code>, or <code>bun</code></li>
+</ul>
+        </dd>
+    </dl>
+
+    <p>The tool is admin-only because it rewrites local project files. It runs
+non-interactively with <code>--yes</code> and returns stdout, stderr, exit code, working
+directory, selected package runner, and execution time.</p>
+
+    </section>
     </section>
             <section class="section" id="workspace-publishing">
             <h2>Workspace publishing<a class="headerlink" href="#workspace-publishing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
@@ -1446,10 +1480,11 @@ ranges are rejected after DNS resolution.</p>
     <li class="dash"><code>rootPageId</code> (integer): root page UID (required for create)</li>
     <li class="dash"><code>base</code> (string): base URL (required for create)</li>
     <li class="dash"><code>dependencies</code> (array): Site Set names to attach, e.g.
-<code>[&quot;vendor/site-package&quot;]</code>. Without at least one Site Set (or a
-<code>sys_template</code> record), the frontend will throw &quot;No site configuration
-or TypoScript template record found&quot;. Supported on <code>create</code> and
-<code>update</code>.</li>
+<code>[&quot;vendor/site-package&quot;]</code>. Supported on <code>create</code> and <code>update</code>.
+If <code>create</code> has no Site Set, no root-page <code>sys_template</code>, and no
+installed theme/site-package-like Site Set, CreateSite writes a minimal
+site-level <code>setup.typoscript</code> fallback in TYPO3&#039;s active site
+configuration path.</li>
     <li class="dash"><code>sets</code> (array): alias for <code>dependencies</code> (some templates expect this
 name). Merged with <code>dependencies</code>.</li>
     <li class="dash"><code>settings</code> (object): top-level <code>settings</code> dictionary merged into the
@@ -1505,8 +1540,9 @@ created without one:</p>
 
 
     <p>If the resulting configuration has no rendering definition (neither a
-<code>dependencies</code> entry nor a <code>sys_template</code> record on the root page), the
-response includes a <code>warning</code> pointing to <code>action=update</code> with a Site Set.</p>
+<code>dependencies</code> entry, a site-level <code>setup.typoscript</code>, nor a
+<code>sys_template</code> record on the root page), the response includes a <code>warning</code>
+pointing to <code>action=update</code> with a Site Set.</p>
 
 
     <p><code>create</code>, <code>update</code>, <code>addLanguage</code>, and <code>replaceLanguages</code> all reset
@@ -1878,7 +1914,7 @@ file itself</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">
@@ -1890,7 +1926,6 @@ file itself</li>
         </div>
     </div>
 </footer>
-<script src="../_resources/js/popper.min.js"></script>
 <script src="../_resources/js/bootstrap.min.js"></script>
 <script src="../_resources/js/theme.min.js"></script>
 

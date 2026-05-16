@@ -28,6 +28,8 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 

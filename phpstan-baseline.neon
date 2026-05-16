@@ -1135,12 +1135,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
 
 		-
-			message: '#^Call to static method translateLabel\(\) on an unknown class Hn\\McpServer\\MCP\\Tool\\Record\\TableAccessService\.$#'
-			identifier: class.notFound
-			count: 6
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
 			message: '#^Cannot access offset ''ROOT'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 3
@@ -1544,30 +1538,6 @@ parameters:
 
 		-
 			message: '#^Part \$identifier \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 2
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Part \$itemLabel \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Part \$itemValue \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Part \$label \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php
-
-		-
-			message: '#^Part \$sheetLabel \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 2
 			path: Classes/MCP/Tool/Record/GetFlexFormSchemaTool.php

@@ -137,7 +137,11 @@ final class GetPreviewUrlTool extends AbstractRecordTool
         $previewUriBuilder = PreviewUriBuilder::create($pageId)
             ->withAdditionalQueryParameters($additionalParams);
 
-        $uri = $previewUriBuilder->buildUri();
+        try {
+            $uri = $previewUriBuilder->buildUri();
+        } catch (\Throwable) {
+            $uri = null;
+        }
         if ($uri === null) {
             $fallback = $this->siteInformationService->generatePageUrl($pageId, $languageId);
             if ($fallback === null) {

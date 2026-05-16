@@ -86,16 +86,17 @@ Accepted risks
    redirects/size limits apply. Extend functional coverage when changing this
    code path.
 
-6. ``localUnsafeMode`` (extension config; default ``auto``) relaxes
-   workspace-only writes and the file sandbox when DDEV / Development
-   context is detected.
+6. ``localUnsafeMode`` (extension config or User TSconfig; default
+   ``auto``) relaxes workspace-only writes, the workspace-capable table
+   requirement, outbound HTTP, and the file sandbox when DDEV /
+   Development context is detected.
 
    Rationale: production never sets ``IS_DDEV_PROJECT`` or runs in the
    Development context. The pre-existing OAuth, capability manifest, and
    TYPO3 permission checks remain enforced regardless of local mode.
    Operators that want belt-and-braces gating can pin
-   ``localUnsafeMode = off`` so even an accidentally-set DDEV env var
-   cannot relax the safety nets.
+   ``localUnsafeMode = off`` or set ``mcpServer.strictSandbox`` so even
+   an accidentally-set DDEV env var cannot relax the safety nets.
 
 2026-05-03 (local-mode UX fix: outbound HTTP relaxes too)
 ==========================================================

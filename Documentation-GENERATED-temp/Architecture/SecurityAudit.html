@@ -12,9 +12,9 @@
 <meta content="" name="docsearch:package_type">
 <meta content="" name="docsearch:release">
 <meta content="" name="docsearch:version">
-<meta content="2026-05-12T17:51:54+00:00" name="docsearch:modified">
-<meta content="2026-05-12T17:51:54+00:00" name="dc.modified">
-<meta content="2026-05-12T17:51:54+00:00" property="article:modified_time">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
     <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
 <link href="../_resources/css/theme.css" rel="stylesheet">
 <link href="https://docs.typo3.org/search/" rel="search" title="Search">
@@ -284,16 +284,17 @@ redirects/size limits apply. Extend functional coverage when changing this
 code path.</p>
 </li>
     <li value="6">
-    <p><code>localUnsafeMode</code> (extension config; default <code>auto</code>) relaxes
-workspace-only writes and the file sandbox when DDEV / Development
-context is detected.</p>
+    <p><code>localUnsafeMode</code> (extension config or User TSconfig; default
+<code>auto</code>) relaxes workspace-only writes, the workspace-capable table
+requirement, outbound HTTP, and the file sandbox when DDEV /
+Development context is detected.</p>
 
     <p>Rationale: production never sets <code>IS_DDEV_PROJECT</code> or runs in the
 Development context. The pre-existing OAuth, capability manifest, and
 TYPO3 permission checks remain enforced regardless of local mode.
 Operators that want belt-and-braces gating can pin
-<code>localUnsafeMode = off</code> so even an accidentally-set DDEV env var
-cannot relax the safety nets.</p>
+<code>localUnsafeMode = off</code> or set <code>mcpServer.strictSandbox</code> so even
+an accidentally-set DDEV env var cannot relax the safety nets.</p>
 </li>
 </ol>
 
@@ -336,8 +337,8 @@ method returns false and the strict gates remain active.</p>
     </section>
             <section class="section" id="2026-05-03-security-audit-skill-pass-owasp-cwe">
             <h2>2026-05-03 (security-audit skill pass — OWASP / CWE)<a class="headerlink" href="#2026-05-03-security-audit-skill-pass-owasp-cwe" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            <section class="section" id="fixed-findings">
-            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="fixed-findings-1">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1">
@@ -419,8 +420,8 @@ PR (composer.lock + sha256 manifest + cosign).</li>
     </section>
             <section class="section" id="2026-05-03-typo3-security-skill-pass-rfc-9700-alignment">
             <h2>2026-05-03 (typo3-security skill pass — RFC 9700 alignment)<a class="headerlink" href="#2026-05-03-typo3-security-skill-pass-rfc-9700-alignment" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
-            <section class="section" id="fixed-findings">
-            <h3>Fixed findings<a class="headerlink" href="#fixed-findings" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="fixed-findings-2">
+            <h3>Fixed findings<a class="headerlink" href="#fixed-findings-2" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1">
@@ -481,8 +482,8 @@ request — same protection model as <code>UploadFileFromUrl</code>.</p>
 </ol>
 
     </section>
-            <section class="section" id="accepted-risks-added">
-            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+            <section class="section" id="accepted-risks-added-1">
+            <h3>Accepted risks (added)<a class="headerlink" href="#accepted-risks-added-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
 
 
 <ol start="1" type="1">
@@ -700,7 +701,7 @@ the constrained <code>where</code> parser</li>
         <div class="frame-container">
             <div class="frame-inner">
                                 <div class="footer-additional">
-                    <p class="text-center">Last rendered: May 12, 2026 17:51</p>
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
                 </div>
                 <div class="footer-meta">
                     <ul class="footer-meta-navigation">
@@ -712,7 +713,6 @@ the constrained <code>where</code> parser</li>
         </div>
     </div>
 </footer>
-<script src="../_resources/js/popper.min.js"></script>
 <script src="../_resources/js/bootstrap.min.js"></script>
 <script src="../_resources/js/theme.min.js"></script>
 

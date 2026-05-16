@@ -130,9 +130,13 @@ final class RenderRecordTool extends AbstractRecordTool
         if ($languageId > 0) {
             $additional['_language'] = $languageId;
         }
-        $previewUri = PreviewUriBuilder::create($pageId)
-            ->withAdditionalQueryParameters($additional)
-            ->buildUri();
+        try {
+            $previewUri = PreviewUriBuilder::create($pageId)
+                ->withAdditionalQueryParameters($additional)
+                ->buildUri();
+        } catch (\Throwable) {
+            $previewUri = null;
+        }
         $url = $previewUri !== null
             ? (string)$previewUri
             : ($this->siteInformationService->generatePageUrl($pageId, $languageId) ?? '');

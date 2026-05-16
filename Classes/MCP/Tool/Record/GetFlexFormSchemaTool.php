@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Utility\TcaFormattingUtility;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Service\FlexFormService;
@@ -213,7 +214,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
         // Get field label
         if (isset($fieldConfig['label'])) {
-            $fieldData['label'] = TableAccessService::translateLabel($fieldConfig['label']);
+            $fieldData['label'] = $this->translateFlexLabel($fieldConfig['label']);
         }
 
         // Get field type and config
@@ -224,7 +225,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
         // Get field description
         if (isset($fieldConfig['description'])) {
-            $fieldData['description'] = TableAccessService::translateLabel($fieldConfig['description']);
+            $fieldData['description'] = $this->translateFlexLabel($fieldConfig['description']);
         }
 
         return $fieldData;
@@ -531,7 +532,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         $tceForms = $fieldConfig['TCEforms'] ?? [];
         $config = $tceForms['config'] ?? [];
         $type = $config['type'] ?? 'unknown';
-        $label = TableAccessService::translateLabel($tceForms['label'] ?? $fieldName);
+        $label = $this->translateFlexLabel($tceForms['label'] ?? null, $fieldName);
 
         // Handle section containers
         if (isset($fieldConfig['type']) && $fieldConfig['type'] === 'array') {
@@ -581,11 +582,11 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                     $itemValue = '';
 
                     if (isset($item['label'])) {
-                        $itemLabel = TableAccessService::translateLabel($item['label']);
-                        $itemValue = $item['value'] ?? '';
+                        $itemLabel = $this->translateFlexLabel($item['label']);
+                        $itemValue = is_scalar($item['value'] ?? null) ? (string)$item['value'] : '';
                     } elseif (isset($item[0])) {
-                        $itemLabel = TableAccessService::translateLabel($item[0]);
-                        $itemValue = $item[1] ?? '';
+                        $itemLabel = $this->translateFlexLabel($item[0]);
+                        $itemValue = is_scalar($item[1] ?? null) ? (string)$item[1] : '';
                     }
 
                     $result .= "$indent    - $itemValue: $itemLabel\n";
@@ -715,7 +716,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         // Process sheets
         if (isset($flexFormDS['sheets']) && is_array($flexFormDS['sheets'])) {
             foreach ($flexFormDS['sheets'] as $sheetName => $sheetConfig) {
-                $sheetLabel = TableAccessService::translateLabel($sheetName);
+                $sheetLabel = $this->translateFlexLabel($sheetName);
                 $result .= "SHEET: $sheetLabel\n";
                 $result .= str_repeat('-', strlen("SHEET: $sheetLabel")) . "\n";
 
@@ -739,4 +740,12 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         return $result;
     }
 
+    private function translateFlexLabel(mixed $label, string $fallback = ''): string
+    {
+        if (is_scalar($label)) {
+            return TableAccessService::translateLabel((string)$label);
+        }
+
+        return $fallback;
+    }
 }
