@@ -806,6 +806,12 @@ The tool is admin-only because it rewrites local project files. It runs
 non-interactively with ``--yes`` and returns stdout, stderr, exit code, working
 directory, selected package runner, and execution time.
 
+This tool is intentionally a frontend project mutator, not a TYPO3 template
+set generator. Use it against the consuming sitepackage or frontend workspace
+that owns the design system. Desiderio-specific Fluid templates, Visual Editor
+content-area markup, CSS tokens and shadcn component recipes should live in
+Desiderio or another sitepackage, not in EXT:mcp_server.
+
 Workspace publishing
 ====================
 

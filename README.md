@@ -189,6 +189,14 @@ list is also returned by the `GetCapabilities` tool, gated by
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats` (when `typo3-x402-paywall` is installed)
 
+### Frontend design-system tooling
+
+`ApplyShadcnPreset` is an admin-only helper for applying a copied
+shadcn/create preset to an existing frontend project directory. The MCP server
+does not own TYPO3 Fluid template sets or Desiderio's frontend component
+recipes; those stay in the consuming sitepackage where Visual Editor content
+areas, site settings, CSS tokens, and template overrides can evolve together.
+
 ### Adding a site configuration
 
 `CreateSite` accepts a live root page UID and an optional rendering definition
