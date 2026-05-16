@@ -272,6 +272,9 @@ CreateSite { "action": "create",
              "base": "https://example.com/",
              "dependencies": ["webconsulting/desiderio-preset-corporate"] }
 // No warning — the Site Set is attached, so the frontend will render.
+// If no theme/site-package-like Site Set is installed and no sys_template
+// exists, CreateSite writes a minimal setup.typoscript fallback in the active
+// TYPO3 site configuration path.
 
 // 2. Already created a site without a theme? Attach one in place.
 CreateSite { "action": "update",

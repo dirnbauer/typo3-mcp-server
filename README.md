@@ -183,8 +183,8 @@ list is also returned by the `GetCapabilities` tool, gated by
 
 ### Building a site from scratch
 
-`CreateSite` accepts a rendering definition so the frontend renders out of
-the box:
+`CreateSite` accepts a rendering definition so the frontend renders with the
+intended theme out of the box:
 
 ```jsonc
 CreateSite {
@@ -199,6 +199,11 @@ CreateSite {
 
 Need to add the theme later? `action: "update"` merges top-level keys into
 an existing site config without touching unrelated entries.
+
+If no Site Set/theme/site package is available and there is no root
+`sys_template`, `CreateSite` creates a minimal site-level `setup.typoscript`
+fallback in TYPO3's active site configuration path, so a newly added website
+can still render content immediately.
 
 ### Translating a page in one call
 

@@ -281,7 +281,7 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         self::assertSame(['vendor/a', 'vendor/b'], $data['config']['dependencies']);
     }
 
-    public function testCreateWithoutRenderingEmitsWarning(): void
+    public function testCreateWithoutRenderingCreatesGlobalTypoScriptInclude(): void
     {
         $result = $this->tool->execute([
             'action' => 'create',
@@ -291,8 +291,31 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         ]);
 
         $data = $this->extractJsonFromResult($result);
-        self::assertArrayHasKey('warning', $data);
-        self::assertStringContainsString('No site configuration or TypoScript template record found', $data['warning']);
+        self::assertArrayNotHasKey('warning', $data);
+        self::assertSame('siteTypoScript', $data['renderingFallback']['type']);
+
+        $setupPath = $this->getSiteConfigPath('no-render') . '/setup.typoscript';
+        self::assertSame($setupPath, $data['renderingFallback']['path']);
+        self::assertFileExists($setupPath);
+        $setup = file_get_contents($setupPath);
+        self::assertIsString($setup);
+        self::assertStringContainsString('page = PAGE', $setup);
+        self::assertStringContainsString('table = tt_content', $setup);
+    }
+
+    public function testCreateWithDependenciesDoesNotCreateGlobalTypoScriptInclude(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'rendered-by-set',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://example.com/',
+            'dependencies' => ['vendor/site-package'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertArrayNotHasKey('renderingFallback', $data);
+        self::assertFileDoesNotExist($this->getSiteConfigPath('rendered-by-set') . '/setup.typoscript');
     }
 
     public function testUpdateMergesDependenciesWhilePreservingOtherKeys(): void

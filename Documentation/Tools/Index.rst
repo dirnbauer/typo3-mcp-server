@@ -962,10 +962,11 @@ Create or update TYPO3 site configurations.
    - ``rootPageId`` (integer): root page UID (required for create)
    - ``base`` (string): base URL (required for create)
    - ``dependencies`` (array): Site Set names to attach, e.g.
-     ``["vendor/site-package"]``. Without at least one Site Set (or a
-     ``sys_template`` record), the frontend will throw "No site configuration
-     or TypoScript template record found". Supported on ``create`` and
-     ``update``.
+     ``["vendor/site-package"]``. Supported on ``create`` and ``update``.
+     If ``create`` has no Site Set, no root-page ``sys_template``, and no
+     installed theme/site-package-like Site Set, CreateSite writes a minimal
+     site-level ``setup.typoscript`` fallback in TYPO3's active site
+     configuration path.
    - ``sets`` (array): alias for ``dependencies`` (some templates expect this
      name). Merged with ``dependencies``.
    - ``settings`` (object): top-level ``settings`` dictionary merged into the
@@ -1008,8 +1009,9 @@ created without one:
 ``languages`` section.
 
 If the resulting configuration has no rendering definition (neither a
-``dependencies`` entry nor a ``sys_template`` record on the root page), the
-response includes a ``warning`` pointing to ``action=update`` with a Site Set.
+``dependencies`` entry, a site-level ``setup.typoscript``, nor a
+``sys_template`` record on the root page), the response includes a ``warning``
+pointing to ``action=update`` with a Site Set.
 
 ``create``, ``update``, ``addLanguage``, and ``replaceLanguages`` all reset
 the internal ISO⇄UID mapping cache so subsequent translate calls see the new

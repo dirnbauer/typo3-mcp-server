@@ -14,6 +14,8 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Site\Set\SetRegistry;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Tool for creating and updating TYPO3 site configurations.
@@ -31,6 +33,19 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 #[AdminOnly]
 final class CreateSiteTool extends AbstractRecordTool
 {
+    private const GLOBAL_TYPOSCRIPT_INCLUDE = <<<'TYPOSCRIPT'
+page = PAGE
+page.10 = CONTENT
+page.10 {
+  table = tt_content
+  select {
+    orderBy = sorting
+    where = {#colPos}=0
+  }
+}
+
+TYPOSCRIPT;
+
     /**
      * Common ISO 639-1 codes mapped to TYPO3 flag identifiers.
      *
@@ -73,6 +88,7 @@ final class CreateSiteTool extends AbstractRecordTool
         private readonly SiteWriter $siteWriter,
         private readonly LanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
+        private readonly SetRegistry $setRegistry,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -91,6 +107,7 @@ final class CreateSiteTool extends AbstractRecordTool
                 . 'Site configurations are YAML-based and take effect immediately (not workspace-versioned). '
                 . 'IMPORTANT: A site without a Site Set or TypoScript template record will throw "No site configuration or TypoScript template record found" in the frontend. '
                 . 'Pass `dependencies` (array of Site Set names) when creating a site to attach a theme, or use action "update" afterwards. '
+                . 'When no dependencies/sys_template/theme-like Site Set exists, create writes a minimal site-level setup.typoscript fallback in the active TYPO3 site configuration path. '
                 . 'Requires admin privileges.',
             'inputSchema' => [
                 'type' => 'object',
@@ -116,7 +133,7 @@ final class CreateSiteTool extends AbstractRecordTool
                         'type' => 'array',
                         'description' => 'Optional: Site Set names to attach (create + update). '
                             . 'Example: ["webconsulting/desiderio-preset-corporate"]. '
-                            . 'Without at least one Site Set (or a sys_template) the frontend will not render.',
+                            . 'Without at least one Site Set (or a sys_template), create may add a minimal site-level TypoScript fallback.',
                         'items' => ['type' => 'string'],
                     ],
                     'sets' => [
@@ -251,12 +268,16 @@ final class CreateSiteTool extends AbstractRecordTool
 
         $this->siteWriter->write($identifier, $config);
         $this->languageService->reset();
+        $renderingFallback = $this->ensureRenderingFallback($config, $identifier);
 
         $response = [
             'status' => 'created',
             'identifier' => $identifier,
             'config' => $config,
         ];
+        if ($renderingFallback !== null) {
+            $response['renderingFallback'] = $renderingFallback;
+        }
 
         $warning = $this->renderingWarningFor($config, $identifier);
         if ($warning !== null) {
@@ -378,10 +399,7 @@ final class CreateSiteTool extends AbstractRecordTool
      */
     private function renderingWarningFor(array $config, string $identifier): ?string
     {
-        $dependencies = isset($config['dependencies']) && is_array($config['dependencies'])
-            ? $this->normalizeStringList($config['dependencies'])
-            : [];
-        if ($dependencies !== []) {
+        if ($this->hasRenderingDefinition($config, $identifier)) {
             return null;
         }
 
@@ -393,6 +411,79 @@ final class CreateSiteTool extends AbstractRecordTool
         return 'Site "' . $identifier . '" has no Site Set (dependencies) and no sys_template record on the root page. '
             . 'The frontend will throw "No site configuration or TypoScript template record found". '
             . 'Use action "update" with `dependencies: ["vendor/theme"]` to attach a Site Set.';
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @return array{type: string, path: string}|null
+     */
+    private function ensureRenderingFallback(array $config, string $identifier): ?array
+    {
+        if ($this->hasRenderingDefinition($config, $identifier) || $this->hasThemeLikeSiteSetAvailable()) {
+            return null;
+        }
+
+        $siteConfigPath = $this->siteConfiguration->getAllSiteConfigurationPaths()[$identifier] ?? null;
+        if (!is_string($siteConfigPath) || $siteConfigPath === '') {
+            return null;
+        }
+
+        $setupPath = rtrim($siteConfigPath, '/') . '/setup.typoscript';
+        if (!is_file($setupPath)) {
+            GeneralUtility::writeFile($setupPath, self::GLOBAL_TYPOSCRIPT_INCLUDE, true);
+        }
+
+        return [
+            'type' => 'siteTypoScript',
+            'path' => $setupPath,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function hasRenderingDefinition(array $config, string $identifier): bool
+    {
+        $dependencies = isset($config['dependencies']) && is_array($config['dependencies'])
+            ? $this->normalizeStringList($config['dependencies'])
+            : [];
+        if ($dependencies !== []) {
+            return true;
+        }
+
+        if ($this->hasSiteTypoScriptInclude($identifier)) {
+            return true;
+        }
+
+        $rootPageId = is_numeric($config['rootPageId'] ?? null) ? (int)$config['rootPageId'] : 0;
+        return $rootPageId > 0 && $this->hasTypoScriptTemplate($rootPageId);
+    }
+
+    private function hasSiteTypoScriptInclude(string $identifier): bool
+    {
+        $siteConfigPath = $this->siteConfiguration->getAllSiteConfigurationPaths()[$identifier] ?? null;
+        if (!is_string($siteConfigPath) || $siteConfigPath === '') {
+            return false;
+        }
+
+        return is_file(rtrim($siteConfigPath, '/') . '/setup.typoscript');
+    }
+
+    private function hasThemeLikeSiteSetAvailable(): bool
+    {
+        foreach ($this->setRegistry->getAllSets() as $set) {
+            $haystack = strtolower(implode(' ', [
+                $set->name,
+                $set->label,
+                ...array_filter($set->dependencies, 'is_string'),
+                ...array_filter($set->optionalDependencies, 'is_string'),
+            ]));
+            if (preg_match('/(theme|site[-_ ]?package|sitepackage|template|frontend|preset)/', $haystack) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function hasTypoScriptTemplate(int $rootPageId): bool
