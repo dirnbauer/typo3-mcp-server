@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -79,8 +80,10 @@ class SysFileMetadataTest extends LlmTestCase
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertNotEmpty($writeCalls,
-            'Expected a WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $writeCalls,
+            'Expected a WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         // The write must target sys_file_metadata. sys_file is read-only, and
         // there is no embedded inline metadata field anymore, so a write on
@@ -92,14 +95,19 @@ class SysFileMetadataTest extends LlmTestCase
                 break;
             }
         }
-        $this->assertNotNull($metadataWrite,
+        self::assertNotNull(
+            $metadataWrite,
             'Expected WriteTable on sys_file_metadata. Tool history: '
             . implode(' → ', $this->getToolCallHistory()) . "\n"
-            . $this->getFailureContext($response));
+            . $this->getFailureContext($response)
+        );
 
-        $this->assertSame('update', $metadataWrite['action'] ?? null,
+        self::assertSame(
+            'update',
+            $metadataWrite['action'] ?? null,
             'Metadata write must be an update, not a create. '
-            . $this->getFailureContext($response));
+            . $this->getFailureContext($response)
+        );
 
         // Drive the conversation forward until tool calls dry up so the
         // workspace overlay actually gets written.
@@ -114,18 +122,26 @@ class SysFileMetadataTest extends LlmTestCase
         );
 
         $personMeta = $this->loadMetadataForFile(3);
-        $this->assertNotNull($personMeta,
+        self::assertNotNull(
+            $personMeta,
             'Could not find metadata row for person.jpg (sys_file uid=3) after the LLM run. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
-        $this->assertSame($newAlt, (string)$personMeta['alternative'],
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
+        self::assertSame(
+            $newAlt,
+            (string)$personMeta['alternative'],
             'Alt text on person.jpg metadata was not updated. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
 
         $testJpgMeta = $this->loadMetadataForFile(1);
-        $this->assertNotNull($testJpgMeta, 'test.jpg metadata row disappeared.');
-        $this->assertSame('Alt text for test', (string)$testJpgMeta['alternative'],
+        self::assertNotNull($testJpgMeta, 'test.jpg metadata row disappeared.');
+        self::assertSame(
+            'Alt text for test',
+            (string)$testJpgMeta['alternative'],
             'Untouched file metadata (test.jpg) was modified — the LLM hit the wrong row. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -144,8 +160,10 @@ class SysFileMetadataTest extends LlmTestCase
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertNotEmpty($writeCalls,
-            'Expected a WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $writeCalls,
+            'Expected a WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         // Drive the conversation forward so the workspace overlay is written.
         $currentResponse = $response;
@@ -163,15 +181,23 @@ class SysFileMetadataTest extends LlmTestCase
         // (the canonical path) or a direct create with l10n_parent set —
         // both produce the same end state.
         $deRow = $this->loadGermanTranslationForFile(3);
-        $this->assertNotNull($deRow,
+        self::assertNotNull(
+            $deRow,
             'Expected a German translation row for person.jpg metadata. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
-        $this->assertSame('Personenfoto', (string)$deRow['title'],
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
+        self::assertSame(
+            'Personenfoto',
+            (string)$deRow['title'],
             'German title not stored on the translation row. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
-        $this->assertSame('Foto vom Teamleiter', (string)$deRow['alternative'],
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
+        self::assertSame(
+            'Foto vom Teamleiter',
+            (string)$deRow['alternative'],
             'German alt text not stored on the translation row. '
-            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse));
+            . $writeArgsDump . "\n" . $this->getFailureContext($currentResponse)
+        );
     }
 
     #[DataProvider('modelProvider')]
@@ -190,8 +216,10 @@ class SysFileMetadataTest extends LlmTestCase
             18
         );
 
-        $this->assertNotEmpty($response->getToolCallsByName('WriteTable'),
-            'Expected at least one WriteTable call. ' . $this->getFailureContext($response));
+        self::assertNotEmpty(
+            $response->getToolCallsByName('WriteTable'),
+            'Expected at least one WriteTable call. ' . $this->getFailureContext($response)
+        );
 
         // The LLM may need several rounds: read to find untagged rows, then
         // update each. Allow generous turn budget.
@@ -203,26 +231,35 @@ class SysFileMetadataTest extends LlmTestCase
         $logoMeta = $this->loadMetadataForFile(4);
         $teamMeta = $this->loadMetadataForFile(5);
 
-        $this->assertNotNull($logoMeta, 'logo.png metadata row should still exist.');
-        $this->assertNotNull($teamMeta, 'team-photo.jpg metadata row should still exist.');
+        self::assertNotNull($logoMeta, 'logo.png metadata row should still exist.');
+        self::assertNotNull($teamMeta, 'team-photo.jpg metadata row should still exist.');
 
-        $this->assertNotSame('', (string)$logoMeta['alternative'],
+        self::assertNotSame(
+            '',
+            (string)$logoMeta['alternative'],
             'logo.png alt text should have been filled. '
-            . $this->getFailureContext($currentResponse));
-        $this->assertNotSame('', (string)$teamMeta['alternative'],
+            . $this->getFailureContext($currentResponse)
+        );
+        self::assertNotSame(
+            '',
+            (string)$teamMeta['alternative'],
             'team-photo.jpg alt text should have been filled. '
-            . $this->getFailureContext($currentResponse));
+            . $this->getFailureContext($currentResponse)
+        );
 
         // Pre-populated rows must not be flattened or overwritten.
         $personMeta = $this->loadMetadataForFile(3);
-        $this->assertSame('Original alt for person', (string)$personMeta['alternative'],
+        self::assertSame(
+            'Original alt for person',
+            (string)$personMeta['alternative'],
             'person.jpg already had alt text and must not have been touched. '
-            . $this->getFailureContext($currentResponse));
+            . $this->getFailureContext($currentResponse)
+        );
 
         // Title field on the previously-untagged rows must survive — the
         // prompt only asks for alt text changes.
-        $this->assertSame('Company Logo', (string)$logoMeta['title']);
-        $this->assertSame('Team Group Photo', (string)$teamMeta['title']);
+        self::assertSame('Company Logo', (string)$logoMeta['title']);
+        self::assertSame('Team Group Photo', (string)$teamMeta['title']);
     }
 
     #[DataProvider('modelProvider')]
@@ -253,19 +290,24 @@ class SysFileMetadataTest extends LlmTestCase
             $allReadCalls
         ))));
 
-        $this->assertNotEmpty($allReadCalls,
-            'Expected at least one ReadTable call. ' . $this->getFailureContext($currentResponse));
+        self::assertNotEmpty(
+            $allReadCalls,
+            'Expected at least one ReadTable call. ' . $this->getFailureContext($currentResponse)
+        );
 
         // The whole point of leaving `metadata: [<uid>]` on sys_file is that
         // the LLM follows the hint into sys_file_metadata.
-        $this->assertContains('sys_file_metadata', $tablesRead,
+        self::assertContains(
+            'sys_file_metadata',
+            $tablesRead,
             'Expected the LLM to read sys_file_metadata after seeing the metadata uid hint on sys_file. '
             . 'Tables read: ' . implode(', ', $tablesRead) . "\n"
-            . $this->getFailureContext($currentResponse));
+            . $this->getFailureContext($currentResponse)
+        );
 
         // The model's final answer should mention the metadata it discovered.
         $finalText = $currentResponse->getContent();
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/Person Photo|Original alt for person/i',
             $finalText,
             'LLM should have surfaced the discovered metadata in its answer. '
@@ -289,8 +331,8 @@ class SysFileMetadataTest extends LlmTestCase
         $rows = $qb->select('uid', 't3ver_oid', 't3ver_state', 'sys_language_uid', 'deleted', 'alternative', 'title', 'l10n_parent', 'file')
             ->from('sys_file_metadata')
             ->where(
-                $qb->expr()->eq('file', $qb->createNamedParameter($fileUid, \Doctrine\DBAL\ParameterType::INTEGER)),
-                $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter(1, \Doctrine\DBAL\ParameterType::INTEGER))
+                $qb->expr()->eq('file', $qb->createNamedParameter($fileUid, ParameterType::INTEGER)),
+                $qb->expr()->eq('sys_language_uid', $qb->createNamedParameter(1, ParameterType::INTEGER))
             )
             ->executeQuery()
             ->fetchAllAssociative();
@@ -337,7 +379,7 @@ class SysFileMetadataTest extends LlmTestCase
         $rows = $qb->select('uid', 't3ver_oid', 't3ver_state', 'sys_language_uid', 'deleted', 'alternative', 'title', 'description', 'file')
             ->from('sys_file_metadata')
             ->where(
-                $qb->expr()->eq('file', $qb->createNamedParameter($fileUid, \Doctrine\DBAL\ParameterType::INTEGER))
+                $qb->expr()->eq('file', $qb->createNamedParameter($fileUid, ParameterType::INTEGER))
             )
             ->executeQuery()
             ->fetchAllAssociative();

@@ -1230,7 +1230,7 @@ final class WriteTableTool extends AbstractRecordTool
             return "Field 'uid' cannot be modified directly";
         }
         if ($table === 'pages' && $action === 'update' && $uid !== null && isset($data['pid']) && (int)$data['pid'] === $uid) {
-            return "Page cannot be moved below itself";
+            return 'Page cannot be moved below itself';
         }
         if (isset($data['pid']) && !in_array($action, ['create', 'update'], true)) {
             return "Field 'pid' can only be set during record creation";
@@ -1277,7 +1277,7 @@ final class WriteTableTool extends AbstractRecordTool
                 $rawItems = isset($rawConfig['items']) && is_array($rawConfig['items'])
                     ? $this->tableAccessService->parseSelectItems($rawConfig['items'])
                     : ['values' => []];
-                if (!isset($allowedTypes[(string)$value]) && in_array((string)$value, array_map('strval', $rawItems['values']), true)) {
+                if (!isset($allowedTypes[(string)$value]) && in_array((string)$value, array_map(strval(...), $rawItems['values']), true)) {
                     return sprintf(
                         "Field '%s' value '%s' is disabled by page TSconfig (removeItems/disableCTypes) or not available for this page",
                         $fieldName,
@@ -1292,7 +1292,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             // Validate field value (with record context for dynamic select item resolution)
-            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value, $mergedRecord);
+            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value);
             if ($validationError !== null) {
                 return $validationError;
             }

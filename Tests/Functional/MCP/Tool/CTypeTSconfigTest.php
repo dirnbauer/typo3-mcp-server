@@ -49,7 +49,7 @@ class CTypeTSconfigTest extends FunctionalTestCase
             ->getConnectionForTable('pages')
             ->update('pages', [
                 'TSconfig' => "TCEFORM.tt_content.CType.removeItems = text, header\n"
-                    . "TCEMAIN.table.tt_content.disableCTypes = bullets",
+                    . 'TCEMAIN.table.tt_content.disableCTypes = bullets',
             ], ['uid' => 1]);
 
         $this->setUpBackendUser(1);
@@ -64,16 +64,16 @@ class CTypeTSconfigTest extends FunctionalTestCase
     {
         $types = $this->tableAccessService->getAvailableTypes('tt_content', 1);
 
-        $this->assertArrayNotHasKey('text', $types, 'CType "text" should be removed by TSconfig');
-        $this->assertArrayNotHasKey('header', $types, 'CType "header" should be removed by TSconfig');
-        $this->assertArrayHasKey('textmedia', $types, 'CType "textmedia" should still be available');
+        self::assertArrayNotHasKey('text', $types, 'CType "text" should be removed by TSconfig');
+        self::assertArrayNotHasKey('header', $types, 'CType "header" should be removed by TSconfig');
+        self::assertArrayHasKey('textmedia', $types, 'CType "textmedia" should still be available');
     }
 
     public function testGetAvailableTypesAppliesDisableCTypesAtPid(): void
     {
         $types = $this->tableAccessService->getAvailableTypes('tt_content', 1);
 
-        $this->assertArrayNotHasKey(
+        self::assertArrayNotHasKey(
             'bullets',
             $types,
             'CType "bullets" should be filtered by TCEMAIN.disableCTypes'
@@ -88,8 +88,8 @@ class CTypeTSconfigTest extends FunctionalTestCase
             'pid' => 2,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertInstanceOf(TextContent::class, $result->content[0]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertInstanceOf(TextContent::class, $result->content[0]);
         $content = $result->content[0]->text;
 
         // Find the line that introduces the CType field — it carries the
@@ -101,14 +101,14 @@ class CTypeTSconfigTest extends FunctionalTestCase
                 break;
             }
         }
-        $this->assertNotNull($ctypeLine, 'Could not locate CType field line in schema output: ' . $content);
+        self::assertNotNull($ctypeLine, 'Could not locate CType field line in schema output: ' . $content);
 
         // Each option is rendered as "<value> (<label>)" — match value boundaries
         // to avoid false positives like "textmedia" matching "text".
-        $this->assertDoesNotMatchRegularExpression('/\btext\s*\(/', $ctypeLine, 'Removed CType "text" leaked into Options list: ' . $ctypeLine);
-        $this->assertDoesNotMatchRegularExpression('/\bheader\s*\(/', $ctypeLine, 'Removed CType "header" leaked into Options list: ' . $ctypeLine);
-        $this->assertDoesNotMatchRegularExpression('/\bbullets\s*\(/', $ctypeLine, 'disableCTypes value "bullets" leaked into Options list: ' . $ctypeLine);
-        $this->assertStringContainsString('textmedia', $ctypeLine, 'Allowed CType "textmedia" missing from Options: ' . $ctypeLine);
+        self::assertDoesNotMatchRegularExpression('/\btext\s*\(/', $ctypeLine, 'Removed CType "text" leaked into Options list: ' . $ctypeLine);
+        self::assertDoesNotMatchRegularExpression('/\bheader\s*\(/', $ctypeLine, 'Removed CType "header" leaked into Options list: ' . $ctypeLine);
+        self::assertDoesNotMatchRegularExpression('/\bbullets\s*\(/', $ctypeLine, 'disableCTypes value "bullets" leaked into Options list: ' . $ctypeLine);
+        self::assertStringContainsString('textmedia', $ctypeLine, 'Allowed CType "textmedia" missing from Options: ' . $ctypeLine);
     }
 
     public function testSchemaToolReturnsErrorWhenRequestingRemovedType(): void
@@ -119,13 +119,13 @@ class CTypeTSconfigTest extends FunctionalTestCase
             'pid' => 2,
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $content = $result->content[0]->text;
 
         // When the requested type is filtered out, the tool emits an ERROR text
         // listing the still-available types.
-        $this->assertStringContainsString('ERROR', $content);
-        $this->assertStringContainsString("'text'", $content);
+        self::assertStringContainsString('ERROR', $content);
+        self::assertStringContainsString("'text'", $content);
     }
 
     public function testWriteRejectsRemovedCType(): void
@@ -141,9 +141,9 @@ class CTypeTSconfigTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Creating a tt_content with a removed CType must fail');
+        self::assertTrue($result->isError, 'Creating a tt_content with a removed CType must fail');
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('CType', $content);
+        self::assertStringContainsString('CType', $content);
     }
 
     public function testWriteRejectsDisabledCType(): void
@@ -158,9 +158,9 @@ class CTypeTSconfigTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertTrue($result->isError, 'Creating a tt_content with a disabled CType must fail');
+        self::assertTrue($result->isError, 'Creating a tt_content with a disabled CType must fail');
         $content = $result->content[0]->text;
-        $this->assertStringContainsString('disableCTypes', $content);
+        self::assertStringContainsString('disableCTypes', $content);
     }
 
     public function testWriteAcceptsAllowedCType(): void
@@ -175,6 +175,6 @@ class CTypeTSconfigTest extends FunctionalTestCase
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 }

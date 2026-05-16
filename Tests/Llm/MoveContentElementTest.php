@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Hn\McpServer\MCP\ToolRegistry;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Test the LLM's ability to move a content element from one page to another.
@@ -49,8 +51,8 @@ class MoveContentElementTest extends LlmTestCase
         // Sanity check the fixture so a fixture change makes the failure obvious
         // instead of looking like an LLM mistake.
         $banner = BackendUtility::getRecord('tt_content', $bannerUid);
-        $this->assertNotNull($banner, 'Fixture content element 110 missing');
-        $this->assertSame($newsPid, (int)$banner['pid'], 'Fixture banner is expected to start on the News page');
+        self::assertNotNull($banner, 'Fixture content element 110 missing');
+        self::assertSame($newsPid, (int)$banner['pid'], 'Fixture banner is expected to start on the News page');
 
         $prompt = 'There\'s a "Banner Ad" content element currently on the News page, but it should be on the Home page instead. Please move it.';
 
@@ -65,51 +67,60 @@ class MoveContentElementTest extends LlmTestCase
             || in_array('GetPageTree', $history, true)
             || in_array('Search', $history, true)
             || in_array('ReadTable', $history, true);
-        $this->assertTrue(
+        self::assertTrue(
             $hasExploration,
             "[$modelKey] Expected exploration before move. Tools used: " . implode(', ', $history)
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $this->assertGreaterThan(
+        self::assertGreaterThan(
             0,
             count($writeCalls),
             "[$modelKey] Expected WriteTable call to perform the move. "
-            . "Tool history: " . implode(' → ', $history)
+            . 'Tool history: ' . implode(' → ', $history)
             . "\nFinal response: " . $response->getContent()
         );
 
         $writeCall = $writeCalls[0]['arguments'];
-        $this->assertSame('update', $writeCall['action'] ?? '',
-            "[$modelKey] Expected an update action for the move. Got: " . json_encode($writeCall, JSON_PRETTY_PRINT));
-        $this->assertSame('tt_content', $writeCall['table'] ?? '',
-            "[$modelKey] Expected tt_content table. Got: " . json_encode($writeCall, JSON_PRETTY_PRINT));
-        $this->assertSame($bannerUid, (int)($writeCall['uid'] ?? 0),
-            "[$modelKey] Expected uid=$bannerUid (the Banner Ad). Got: " . json_encode($writeCall, JSON_PRETTY_PRINT));
+        self::assertSame(
+            'update',
+            $writeCall['action'] ?? '',
+            "[$modelKey] Expected an update action for the move. Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
+        );
+        self::assertSame(
+            'tt_content',
+            $writeCall['table'] ?? '',
+            "[$modelKey] Expected tt_content table. Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
+        );
+        self::assertSame(
+            $bannerUid,
+            (int)($writeCall['uid'] ?? 0),
+            "[$modelKey] Expected uid=$bannerUid (the Banner Ad). Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
+        );
 
         // Per the schema, pid lives inside `data` (it's a record column, not a
         // top-level parameter). Verify the LLM put it there.
         $data = $this->extractWriteData($writeCall);
-        $this->assertArrayHasKey(
+        self::assertArrayHasKey(
             'pid',
             $data,
             "[$modelKey] Expected pid inside `data` (it's a record column per the schema). "
-            . "Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
+            . 'Got: ' . json_encode($writeCall, JSON_PRETTY_PRINT)
         );
-        $this->assertArrayNotHasKey(
+        self::assertArrayNotHasKey(
             'pid',
             $writeCall,
             "[$modelKey] Did not expect pid as a top-level parameter — schema places it in `data`. "
-            . "Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
+            . 'Got: ' . json_encode($writeCall, JSON_PRETTY_PRINT)
         );
-        $this->assertSame(
+        self::assertSame(
             $homePid,
             (int)$data['pid'],
             "[$modelKey] Expected data.pid=$homePid (Home page). Got: " . json_encode($writeCall, JSON_PRETTY_PRINT)
         );
 
         $writeResult = $this->executeToolCall($writeCalls[0]);
-        $this->assertFalse(
+        self::assertFalse(
             $writeResult['isError'] ?? false,
             "[$modelKey] WriteTable failed: " . ($writeResult['content'] ?? '')
         );
@@ -122,27 +133,31 @@ class MoveContentElementTest extends LlmTestCase
 
     private function assertContentElementIsOnPage(int $uid, int $expectedPid, string $modelKey): void
     {
-        $toolRegistry = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\Hn\McpServer\MCP\ToolRegistry::class);
+        $toolRegistry = GeneralUtility::makeInstance(ToolRegistry::class);
         $readTable = $toolRegistry->getTool('ReadTable');
-        $this->assertNotNull($readTable, 'ReadTable tool missing from registry');
+        self::assertNotNull($readTable, 'ReadTable tool missing from registry');
 
         $result = $readTable->execute([
             'table' => 'tt_content',
             'uid' => $uid,
         ]);
-        $this->assertFalse($result->isError,
+        self::assertFalse(
+            $result->isError,
             "[$modelKey] ReadTable failed when verifying move: "
-            . ($result->content[0]->text ?? json_encode($result->jsonSerialize())));
+            . ($result->content[0]->text ?? json_encode($result->jsonSerialize()))
+        );
 
-        $payload = json_decode($result->content[0]->text, true);
+        $payload = json_decode((string)$result->content[0]->text, true);
         $record = $payload['records'][0] ?? null;
-        $this->assertNotNull($record,
-            "[$modelKey] Could not find content element $uid after move. Payload: " . json_encode($payload));
-        $this->assertSame(
+        self::assertNotNull(
+            $record,
+            "[$modelKey] Could not find content element $uid after move. Payload: " . json_encode($payload)
+        );
+        self::assertSame(
             $expectedPid,
             (int)($record['pid'] ?? 0),
             "[$modelKey] Expected content element $uid to live on page $expectedPid after the move. "
-            . "Actual record: " . json_encode($record)
+            . 'Actual record: ' . json_encode($record)
         );
     }
 }

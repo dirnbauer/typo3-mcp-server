@@ -3181,12 +3181,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:validateFieldValue\(\) invoked with 4 parameters, 3 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Only booleans are allowed in &&, array\<string, mixed\> given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 1

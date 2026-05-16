@@ -475,8 +475,8 @@ TYPOSCRIPT;
             $haystack = strtolower(implode(' ', [
                 $set->name,
                 $set->label,
-                ...array_filter($set->dependencies, 'is_string'),
-                ...array_filter($set->optionalDependencies, 'is_string'),
+                ...array_filter($set->dependencies, is_string(...)),
+                ...array_filter($set->optionalDependencies, is_string(...)),
             ]));
             if (preg_match('/(theme|site[-_ ]?package|sitepackage|template|frontend|preset)/', $haystack) === 1) {
                 return true;

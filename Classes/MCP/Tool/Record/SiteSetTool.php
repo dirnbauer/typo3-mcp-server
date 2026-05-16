@@ -256,8 +256,8 @@ final class SiteSetTool extends AbstractRecordTool
             return true;
         }
 
-        $dependencies = array_values(array_filter($set->dependencies, 'is_string'));
-        $optionalDependencies = array_values(array_filter($set->optionalDependencies, 'is_string'));
+        $dependencies = array_values(array_filter($set->dependencies, is_string(...)));
+        $optionalDependencies = array_values(array_filter($set->optionalDependencies, is_string(...)));
 
         $haystack = strtolower(implode(' ', [
             $set->name,

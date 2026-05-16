@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
+use Hn\McpServer\Utility\TcaFormattingUtility;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -378,7 +380,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
      */
     public function testSelectItemsWithIntegerLabelsDoNotBreakFormatting(): void
     {
-        $service = GeneralUtility::makeInstance(\Hn\McpServer\Service\TableAccessService::class);
+        $service = GeneralUtility::makeInstance(TableAccessService::class);
         $parsed = $service->parseSelectItems([
             ['label' => 0, 'value' => 0],
             ['label' => 1, 'value' => 1],
@@ -388,7 +390,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         // Labels must be strings so downstream type-strict consumers
         // (translateLabel, string concatenation) do not raise.
         foreach ($parsed['labels'] as $label) {
-            $this->assertIsString($label);
+            self::assertIsString($label);
         }
 
         // The select formatter feeds these labels through translateLabel and
@@ -403,15 +405,15 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             ],
         ];
         $rendered = '';
-        \Hn\McpServer\Utility\TcaFormattingUtility::addFieldDetailsInline(
+        TcaFormattingUtility::addFieldDetailsInline(
             $rendered,
             $config,
             'ranking',
             'sys_file_metadata'
         );
         // Label 0 is dropped by the truthy `if ($label)` filter; 1 and 5 remain.
-        $this->assertStringContainsString('1 (1)', $rendered);
-        $this->assertStringContainsString('5 (5)', $rendered);
+        self::assertStringContainsString('1 (1)', $rendered);
+        self::assertStringContainsString('5 (5)', $rendered);
     }
 
     /**

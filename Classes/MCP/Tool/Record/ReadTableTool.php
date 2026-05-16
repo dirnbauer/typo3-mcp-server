@@ -250,7 +250,7 @@ final class ReadTableTool extends AbstractRecordTool
         $pid = isset($params['pid']) ? (int)$params['pid'] : null;
         $uidParam = $params['uid'] ?? null;
         $uid = is_array($uidParam)
-            ? array_values(array_map('intval', array_filter($uidParam, 'is_numeric')))
+            ? array_values(array_map(intval(...), array_filter($uidParam, is_numeric(...))))
             : (is_numeric($uidParam) ? (int)$uidParam : null);
         $filtersParam = $params['filters'] ?? [];
         $limit = isset($params['limit']) ? (int)$params['limit'] : 20;

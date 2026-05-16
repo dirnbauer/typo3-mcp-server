@@ -52,7 +52,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         // depends on the legacy mechanism; skip on v14 until the schema tool
         // is reworked to source TSconfig from a page in the rootline.
         if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() >= 14) {
-            $this->markTestSkipped(
+            self::markTestSkipped(
                 'TSconfig-based field filtering uses defaultPageTSconfig which was '
                 . 'removed in TYPO3 14. Test relies on a v13-only mechanism.'
             );

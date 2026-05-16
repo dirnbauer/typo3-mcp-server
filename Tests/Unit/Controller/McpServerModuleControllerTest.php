@@ -62,7 +62,7 @@ final class McpServerModuleControllerTest extends TestCase
 
         $url = $this->invokePrivate('buildCursorInstallUrl', ['Example Site', $config]);
         $query = [];
-        parse_str((string)parse_url($url, PHP_URL_QUERY), $query);
+        parse_str((string)parse_url((string)$url, PHP_URL_QUERY), $query);
 
         self::assertSame('Example Site', $query['name']);
         self::assertSame($config, json_decode((string)base64_decode((string)$query['config'], true), true));
