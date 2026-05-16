@@ -1,0 +1,134 @@
+capabilities:
+  version: '1.0'
+  extension: mcp_server
+
+  # Subsystems this extension touches. Each subsystem is a coarse permission
+  # bucket. Tools are mapped to required subsystems below; the
+  # CapabilityManifestService refuses to run a tool whose required subsystems
+  # are not listed here. Removing a line below disables every tool that needs
+  # it — useful for hardening (e.g. delete `database:write` to make the MCP
+  # endpoint read-only).
+  subsystems:
+    - database:read     # ReadTable, GetPage, GetPageTree, Search, GetTableSchema, ...
+    - database:write    # WriteTable, BulkWrite, CopyContent, ImportContent, ...
+    - database:schema   # GetTableSchema, GetFlexFormSchema, ListTables
+    - workspace:read    # ListWorkspaces, WorkspaceReview
+    - workspace:write   # PublishWorkspace, RollbackWorkspace
+    - file:read         # BrowseFiles, BrowseFolder, ListStorages, ReadFileMetadata, SearchFile, SearchMedia
+    - file:write        # UploadFile, UploadFileFromUrl, WriteFile
+    - cli:safe          # SafeCli (allowlisted commands only)
+    - extension:install # InstallExtensionTool (admin-only)
+    - site:write        # CreateSite, ManageRedirects (admin-only)
+    - render:frontend   # RenderRecord, GetPreviewUrl (HTTP fetch to own site)
+    - log:read          # GetSystemLog
+    - x402:payments     # X402 paid-content tools (only loaded if x402 keys exist)
+    - project:write     # ApplyShadcnPreset (rewrites local frontend project files)
+
+  # Prerequisite chains. A subsystem on the left is only "effective" when
+  # all subsystems on the right are also declared. Removing `database:write`
+  # therefore also disables every tool that needs `file:write` — uploaded
+  # files only make sense when there is content to attach them to. Removing
+  # `file:read` disables `file:write` (cannot blindly write where you cannot
+  # see). The chain is one of the central ideas from
+  # https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests
+  # adapted for runtime enforcement.
+  requires:
+    file:write:        [file:read, database:write]
+    workspace:write:   [workspace:read, database:write]
+    site:write:        [database:write]
+    render:frontend:   [database:read]
+    extension:install: [database:write]
+    database:write:    [database:read]
+    cli:safe:          [database:read]
+
+  # Network policy. Listeners (UploadFileFromUrl, RenderRecord) refuse
+  # outbound HTTP unless the target host or scheme is permitted here.
+  # Defense-in-depth: the IP-range check inside UploadFileFromUrl still
+  # blocks private/reserved networks even if `*` is added below.
+  network:
+    outbound:
+      # `self` is a sentinel: matches any host configured as a TYPO3 site base.
+      # Required for RenderRecord (it fetches preview URLs of pages on this
+      # very site).
+      - self
+      # To allow UploadFileFromUrl to reach the public web, uncomment one of:
+      #   - '*'                        # any host (still blocks private IPs)
+      #   - 'images.unsplash.com'      # exact host match
+      #   - '*.unsplash.com'           # wildcard subdomain match
+      # Default ships closed — operators opt in per deployment.
+
+  # Database tables the extension owns (none — MCP doesn't ship its own
+  # tables; OAuth tokens land in tx_mcpserver_domain_model_oauth*).
+  database:
+    own_tables:
+      - tx_mcpserver_domain_model_oauthclient
+      - tx_mcpserver_domain_model_oauthtoken
+      - tx_mcpserver_domain_model_oauthauthorization
+    # Tables MCP is allowed to write through DataHandler. The list mirrors
+    # TableAccessService::getAccessibleTables() filtering, so adding an entry
+    # here without TCA permissions still gets blocked at the DataHandler
+    # layer. The wildcard exists so an admin can opt out of the wildcard and
+    # specify exact tables for an even tighter policy.
+    writes:
+      - '*'
+    reads:
+      - '*'
+
+  # Required-by-tool mapping. The ToolRegistry consults this when a client
+  # calls a tool. Unlisted tools default to the union of `database:read` +
+  # `database:write` to fail closed. Add the tool name (matching
+  # `Tool->getName()`) on the left and the required subsystems on the right.
+  tools:
+    GetPageTree:        [database:read]
+    GetPage:            [database:read]
+    Search:             [database:read]
+    ListTables:         [database:schema]
+    GetTableSchema:     [database:schema]
+    GetFlexFormSchema:  [database:schema]
+    ReadTable:          [database:read]
+    WriteTable:         [database:write]
+    BulkWrite:          [database:write]
+    AttachImage:        [database:write, file:read]
+    CopyContent:        [database:write, database:read]
+    ImportContent:      [database:write]
+    ImportFromUrl:      [database:write, file:write]
+    ManageRedirects:    [site:write]
+    CreateSite:         [site:write]
+    SiteSet:            [site:write]
+    GetSystemLog:       [log:read]
+    ContentAudit:       [database:read]
+    ListWorkspaces:     [workspace:read]
+    WorkspaceReview:    [workspace:read]
+    PublishWorkspace:   [workspace:write]
+    RollbackWorkspace:  [workspace:write]
+    BrowseFiles:        [file:read]
+    BrowseFolder:       [file:read]
+    ListStorages:       [file:read]
+    ReadFileMetadata:   [file:read]
+    SearchFile:         [file:read]
+    SearchMedia:        [file:read]
+    UploadFile:         [file:write]
+    UploadFileFromUrl:  [file:write]
+    WriteFile:          [file:write]
+    SafeCli:            [cli:safe]
+    InstallExtension:   [extension:install]
+    GetPreviewUrl:      [database:read]
+    RenderRecord:       [database:read, render:frontend]
+    GetCapabilities:    []
+    ListPaidContent:    [x402:payments, database:read]
+    GetPaidContent:     [x402:payments, database:read]
+    GetPaymentStats:    [x402:payments, database:read]
+    ApplyShadcnPreset:  [project:write]
+
+  # Risk score: cumulative weight of declared subsystems. Used by the
+  # GetCapabilities tool's `risk` field. Production reviewers can use this as
+  # a single number to compare configurations.
+  risk:
+    level: high
+    justification: |
+      MCP exposes structured CRUD on every workspace-capable TCA table plus
+      file uploads. Risk is offset by: (a) OAuth + backend session, (b)
+      workspace staging by default, (c) admin-only gating via #[AdminOnly] on
+      destructive tools, (d) outbound IP allowlist for SSRF. Lower the risk
+      by removing `database:write`, `file:write`, or `extension:install`
+      lines above.
