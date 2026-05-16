@@ -17,7 +17,10 @@ General notes
 - Most record-backed tools also accept an optional ``workspace_id`` override.
 - Language-related parameters are only exposed when the TYPO3 instance has
   multiple configured languages.
-- File tools are always restricted to the configured MCP file sandbox.
+- File-write tools are restricted to the configured MCP file sandbox in
+  strict mode. FAL-wide read tools can inspect storages the backend user may
+  access, and DDEV / local-development mode can relax the sandbox for local
+  work.
 - Some tool families are optional at runtime. For example, ``ManageRedirects``
   requires ``sys_redirect`` to be available, and the x402 tools require the
   optional paywall extension surface.
@@ -51,8 +54,10 @@ operators opt in to additional hosts per deployment.
 CLI mirror
 ----------
 
-Every tool is also a TYPO3 console command. Use ``vendor/bin/typo3 list mcp``
-to discover them. Output modes:
+Every bundled tool is also reachable from the TYPO3 CLI, either through a
+dedicated ``mcp:<tool-name>`` shortcut or through the universal
+``mcp:tool <Name>`` runner. Use ``vendor/bin/typo3 list mcp`` to discover
+the active command list. Output modes:
 
 - ``--json`` — machine-readable envelope ``{ok, result}``
 - ``--plain`` or ``--no-ansi`` — plain text without decoration
@@ -60,10 +65,12 @@ to discover them. Output modes:
 
 Pass parameters via ``--param key=value`` (repeatable), ``--params <json>``,
 or ``--param key=@file.json`` (file must live under the project root). Use
-``vendor/bin/typo3 mcp:tool <Name>`` for any tool without a dedicated
-shortcut, or ``vendor/bin/typo3 mcp:tool:list --schema=<Name>`` to dump the
-JSON Schema. Recipe for adding a new shortcut: see the ``typo3-mcp-cli``
-claude-code skill.
+``vendor/bin/typo3 mcp:tool <Name>`` for third-party tools or for scripts that
+prefer stable MCP tool names, and
+``vendor/bin/typo3 mcp:tool:list --schema=<Name>`` to dump the JSON Schema.
+Most shortcut commands can be added with a ``GenericMcpToolCommand`` service
+entry in ``Configuration/Services.yaml``; create a custom
+``AbstractMcpToolCommand`` subclass only for bespoke options or formatting.
 
 Tool names (MCP ``tools/list``)
 ===============================
@@ -535,7 +542,7 @@ Search FAL for existing files across storages.
 
 :Parameters:
    - ``name`` (string): partial, case-insensitive filename match
-   - ``extensions`` (string): comma-separated extensions, e.g. ``png,jpg,svg``
+   - ``extension`` (string): comma-separated extensions, e.g. ``png,jpg,svg``
    - ``folder`` (string): restrict search to a folder
    - ``mimeType`` (string): filter by MIME type prefix, e.g. ``image/``
    - ``limit`` (integer): max results
@@ -583,8 +590,16 @@ metadata on an existing file.
    - ``metadata`` (object): title, description, alternative text, copyright
 
 This tool supports TYPO3 text file extensions such as ``.txt``, ``.html``,
-``.css``, ``.js``, ``.json``, ``.xml``, ``.csv``, ``.svg``, ``.yaml``,
-``.md``, and others configured in TYPO3.
+``.css``, ``.js``, ``.json``, ``.xml``, ``.csv``, ``.yaml``, ``.md``,
+``.rst``, and others configured in TYPO3.
+
+.. note::
+
+   ``.svg`` is intentionally excluded from the default text-file allowlist
+   because SVG can carry inline scripts when served from ``fileadmin/``.
+   Operators who need SVG creation must opt in through
+   ``$GLOBALS['TYPO3_CONF_VARS']['SYS']['textfile_ext']`` and sanitize SVG
+   content before serving it.
 
 .. warning::
 
@@ -985,7 +1000,9 @@ Create or update TYPO3 site configurations.
    - ``action`` (string, required): ``create``, ``update``, ``addLanguage``, or
      ``replaceLanguages``
    - ``identifier`` (string, required): site identifier (alphanumeric + dash)
-   - ``rootPageId`` (integer): root page UID (required for create)
+   - ``rootPageId`` (integer): live root page UID (required for create).
+     Site configuration is not workspace-versioned, so do not point it at a
+     draft-only workspace page.
    - ``base`` (string): base URL (required for create)
    - ``dependencies`` (array): Site Set names to attach, e.g.
      ``["vendor/site-package"]``. Supported on ``create`` and ``update``.

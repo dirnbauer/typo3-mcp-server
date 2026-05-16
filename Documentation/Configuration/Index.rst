@@ -170,9 +170,10 @@ Extension configuration values
       Development context in production, so ``auto`` resolves to ``off``
       automatically.
 
-   Authentication (OAuth + backend session) and the capability manifest
-   stay enforced even with this on; only the workspace-staging and
-   file-sandbox checks are skipped.
+   Authentication (OAuth + backend session), backend-user permissions, and
+   per-tool subsystem checks from the capability manifest stay enforced even
+   with this on. Local mode does relax the workspace-staging,
+   non-workspace-table, file-sandbox, and outbound-network safety nets.
 
    User TSconfig can override the extension setting, which makes TYPO3
    conditions usable for this policy:
@@ -199,8 +200,9 @@ Extension configuration values
       options.mcpServer.strictSandbox = 1
 
    Strict sandbox mode has priority over ``localUnsafeMode`` and DDEV
-   auto-detection. File tools stay inside ``fileSandboxRoot`` and record
-   writes stay in TYPO3 workspaces.
+   auto-detection. File tools stay inside ``fileSandboxRoot``, record writes
+   stay in TYPO3 workspaces, and outbound HTTP uses the configured network
+   allowlist.
 
 .. confval:: enforceCapabilityManifest
    :name: ext-mcp-server-enforceCapabilityManifest

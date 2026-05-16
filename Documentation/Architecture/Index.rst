@@ -111,5 +111,7 @@ Key security measures:
 - Uploads use randomized stored filenames to reduce predictable file exposure
 - Capability manifest gates every tool call and outbound HTTP request; see
   :doc:`CapabilityManifest`.
-- DDEV / local-mode detection relaxes only the workspace-staging and
-  file-sandbox safety nets — never authentication or capability policy.
+- DDEV / local-mode detection relaxes the workspace-staging,
+  non-workspace-table, file-sandbox, and outbound-network safety nets —
+  never authentication, backend-user permissions, or per-tool subsystem
+  checks.

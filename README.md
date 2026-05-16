@@ -11,14 +11,20 @@ scripts and CI.
 by [Marco Pfeiffer](https://github.com/hauptsacheNet). This fork tracks
 upstream and adds: capability-manifest enforcement, DDEV-aware local mode,
 preview/render tools for the editor verification loop, a complete CLI
-mirror of the MCP surface, and ~25 fork-only tools (file sandbox, content
-audit, translate ergonomics, …).
+mirror of the MCP surface, and additional fork-only tools such as the file
+sandbox, content audit, preview/render loop, local-mode ergonomics, and site
+configuration helpers.
 
 ---
 
 ## Continuously Tested With Real LLMs
 
-Every push to `main` runs a benchmark that has the latest models from **Anthropic, OpenAI, Mistral, and Google** actually use this MCP to perform real TYPO3 tasks. That's how we stay vendor-independent and prove the tool descriptions convey what they claim across very different prompting styles — your AI assistant of choice should just work, not only ours. Click any badge for the full run-by-run history.
+Every push to `main` runs a benchmark that has models from **Anthropic,
+OpenAI, Mistral, and Google** actually use this MCP to perform real TYPO3
+tasks. That's how we stay vendor-independent and prove the tool descriptions
+convey what they claim across very different prompting styles — your AI
+assistant of choice should just work, not only ours. Click any badge for the
+full run-by-run history.
 
 [
 ![haiku-4.5](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbwyS4NavPMDQWbQQYCh3uKA4zJ5C8sxggxTZQQPdgjXOZ7Vt4BpUd5mzWdsWMqjzniI%2Fexec&query=%24.percentages%5B%22haiku-4.5%22%5D&suffix=%25&label=haiku-4.5)
@@ -41,8 +47,10 @@ over OAuth to `https://your-site/mcp` and can:
 - Import text/Markdown/HTML and propose or create content elements.
 - Audit content for missing metadata or alt text.
 
-Every tool is also a Symfony console command (`vendor/bin/typo3 mcp:<tool>`),
-with `--json`, `--plain`, and `--no-ansi` output modes for shell scripting.
+Every tool is available from the TYPO3 CLI: either through its dedicated
+`vendor/bin/typo3 mcp:<tool-name>` shortcut or through the universal
+`vendor/bin/typo3 mcp:tool <ToolName>` runner. CLI commands support `--json`,
+`--plain`, and `--no-ansi` output modes for shell scripting.
 
 TYPO3 stays in control of permissions, TCA, DataHandler, workspaces, and
 language overlays. The MCP client sees a clean, machine-readable surface.
@@ -69,7 +77,7 @@ relying on this in production.
 
 While there are a lot of automated tests, TYPO3 instances are widely
 different and language models are also widely different. Feel free to
-[create issues here on GitHub](https://github.com/hauptsacheNet/typo3-mcp-server/issues)
+[create issues here on GitHub](https://github.com/dirnbauer/typo3-mcp-server/issues)
 or [share experiences in the typo3-core-ai channel](https://typo3.slack.com/archives/C091M0M7BL6).
 
 ### 1. Install
@@ -81,8 +89,8 @@ vendor/bin/typo3 extension:activate mcp_server
 
 **Requirements**
 
-- TYPO3 `^14.0` (v14.3 LTS — no v12/v13 fallback paths in this fork)
-- PHP `8.2 – 8.5` (CI matrix runs all four)
+- TYPO3 `^14.0` (no v12/v13 fallback paths in this fork)
+- PHP `8.2 – 8.5` as declared in `ext_emconf.php`
 - `typo3/cms-workspaces`
 
 ### 2. Open the backend module
@@ -105,7 +113,7 @@ In the TYPO3 backend, go to **User → MCP Server**. The module shows:
 | **Manus** | Remote HTTP + OAuth | Paste endpoint URL |
 | **MCP Inspector** | Remote HTTP | `npx @modelcontextprotocol/inspector …` |
 | **Local / trusted host** | stdio | `vendor/bin/typo3 mcp:server` |
-| **Shell / CI / scripts** | TYPO3 CLI | `vendor/bin/typo3 mcp:<tool> [--json]` |
+| **Shell / CI / scripts** | TYPO3 CLI | `vendor/bin/typo3 mcp:<tool-name> [--json]` or `vendor/bin/typo3 mcp:tool <ToolName> --json` |
 
 The first remote request triggers the OAuth flow: TYPO3 logs you in with
 your existing backend credentials and authorizes the client.
@@ -181,10 +189,12 @@ list is also returned by the `GetCapabilities` tool, gated by
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats` (when `typo3-x402-paywall` is installed)
 
-### Building a site from scratch
+### Adding a site configuration
 
-`CreateSite` accepts a rendering definition so the frontend renders with the
-intended theme out of the box:
+`CreateSite` accepts a live root page UID and an optional rendering definition
+so the frontend renders with the intended theme out of the box. Site
+configuration is YAML-backed and not workspace-versioned, so prepare or
+publish the root page before pointing a site config at it.
 
 ```jsonc
 CreateSite {
@@ -244,9 +254,8 @@ WriteTable {
 
 ## CLI: every tool, every shell
 
-Every MCP tool is also a TYPO3 CLI command, so the same surface is
-available to shell scripts, CI pipelines, and `ddev exec`. Three output
-modes:
+Every MCP tool is available from the TYPO3 CLI, so the same surface is
+available to shell scripts, CI pipelines, and `ddev exec`. Three output modes:
 
 ```sh
 # Pretty (humans):
@@ -271,13 +280,13 @@ ddev exec ./vendor/bin/typo3 mcp:tool ReadTable --param table=pages --json
 ddev exec ./vendor/bin/typo3 mcp:get-capabilities --json
 ```
 
-The shipped `mcp:<tool>` shortcuts cover the most-used upstream tools
-(`read-table`, `write-table`, `get-page`, `get-page-tree`, `search`,
-`list-tables`, `get-table-schema`, `list-workspaces`, `publish-workspace`,
-`render-record`, `get-preview-url`, `get-capabilities`). For everything
-else, `mcp:tool <Name>` works against any registered tool. Adding a new
-shortcut is a 15-line subclass of `AbstractMcpToolCommand` — see the
-[`typo3-mcp-cli` skill](#documentation) for the recipe.
+The shipped `mcp:<tool-name>` shortcuts cover the complete bundled tool
+surface, including generic shortcuts backed by `GenericMcpToolCommand`.
+`mcp:tool <Name>` remains the universal runner for any registered tool,
+including tools contributed by third-party extensions. Adding a new shortcut
+usually means adding a `GenericMcpToolCommand` service entry; use a custom
+`AbstractMcpToolCommand` subclass only when the command needs bespoke
+options or formatting.
 
 ## Capability manifest (security model)
 
@@ -374,9 +383,11 @@ sandbox and record writes stay in TYPO3 workspaces. Local mode additionally
 removes the workspace-capable table requirement so local-only tools can write
 non-workspace tables with the current backend user's normal permissions.
 
-The `Configuration/Capabilities.yaml` and OAuth/permission checks remain
-enforced — local mode only relaxes the workspace-staging and file-sandbox
-nets, never authentication or capability-policy.
+OAuth, backend-user permission checks, and per-tool subsystem checks from
+`Configuration/Capabilities.yaml` remain enforced. Local mode relaxes the
+workspace-staging, non-workspace-table, file-sandbox, and outbound-network
+safety nets; it does not turn the MCP endpoint into an unauthenticated or
+ungated shell.
 
 ## Authentication and clients
 
@@ -419,7 +430,7 @@ for details and security recommendations.
 ## Development
 
 ```bash
-ddev exec composer test            # 42 unit + 817 functional, paratest -p 4
+ddev exec composer test            # unit + functional suites
 ddev exec composer test:llm        # LLM-assisted ergonomics tests (needs OPENROUTER_API_KEY)
 ddev exec composer phpstan         # PHPStan level max + saschaegerer/phpstan-typo3
                                    # + phpstan-strict-rules + phpstan-deprecation-rules
@@ -467,7 +478,7 @@ Classes/
 Configuration/
   Capabilities.yaml   declared subsystems + per-tool requirements + outbound policy
   Services.yaml       DI + console.command + event listener registration
-  Commands.php        Symfony command map
+  Commands.php        legacy/explicit command map for selected shortcuts
 Documentation/        reStructuredText manual (published source)
 Resources/            templates, CSS/JS, XLIFF labels (en + de)
 Tests/                unit, functional, LLM, architecture, E2E
@@ -495,8 +506,9 @@ reading order:
 Long-form design rationale and real-world scenarios:
 [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md).
 
-A claude-code skill for adding new CLI commands ships at
-`~/.claude/skills/typo3-mcp-cli/` (this fork's developer-experience helper).
+New dedicated CLI shortcuts can be added through `GenericMcpToolCommand`
+service entries in `Configuration/Services.yaml`; use a custom command class
+only when a shortcut needs specialized behavior.
 
 ## Acknowledgements
 

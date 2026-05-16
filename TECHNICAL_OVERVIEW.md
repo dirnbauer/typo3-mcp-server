@@ -96,10 +96,11 @@ domains. See
 [`Documentation/Architecture/CapabilityManifest.rst`](Documentation/Architecture/CapabilityManifest.rst).
 
 A **DDEV / local-mode service** (`LocalModeService`) detects developer
-environments and relaxes only the workspace-staging, workspace-capable table,
-outbound HTTP, and file-sandbox safety nets — never authentication or backend
-user permissions. Production stays strict by default, and strict sandbox mode
-can be forced via TYPO3 feature flag or User TSconfig.
+environments and relaxes the workspace-staging, non-workspace-table,
+outbound HTTP, and file-sandbox safety nets — never authentication, backend
+user permissions, or per-tool subsystem checks. Production stays strict by
+default, and strict sandbox mode can be forced via TYPO3 feature flag or User
+TSconfig.
 
 ### 6. Language-awareness, conditional
 
@@ -228,44 +229,47 @@ WriteFile         {
 }
 ```
 
-### "Generate an SVG icon"
+### "Generate a small text asset"
 
 ```jsonc
 WriteFile {
-  "path": "icons/contact-phone.svg",
-  "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" …/>",
+  "path": "notes/campaign-copy.md",
+  "content": "# Contact block\n\nUse a concise call to action here.",
   "metadata": {
-    "title":       "Contact Phone Icon",
-    "alternative": "Phone icon for contact section"
+    "title":       "Campaign copy notes",
+    "description": "Draft notes generated during MCP content editing"
   }
 }
 ```
+
+`WriteFile` intentionally excludes SVG from its default text-file allowlist
+because SVG can carry inline scripts when served from `fileadmin/`. Operators
+who need SVG generation must opt in through TYPO3's `SYS.textfile_ext` and
+sanitize content before serving it.
 
 ### Workflow: draft → review → publish
 
 ```jsonc
 ListWorkspaces    {}
-WorkspaceReview   { "workspaceId": 3 }
-PublishWorkspace  { "workspaceId": 3, "dryRun": true  }  // preview
-PublishWorkspace  { "workspaceId": 3, "dryRun": false }  // execute
+WorkspaceReview   { "workspace_id": 3 }
+PublishWorkspace  { "workspace_id": 3, "dryRun": true  }  // preview
+PublishWorkspace  { "workspace_id": 3, "dryRun": false }  // execute
 ```
 
 ### Workflow: translations-only rollout
 
 ```jsonc
 // Ship only the translation rows, leaving source-language drafts in place.
-PublishWorkspace  { "workspaceId": 3, "onlyTranslations": true, "dryRun": true }
-PublishWorkspace  { "workspaceId": 3, "onlyTranslations": true, "dryRun": false }
+PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": true }
+PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": false }
 ```
 
-### Workflow: build a site from scratch
+### Workflow: add a site configuration
 
 ```jsonc
-// 1. Create a root page and the site config with a rendering definition.
-WriteTable { "table": "pages", "action": "create", "pid": 0,
-             "data": { "title": "Launch 2026", "slug": "/" } }
-// → uid: 474
-
+// 1. Use an existing live root page prepared for the site. Site YAML is not
+// workspace-versioned, so CreateSite must point at a page that TYPO3 can
+// resolve outside a draft-only workspace row.
 CreateSite { "action": "create",
              "identifier": "launch-2026",
              "rootPageId": 474,
@@ -324,8 +328,9 @@ The runtime is intentionally thin; TYPO3 does most of the work.
   tokens are not logged.
 - **Query-token auth disabled by default** — `?token=…` on `/mcp` requires
   explicit opt-in via `allowMcpTokenInQueryString`.
-- **Minimal auth diagnostic** — `?test=auth` does not reveal server
-  fingerprint; can be turned off via `enableMcpAuthHeaderDiagnostic`.
+- **Minimal auth diagnostic** — `?test=auth` is disabled by default. When
+  enabled via `enableMcpAuthHeaderDiagnostic`, it reports only whether the
+  `Authorization` header arrived and does not reveal server fingerprint data.
 
 See [`Documentation/Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst)
 for the full audit snapshot.

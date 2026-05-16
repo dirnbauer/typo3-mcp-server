@@ -152,9 +152,9 @@ the remote OAuth endpoint.
 CLI mirror (every tool, every shell)
 ------------------------------------
 
-Every MCP tool is also a TYPO3 console command, so shell scripts, CI
-pipelines, and ``ddev exec`` can drive the same surface as the MCP
-endpoint. List what's available:
+Every bundled MCP tool is reachable from the TYPO3 CLI, so shell scripts, CI
+pipelines, and ``ddev exec`` can drive the same surface as the MCP endpoint.
+List what's available:
 
 .. code-block:: bash
    :caption: Discover MCP tool commands
@@ -185,8 +185,10 @@ Output modes:
 - (default) — pretty colored output
 
 Use ``--param key=@payload.json`` to pass JSON from a file (constrained to
-the TYPO3 project root). Adding a new ``mcp:<tool>`` shortcut: see the
-``typo3-mcp-cli`` claude-code skill.
+the TYPO3 project root). Most dedicated shortcuts are
+``GenericMcpToolCommand`` service entries in ``Configuration/Services.yaml``;
+create a custom ``AbstractMcpToolCommand`` subclass only when a shortcut needs
+bespoke options or output formatting.
 
 After installation
 ==================

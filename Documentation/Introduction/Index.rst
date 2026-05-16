@@ -121,10 +121,11 @@ DDEV / local-development mode
 -----------------------------
 
 Detection of DDEV environment variables or the TYPO3 Development
-application context relaxes the workspace-only-writes and file-sandbox
-safety nets so a developer's laptop is ergonomic to use. Override via
-the ``localUnsafeMode`` extension setting (``auto``/``on``/``off``).
-Authentication and the capability manifest stay enforced regardless.
+application context relaxes the workspace-only-writes, non-workspace-table,
+file-sandbox, and outbound-network safety nets so a developer's laptop is
+ergonomic to use. Override via the ``localUnsafeMode`` extension setting
+(``auto``/``on``/``off``). Authentication, backend-user permissions, and
+per-tool subsystem checks stay enforced regardless.
 
 Important limitations
 =====================

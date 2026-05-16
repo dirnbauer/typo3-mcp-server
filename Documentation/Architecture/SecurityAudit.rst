@@ -51,9 +51,11 @@ Fixed findings
 6. Unauthenticated ``?test=auth`` probe exposed server fingerprint data.
 
    Status: Mitigated. The diagnostic can be disabled via
-   ``enableMcpAuthHeaderDiagnostic`` (default on for the backend MCP module).
-   When disabled, the endpoint returns **403** without detail. When enabled,
-   the JSON response is minimal (header presence only; no ``server_software`` or
+   ``enableMcpAuthHeaderDiagnostic``. The default extension configuration is
+   off; operators can enable it when they want the backend module connection
+   check to verify whether a proxy strips the ``Authorization`` header. When
+   disabled, the endpoint returns **403** without detail. When enabled, the
+   JSON response is minimal (header presence only; no ``server_software`` or
    similar fingerprint fields).
 
 Accepted risks
@@ -92,8 +94,10 @@ Accepted risks
    Development context is detected.
 
    Rationale: production never sets ``IS_DDEV_PROJECT`` or runs in the
-   Development context. The pre-existing OAuth, capability manifest, and
-   TYPO3 permission checks remain enforced regardless of local mode.
+   Development context. OAuth, TYPO3 permission checks, and the manifest's
+   per-tool subsystem checks remain enforced regardless of local mode; the
+   manifest's outbound allowlist is intentionally relaxed only for local
+   development ergonomics.
    Operators that want belt-and-braces gating can pin
    ``localUnsafeMode = off`` or set ``mcpServer.strictSandbox`` so even
    an accidentally-set DDEV env var cannot relax the safety nets.
