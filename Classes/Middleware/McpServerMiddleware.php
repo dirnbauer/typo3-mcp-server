@@ -42,7 +42,7 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $path = $request->getUri()->getPath();
+        $path = $this->normalizeRoutePath($request->getUri()->getPath());
 
         return match ($path) {
             '/mcp' => ($this->mcpEndpoint)($request),
@@ -61,6 +61,15 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 
             default => $handler->handle($request),
         };
+    }
+
+    private function normalizeRoutePath(string $path): string
+    {
+        if ($path === '/') {
+            return $path;
+        }
+
+        return rtrim($path, '/');
     }
 
     /**

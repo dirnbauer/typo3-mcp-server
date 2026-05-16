@@ -5,6 +5,7 @@ use Hn\McpServer\Command\McpTestCommand;
 use Hn\McpServer\Command\McpToolListCommand;
 use Hn\McpServer\Command\McpToolRunCommand;
 use Hn\McpServer\Command\OAuthManageCommand;
+use Hn\McpServer\Command\Tool\ApplyShadcnPresetToolCommand;
 use Hn\McpServer\Command\Tool\GetCapabilitiesToolCommand;
 use Hn\McpServer\Command\Tool\GetPageToolCommand;
 use Hn\McpServer\Command\Tool\GetPageTreeToolCommand;
@@ -95,6 +96,10 @@ return [
     ],
     'mcp:site-set' => [
         'class' => SiteSetToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:apply-shadcn-preset' => [
+        'class' => ApplyShadcnPresetToolCommand::class,
         'schedulable' => false,
     ],
 ];

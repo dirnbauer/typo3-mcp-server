@@ -110,6 +110,11 @@ services:
       - name: 'console.command'
         command: 'mcp:site-set'
         description: 'Find, add, or remove TYPO3 Site Sets on an existing site.'
+  Hn\McpServer\Command\Tool\ApplyShadcnPresetToolCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:apply-shadcn-preset'
+        description: 'Apply a shadcn/ui preset to an existing frontend project.'
         
   # Make ToolRegistry public for eID access
   Hn\McpServer\MCP\ToolRegistry:

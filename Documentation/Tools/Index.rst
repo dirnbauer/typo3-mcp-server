@@ -153,6 +153,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``SafeCli``
      - Execute
      - Run whitelisted TYPO3 CLI commands
+   * - ``ApplyShadcnPreset``
+     - Execute
+     - Apply a shadcn/ui preset code from ``ui.shadcn.com/create`` to an existing frontend project
    * - ``PublishWorkspace``
      - Write
      - Publish pending workspace changes to live (dry-run by default)
@@ -764,6 +767,29 @@ Allowed commands:
 Arguments are validated against a per-command allowlist, and shell injection
 characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.
+
+ApplyShadcnPreset
+-----------------
+
+Apply a shadcn/ui preset to an existing frontend project via
+``shadcn apply --preset``. Use this when a preset is copied from
+``https://ui.shadcn.com/create`` and should change the current project theme,
+fonts, icons, and related shadcn files.
+
+:Parameters:
+   - ``preset`` (string, required): preset code such as ``b0`` or
+     ``bkqYkPSa0``, or a full
+     ``https://ui.shadcn.com/create?preset=...`` URL
+   - ``only`` (string or array): optional partial apply; allowed values are
+     ``theme`` and ``font``
+   - ``cwd`` (string): optional project-root-relative frontend directory for
+     monorepos
+   - ``packageManager`` (string): ``auto`` (default), ``npx``, ``pnpm``,
+     ``yarn``, or ``bun``
+
+The tool is admin-only because it rewrites local project files. It runs
+non-interactively with ``--yes`` and returns stdout, stderr, exit code, working
+directory, selected package runner, and execution time.
 
 Workspace publishing
 ====================

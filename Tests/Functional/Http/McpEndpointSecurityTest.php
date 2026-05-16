@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\McpEndpoint;
+use Hn\McpServer\Middleware\McpServerMiddleware;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
+use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -187,6 +193,30 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
 
         $response = $endpoint($request);
         self::assertSame(401, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function testMcpRouteAcceptsTrailingSlashWithoutFallingThroughToHtmlFrontend(): void
+    {
+        $middleware = $this->getContainer()->get(McpServerMiddleware::class);
+        self::assertInstanceOf(McpServerMiddleware::class, $middleware);
+
+        $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
+        $request = $factory->createServerRequest('POST', 'https://example.org/mcp/');
+
+        $response = $middleware->process($request, new class () implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $stream = new Stream('php://temp', 'rw');
+                $stream->write('<html>fallback</html>');
+                $stream->rewind();
+
+                return new Response($stream, 404, ['Content-Type' => 'text/html; charset=utf-8']);
+            }
+        });
+
+        self::assertSame(401, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     #[Test]

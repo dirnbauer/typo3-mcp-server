@@ -22,6 +22,7 @@ capabilities:
     - render:frontend   # RenderRecord, GetPreviewUrl (HTTP fetch to own site)
     - log:read          # GetSystemLog
     - x402:payments     # X402 paid-content tools (only loaded if x402 keys exist)
+    - project:write     # ApplyShadcnPreset (rewrites local frontend project files)
 
   # Prerequisite chains. A subsystem on the left is only "effective" when
   # all subsystems on the right are also declared. Removing `database:write`
@@ -117,6 +118,7 @@ capabilities:
     ListPaidContent:    [x402:payments, database:read]
     GetPaidContent:     [x402:payments, database:read]
     GetPaymentStats:    [x402:payments, database:read]
+    ApplyShadcnPreset:  [project:write]
 
   # Risk score: cumulative weight of declared subsystems. Used by the
   # GetCapabilities tool's `risk` field. Production reviewers can use this as
