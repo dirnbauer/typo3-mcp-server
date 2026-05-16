@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <title>Workspace transparency
+        documentation</title>
+
+
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="phpdocumentor/guides" name="generator">
+<meta content="" name="docsearch:name">
+<meta content="" name="docsearch:package_type">
+<meta content="" name="docsearch:release">
+<meta content="" name="docsearch:version">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
+    <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
+<link href="../_resources/css/theme.css" rel="stylesheet">
+<link href="https://docs.typo3.org/search/" rel="search" title="Search">
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
+                        <link href="ImplementationOverview.html" rel="prev" title="Implementation overview"/>
+            <link href="LanguageOverlays.html" rel="next" title="Language overlays"/>
+            <link href="../Index.html" rel="top" title="MCP Server"/>
+    </head>
+<body>
+<div class="page">
+    <header>
+    <div class="page-topbar">
+        <div class="page-topbar-inner">
+            <typo3-universe active="documentation">
+                <div style="display: block; height: 44px; background-color: #313131;"></div>
+            </typo3-universe>
+        </div>
+    </div>
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="d-flex flex-wrap">
+                <div class="logo-wrapper">
+                    <a class="logo" href="https://docs.typo3.org/" title="TYPO3 Documentation">
+                        <img alt="TYPO3 Logo" class="logo-image" src="../_resources/img/typo3-logo.svg" width="484" height="130">
+                    </a>
+                </div>
+                <div class="align-self-center order-lg-2 order-last">
+
+<div class="toc-header">
+    <div class="toc-title pe-3">
+                            <a class="toc-title-project" href="../Index.html">MCP Server</a>
+            </div>
+    </div>                </div>
+                <div class="ms-auto order-lg-3 d-flex">
+                    <div class="menu-search-wrapper">
+                        <button id="toc-toggle" class="btn btn-light d-block d-lg-none" tabindex="0" aria-controls="toc-collapse" aria-expanded="false">
+                            <i class="fas fa-bars"></i> <span class="visually-hidden">Mobile Menu</span>
+                        </button>
+                        <all-documentations-menu data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu>
+                                                <search role="search">
+                            <form action="https://docs.typo3.org/search/search" id="global-search-form" method="get">
+                                <div class="sr-only"><label for="globalsearchinput">TYPO3 documentation...</label></div>
+                                <div class="input-group mb-3 mt-sm-3">
+                                    <select class="form-select search__scope" id="searchscope" name="scope">
+                                        <option value="">Search all</option>
+                                    </select>
+                                    <input autocomplete="off" class="form-control shadow-none" id="globalsearchinput" name="q" placeholder="TYPO3 documentation..." type="text" value="">
+                                    <button class="btn btn-light" type="submit"><i class="fa fa-search"></i>&nbsp;<span class="d-none d-md-inline">Search</span></button>
+                                </div>
+                            </form>
+                            <div id="global-search-root"></div>
+                        </search>
+                        <div class="position-relative d-inline-block">
+                            <button id="options-toggle" class="btn btn-light d-block" type="button" aria-expanded="false">
+                                <i class="fas fa-cog"></i> <span class="visually-hidden">Options</span>
+                            </button>
+
+                            <div id="options-panel"
+                                 class="shadow p-3"
+                                 role="menu"
+                                 aria-hidden="true">
+                                <h6 class="dropdown-header text-muted text-uppercase small mb-2">Options</h6>
+
+                                                                                                            <a class="dropdown-item d-flex align-items-center gap-2" href="../_sources/Architecture/WorkspaceTransparency.rst.txt" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-code"></i>
+        View source
+    </a>
+    <a class="dropdown-item d-flex align-items-center gap-2" href="https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/WritingDocsOfficial/GithubMethod.html" id="btnHowToEdit" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-info-circle"></i>
+        How to edit
+    </a>
+                                                                                                                <a class="dropdown-item d-flex align-items-center gap-2" href="../singlehtml/Index.html" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i>
+                                            Full documentation (single file)
+                                        </a>
+                                                                                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>    <main class="page-main">
+        <div class="page-main-inner">
+            <div class="page-main-navigation">
+                <nav>
+
+                    <div id="toc-collapse">
+                                                <div aria-label="main navigation" class="toc"
+                             role="navigation">
+                                <all-documentations-menu-mobile
+        data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu-mobile>
+    <div aria-label="Main navigation" class="main_menu" role="navigation">
+                <p class="caption">MCP Server</p>
+            <ul class="menu-level-1" role="menubar">
+    <li class="" role="menuitem">
+    <a href="../Introduction/Index.html">
+        Introduction
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Introduction/IntendedBehavior.html">
+        Intended behavior
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Installation/Index.html">
+        Installation
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Configuration/Index.html">
+        Configuration
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Tools/Index.html">
+        Tools
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class=" active" role="menuitem">
+    <a href="Index.html">
+        Architecture
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="ImplementationOverview.html">
+        Implementation overview
+    </a></li><li class=" current active" role="menuitem">
+    <a href="#" aria-current="page">
+        Workspace transparency
+    </a></li><li class="" role="menuitem">
+    <a href="LanguageOverlays.html">
+        Language overlays
+    </a></li><li class="" role="menuitem">
+    <a href="InlineRelations.html">
+        Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="CapabilityManifest.html">
+        Capability manifest
+    </a></li><li class="" role="menuitem">
+    <a href="SecurityAudit.html">
+        Security audit
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Troubleshooting/Index.html">
+        Troubleshooting
+    </a></li>    </ul>
+    </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="page-main-content">
+                <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
+
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
+        <li class="breadcrumb-item"><a href="Index.html">Architecture</a></li>
+                    <li aria-current="page"  class="breadcrumb-item  active">Workspace transparency</li>
+        </ol>
+        <div class="breadcrumb-additions"></div>
+    </nav>
+
+<article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+    <div itemprop="articleBody">
+        <!-- content start -->
+
+<section class="section" id="workspace-transparency">
+            <h1>Workspace transparency<a class="headerlink" href="#workspace-transparency" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="overview">
+            <h2>Overview<a class="headerlink" href="#overview" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>This document describes how the MCP server hides TYPO3 workspace complexity
+from MCP clients. The goal is to expose a simplified content model while still
+keeping all writes safely inside TYPO3 workspaces.</p>
+
+    </section>
+            <section class="section" id="background">
+            <h2>Background<a class="headerlink" href="#background" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <dl>
+                        <dt>TYPO3 workspaces provide isolated editing areas before content is published to</dt>
+
+        <dd>live. The system uses:</dd>
+            </dl>
+
+
+<ul>
+    <li class="dash">Live records with <code>t3ver_wsid = 0</code></li>
+    <li class="dash">Workspace versions of live records</li>
+    <li class="dash">Version states for create, update, move, and delete handling</li>
+    <li class="dash">Overlay processing after database queries</li>
+</ul>
+
+
+    <p>TYPO3&#039;s default backend approach combines SQL restrictions with
+<code>BackendUtility::workspaceOL()</code> post-processing. That works well for human
+editors who understand workspace states, but it is not transparent enough for
+an MCP API.</p>
+
+    </section>
+            <section class="section" id="requirements">
+            <h2>Requirements<a class="headerlink" href="#requirements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>The MCP server needs:</p>
+
+
+
+<ul>
+    <li class="dash">Transparent operations without exposing workspace mechanics</li>
+    <li class="dash">Stable record identities for the same logical record</li>
+    <li class="dash">Automatic workspace handling in every tool</li>
+    <li class="dash">Deleted records to disappear from results immediately</li>
+</ul>
+
+    </section>
+            <section class="section" id="implementation">
+            <h2>Implementation<a class="headerlink" href="#implementation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="delete-placeholders">
+            <h3>Delete placeholders<a class="headerlink" href="#delete-placeholders" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>The custom <code>WorkspaceDeletePlaceholderRestriction</code> excludes live records that
+have a delete placeholder in the active workspace. This prevents deleted
+content from leaking into read results.</p>
+
+    </section>
+            <section class="section" id="uid-resolution">
+            <h3>UID resolution<a class="headerlink" href="#uid-resolution" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>The implementation uses two complementary mechanisms:</p>
+
+
+
+<ul>
+    <li class="dash"><code>getLiveUid()</code> maps workspace records back to the client-visible live UID</li>
+    <li class="dash"><code>resolveToWorkspaceUid()</code> finds the workspace version when a client refers
+to a live UID for updates or deletes</li>
+</ul>
+
+
+    <p>This keeps record identities stable even when TYPO3 internally works with
+workspace versions.</p>
+
+    </section>
+            <section class="section" id="query-time-workspace-handling">
+            <h3>Query-time workspace handling<a class="headerlink" href="#query-time-workspace-handling" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p><code>ReadTableTool</code> resolves both the direct <code>uid</code> and matching <code>t3ver_oid</code>
+records in a workspace. Combined with the delete-placeholder restriction, this
+allows clients to address records by their live UID while TYPO3 still reads and
+writes the correct workspace version.</p>
+
+    </section>
+            <section class="section" id="search-result-normalization">
+            <h3>Search result normalization<a class="headerlink" href="#search-result-normalization" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p><code>SearchTool</code> applies the same transparency rules by:</p>
+
+
+
+<ul>
+    <li class="dash">Filtering delete placeholders</li>
+    <li class="dash">Returning live UIDs instead of internal workspace UIDs</li>
+    <li class="dash">De-duplicating matching live and workspace versions</li>
+</ul>
+
+    </section>
+    </section>
+            <section class="section" id="rationale">
+            <h2>Rationale<a class="headerlink" href="#rationale" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Using TYPO3&#039;s standard overlay flow alone would leave too much logic in
+post-processing. The current approach keeps workspace handling closer to the
+query, which improves consistency and avoids exposing workspace artifacts to
+clients.</p>
+
+    </section>
+            <section class="section" id="benefits">
+            <h2>Benefits<a class="headerlink" href="#benefits" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+
+<ul>
+    <li class="dash">Workspace handling is transparent to MCP clients</li>
+    <li class="dash">All tools behave consistently</li>
+    <li class="dash">Fewer incorrect intermediary results need post-processing</li>
+    <li class="dash">Delete handling is more predictable</li>
+</ul>
+
+    </section>
+            <section class="section" id="limitations">
+            <h2>Limitations<a class="headerlink" href="#limitations" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+
+<ul>
+    <li class="dash">The approach intentionally differs from standard TYPO3 backend patterns</li>
+    <li class="dash">Query construction is more complex than pure live-workspace querying</li>
+    <li class="dash">Some special cases, such as move handling, still need explicit care</li>
+</ul>
+
+    </section>
+            <section class="section" id="testing">
+            <h2>Testing<a class="headerlink" href="#testing" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>The implementation is covered by functional tests around workspace edge cases,
+write flows, and search behavior.</p>
+
+    </section>
+    </section>
+        <!-- content end -->
+    </div>
+</article>
+
+            <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center"><li class="page-item">
+                            <a class="page-link" href="ImplementationOverview.html"
+                               title="Accesskey Alt(+Shift)+p">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    <li class="page-item">
+                            <a class="page-link" href="LanguageOverlays.html"
+                               title="Accesskey Alt(+Shift)+n">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+        </nav>
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="linkReferenceModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Architecture/WorkspaceTransparency">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkReferenceModalLabel">Reference to the headline</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="permalink-alert-success" role="alert"></div>
+                <div class="mb-3">
+                    <div class="permalink-short-wrapper">
+                        <label for="permalink-short" class="col-form-label">Permalink (Shortlink)</label>
+                        <div class="input-group">
+                            <input class="form-control code" id="permalink-short" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-short"><i class="far fa-clone"></i></button>
+                        </div>
+                        <p><em>Copy and freely share the link</em></p>
+                    </div>
+                    <label for="permalink-uri" class="col-form-label">URL</label>
+                    <div class="input-group">
+                        <input class="form-control code" id="permalink-uri" readonly>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-uri"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-warning alert-permalink-rst" role="alert">This link target has no permanent anchor assigned.The link below can be used, but is prone to change if the page gets moved.
+                    </div>
+                    <label for="permalink-rst" class="col-form-label">Link in reStructuredText (reST)</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-rst" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-rst"><i class="far fa-clone"></i></button>
+                    </div>
+                    <p><em>Copy this link into your TYPO3 manual.</em></p>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-md" class="col-form-label">Link in Markdown</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-md" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-md"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-html" class="col-form-label">Link in HTML</label>
+                                        <div class="input-group">
+                        <textarea class="form-control code" id="permalink-html" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-html"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>    <div class="modal fade" id="generalModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Architecture/WorkspaceTransparency"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="general-alert-success" role="alert"></div>
+                <div id="generalModalContent">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div id="generalModalCustomButtons"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i>&nbsp;Close</button>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+
+<footer class="page-footer">
+    <div class="frame frame-ruler-before frame-background-dark">
+        <div class="frame-container">
+            <div class="frame-inner">
+                                <div class="footer-additional">
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
+                </div>
+                <div class="footer-meta">
+                    <ul class="footer-meta-navigation">
+                        <li><a href="https://typo3.org/legal-notice" rel="nofollow" target="_blank" title="Legal Notice">Legal Notice</a></li>
+                        <li><a href="https://typo3.org/privacy-policy" rel="nofollow" target="_blank" title="Privacy Policy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="../_resources/js/bootstrap.min.js"></script>
+<script src="../_resources/js/theme.min.js"></script>
+
+<!--
+ Locally rendered. No tracking embedded.
+-->
+</body>
+</html>

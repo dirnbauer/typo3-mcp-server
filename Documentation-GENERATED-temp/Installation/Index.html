@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <title>Installation
+        documentation</title>
+
+
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="phpdocumentor/guides" name="generator">
+<meta content="" name="docsearch:name">
+<meta content="" name="docsearch:package_type">
+<meta content="" name="docsearch:release">
+<meta content="" name="docsearch:version">
+<meta content="2026-05-16T14:39:19+00:00" name="docsearch:modified">
+<meta content="2026-05-16T14:39:19+00:00" name="dc.modified">
+<meta content="2026-05-16T14:39:19+00:00" property="article:modified_time">
+    <link href="http://purl.org/dc/elements/1.1/" rel="schema.dc">
+<link href="../_resources/css/theme.css" rel="stylesheet">
+<link href="https://docs.typo3.org/search/" rel="search" title="Search">
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/webcomponents-loader.js"></script>
+<script src="https://cdn.typo3.com/typo3infrastructure/universe/dist/typo3-universe.js" type="module"></script>
+                        <link href="../Introduction/IntendedBehavior.html" rel="prev" title="Intended behavior"/>
+            <link href="../Configuration/Index.html" rel="next" title="Configuration"/>
+            <link href="../Index.html" rel="top" title="MCP Server"/>
+    </head>
+<body>
+<div class="page">
+    <header>
+    <div class="page-topbar">
+        <div class="page-topbar-inner">
+            <typo3-universe active="documentation">
+                <div style="display: block; height: 44px; background-color: #313131;"></div>
+            </typo3-universe>
+        </div>
+    </div>
+    <div class="page-header">
+        <div class="page-header-inner">
+            <div class="d-flex flex-wrap">
+                <div class="logo-wrapper">
+                    <a class="logo" href="https://docs.typo3.org/" title="TYPO3 Documentation">
+                        <img alt="TYPO3 Logo" class="logo-image" src="../_resources/img/typo3-logo.svg" width="484" height="130">
+                    </a>
+                </div>
+                <div class="align-self-center order-lg-2 order-last">
+
+<div class="toc-header">
+    <div class="toc-title pe-3">
+                            <a class="toc-title-project" href="../Index.html">MCP Server</a>
+            </div>
+    </div>                </div>
+                <div class="ms-auto order-lg-3 d-flex">
+                    <div class="menu-search-wrapper">
+                        <button id="toc-toggle" class="btn btn-light d-block d-lg-none" tabindex="0" aria-controls="toc-collapse" aria-expanded="false">
+                            <i class="fas fa-bars"></i> <span class="visually-hidden">Mobile Menu</span>
+                        </button>
+                        <all-documentations-menu data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu>
+                                                <search role="search">
+                            <form action="https://docs.typo3.org/search/search" id="global-search-form" method="get">
+                                <div class="sr-only"><label for="globalsearchinput">TYPO3 documentation...</label></div>
+                                <div class="input-group mb-3 mt-sm-3">
+                                    <select class="form-select search__scope" id="searchscope" name="scope">
+                                        <option value="">Search all</option>
+                                    </select>
+                                    <input autocomplete="off" class="form-control shadow-none" id="globalsearchinput" name="q" placeholder="TYPO3 documentation..." type="text" value="">
+                                    <button class="btn btn-light" type="submit"><i class="fa fa-search"></i>&nbsp;<span class="d-none d-md-inline">Search</span></button>
+                                </div>
+                            </form>
+                            <div id="global-search-root"></div>
+                        </search>
+                        <div class="position-relative d-inline-block">
+                            <button id="options-toggle" class="btn btn-light d-block" type="button" aria-expanded="false">
+                                <i class="fas fa-cog"></i> <span class="visually-hidden">Options</span>
+                            </button>
+
+                            <div id="options-panel"
+                                 class="shadow p-3"
+                                 role="menu"
+                                 aria-hidden="true">
+                                <h6 class="dropdown-header text-muted text-uppercase small mb-2">Options</h6>
+
+                                                                                                            <a class="dropdown-item d-flex align-items-center gap-2" href="../_sources/Installation/Index.rst.txt" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-code"></i>
+        View source
+    </a>
+    <a class="dropdown-item d-flex align-items-center gap-2" href="https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/WritingDocsOfficial/GithubMethod.html" id="btnHowToEdit" rel="nofollow noopener" target="_blank">
+        <i class="fas fa-info-circle"></i>
+        How to edit
+    </a>
+                                                                                                                <a class="dropdown-item d-flex align-items-center gap-2" href="../singlehtml/Index.html" target="_blank" rel="noopener">
+                                            <i class="fas fa-print"></i>
+                                            Full documentation (single file)
+                                        </a>
+                                                                                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>    <main class="page-main">
+        <div class="page-main-inner">
+            <div class="page-main-navigation">
+                <nav>
+
+                    <div id="toc-collapse">
+                                                <div aria-label="main navigation" class="toc"
+                             role="navigation">
+                                <all-documentations-menu-mobile
+        data-override-url="../_resources/js/menu-proxy.php"></all-documentations-menu-mobile>
+    <div aria-label="Main navigation" class="main_menu" role="navigation">
+                <p class="caption">MCP Server</p>
+            <ul class="menu-level-1" role="menubar">
+    <li class="" role="menuitem">
+    <a href="../Introduction/Index.html">
+        Introduction
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Introduction/IntendedBehavior.html">
+        Intended behavior
+    </a></li></ul></li>    <li class=" current active" role="menuitem">
+    <a href="#" aria-current="page">
+        Installation
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Configuration/Index.html">
+        Configuration
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Tools/Index.html">
+        Tools
+    </a></li>    <li class="" role="menuitem">
+    <a href="../Testing/Index.html">
+        Testing
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Testing/E2eSuite.html">
+        The E2E suite
+    </a></li><li class="" role="menuitem">
+    <a href="../Testing/E2eCiDebugging.html">
+        E2E CI and debugging
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Architecture/Index.html">
+        Architecture
+    </a>        <ul class="menu-level-1"><li class="" role="menuitem">
+    <a href="../Architecture/ImplementationOverview.html">
+        Implementation overview
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/WorkspaceTransparency.html">
+        Workspace transparency
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/LanguageOverlays.html">
+        Language overlays
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/InlineRelations.html">
+        Inline relations
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/CapabilityManifest.html">
+        Capability manifest
+    </a></li><li class="" role="menuitem">
+    <a href="../Architecture/SecurityAudit.html">
+        Security audit
+    </a></li></ul></li>    <li class="" role="menuitem">
+    <a href="../Troubleshooting/Index.html">
+        Troubleshooting
+    </a></li>    </ul>
+    </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div class="page-main-content">
+                <div class="rst-content">                        <nav aria-label="breadcrumbs navigation" class="breadcrumb-bar" role="navigation">
+
+<ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="../Index.html">MCP Server</a></li>
+                    <li aria-current="page"  class="breadcrumb-item  active">Installation</li>
+        </ol>
+        <div class="breadcrumb-additions"></div>
+    </nav>
+
+<article class="document" itemscope="itemscope" itemtype="http://schema.org/Article" role="main">
+    <div itemprop="articleBody">
+        <!-- content start -->
+
+<section class="section" id="installation-1" data-rst-anchor="installation">
+            <a id="installation"></a>
+            <h1>Installation<a class="headerlink" href="#installation-1" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h1>
+            <section class="section" id="requirements" data-rst-anchor="installation-requirements">
+            <a id="installation-requirements"></a>
+            <h2>Requirements<a class="headerlink" href="#requirements" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+
+<ul>
+    <li class="dash">TYPO3 v14</li>
+    <li class="dash">PHP 8.2+</li>
+    <li class="dash">TYPO3 backend access for the editors who will use MCP</li>
+    <li class="dash">TYPO3 Workspaces extension, installed as a dependency</li>
+</ul>
+
+    </section>
+            <section class="section" id="recommended-prerequisites">
+            <h2>Recommended prerequisites<a class="headerlink" href="#recommended-prerequisites" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Before you connect an MCP client, make sure TYPO3 is already configured with:</p>
+
+
+
+<ul>
+    <li class="dash">at least one backend user who can access the relevant page tree</li>
+    <li class="dash">table permissions for the records you want MCP to manage</li>
+    <li class="dash">a writable workspace, or permission for the extension to create one</li>
+    <li class="dash">a reachable base URL for remote clients</li>
+</ul>
+
+    </section>
+            <section class="section" id="composer-installation">
+            <h2>Composer installation<a class="headerlink" href="#composer-installation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Install the extension with Composer:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Install the extension with Composer</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs bash">composer require hn/typo3-mcp-server</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>Activate the extension:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Activate the extension</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 extension:activate mcp_server</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>The backend module will then be available under <span class="guilabel">User &gt; MCP Server</span>.</p>
+
+    </section>
+            <section class="section" id="first-backend-check">
+            <h2>First backend check<a class="headerlink" href="#first-backend-check" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Open the backend module and verify that you can see:</p>
+
+
+
+<ul>
+    <li class="dash">the MCP endpoint URL</li>
+    <li class="dash">the main connection setup tabs</li>
+    <li class="dash">the remote client setup tabs</li>
+    <li class="dash">the active token management area</li>
+    <li class="dash">endpoint status indicators for MCP and OAuth discovery URLs</li>
+</ul>
+
+    </section>
+            <section class="section" id="backend-module-setup">
+            <h2>Backend module setup<a class="headerlink" href="#backend-module-setup" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>The backend module is designed around the most common connection flow first.</p>
+
+
+    <p>At the top of the page you get:</p>
+
+
+
+<ul>
+    <li class="dash">the remote MCP server URL</li>
+    <li class="dash">a copy button for the server URL</li>
+    <li class="dash">endpoint health checks for the MCP and OAuth discovery URLs</li>
+</ul>
+
+
+    <p>The client chooser then provides focused setup steps for:</p>
+
+
+
+<ul>
+    <li class="dash">Claude Desktop</li>
+    <li class="dash">n8n</li>
+    <li class="dash">Manus</li>
+    <li class="dash">MCP Inspector</li>
+    <li class="dash">other MCP clients</li>
+</ul>
+
+
+    <p>Separate top-level tabs also cover:</p>
+
+
+
+<ul>
+    <li class="dash">Remote MCP Setup</li>
+    <li class="dash">Local Setup (mcp-remote)</li>
+    <li class="dash">Local Setup (TYPO3 CLI)</li>
+</ul>
+
+
+    <p>The common path is:</p>
+
+
+
+<ol start="1" type="1">
+    <li value="1">Open <span class="guilabel">User &gt; MCP Server</span>.</li>
+    <li value="2">Copy the server URL.</li>
+    <li value="3">Choose your client tab.</li>
+    <li value="4">Follow the short client-specific setup.</li>
+    <li value="5">Complete OAuth in TYPO3, or create a direct-access token for clients such as
+n8n or Manus.</li>
+</ol>
+
+    </section>
+            <section class="section" id="connection-options" data-rst-anchor="installation-connection-options">
+            <a id="installation-connection-options"></a>
+            <h2>Connection options<a class="headerlink" href="#connection-options" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+            <section class="section" id="remote-mcp-over-oauth">
+            <h3>Remote MCP over OAuth<a class="headerlink" href="#remote-mcp-over-oauth" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>This is the recommended setup for remote MCP clients.</p>
+
+
+
+<ol start="1" type="1">
+    <li value="1">Open <span class="guilabel">User &gt; MCP Server</span>.</li>
+    <li value="2">Copy the server URL shown in the module.</li>
+    <li value="3">Add the server URL to your MCP client.</li>
+    <li value="4">Complete the OAuth flow in TYPO3 when the client requests access.</li>
+</ol>
+
+
+    <p>The module includes setup instructions for multiple client types.</p>
+
+    </section>
+            <section class="section" id="local-typo3-cli-server" data-rst-anchor="installation-local-cli">
+            <a id="installation-local-cli"></a>
+            <h3>Local TYPO3 CLI server<a class="headerlink" href="#local-typo3-cli-server" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>For local development or shell-based MCP clients, use the TYPO3 CLI command.</p>
+
+
+    <p>Example MCP client configuration:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Example local stdio MCP client configuration</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs json">{
+  <span class="hljs-attr">"mcpServers"</span>: {
+    <span class="hljs-attr">"my-typo3-site"</span>: {
+      <span class="hljs-attr">"command"</span>: <span class="hljs-string">"php"</span>,
+      <span class="hljs-attr">"args"</span>: [<span class="hljs-string">"vendor/bin/typo3"</span>, <span class="hljs-string">"mcp:server"</span>]
+    }
+  }
+}</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>This is convenient for development, but it uses a different trust model than
+the remote OAuth endpoint.</p>
+
+
+<div class="admonition caution" role="alert">
+    <p class="admonition-title">Caution</p>
+
+    <p><strong>Local stdio and the host (guidance for this maintained distribution):</strong>
+The CLI server runs as the <strong>operating-system user</strong> that starts it. TYPO3
+enforces editorial and table permissions for MCP tools, but it does <strong>not</strong>
+sandbox the underlying machine. If your MCP client also exposes a shell or
+terminal—or you launch the server via <code>bash</code>, <code>sh</code>, or other
+wrappers—the effective risk includes <strong>arbitrary host commands</strong> at that
+user’s privilege level (files, environment secrets, system changes beyond
+TYPO3). Use this setup only on <strong>trusted local or non-production</strong> systems,
+with least-privilege OS accounts and without mixing it with production
+secrets or unrestricted terminal access.</p>
+
+    <p>The same topic is covered technically under <strong>Local stdio and the host OS
+boundary</strong> in <code>TECHNICAL_OVERVIEW.md</code> (repository root).</p>
+
+</div>
+    </section>
+            <section class="section" id="cli-mirror-every-tool-every-shell" data-rst-anchor="installation-cli-mirror">
+            <a id="installation-cli-mirror"></a>
+            <h3>CLI mirror (every tool, every shell)<a class="headerlink" href="#cli-mirror-every-tool-every-shell" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h3>
+
+    <p>Every MCP tool is also a TYPO3 console command, so shell scripts, CI
+pipelines, and <code>ddev exec</code> can drive the same surface as the MCP
+endpoint. List what&#039;s available:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Discover MCP tool commands</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 list mcp</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>Run any registered tool by name:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Generic runner</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 mcp:tool ReadTable --param table=pages --param pid=1 --json
+vendor/bin/typo3 mcp:tool:list --schema=ReadTable</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>Or use one of the shipped per-tool shortcuts:</p>
+
+                <div class="code-block-caption">
+        <span class="caption-text">Per-tool shortcuts</span>
+    </div><div class="code-block-wrapper" translate="no">
+
+    <pre class="code-block"><code class="hljs bash">vendor/bin/typo3 mcp:<span class="hljs-built_in">read</span>-table --table tt_content --pid 1
+vendor/bin/typo3 mcp:write-table --action create --table pages --pid 1 --param data=<span class="hljs-string">'{"title": "X"}'</span>
+vendor/bin/typo3 mcp:get-capabilities --json</code></pre>
+    <div class="code-block-actions">        <button class="code-block-copy" title="Copy to clipboard">
+            <i class="icon fa-regular fa-copy code-block-copy-icon"></i>
+            <i class="fa-solid fa-check code-block-check-icon code-block-hide"></i>
+        </button>
+        <span class="code-block-check-tooltip code-block-hide" aria-live="polite">Copied!</span>
+    </div>
+</div>
+
+    <p>Output modes:</p>
+
+
+
+<ul>
+    <li class="dash"><code>--json</code> — machine envelope <code>{ok, result}</code></li>
+    <li class="dash"><code>--plain</code> or <code>--no-ansi</code> — plain text without decoration</li>
+    <li class="dash">(default) — pretty colored output</li>
+</ul>
+
+
+    <p>Use <code>--param key=@payload.json</code> to pass JSON from a file (constrained to
+the TYPO3 project root). Adding a new <code>mcp:&lt;tool&gt;</code> shortcut: see the
+<code>typo3-mcp-cli</code> claude-code skill.</p>
+
+    </section>
+    </section>
+            <section class="section" id="after-installation">
+            <h2>After installation<a class="headerlink" href="#after-installation" data-bs-toggle="modal" data-bs-target="#linkReferenceModal"  title="Reference this headline">&nbsp;<i class="fa-solid fa-link"></i></a></h2>
+
+    <p>Continue with:</p>
+
+
+
+<ul>
+    <li class="dash"><a href="../Configuration/Index.html">Configuration</a> to configure the file sandbox, capability
+manifest, local-mode toggle, and workspace behavior</li>
+    <li class="dash"><a href="../Tools/Index.html">Tools</a> to review the available MCP tools</li>
+    <li class="dash"><a href="../Architecture/CapabilityManifest.html">Capability manifest</a> to understand the
+declaration-and-enforcement security model</li>
+</ul>
+
+    </section>
+    </section>
+        <!-- content end -->
+    </div>
+</article>
+
+            <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center"><li class="page-item">
+                            <a class="page-link" href="../Introduction/IntendedBehavior.html"
+                               title="Accesskey Alt(+Shift)+p">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </a>
+                        </li>
+                    <li class="page-item">
+                            <a class="page-link" href="../Configuration/Index.html"
+                               title="Accesskey Alt(+Shift)+n">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+        </nav>
+                    </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="linkReferenceModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Installation/Index">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkReferenceModalLabel">Reference to the headline</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="permalink-alert-success" role="alert"></div>
+                <div class="mb-3">
+                    <div class="permalink-short-wrapper">
+                        <label for="permalink-short" class="col-form-label">Permalink (Shortlink)</label>
+                        <div class="input-group">
+                            <input class="form-control code" id="permalink-short" readonly>
+                            <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-short"><i class="far fa-clone"></i></button>
+                        </div>
+                        <p><em>Copy and freely share the link</em></p>
+                    </div>
+                    <label for="permalink-uri" class="col-form-label">URL</label>
+                    <div class="input-group">
+                        <input class="form-control code" id="permalink-uri" readonly>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-uri"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="alert alert-warning alert-permalink-rst" role="alert">This link target has no permanent anchor assigned.The link below can be used, but is prone to change if the page gets moved.
+                    </div>
+                    <label for="permalink-rst" class="col-form-label">Link in reStructuredText (reST)</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-rst" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-rst"><i class="far fa-clone"></i></button>
+                    </div>
+                    <p><em>Copy this link into your TYPO3 manual.</em></p>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-md" class="col-form-label">Link in Markdown</label>
+                    <div class="input-group">
+                        <textarea class="form-control code" id="permalink-md" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-md"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="permalink-html" class="col-form-label">Link in HTML</label>
+                                        <div class="input-group">
+                        <textarea class="form-control code" id="permalink-html" readonly></textarea>
+                        <button type="button" class="btn btn-outline-secondary copy-button" data-target="permalink-html"><i class="far fa-clone"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>    <div class="modal fade" id="generalModal" tabindex="-1" aria-labelledby="linkReferenceModalLabel"
+    aria-hidden="true" data-current-filename="Installation/Index"
+>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generalModalLabel"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-none" id="general-alert-success" role="alert"></div>
+                <div id="generalModalContent">
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <div id="generalModalCustomButtons"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fa-regular fa-circle-xmark"></i>&nbsp;Close</button>
+            </div>
+        </div>
+    </div>
+</div></div>
+
+
+<footer class="page-footer">
+    <div class="frame frame-ruler-before frame-background-dark">
+        <div class="frame-container">
+            <div class="frame-inner">
+                                <div class="footer-additional">
+                    <p class="text-center">Last rendered: May 16, 2026 14:39</p>
+                </div>
+                <div class="footer-meta">
+                    <ul class="footer-meta-navigation">
+                        <li><a href="https://typo3.org/legal-notice" rel="nofollow" target="_blank" title="Legal Notice">Legal Notice</a></li>
+                        <li><a href="https://typo3.org/privacy-policy" rel="nofollow" target="_blank" title="Privacy Policy">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="../_resources/js/bootstrap.min.js"></script>
+<script src="../_resources/js/theme.min.js"></script>
+
+<!--
+ Locally rendered. No tracking embedded.
+-->
+</body>
+</html>

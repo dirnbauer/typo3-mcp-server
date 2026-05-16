@@ -1,363 +1,408 @@
-# TYPO3 MCP Server Technical Overview
+# TYPO3 MCP Server — Technical Overview
 
-This document provides a comprehensive technical overview of the TYPO3 MCP (Model Context Protocol) Server extension. It explains how AI assistants can safely interact with TYPO3 content through a carefully designed interface that maintains security while hiding complexity.
+Long-form companion to the [README](README.md) and the
+[reStructuredText manual](Documentation/Index.rst). Focus is on design
+rationale, architecture, and practical AI-workflow scenarios, not a full
+tool reference (see
+[`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst) for that).
 
-## Introduction & Core Concepts
+---
 
-### What is the TYPO3 MCP Server?
+## Table of contents
 
-The TYPO3 MCP Server is an extension that bridges the gap between AI language models and TYPO3 content management. It provides a standardized interface that allows AI assistants like Claude, ChatGPT, or other MCP-compatible tools to:
+- [Project lineage](#project-lineage)
+- [What problem this solves](#what-problem-this-solves)
+- [Design principles](#design-principles)
+- [MCP ergonomics (mcp-builder alignment)](#mcp-ergonomics-mcp-builder-alignment)
+- [Real-world scenarios](#real-world-scenarios)
+- [Implementation architecture](#implementation-architecture)
+- [Known limitations](#known-limitations)
+- [Skills vs MCP tools](#skills-vs-mcp-tools)
+- [Best practices for editors](#best-practices-for-editors)
 
-- Read and understand TYPO3 content structure
-- Create and modify content safely
-- Navigate complex site hierarchies
-- Work with any TYPO3 extension's data
+## Project lineage
 
-### The Problem It Solves
+This repository builds on the original TYPO3 MCP Server work by Marco
+Pfeiffer and [hauptsacheNet](https://github.com/hauptsacheNet). That
+foundation was strong in exactly the right places: TYPO3-native,
+editor-first, workspace-safe, practical. The current v14-focused line keeps
+that direction while tightening security, clarifying MCP ergonomics, and
+expanding the tool surface.
 
-Traditional CMS interfaces are designed for human interaction through web browsers. AI assistants need a different approach - one that provides structured data access while maintaining the safety and workflow controls that make TYPO3 reliable. The MCP Server solves this by:
+## What problem this solves
 
-- **Ensuring all changes go through workspaces** - no accidental live modifications
-- **Providing AI-friendly interfaces** - structured data instead of HTML forms
-- **Maintaining security** - respecting user permissions and access controls
-- **Supporting complex operations** - handling relations, translations, and more
+TYPO3 backends are designed for people using forms, trees, and list modules.
+LLMs need something different: structured tools, stable identifiers, and
+machine-readable responses. This extension provides that layer while:
 
-### How MCP Fits In
-
-The Model Context Protocol (MCP) is an open standard for connecting AI systems with external tools and data sources. In the TYPO3 context:
-
-- **MCP Client**: Your AI assistant (Claude Desktop, custom implementations, etc.)
-- **MCP Server**: This TYPO3 extension
-- **TYPO3**: Your content management system
-
-The MCP Server acts as an intelligent translator between what the AI understands and how TYPO3 works internally.
+- routing every record-write through a TYPO3 workspace (no accidental live
+  edits),
+- respecting TCA, DataHandler, permissions, and language overlays,
+- keeping editors in charge of publishing.
 
 ```
 ┌──────────────┐     OAuth/HTTP      ┌─────────────────┐
-│  MCP Client  │◄───────────────────▶│   MCP Server    │
-│(Claude, etc) │     stdin/stdout    │  (TYPO3 Ext)    │
+│  MCP Client  │ ◄──────────────────►│   MCP Server    │
+│ Cursor/Claude│     stdin/stdout    │  (TYPO3 ext)    │
 └──────────────┘                     └────────┬────────┘
                                               │
                                               ▼
                                      ┌─────────────────┐
                                      │  TYPO3 Core     │
-                                     │  - DataHandler  │
-                                     │  - Workspaces   │
-                                     │  - TCA/Database │
+                                     │  DataHandler    │
+                                     │  Workspaces     │
+                                     │  TCA / FAL      │
                                      └─────────────────┘
 ```
 
-## Core Principles
+## Design principles
 
-These design principles guide every aspect of the MCP Server implementation:
+### 1. Workspace transparency
 
-### 1. Workspace Transparency
-All content modifications automatically happen in TYPO3 workspaces. The AI assistant doesn't need to understand workspaces - it just creates or modifies content, and the system ensures it's safely queued for review. From the AI's perspective, it's working with simple record IDs, while behind the scenes, the workspace system manages versions and drafts.
+Every record-backed write stages in a TYPO3 workspace. Clients see stable
+live-facing UIDs; internal version rows never leak into tool output. If the
+user has no active workspace, the extension picks a writable one or creates
+an "MCP" workspace automatically.
 
-### 2. TCA-First Approach
-TYPO3's TCA is designed to create human-understandable forms, and we leverage this same design to create AI-understandable data representations. Every operation is based on the Table Configuration Array rather than raw database schemas. This means:
-- Validation rules are automatically enforced
-- Field types are properly handled
-- Relations work as configured
-- Well-named fields and descriptions in TCA automatically create a good AI interface
-- The same effort that makes forms intuitive for editors makes data intuitive for AI
+### 2. TCA-first
 
-### 3. Familiar Interface Patterns
-The MCP tools closely resemble TYPO3's Page-Tree and List-Module interfaces. This familiar pattern means:
-- TYPO3 users can easily estimate what the AI will see and understand
-- Extensions that design good interfaces through TCA automatically provide good AI interfaces
-- Better for everyone: improvements in human usability translate directly to AI usability
+Tool schemas are derived from TYPO3 TCA, not from handwritten per-table
+adapters. That means field labels, palettes, FlexForms, relations, record
+types, and third-party extensions (e.g. `georgringer/news`) work without any
+MCP-specific code.
 
-### 4. Extension Compatibility
-Any TYPO3 extension with proper TCA configuration and workspace support works automatically - no modifications needed. If you can edit it in the TYPO3 backend, the AI can work with it through MCP. This includes:
-- Core TYPO3 tables (pages, content, users)
-- Popular extensions (news, etc.)
-- Your custom extensions
+### 3. Familiar patterns
 
-### 5. User Context & Responsibility
-The MCP operates with the permissions and workspace of the authenticated user. It's a tool to help editors, but editors remain responsible for the content. The AI assistant:
-- Can only access what the user can access
-- Creates changes in the user's workspace and in the users name
-- Respects all permission settings
-- Maintains an audit trail
+MCP tools resemble what TYPO3 editors already know: page-tree,
+list-module-style reads, schema-driven writes. Better TCA labels and
+descriptions instantly improve the AI experience too.
 
-### 6. Page-Centric Context
-Everything in TYPO3 revolves around pages, and the MCP Server embraces this. Most operations require or benefit from page context:
-- Content elements belong to pages
-- Records are often filtered by page
-- Permissions are page-based
-- URLs map to pages
+### 4. User context
 
-### 7. Safety by Default
-No direct modifications to live data are possible. Every change:
-- Goes through TYPO3's DataHandler
-- Is created in a workspace
-- Must be explicitly published
-- Can be reviewed before going live
+MCP calls run with the authenticated backend user's permissions and
+workspace. The AI can only do what the user could do through the backend.
 
-### 8. Thoughtful Data Representation
-The complexity of TYPO3 is hidden through carefully crafted data representations. Rather than simply dumping JSON, we thoughtfully curate what the AI sees:
-- JSON structures that mirror the form layouts, showing only relevant fields
-- Friendly error messages instead of technical exceptions
-- Logical field names with context from TCA labels and descriptions
-- Automatic handling of relations and references
-- Tab and palette groupings preserved to maintain semantic relationships
+### 5. Safety by default
 
+Writes go through DataHandler. Publishes and rollbacks default to dry-run.
+File tools are sandboxed. Admin-only tools (`CreateSite`, `InstallExtension`)
+are clearly gated.
 
-## Available Tools
+A **capability manifest** (`Configuration/Capabilities.yaml`) declares
+which subsystems each tool needs and gates outbound HTTP. Production
+operators harden by removing subsystems (e.g. delete `database:write` to
+make MCP read-only) or constraining `network.outbound` to specific
+domains. See
+[`Documentation/Architecture/CapabilityManifest.rst`](Documentation/Architecture/CapabilityManifest.rst).
 
-The MCP Server provides these tools for interacting with TYPO3:
+A **DDEV / local-mode service** (`LocalModeService`) detects developer
+environments and relaxes the workspace-staging, non-workspace-table,
+outbound HTTP, and file-sandbox safety nets — never authentication, backend
+user permissions, or per-tool subsystem checks. Production stays strict by
+default, and strict sandbox mode can be forced via TYPO3 feature flag or User
+TSconfig.
 
-### Discovery & Navigation
-- **GetPageTree** - Navigate site hierarchy and explore page structure
-- **GetPage** - Get page details by URL or ID with content summary
-- **ListTables** - Discover available TYPO3 tables and extensions
+### 6. Language-awareness, conditional
 
-### Content Reading
-- **ReadTable** - Read records from any TYPO3 table with filtering
-- **Search** - Find content across tables using full-text search
-- **GetTableSchema** - Understand table structure and field types
-- **GetFlexFormSchema** - Get plugin configuration schemas
+Translation parameters are only exposed when the site actually has more than
+one language configured. `WriteTable` accepts ISO codes (`de`, `fr`, ...).
+Page overlays use TYPO3's `PageRepository`; workspace overlays use custom
+transparency logic. See
+[`Documentation/Architecture/LanguageOverlays.rst`](Documentation/Architecture/LanguageOverlays.rst).
 
-### Content Modification
-- **WriteTable** - Create, update, or delete records (safely in workspace)
+### 7. Versioning and evolution
 
-> Each tool provides detailed schema information when called. See the Real-World Scenarios below for practical examples.
+The extension targets TYPO3 v14 strictly. MCP tool contracts are treated as
+**editor/product ergonomics, not as a legacy API**. Tool names, parameters,
+and defaults may change within v14 when that improves LLM usability or TYPO3
+correctness. Pin Composer versions and read release notes before upgrades.
 
-## Real-World Scenarios
+## MCP ergonomics (mcp-builder alignment)
 
-Here are practical examples of how the MCP Server enables AI-powered content management:
+This extension is reviewed against the public
+[mcp-builder skill](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).
+
+**What matches the guide**
+
+- **Schemas** — Each tool has a top-level `description`, JSON Schema
+  `inputSchema` with per-field descriptions, and `required` where useful.
+  Record-backed tools share an optional `workspace_id` (see
+  `AbstractRecordTool`).
+- **Annotations** — All four hints are set on every tool: `readOnlyHint`,
+  `destructiveHint`, `idempotentHint`, `openWorldHint`.
+- **Actionable errors** — `AbstractTool` + `ExceptionHandlerTrait` map
+  exceptions to `CallToolResult` errors with editor-oriented text. Server
+  internals stay in logs. Unknown tool names return a helpful
+  `tools/list` hint instead of a JSON-RPC `-32603`.
+- **Pagination** — `ReadTable` returns `total`, `count`, `limit`, `offset`,
+  `nextOffset`, `hasMore`. `Search` enforces per-table limits and reports
+  both totals and returned matches when a table was truncated. Tree tools
+  warn about depth vs. site size.
+- **Transport** — Remote HTTP + OAuth for hosted use; local stdio for
+  trusted environments.
+
+**Intentional differences**
+
+- **Naming** — PascalCase (`ReadTable`, `WriteTable`) matches TYPO3 vocabulary
+  instead of the `service_action` prefix style.
+- **Structured output** — The PHP SDK does not currently expose
+  `outputSchema` for structured tool results. Successful tools return **JSON
+  inside `TextContent`**; client-side parsing is expected.
+
+### Local stdio and the host OS boundary
+
+`vendor/bin/typo3 mcp:server` runs as the OS user that launched it. TYPO3
+constrains editorial rules; it does **not** isolate the PHP process from the
+rest of the machine. If the MCP client exposes a shell — or you wrap startup
+in `bash` — effective risk includes arbitrary host commands at the user's
+privilege level. Treat that combination like interactive shell access: use
+only on trusted local / non-production hosts; prefer dedicated OS accounts;
+do not pair with production credentials.
+
+## Real-world scenarios
 
 ### "Translate that page"
 
-**User says**: "Translate the /about-us page to German"
+**Prompt:** *"Translate the /about-us page to German."*
 
-**What happens**:
-1. AI uses `GetPage` with URL "/about-us" to fetch the page
-2. Reads all content elements using `ReadTable` with pid filter
-3. Translates the text content
-4. Creates German language versions using `WriteTable`
-5. Sets proper language relations and parent references
+```jsonc
+GetPage    { "url": "/about-us" }
+ReadTable  { "table": "tt_content", "pid": 123 }
 
-**Tool calls**:
-```json
-// 1. Get page info
-{"tool": "GetPage", "params": {"url": "/about-us"}}
-
-// 2. Read content elements
-{"tool": "ReadTable", "params": {
-  "table": "tt_content",
-  "pid": 123
-  // No language parameter = default language
-}}
-
-// 3. Create translations
-{"tool": "WriteTable", "params": {
+WriteTable {
   "table": "tt_content",
   "action": "translate",
   "uid": 456,
   "data": {
     "sys_language_uid": "de",
-    "header": "Über uns",
-    "bodytext": "[translated content]"
+    "header":   "Über uns",
+    "bodytext": "[translated content]",
+    "slug":     "/ueber-uns"
   }
-}}
+}
+// Response includes translationUid (live), targetLanguage ("de" — resolved
+// per-site, not first-wins across all sites), siteIdentifier, slug, and
+// hidden=false. Translations are visible by default — pass hidden: true to
+// keep them in review.
 ```
 
-### "Create a news article from this Word draft"
+### "Create a news article from this draft"
 
-**User says**: "Create a news article from this document" [provides Word file]
+```jsonc
+GetPageTree      { "startPage": 0, "depth": 3 }
+GetTableSchema   { "table": "tx_news_domain_model_news" }
+ReadTable        { "table": "tx_news_domain_model_category", "pid": 789 }
 
-**What happens**:
-1. AI extracts content from the Word document
-2. Finds appropriate storage location for news articles
-3. Uses `GetTableSchema` to understand news record structure
-4. Searches for or creates appropriate categories
-5. Creates news record with proper metadata
-6. Handles relations and references
-
-**Tool calls**:
-```json
-// 1. Find news storage folder
-{"tool": "GetPageTree", "params": {"depth": 3}}
-// or
-{"tool": "ReadTable", "params": {
-  "table": "pages",
-  "where": "doktype = 254",
-  "limit": 10
-}}
-
-// 2. Check news table structure
-{"tool": "GetTableSchema", "params": {"table": "tx_news_domain_model_news"}}
-
-// 3. Look for existing categories
-{"tool": "ReadTable", "params": {
-  "table": "tx_news_domain_model_category",
-  "pid": 789
-}}
-
-// 4. Create news article
-{"tool": "WriteTable", "params": {
+WriteTable {
   "table": "tx_news_domain_model_news",
   "action": "create",
   "pid": 789,
   "data": {
-    "title": "Annual Report 2024 Released",
-    "teaser": "Our latest financial results...",
-    "bodytext": "[full article content]",
+    "title":      "Annual Report 2026 Released",
+    "teaser":     "Our latest financial results …",
+    "bodytext":   "[full article content]",
     "categories": [12, 15],
-    "datetime": "2024-01-15T10:00:00"
-  }
-}}
-```
-
-### "Proofread and judge the tone of site X"
-
-**User says**: "Review the tone of our product pages and make them more friendly"
-
-**What happens**:
-1. AI finds all product pages using `GetPageTree`
-2. Reads content from each page
-3. Analyzes tone and style
-4. Provides specific recommendations
-5. Can update content if requested
-
-### "Fill in the SEO descriptions of those sites"
-
-**User says**: "Add meta descriptions to all pages that don't have them"
-
-**What happens**:
-1. AI searches for pages without descriptions
-2. Reads page content to understand context
-3. Generates appropriate meta descriptions
-4. Updates page records with SEO content
-
-**Note on Limitations**: Complex operations like "translate the entire page" may hit context window limits depending on the MCP client and language model. Consider processing in chunks for large pages.
-
-## Key Features in Detail
-
-### URL Resolution
-
-The `GetPage` tool intelligently handles various URL formats:
-
-- **Full URLs**: `https://example.com/about-us`
-- **Paths**: `/about-us` or `about-us`  
-- **Multi-language**: Detects language from URL
-- **Domain validation**: Ensures URLs match configured sites
-- **Fallback strategies**: Router → slug lookup → ID
-
-### Relation Handling
-
-Relations are transparently resolved and can be set using simple syntax:
-
-- **Select relations**: Use comma-separated IDs or arrays
-- **Inline relations**: Provide as nested objects
-- **MM relations**: Handled automatically
-- **File references**: Currently read-only
-- **Bidirectional**: Updates both sides as needed
-
-### Language Support
-
-The MCP Server provides sophisticated multi-language support:
-
-1. **ISO Code Support**: Instead of numeric language UIDs, use ISO codes like 'de', 'fr', 'en'
-2. **Automatic Discovery**: Available languages are discovered from site configuration
-3. **Smart Schema Display**: Language fields show available ISO codes in GetTableSchema
-4. **Translation Actions**: Built-in support for creating and managing translations
-
-Example:
-```json
-// Instead of: "sys_language_uid": 1
-// Use: "sys_language_uid": "de"
-```
-
-### Workspace Magic
-
-Behind the scenes, the workspace system:
-
-1. **Finds or creates** an appropriate workspace
-2. **Manages versions** without exposing version UIDs
-3. **Handles deletes** through delete placeholders
-4. **Overlays data** for transparent reading
-5. **Queues changes** for editorial review
-
-### Validation & Error Handling
-
-Errors are designed to help AI assistants self-correct:
-
-```json
-{
-  "error": "Validation failed",
-  "details": {
-    "field_errors": {
-      "title": "This field is required",
-      "email": "Invalid email format"
-    },
-    "suggestions": {
-      "email": "Use format: user@example.com"
-    }
+    "datetime":   "2026-01-15T10:00:00"
   }
 }
 ```
 
-### Permission Handling
+### "Fill in missing SEO descriptions"
 
-The MCP Server respects all TYPO3 permissions:
+```jsonc
+ContentAudit { "startPage": 1, "depth": 4, "checks": ["missingMetaDescription"] }
+// iterate results, then for each hit:
+WriteTable   { "table": "pages", "action": "update", "uid": …, "data": { "description": "…" } }
+```
 
-- **Page permissions**: Read, write, delete
-- **Table permissions**: Based on user group
-- **Field permissions**: Exclude fields work
-- **Record permissions**: Custom access checks
-- **Workspace permissions**: Automatic workspace selection
+### "Add alt text to all product images"
 
-## What's Not Yet Implemented
+```jsonc
+BrowseFiles       { "path": "products/" }
+ReadFileMetadata  { "identifier": "products/widget-pro.jpg" }
+WriteFile         {
+  "path": "products/widget-pro.jpg",
+  "metadata": {
+    "alternative": "Widget Pro — ergonomic design in brushed aluminium",
+    "title":       "Widget Pro product photo"
+  }
+}
+```
 
-While the MCP Server is powerful, some features are still in development:
+### "Generate a small text asset"
 
-### Image/File Handling
-- Currently read-only access to file references
-- Cannot upload new files or modify existing ones
-- Workaround: Reference existing files by ID
+```jsonc
+WriteFile {
+  "path": "notes/campaign-copy.md",
+  "content": "# Contact block\n\nUse a concise call to action here.",
+  "metadata": {
+    "title":       "Campaign copy notes",
+    "description": "Draft notes generated during MCP content editing"
+  }
+}
+```
 
-### Direct Workspace Management
-- Cannot create/delete workspaces
-- Cannot manually publish changes
-- Must use TYPO3 backend for workspace operations
+`WriteFile` intentionally excludes SVG from its default text-file allowlist
+because SVG can carry inline scripts when served from `fileadmin/`. Operators
+who need SVG generation must opt in through TYPO3's `SYS.textfile_ext` and
+sanitize content before serving it.
 
-### Bulk Operations Optimization
-- Large batch operations may be slow
-- No built-in chunking for massive updates
-- Consider breaking into smaller operations
+### Workflow: draft → review → publish
 
-## Best Practices for Users
+```jsonc
+ListWorkspaces    {}
+WorkspaceReview   { "workspace_id": 3 }
+PublishWorkspace  { "workspace_id": 3, "dryRun": true  }  // preview
+PublishWorkspace  { "workspace_id": 3, "dryRun": false }  // execute
+```
 
-To get the most out of your AI assistant with TYPO3:
+### Workflow: translations-only rollout
 
-### Use Full Page URLs
-Give your AI assistant complete URLs like `https://example.com/about-us`. The system can automatically resolve these to the correct pages, making your instructions clearer and reducing errors.
+```jsonc
+// Ship only the translation rows, leaving source-language drafts in place.
+PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": true }
+PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": false }
+```
 
-### Be Specific About Scope
-For large operations, specify exactly what to process. Instead of "update all pages", say "update the meta descriptions for pages under /products". This helps avoid context window limits and ensures focused results.
+### Workflow: add a site configuration
 
-### Review Before Publishing
-Always check the Workspaces module to review AI-generated changes before they go live. The AI is powerful but should be treated as a helpful assistant, not an autonomous system.
+```jsonc
+// 1. Use an existing live root page prepared for the site. Site YAML is not
+// workspace-versioned, so CreateSite must point at a page that TYPO3 can
+// resolve outside a draft-only workspace row.
+CreateSite { "action": "create",
+             "identifier": "launch-2026",
+             "rootPageId": 474,
+             "base": "https://example.com/",
+             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
+// No warning — the Site Set is attached, so the frontend will render.
+// If no theme/site-package-like Site Set is installed and no sys_template
+// exists, CreateSite writes a minimal setup.typoscript fallback in the active
+// TYPO3 site configuration path.
 
-### Provide Context
-Give your AI assistant relevant background information. For example: "We're a law firm, keep the tone professional" or "This is for our summer campaign, make it cheerful".
+// 2. Already created a site without a theme? Attach one in place.
+CreateSite { "action": "update",
+             "identifier": "launch-2026",
+             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
+```
 
-### Work Incrementally
-For complex tasks, break them into smaller steps:
-1. First, analyze the current content
-2. Then, make specific improvements
-3. Finally, review and refine
+## Implementation architecture
 
-**Tip**: For very complex operations, consider using multiple chat sessions in parallel. Each session maintains its own context, allowing you to tackle different aspects of a project simultaneously without overwhelming a single conversation.
+The runtime is intentionally thin; TYPO3 does most of the work.
 
-### Understand the Publishing Workflow
-Remember that all changes need your approval:
-1. AI creates/modifies content in workspace
-2. You review in TYPO3 Backend → Workspaces
-3. You publish approved changes
-4. Content goes live on your site
+### Request path
 
-This workflow ensures you maintain full control while benefiting from AI efficiency.
+1. **Remote client** authenticates via OAuth, then calls `/mcp`.
+   `McpEndpoint` validates the token, bootstraps a backend user context, and
+   hands the request to the SDK's `HttpServerRunner::handleRequest()`.
+   Session state persists to `var/mcp_sessions/` via `FileSessionStore`.
+2. **Local client** starts `vendor/bin/typo3 mcp:server` over stdio.
+3. `McpServerFactory` builds the server and registers `tools/list` and
+   `tools/call` handlers.
+4. `ToolRegistry` collects every DI service tagged `mcp.tool`. Native
+   `ToolInterface` implementations are used directly; other objects exposing
+   `getName()`/`execute()` are wrapped by `CompatibleToolAdapter`.
+5. Tools call shared services for workspace, TCA, language, sandbox, URL,
+   and OAuth logic.
+6. TYPO3 core APIs (`DataHandler`, `PageRepository`, `TcaSchemaFactory`,
+   FAL) perform the actual CMS work.
+
+### Shared services
+
+| Service | Responsibility |
+|---|---|
+| `WorkspaceContextService` | Pick/keep/create the workspace; switch context safely |
+| `TableAccessService` | Central gate for table/field access + TSconfig visibility |
+| `LanguageService` | Map ISO ↔ TYPO3 language UIDs; hide params when monolingual |
+| `McpFileSandboxService` | Enforce sandbox root; compute workspace upload folders |
+| `SiteInformationService` | Resolve site URLs, domains, and base paths |
+| `FileReferenceAttachmentService` | Workspace-safe `sys_file_reference` creation via DataHandler |
+| `OAuthService` | Auth codes, PKCE, SHA-256 token hashing, revocation |
+| `SelectItemResolver` | FormEngine-style select resolution (itemsProcFunc, TSconfig) |
+| `LocalModeService` | Detect DDEV / Development context; gate live writes + unrestricted file access |
+| `CapabilityManifestService` | Read `Capabilities.yaml`; refuse undeclared tools and out-of-policy outbound HTTP |
+
+### HTTP transport hardening
+
+- **Redacted logs** (`McpHttpLogRedactor`) — sensitive headers and query
+  tokens are not logged.
+- **Query-token auth disabled by default** — `?token=…` on `/mcp` requires
+  explicit opt-in via `allowMcpTokenInQueryString`.
+- **Minimal auth diagnostic** — `?test=auth` is disabled by default. When
+  enabled via `enableMcpAuthHeaderDiagnostic`, it reports only whether the
+  `Authorization` header arrived and does not reveal server fingerprint data.
+
+See [`Documentation/Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst)
+for the full audit snapshot.
+
+### Testing strategy
+
+- **Unit tests** for focused pure logic (OAuth hashing, sandbox paths).
+- **Functional TYPO3 tests** for workspaces, language overlays, TCA-driven
+  tool behavior, file sandbox, non-admin permissions, and extension
+  compatibility.
+- **LLM tests** (opt-in, needs `OPENROUTER_API_KEY`) that exercise tool
+  ergonomics in multi-step conversations with real models.
+
+## Known limitations
+
+- **Physical files are not workspace-versioned.** The sandbox and optional
+  workspace subfolders reduce risk, but `WriteFile` / `UploadFile` changes
+  are immediate across all workspaces. Only file *references* are versioned.
+- **`PublishWorkspace` is irreversible.** It defaults to dry-run; always
+  review before executing.
+- **`BulkWrite` is capped at 50 operations** per call. Split larger batches
+  into multiple calls.
+- **Redirects (`sys_redirect`) are outside TYPO3 workspaces.** MCP lists
+  them read-only; create/delete through MCP is intentionally disabled.
+- **Context-window limits.** Operations like "translate the entire page"
+  may hit client model limits; process in chunks for very large pages.
+
+## Skills vs MCP tools
+
+Not everything should be an MCP tool. Runtime data operations (read/write
+records, files, workspaces) are MCP tools. Domain knowledge and workflow
+templates live as **AI skills** that drive the same tools.
+
+| MCP tools (runtime) | Skills (knowledge) |
+|---|---|
+| Read/write records, files, configurations | Content modeling (Content Blocks, TCA patterns) |
+| Navigate page tree, search, audit content | Frontend templates (shadcn, design systems) |
+| Manage workspaces, publish, rollback | Form creation (Powermail) |
+| Install extensions, run safe CLI | Legal pages (Impressum, Datenschutz) |
+| Redirects, system log, site config | SEO audit, accessibility audit |
+
+**Example workflow — "Add a contact form to the about page"**
+
+1. LLM loads the `typo3-powermail` skill (form structure, best practices).
+2. `GetPage` → find the about page.
+3. `GetTableSchema` → understand
+   `tx_powermail_domain_model_form` fields.
+4. `WriteTable` → create the form, page, and fields.
+5. `WriteTable` → add a `list` content element with the form plugin.
+
+This separation keeps MCP tools generic and reusable; skills evolve
+independently.
+
+## Best practices for editors
+
+**Use full URLs.** `https://example.com/about-us` resolves cleanly through
+`GetPage` across languages and domains.
+
+**Be specific about scope.** "Update meta descriptions under /products"
+beats "update all pages". Helps avoid context-window issues and focuses the
+assistant.
+
+**Review before publishing.** Everything lands in a workspace first — the
+TYPO3 backend (`Workspaces` module) is still the final authority.
+
+**Provide context.** "We're a law firm — keep the tone professional" or
+"summer campaign, make it cheerful" dramatically improves output quality.
+
+**Work incrementally.** Analyze → change → review in small steps. For big
+projects, use multiple chat sessions in parallel; each maintains its own
+context.
+
+**Use controlled environments first.** `CreateSite`, `InstallExtension`,
+`SafeCli`, and `PublishWorkspace` are powerful. Try them on staging first
+and narrow the tool surface you expose to production clients.
