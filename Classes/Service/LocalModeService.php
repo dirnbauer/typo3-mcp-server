@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 
@@ -12,9 +13,11 @@ use TYPO3\CMS\Core\Core\Environment;
  * where the workspace-only / file-sandbox safety nets can be relaxed.
  *
  * Detection priority:
- *   1. Extension setting `localUnsafeMode` (off|auto|on) — auto is the default.
- *   2. DDEV environment indicators (`IS_DDEV_PROJECT`, `DDEV_PROJECT`, `DDEV_HOSTNAME`).
- *   3. TYPO3 application context (`Development/...`).
+ *   1. Strict sandbox overrides via TYPO3 feature flag / User TSconfig.
+ *   2. User TSconfig `options.mcpServer.localUnsafeMode` (off|auto|on).
+ *   3. Extension setting `localUnsafeMode` (off|auto|on) — auto is the default.
+ *   4. DDEV environment indicators (`IS_DDEV_PROJECT`, `DDEV_PROJECT`, `DDEV_HOSTNAME`).
+ *   5. TYPO3 application context (`Development/...`).
  *
  * "Local mode" never bypasses authentication, OAuth, or admin/permission checks.
  * It only loosens the workspace-only-writes and `1:/mcp/`-only file rules — the
@@ -33,6 +36,10 @@ final readonly class LocalModeService
      */
     public function isLocalMode(): bool
     {
+        if ($this->enforcesStrictSandbox()) {
+            return false;
+        }
+
         $configured = $this->getConfigured();
         if ($configured === 'on') {
             return true;
@@ -79,10 +86,14 @@ final readonly class LocalModeService
      * @return array{
      *     enabled: bool,
      *     setting: string,
+     *     extension_setting: string,
+     *     tsconfig_setting: string|null,
+     *     strict_sandbox: bool,
      *     ddev: bool,
      *     development_context: bool,
      *     allows_live_writes: bool,
-     *     allows_unrestricted_files: bool
+     *     allows_unrestricted_files: bool,
+     *     allows_unrestricted_outbound: bool
      * }
      */
     public function describe(): array
@@ -90,10 +101,14 @@ final readonly class LocalModeService
         return [
             'enabled' => $this->isLocalMode(),
             'setting' => $this->getConfigured(),
+            'extension_setting' => $this->getExtensionConfigured(),
+            'tsconfig_setting' => $this->getTsConfigMode(),
+            'strict_sandbox' => $this->enforcesStrictSandbox(),
             'ddev' => $this->isDdev(),
             'development_context' => $this->isDevelopmentContext(),
             'allows_live_writes' => $this->allowsLiveWrites(),
             'allows_unrestricted_files' => $this->allowsUnrestrictedFileAccess(),
+            'allows_unrestricted_outbound' => $this->allowsUnrestrictedOutbound(),
         ];
     }
 
@@ -119,19 +134,80 @@ final readonly class LocalModeService
 
     private function getConfigured(): string
     {
+        return $this->getTsConfigMode() ?? $this->getExtensionConfigured();
+    }
+
+    private function getExtensionConfigured(): string
+    {
         try {
             $config = $this->extensionConfiguration->get('mcp_server');
         } catch (\Throwable) {
             return 'auto';
         }
 
-        $value = is_array($config) ? ($config['localUnsafeMode'] ?? null) : null;
+        return $this->normalizeMode(is_array($config) ? ($config['localUnsafeMode'] ?? null) : null);
+    }
+
+    private function getTsConfigMode(): ?string
+    {
+        $value = $this->getMcpUserTsConfigValue('localUnsafeMode');
+        if ($value === null) {
+            return null;
+        }
+
+        return $this->normalizeModeOrNull($value);
+    }
+
+    private function enforcesStrictSandbox(): bool
+    {
+        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? [];
+        $sysConfig = is_array($confVars) && is_array($confVars['SYS'] ?? null) ? $confVars['SYS'] : [];
+        $features = is_array($sysConfig['features'] ?? null) ? $sysConfig['features'] : [];
+        if ($this->isTruthy($features['mcpServer.strictSandbox'] ?? null)) {
+            return true;
+        }
+
+        return $this->isTruthy($this->getMcpUserTsConfigValue('strictSandbox'));
+    }
+
+    private function getMcpUserTsConfigValue(string $key): mixed
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            return null;
+        }
+
+        try {
+            $tsConfig = $backendUser->getTSConfig();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $options = $tsConfig['options.'] ?? [];
+        if (!is_array($options)) {
+            return null;
+        }
+
+        $mcpServer = $options['mcpServer.'] ?? $options['mcp_server.'] ?? [];
+        if (!is_array($mcpServer)) {
+            return null;
+        }
+
+        return $mcpServer[$key] ?? null;
+    }
+
+    private function normalizeMode(mixed $value): string
+    {
+        return $this->normalizeModeOrNull($value) ?? 'auto';
+    }
+
+    private function normalizeModeOrNull(mixed $value): ?string
+    {
         if (is_string($value)) {
             $value = strtolower(trim($value));
             if (in_array($value, ['on', 'off', 'auto'], true)) {
                 return $value;
             }
-            // Legacy 1/0/true/false strings → on/off
             if (in_array($value, ['1', 'true', 'yes'], true)) {
                 return 'on';
             }
@@ -146,6 +222,21 @@ final readonly class LocalModeService
             return $value === 1 ? 'on' : 'off';
         }
 
-        return 'auto';
+        return null;
+    }
+
+    private function isTruthy(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_int($value)) {
+            return $value === 1;
+        }
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
     }
 }

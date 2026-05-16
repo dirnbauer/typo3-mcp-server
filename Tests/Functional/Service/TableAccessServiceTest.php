@@ -23,6 +23,8 @@ final class TableAccessServiceTest extends FunctionalTestCase
     {
         parent::setUp();
 
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $this->setUpBackendUser(1);
 
@@ -129,6 +131,17 @@ final class TableAccessServiceTest extends FunctionalTestCase
         $result = $this->service->canAccessTable('sys_log');
 
         self::assertFalse($result, 'sys_log should be restricted');
+    }
+
+    public function testLocalModeAllowsNonWorkspaceCapableTableAccess(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+
+        $accessInfo = $this->service->getTableAccessInfo('be_users');
+
+        self::assertTrue($accessInfo['accessible'], implode(', ', $accessInfo['reasons']));
+        self::assertFalse($accessInfo['workspace_capable']);
+        self::assertTrue($accessInfo['permissions']['write']);
     }
 
     public function testGetAccessibleTablesReturnsArray(): void

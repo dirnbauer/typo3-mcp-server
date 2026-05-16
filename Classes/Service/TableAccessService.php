@@ -60,6 +60,7 @@ final class TableAccessService
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly PageDoktypeRegistry $pageDoktypeRegistry,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly LocalModeService $localMode,
     ) {}
 
     /**
@@ -330,7 +331,8 @@ final class TableAccessService
         $workspaceCapability = $this->getTableCtrl($table)['versioningWS'] ?? false;
         $info['workspace_capable'] = $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
         $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
-        if ($requireWorkspaceCapability) {
+        $requiresWorkspaceForWrite = $requireWorkspaceCapability && !$this->localMode->allowsLiveWrites();
+        if ($requiresWorkspaceForWrite) {
             if (!$info['workspace_capable'] && !$isAdditionalReadOnly) {
                 $info['reasons'][] = 'Table is not workspace-capable (required for write operations)';
                 return $info;
@@ -745,6 +747,10 @@ final class TableAccessService
      */
     private function isRestrictedSystemTable(string $table): bool
     {
+        if ($this->localMode->allowsLiveWrites()) {
+            return false;
+        }
+
         if (in_array($table, $this->getAdditionalReadOnlyTables(), true)) {
             return false;
         }

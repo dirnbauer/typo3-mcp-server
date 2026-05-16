@@ -96,9 +96,10 @@ domains. See
 [`Documentation/Architecture/CapabilityManifest.rst`](Documentation/Architecture/CapabilityManifest.rst).
 
 A **DDEV / local-mode service** (`LocalModeService`) detects developer
-environments and relaxes only the workspace-staging and file-sandbox
-safety nets — never authentication or capability policy. Production stays
-strict by default.
+environments and relaxes only the workspace-staging, workspace-capable table,
+outbound HTTP, and file-sandbox safety nets — never authentication or backend
+user permissions. Production stays strict by default, and strict sandbox mode
+can be forced via TYPO3 feature flag or User TSconfig.
 
 ### 6. Language-awareness, conditional
 

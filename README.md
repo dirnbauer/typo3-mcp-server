@@ -345,6 +345,30 @@ Override via extension setting `localUnsafeMode`:
 | `on`   | always relaxed — only set in trusted local environments                      |
 | `off`  | always strict — production-safe                                              |
 
+The same mode can be set per backend user or group via User TSconfig, which
+allows TYPO3 conditions:
+
+```typoscript
+[applicationContext == "Development/DDEV"]
+options.mcpServer.localUnsafeMode = on
+[else]
+options.mcpServer.localUnsafeMode = off
+[end]
+```
+
+To force the production safety nets even in DDEV, set either the TYPO3 feature
+flag `$GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox']`
+or User TSconfig:
+
+```typoscript
+options.mcpServer.strictSandbox = 1
+```
+
+Strict sandbox mode means file tools stay inside the configured MCP file
+sandbox and record writes stay in TYPO3 workspaces. Local mode additionally
+removes the workspace-capable table requirement so local-only tools can write
+non-workspace tables with the current backend user's normal permissions.
+
 The `Configuration/Capabilities.yaml` and OAuth/permission checks remain
 enforced — local mode only relaxes the workspace-staging and file-sandbox
 nets, never authentication or capability-policy.
@@ -380,7 +404,7 @@ All settings live in **Extension Configuration → `mcp_server`**.
 | `workspaceUploadSubfolders`    | `1`     | Route uploads into workspace-specific folders                                      |
 | `allowMcpTokenInQueryString`   | `0`     | Allow `?token=…` on `/mcp` (legacy clients only, logging risk)                     |
 | `enableMcpAuthHeaderDiagnostic`| `0`     | Enable minimal `?test=auth` diagnostic on `/mcp` (off-by-default since 2026-05)    |
-| `localUnsafeMode`              | `auto`  | DDEV/Development → live writes + unrestricted file access. `on`/`off`/`auto`.      |
+| `localUnsafeMode`              | `auto`  | DDEV/Development → live writes + unrestricted file access. `on`/`off`/`auto`; can be overridden by User TSconfig. |
 | `enforceCapabilityManifest`    | `1`     | Reject tools whose required subsystems aren't declared in `Capabilities.yaml`      |
 
 See [`Documentation/Configuration/Index.rst`](Documentation/Configuration/Index.rst)

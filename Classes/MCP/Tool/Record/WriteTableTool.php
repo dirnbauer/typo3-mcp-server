@@ -68,7 +68,7 @@ final class WriteTableTool extends AbstractRecordTool
         sort($tableNames); // Sort alphabetically for better readability
 
         return [
-            'description' => 'Create, update, translate, move, or delete records in workspace-capable TYPO3 tables. All changes are made in workspace context and require publishing to become live. ' .
+            'description' => 'Create, update, translate, move, or delete records in TYPO3 tables. In strict mode, all changes are made in workspace context and require publishing to become live. In DDEV/local mode, live writes and non-workspace tables are allowed for local development. ' .
                 'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). ' .
                 'REQUIRED PARAMETERS PER ACTION: ' .
                 'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). ' .

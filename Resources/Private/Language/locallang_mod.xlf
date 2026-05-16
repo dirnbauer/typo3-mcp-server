@@ -34,7 +34,7 @@
         <source>Enable the public ?test=auth diagnostic on the MCP endpoint (used by the backend connection check). Disable on hardened sites if you do not need it.</source>
       </trans-unit>
       <trans-unit id="extconf.localUnsafeMode">
-        <source>Local development mode: relax workspace-only writes and the file sandbox so MCP can edit live records and write anywhere in fileadmin. "auto" detects DDEV and the TYPO3 development context. NEVER enable on production.</source>
+        <source>Local development mode: relax workspace-only writes, non-workspace table blocking, and the file sandbox so MCP can edit live records and write anywhere in fileadmin. "auto" detects DDEV and the TYPO3 development context. User TSconfig options.mcpServer.localUnsafeMode can override this; options.mcpServer.strictSandbox or feature flag mcpServer.strictSandbox forces strict mode. NEVER enable unsafe mode on production.</source>
       </trans-unit>
       <trans-unit id="extconf.enforceCapabilityManifest">
         <source>Enforce the capability manifest (Configuration/Capabilities.yaml). Tools whose required capabilities are not declared/granted are rejected at call time. Disable only for debugging.</source>

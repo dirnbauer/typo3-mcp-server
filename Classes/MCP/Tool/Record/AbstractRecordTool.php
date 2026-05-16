@@ -62,7 +62,8 @@ abstract class AbstractRecordTool extends AbstractTool
         $props['workspace_id'] = [
             'type' => 'integer',
             'description' => 'Optional workspace ID for this call. Changes are staged in that workspace (not live). '
-                . 'Use the ListWorkspaces tool to list IDs. Omit to use the server-selected draft workspace.',
+                . 'Use the ListWorkspaces tool to list IDs. Omit to use the server-selected draft workspace. '
+                . 'workspace_id=0 is accepted only in DDEV/local mode.',
         ];
         $inputSchema['properties'] = $props;
         $schema['inputSchema'] = $inputSchema;

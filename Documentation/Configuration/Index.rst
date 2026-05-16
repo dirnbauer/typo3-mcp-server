@@ -150,6 +150,7 @@ Extension configuration values
    file-sandbox, and outbound-HTTP safety nets relax:
 
    - record writes accept ``workspace_id: 0`` (live writes)
+   - record writes can target writable non-workspace-capable TCA tables
    - file tools reach any storage / folder, not only ``fileSandboxRoot``
    - outbound HTTP (``UploadFileFromUrl``, ``RenderRecord``) bypasses
      the manifest's ``network.outbound`` allowlist AND the SSRF
@@ -172,6 +173,34 @@ Extension configuration values
    Authentication (OAuth + backend session) and the capability manifest
    stay enforced even with this on; only the workspace-staging and
    file-sandbox checks are skipped.
+
+   User TSconfig can override the extension setting, which makes TYPO3
+   conditions usable for this policy:
+
+   .. code-block:: typoscript
+
+      [applicationContext == "Development/DDEV"]
+      options.mcpServer.localUnsafeMode = on
+      [else]
+      options.mcpServer.localUnsafeMode = off
+      [end]
+
+   To force the production safety nets even in DDEV, set either the TYPO3
+   feature flag ``mcpServer.strictSandbox``:
+
+   .. code-block:: php
+
+      $GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox'] = true;
+
+   Or set User TSconfig:
+
+   .. code-block:: typoscript
+
+      options.mcpServer.strictSandbox = 1
+
+   Strict sandbox mode has priority over ``localUnsafeMode`` and DDEV
+   auto-detection. File tools stay inside ``fileSandboxRoot`` and record
+   writes stay in TYPO3 workspaces.
 
 .. confval:: enforceCapabilityManifest
    :name: ext-mcp-server-enforceCapabilityManifest
