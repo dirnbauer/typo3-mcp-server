@@ -250,7 +250,6 @@ final readonly class McpServerModuleController
                     'exec',
                     '-p',
                     $ddevProject,
-                    '--raw',
                     '--',
                     'php',
                     'vendor/bin/typo3',

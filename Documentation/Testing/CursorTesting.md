@@ -105,7 +105,7 @@ For everything-local-on-one-machine, skip OAuth entirely:
   "mcpServers": {
     "typo3-local": {
       "command": "ddev",
-      "args": ["exec", "-p", "your-ddev-project", "--raw", "--", "php", "vendor/bin/typo3", "mcp:server"]
+      "args": ["exec", "-p", "your-ddev-project", "--", "php", "vendor/bin/typo3", "mcp:server"]
     }
   }
 }

@@ -23,7 +23,6 @@ final class McpServerModuleControllerTest extends TestCase
                 'exec',
                 '-p',
                 'example-project',
-                '--raw',
                 '--',
                 'php',
                 'vendor/bin/typo3',
