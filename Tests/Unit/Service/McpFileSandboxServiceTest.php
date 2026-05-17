@@ -84,10 +84,63 @@ final class McpFileSandboxServiceTest extends TestCase
     }
 
     #[Test]
+    public function localModeAllowsAbsoluteReadTargetOutsideSandbox(): void
+    {
+        $subject = $this->createSubject([
+            'fileSandboxRoot' => '1:/secure-area/',
+            'localUnsafeMode' => 'on',
+        ]);
+
+        $target = $subject->resolveFileTarget('1:/outside-sandbox/docs/guide.txt');
+
+        self::assertSame(1, $target['storageUid']);
+        self::assertSame('/outside-sandbox/docs/', $target['folderPath']);
+        self::assertSame('guide.txt', $target['fileName']);
+        self::assertSame('1:/outside-sandbox/docs/guide.txt', $target['combinedIdentifier']);
+    }
+
+    #[Test]
+    public function localModeAllowsAbsoluteUploadTargetOutsideWorkspaceUploadFolder(): void
+    {
+        $this->setBackendUserWorkspace(5);
+        $subject = $this->createSubject([
+            'fileSandboxRoot' => '1:/secure-area/',
+            'localUnsafeMode' => 'on',
+        ]);
+
+        $target = $subject->resolveUploadTarget('1:/outside-sandbox/images/pixel.png');
+
+        self::assertSame(1, $target['storageUid']);
+        self::assertSame('/outside-sandbox/images/', $target['folderPath']);
+        self::assertSame('pixel.png', $target['fileName']);
+        self::assertSame('1:/outside-sandbox/images/pixel.png', $target['combinedIdentifier']);
+        self::assertSame('1:/outside-sandbox/images/', $target['uploadFolder']);
+    }
+
+    #[Test]
+    public function localModeAllowsAbsoluteFolderTargetOutsideSandboxAndPreservesStorage(): void
+    {
+        $this->setBackendUserWorkspace(5);
+        $subject = $this->createSubject([
+            'fileSandboxRoot' => '1:/secure-area/',
+            'localUnsafeMode' => 'on',
+        ]);
+
+        $target = $subject->resolveFolderTarget('2:/outside-sandbox/assets/');
+
+        self::assertSame(2, $target['storageUid']);
+        self::assertSame('/outside-sandbox/assets/', $target['folderPath']);
+        self::assertSame('2:/outside-sandbox/assets/', $target['combinedIdentifier']);
+        self::assertSame('1:/secure-area/', $target['baseFolder']);
+    }
+
+    #[Test]
     public function uploadTargetRejectsAbsolutePathOutsideWorkspaceUploadFolder(): void
     {
         $this->setBackendUserWorkspace(5);
-        $subject = $this->createSubject([]);
+        $subject = $this->createSubject([
+            'localUnsafeMode' => 'off',
+        ]);
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Workspace uploads must stay inside "1:/mcp/workspaces/ws-5/"');

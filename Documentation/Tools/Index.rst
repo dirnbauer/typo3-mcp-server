@@ -558,11 +558,13 @@ wiring records up to existing media.
 BrowseFiles
 -----------
 
-Browse folders inside the MCP file sandbox.
+Browse folders inside the MCP file sandbox. In DDEV / ``localUnsafeMode=on``,
+combined identifiers can point to any FAL storage/folder the backend user may
+access.
 
 :Parameters:
    - ``path`` (string): relative folder path or combined identifier inside the
-     sandbox
+     sandbox; in local mode, combined identifiers may point outside the sandbox
    - ``recursive`` (boolean): include subfolder listing
 
 Omit ``path`` to inspect the configured sandbox root, current workspace upload
@@ -571,12 +573,15 @@ folder, and upload-folder behavior.
 ReadFileMetadata
 ----------------
 
-Read metadata for a file inside the MCP file sandbox.
+Read metadata for a file inside the MCP file sandbox. In DDEV /
+``localUnsafeMode=on``, combined identifiers can point to files outside the
+sandbox.
 
 :Parameters:
    - ``uid`` (integer): file UID
    - ``identifier`` (string): relative file path or combined identifier inside
-     the sandbox
+     the sandbox; in local mode, combined identifiers may point outside the
+     sandbox
 
 The result includes core file data, metadata fields, categories, and a summary
 of where the file is referenced.
@@ -585,11 +590,13 @@ WriteFile
 ---------
 
 Create or overwrite a text-based file inside the MCP file sandbox, or update
-metadata on an existing file.
+metadata on an existing file. In DDEV / ``localUnsafeMode=on``, combined
+identifiers can point outside the sandbox.
 
 :Parameters:
    - ``path`` (string, required): relative path or combined identifier inside
-     the sandbox
+     the sandbox; in local mode, combined identifiers may point outside the
+     sandbox
    - ``content`` (string): text content to write
    - ``overwrite`` (boolean): overwrite an existing file
    - ``metadata`` (object): title, description, alternative text, copyright

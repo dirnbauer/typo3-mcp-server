@@ -31,6 +31,7 @@ final class BrowseFilesTool extends AbstractTool
         return [
             'description' => 'Browse the MCP file sandbox in TYPO3. '
                 . 'All file browsing is restricted to the configured sandbox root (default: fileadmin/mcp/). '
+                . 'In local mode (DDEV / localUnsafeMode=on), combined identifiers may target any accessible FAL storage/folder. '
                 . 'Physical files are NOT versioned in workspaces -- uploads are sandboxed, but the underlying files still exist immediately.',
             'inputSchema' => [
                 'type' => 'object',
@@ -39,6 +40,7 @@ final class BrowseFilesTool extends AbstractTool
                         'type' => 'string',
                         'description' => 'Folder path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/" or an absolute combined identifier inside the sandbox such as "1:/mcp/images/". '
+                            . 'In local mode, combined identifiers may point outside the sandbox. '
                             . 'Omit to inspect the configured sandbox root.',
                     ],
                     'recursive' => [
@@ -82,7 +84,9 @@ final class BrowseFilesTool extends AbstractTool
             'Workspace-scoped uploads: ' . ($sandbox['workspaceUploads'] ? 'enabled' : 'disabled'),
             'Current workspace: ' . ($sandbox['workspaceId'] > 0 ? (string)$sandbox['workspaceId'] : 'live'),
             '',
-            'All MCP file tools are restricted to the base folder above.',
+            $sandbox['unrestricted']
+                ? 'Local mode is enabled: combined identifiers may point to any accessible FAL storage/folder.'
+                : 'All MCP file tools are restricted to the base folder above.',
             '',
         ];
 
@@ -115,7 +119,7 @@ final class BrowseFilesTool extends AbstractTool
             throw new ValidationException(["Folder not found: {$folderTarget['combinedIdentifier']}"]);
         } catch (\InvalidArgumentException) {
             throw new ValidationException([
-                'Invalid folder path. Use a relative path inside the MCP file sandbox or an absolute combined identifier inside that sandbox.',
+                'Invalid folder path. Use a relative path inside the MCP file sandbox or an absolute combined identifier.',
             ]);
         }
 

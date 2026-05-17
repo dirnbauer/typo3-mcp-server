@@ -31,7 +31,8 @@ final readonly class McpFileSandboxService
      *     baseFolder: string,
      *     uploadFolder: string,
      *     workspaceId: int,
-     *     workspaceUploads: bool
+     *     workspaceUploads: bool,
+     *     unrestricted: bool
      * }
      */
     public function describeSandbox(): array
@@ -61,6 +62,11 @@ final readonly class McpFileSandboxService
     public function resolveFileTarget(string $path): array
     {
         $base = $this->parseConfiguredBaseFolder();
+        if ($this->localMode->allowsUnrestrictedFileAccess() && $this->isCombinedIdentifier($path)) {
+            $parsed = $this->parseAbsoluteFileIdentifier($path);
+            return $this->buildFileTargetFromParsedPath($parsed['storageUid'], $parsed['folderPath'], $parsed['fileName']);
+        }
+
         $relativePath = $this->resolveRelativeFilePath($path, false);
 
         return $this->buildFileTargetFromRelativePath($relativePath, $base['storageUid'], $base['folderPath']);
@@ -81,6 +87,14 @@ final readonly class McpFileSandboxService
     {
         $base = $this->parseConfiguredBaseFolder();
         $workspaceId = $this->resolveWorkspaceForUpload();
+        if ($this->localMode->allowsUnrestrictedFileAccess() && $this->isCombinedIdentifier($path)) {
+            $parsed = $this->parseAbsoluteFileIdentifier($path);
+            $target = $this->buildFileTargetFromParsedPath($parsed['storageUid'], $parsed['folderPath'], $parsed['fileName']);
+            $target['uploadFolder'] = $parsed['storageUid'] . ':' . $parsed['folderPath'];
+
+            return $target;
+        }
+
         $relativePath = $this->resolveRelativeFilePath($path, true, $workspaceId);
         $defaultFolder = $this->getUploadFolderPath($workspaceId, $base['folderPath']);
         $target = $this->buildFileTargetFromRelativePath($relativePath, $base['storageUid'], $defaultFolder);
@@ -103,12 +117,14 @@ final readonly class McpFileSandboxService
     {
         $base = $this->parseConfiguredBaseFolder();
         $workspaceId = $this->workspaceContextService->getCurrentWorkspace();
+        $storageUid = $base['storageUid'];
 
         if ($path === null || trim($path) === '') {
             $folderPath = $base['folderPath'];
         } elseif ($this->isCombinedIdentifier($path)) {
             $parsed = $this->parseAbsoluteFolderIdentifier($path);
             $this->assertWithinBaseFolder($parsed['storageUid'], $parsed['folderPath'], $base);
+            $storageUid = $parsed['storageUid'];
             $folderPath = $parsed['folderPath'];
         } else {
             $relativePath = $this->sanitizeRelativeFolderPath($path);
@@ -116,8 +132,8 @@ final readonly class McpFileSandboxService
         }
 
         return [
-            'combinedIdentifier' => $base['storageUid'] . ':' . $folderPath,
-            'storageUid' => $base['storageUid'],
+            'combinedIdentifier' => $storageUid . ':' . $folderPath,
+            'storageUid' => $storageUid,
             'folderPath' => $folderPath,
             'baseFolder' => $base['storageUid'] . ':' . $base['folderPath'],
             'workspaceId' => $workspaceId,
@@ -279,13 +295,27 @@ final readonly class McpFileSandboxService
     {
         $parts = $this->sanitizeRelativeFilePath($relativePath);
         $folderPath = $this->joinFolderSegments($baseFolderPath, $parts['folderPath']);
-        $combinedIdentifier = $storageUid . ':' . $folderPath . $parts['fileName'];
 
+        return $this->buildFileTargetFromParsedPath($storageUid, $folderPath, $parts['fileName']);
+    }
+
+    /**
+     * @return array{
+     *     combinedIdentifier: string,
+     *     storageUid: int,
+     *     folderPath: string,
+     *     fileName: string,
+     *     baseFolder: string,
+     *     workspaceId: int
+     * }
+     */
+    private function buildFileTargetFromParsedPath(int $storageUid, string $folderPath, string $fileName): array
+    {
         return [
-            'combinedIdentifier' => $combinedIdentifier,
+            'combinedIdentifier' => $storageUid . ':' . $folderPath . $fileName,
             'storageUid' => $storageUid,
             'folderPath' => $folderPath,
-            'fileName' => $parts['fileName'],
+            'fileName' => $fileName,
             'baseFolder' => $this->getBaseFolderIdentifier(),
             'workspaceId' => $this->workspaceContextService->getCurrentWorkspace(),
         ];

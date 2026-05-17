@@ -36,6 +36,7 @@ final class UploadFileTool extends AbstractTool
         return [
             'description' => 'Upload a binary or text file into the MCP file sandbox. '
                 . 'All uploads are restricted to the configured sandbox root (default: fileadmin/mcp/). '
+                . 'In local mode (DDEV / localUnsafeMode=on), combined identifiers may target any accessible FAL folder. '
                 . 'When workspace upload subfolders are enabled, files are stored below a workspace-specific folder to reduce collisions with live content. '
                 . 'Existing files are never overwritten.',
             'inputSchema' => [
@@ -45,6 +46,7 @@ final class UploadFileTool extends AbstractTool
                         'type' => 'string',
                         'description' => 'Target file path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/product-photo.png" or an absolute combined identifier inside the sandbox. '
+                            . 'In local mode, combined identifiers may point outside the sandbox. '
                             . 'The folder path is respected, but the stored filename is randomized for security.',
                     ],
                     'content_base64' => [

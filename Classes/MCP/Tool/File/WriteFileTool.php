@@ -40,6 +40,7 @@ final class WriteFileTool extends AbstractTool
         return [
             'description' => 'Create or overwrite a text-based file inside the MCP file sandbox, and/or update its metadata. '
                 . 'The configured sandbox defaults to fileadmin/mcp/ and all paths are restricted to that area. '
+                . 'In local mode (DDEV / localUnsafeMode=on), combined identifiers may target any accessible FAL file. '
                 . 'Supports text files such as .txt, .html, .css, .js, .json, .xml, .csv, .yaml, .md. '
                 . '(SVG excluded by default to prevent stored XSS — opt in via TYPO3 SYS textfile_ext + SvgSanitizer.) '
                 . 'Binary file uploads (images, PDFs, etc.) are NOT supported. '
@@ -52,6 +53,7 @@ final class WriteFileTool extends AbstractTool
                         'type' => 'string',
                         'description' => 'Target file path inside the MCP file sandbox. '
                             . 'Use either a relative path like "notes/data.json" or an absolute combined identifier inside the sandbox such as "1:/mcp/notes/data.json". '
+                            . 'In local mode, combined identifiers may point outside the sandbox. '
                             . 'Parent folders are created automatically when writing content.',
                     ],
                     'content' => [

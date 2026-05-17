@@ -54,6 +54,7 @@ final class UploadFileFromUrlTool extends AbstractTool
             'description' => 'Download a file from a public URL and store it in the MCP file sandbox. '
                 . 'Use this instead of UploadFile when the file is available via HTTP/HTTPS, '
                 . 'which avoids base64 encoding size limits. '
+                . 'In local mode (DDEV / localUnsafeMode=on), combined path identifiers may target any accessible FAL folder. '
                 . 'Maximum file size: 20 MB. Only http:// and https:// URLs are allowed.',
             'inputSchema' => [
                 'type' => 'object',
@@ -66,6 +67,7 @@ final class UploadFileFromUrlTool extends AbstractTool
                         'type' => 'string',
                         'description' => 'Target file path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/photo.jpg" or "documents/report.pdf". '
+                            . 'In local mode, combined identifiers may point outside the sandbox. '
                             . 'If omitted, the filename is derived from the URL. '
                             . 'The stored filename is randomized for security.',
                     ],

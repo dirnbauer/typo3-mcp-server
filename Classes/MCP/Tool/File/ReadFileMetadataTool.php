@@ -32,6 +32,7 @@ final class ReadFileMetadataTool extends AbstractTool
         return [
             'description' => 'Read detailed metadata for a file in the MCP file sandbox by UID or path. '
                 . 'All access is restricted to the configured MCP file sandbox root (default: fileadmin/mcp/). '
+                . 'In local mode (DDEV / localUnsafeMode=on), combined identifiers may target any accessible FAL file. '
                 . 'Returns title, description, alternative text, categories, dimensions, and more. '
                 . 'Use browse_files to inspect the sandbox first.',
             'inputSchema' => [
@@ -45,6 +46,7 @@ final class ReadFileMetadataTool extends AbstractTool
                         'type' => 'string',
                         'description' => 'File path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/photo.jpg" or an absolute combined identifier inside the sandbox such as "1:/mcp/images/photo.jpg". '
+                            . 'In local mode, combined identifiers may point outside the sandbox. '
                             . 'Use uid OR identifier, not both.',
                     ],
                 ],
