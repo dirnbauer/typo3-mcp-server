@@ -370,7 +370,7 @@ TYPOSCRIPT;
         if ($dataHandler->errorLog !== []) {
             throw new ValidationException([
                 'Could not create site root page: ' . implode(', ', array_map(
-                    static fn (mixed $error): string => is_scalar($error) ? (string)$error : get_debug_type($error),
+                    static fn(mixed $error): string => is_scalar($error) ? (string)$error : get_debug_type($error),
                     $dataHandler->errorLog,
                 )),
             ]);
