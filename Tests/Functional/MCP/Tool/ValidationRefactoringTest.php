@@ -139,6 +139,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page with Date',
                 'starttime' => '2024-01-01T10:00:00Z',

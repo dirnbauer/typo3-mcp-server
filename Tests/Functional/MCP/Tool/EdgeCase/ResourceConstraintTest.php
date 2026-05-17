@@ -202,6 +202,7 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
                     'action' => 'create',
                     'table' => 'pages',
                     'pid' => 0,
+                    'allowRootLevelPageCreation' => true,
                     'data' => [
                         'title' => "Time test page $count",
                     ],

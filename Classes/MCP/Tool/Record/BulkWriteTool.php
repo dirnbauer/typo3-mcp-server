@@ -71,6 +71,12 @@ final class BulkWriteTool extends AbstractRecordTool
                                     'type' => 'integer',
                                     'description' => 'Page ID (required for create)',
                                 ],
+                                'allowRootLevelPageCreation' => [
+                                    'type' => 'boolean',
+                                    'description' => 'create action with table="pages" only. Defaults to false so accidental website/root-page creation at pid=0 is rejected. '
+                                        . 'For new websites, use CreateSite with parentPageId. Set true only for intentional TYPO3 root-level pages.',
+                                    'default' => false,
+                                ],
                                 'data' => [
                                     'type' => 'object',
                                     'description' => 'Flat field values for create or update. NOTE: Inline children (nested arrays of child records) are not supported here — use WriteTable instead.',
@@ -368,6 +374,12 @@ final class BulkWriteTool extends AbstractRecordTool
                     $pid = is_numeric($op['pid'] ?? null) ? (int)$op['pid'] : -1;
                     if ($pid < 0) {
                         $errors[] = 'Operation #' . $index . ': pid is required for create';
+                        continue 2;
+                    }
+                    if ($table === 'pages' && $pid === 0 && ($op['allowRootLevelPageCreation'] ?? false) !== true) {
+                        $errors[] = 'Operation #' . $index . ': creating pages at pid=0 is reserved for intentional TYPO3 root-level pages. '
+                            . 'For a new website, use CreateSite with parentPageId. '
+                            . 'If you really need a root-level page, pass allowRootLevelPageCreation=true.';
                         continue 2;
                     }
                     $data = is_array($op['data'] ?? null) ? $op['data'] : [];

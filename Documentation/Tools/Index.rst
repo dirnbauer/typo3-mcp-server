@@ -399,6 +399,11 @@ Create, update, translate, move, or delete TYPO3 records.
    - ``hidden`` (boolean, ``translate`` action): default ``false``. By default
      translations are created visible; set ``true`` to keep them hidden for
      review.
+   - ``allowRootLevelPageCreation`` (boolean, ``create`` action for ``pages``):
+     default ``false``. Creating pages at ``pid=0`` is rejected unless this is
+     explicitly ``true``. For new websites, use ``CreateSite`` with
+     ``parentPageId`` instead so the site root page is created below an existing
+     visible page.
    - ``workspace_id`` (integer): optional workspace override
 
 Important behavior:
@@ -855,6 +860,10 @@ Execute multiple write operations in a single DataHandler transaction.
      - ``table`` (string, required): table name
      - ``uid`` (integer): record UID (required for update and delete)
      - ``pid`` (integer): page ID (required for create)
+     - ``allowRootLevelPageCreation`` (boolean): ``create`` with
+       ``table=pages`` only. Defaults to ``false``; ``pid=0`` page creation is
+       rejected unless this is explicitly ``true``. For new websites, use
+       ``CreateSite`` with ``parentPageId`` instead.
      - ``data`` (object): flat field values for create or update (no inline
        children)
 
@@ -1006,9 +1015,17 @@ Create or update TYPO3 site configurations.
    - ``action`` (string, required): ``create``, ``update``, ``addLanguage``, or
      ``replaceLanguages``
    - ``identifier`` (string, required): site identifier (alphanumeric + dash)
-   - ``rootPageId`` (integer): live root page UID (required for create).
-     Site configuration is not workspace-versioned, so do not point it at a
-     draft-only workspace page.
+   - ``rootPageId`` (integer): existing root page UID for ``create``. If the
+     root page does not exist yet, omit this and pass ``parentPageId`` instead.
+   - ``parentPageId`` (integer): existing visible parent page under which
+     ``CreateSite`` creates a new site root page when ``rootPageId`` is omitted.
+     This must be a positive page UID. ``parentPageId=0`` is rejected for this
+     website creation flow so a new "Home" page is not created outside the
+     mounted site tree.
+   - ``rootPageTitle`` (string): title for the new root page when
+     ``parentPageId`` is used. Defaults to a title derived from ``identifier``.
+   - ``rootPageSlug`` (string): slug for the new root page when
+     ``parentPageId`` is used. Defaults to ``/`` plus ``identifier``.
    - ``base`` (string): base URL (required for create)
    - ``dependencies`` (array): Site Set names to attach, e.g.
      ``["vendor/site-package"]``. Supported on ``create`` and ``update``.

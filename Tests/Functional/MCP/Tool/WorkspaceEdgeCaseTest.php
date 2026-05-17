@@ -125,6 +125,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Live Page',
                 'doktype' => 1,
@@ -143,6 +144,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Workspace Page',
                 'doktype' => 1,

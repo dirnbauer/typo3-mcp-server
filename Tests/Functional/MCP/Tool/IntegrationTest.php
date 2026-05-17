@@ -226,6 +226,7 @@ class IntegrationTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Brand New Page',
                 'slug' => '/brand-new',

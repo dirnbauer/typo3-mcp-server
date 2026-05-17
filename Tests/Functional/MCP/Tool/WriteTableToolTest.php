@@ -1019,6 +1019,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Workspace Test Page',
                 'slug' => '/workspace-test',
@@ -1107,6 +1108,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'doktype' => 1,
                 // Missing required 'title' field
@@ -1196,6 +1198,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => $veryLongTitle,
                 'doktype' => 1,
@@ -1218,6 +1221,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 999, // Invalid doktype
@@ -1349,6 +1353,7 @@ XML;
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page with Date',
                 'doktype' => 1,

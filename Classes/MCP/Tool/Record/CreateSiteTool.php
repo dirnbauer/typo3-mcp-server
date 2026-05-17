@@ -11,9 +11,11 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Site\Set\SetRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -101,6 +103,8 @@ TYPOSCRIPT;
         return [
             'description' => 'Create or update a TYPO3 site configuration. '
                 . 'Action "create" builds a new site config with root page, base URL, optional languages, and optional rendering definitions (dependencies/sets). '
+                . 'Pass rootPageId to use an existing root page, or pass parentPageId + rootPageTitle to create the site root page below an existing visible page. '
+                . 'Do not create a new website by creating a "Home" page at pid=0 with WriteTable; use this tool instead. '
                 . 'Action "update" merges arbitrary top-level keys (dependencies, sets, settings, routes, routeEnhancers, ...) into an existing site config while preserving unrelated keys. Use this to attach a Site Set theme (e.g. "webconsulting/desiderio-preset-corporate") to an existing site. '
                 . 'Action "addLanguage" adds a language to an existing site. '
                 . 'Action "replaceLanguages" replaces the full language list of an existing site while preserving other site settings. '
@@ -123,7 +127,19 @@ TYPOSCRIPT;
                     ],
                     'rootPageId' => [
                         'type' => 'integer',
-                        'description' => 'Root page UID for the site (create action only).',
+                        'description' => 'Existing root page UID for the site (create action only). If omitted, parentPageId is required so CreateSite can create the root page below an existing visible page.',
+                    ],
+                    'parentPageId' => [
+                        'type' => 'integer',
+                        'description' => 'Create action only: parent page UID under which a new site root page should be created when rootPageId is omitted. Must be a positive page UID; pid=0 is rejected for this website creation flow.',
+                    ],
+                    'rootPageTitle' => [
+                        'type' => 'string',
+                        'description' => 'Create action only: title for the new site root page when parentPageId is used. Defaults to a title derived from identifier.',
+                    ],
+                    'rootPageSlug' => [
+                        'type' => 'string',
+                        'description' => 'Create action only: slug for the new site root page when parentPageId is used. Defaults to "/" plus the identifier.',
                     ],
                     'base' => [
                         'type' => 'string',
@@ -232,10 +248,11 @@ TYPOSCRIPT;
     {
         $rootPageId = is_numeric($params['rootPageId'] ?? null) ? (int)$params['rootPageId'] : 0;
         $base = is_string($params['base'] ?? null) ? trim($params['base']) : '';
+        $rootPage = null;
 
         $errors = [];
-        if ($rootPageId <= 0) {
-            $errors[] = 'rootPageId is required and must be a positive integer.';
+        if ($rootPageId <= 0 && !array_key_exists('parentPageId', $params)) {
+            $errors[] = 'Either rootPageId must be a positive existing root page UID, or parentPageId must be a positive existing page UID so CreateSite can create the site root page below it.';
         }
         if ($base === '') {
             $errors[] = 'base is required and must be a non-empty string.';
@@ -244,10 +261,15 @@ TYPOSCRIPT;
             throw new ValidationException($errors);
         }
 
-        // Validate root page exists
-        $page = BackendUtility::getRecord('pages', $rootPageId, 'uid,title');
-        if ($page === null) {
-            throw new ValidationException(['Root page with UID ' . $rootPageId . ' does not exist.']);
+        if ($rootPageId <= 0) {
+            $rootPage = $this->createSiteRootPage($identifier, $params);
+            $rootPageId = $rootPage['uid'];
+        } else {
+            // Validate root page exists
+            $page = BackendUtility::getRecord('pages', $rootPageId, 'uid,title');
+            if ($page === null) {
+                throw new ValidationException(['Root page with UID ' . $rootPageId . ' does not exist.']);
+            }
         }
 
         $defaultLangParams = is_array($params['defaultLanguage'] ?? null) ? $params['defaultLanguage'] : [];
@@ -275,6 +297,9 @@ TYPOSCRIPT;
             'identifier' => $identifier,
             'config' => $config,
         ];
+        if ($rootPage !== null) {
+            $response['rootPage'] = $rootPage;
+        }
         if ($renderingFallback !== null) {
             $response['renderingFallback'] = $renderingFallback;
         }
@@ -285,6 +310,83 @@ TYPOSCRIPT;
         }
 
         return $this->createJsonResult($response);
+    }
+
+    /**
+     * Create a site root page below an existing visible page. This intentionally
+     * rejects pid=0 so "create a website" does not create a top-level Home page
+     * outside the editor's mounted site tree.
+     *
+     * @param array<string, mixed> $params
+     * @return array{uid: int, parentPageId: int, title: string, slug: string}
+     */
+    private function createSiteRootPage(string $identifier, array $params): array
+    {
+        $parentPageId = is_numeric($params['parentPageId'] ?? null) ? (int)$params['parentPageId'] : 0;
+        if ($parentPageId <= 0) {
+            throw new ValidationException([
+                'parentPageId must be a positive existing page UID when CreateSite creates a new root page. '
+                . 'Creating a website root page at pid=0 is intentionally rejected for this flow.',
+            ]);
+        }
+
+        $parentPage = BackendUtility::getRecord('pages', $parentPageId, 'uid,title');
+        if ($parentPage === null) {
+            throw new ValidationException(['Parent page with UID ' . $parentPageId . ' does not exist.']);
+        }
+
+        $this->ensureTableAccess('pages', 'write');
+
+        $title = is_string($params['rootPageTitle'] ?? null) && trim($params['rootPageTitle']) !== ''
+            ? trim($params['rootPageTitle'])
+            : $this->titleFromIdentifier($identifier);
+        $slug = is_string($params['rootPageSlug'] ?? null) && trim($params['rootPageSlug']) !== ''
+            ? trim($params['rootPageSlug'])
+            : '/' . strtolower($identifier);
+        $slug = $this->normalizePageSlug($slug);
+
+        $newId = 'NEW' . bin2hex(random_bytes(8));
+        $pageData = [
+            'pid' => $parentPageId,
+            'title' => $title,
+            'slug' => $slug,
+            'doktype' => 1,
+            'hidden' => 0,
+        ];
+        if ($this->hasPageColumn('is_siteroot')) {
+            $pageData['is_siteroot'] = 1;
+        }
+
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new ValidationException(['Could not create site root page: no backend user is available.']);
+        }
+
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $dataHandler->BE_USER = $backendUser;
+        $dataHandler->start(['pages' => [$newId => $pageData]], []);
+        $dataHandler->process_datamap();
+
+        if ($dataHandler->errorLog !== []) {
+            throw new ValidationException([
+                'Could not create site root page: ' . implode(', ', array_map(
+                    static fn (mixed $error): string => is_scalar($error) ? (string)$error : get_debug_type($error),
+                    $dataHandler->errorLog,
+                )),
+            ]);
+        }
+
+        $newPageUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
+        if (!is_numeric($newPageUid) || (int)$newPageUid <= 0) {
+            throw new ValidationException(['Could not create site root page: DataHandler did not return a page UID.']);
+        }
+
+        return [
+            'uid' => (int)$newPageUid,
+            'parentPageId' => $parentPageId,
+            'title' => $title,
+            'slug' => $slug,
+        ];
     }
 
     /**
@@ -767,6 +869,48 @@ TYPOSCRIPT;
         }
 
         return self::FLAG_MAP[$isoCode] ?? $isoCode;
+    }
+
+    private function titleFromIdentifier(string $identifier): string
+    {
+        $title = str_replace('-', ' ', trim($identifier));
+        $title = preg_replace('/\s+/', ' ', $title) ?? $title;
+        $title = ucwords($title);
+
+        return $title !== '' ? $title : 'New Website';
+    }
+
+    private function normalizePageSlug(string $slug): string
+    {
+        $slug = trim($slug);
+        if ($slug === '') {
+            return '/';
+        }
+
+        $slug = '/' . ltrim($slug, '/');
+        $slug = preg_replace('#/+#', '/', $slug) ?? $slug;
+
+        $slug = rtrim($slug, '/');
+
+        return $slug !== '' ? $slug : '/';
+    }
+
+    private function hasPageColumn(string $column): bool
+    {
+        $tca = $GLOBALS['TCA'] ?? [];
+        if (!is_array($tca)) {
+            return false;
+        }
+        $pagesTca = $tca['pages'] ?? [];
+        if (!is_array($pagesTca)) {
+            return false;
+        }
+        $columns = $pagesTca['columns'] ?? [];
+        if (!is_array($columns)) {
+            return false;
+        }
+
+        return isset($columns[$column]);
     }
 
     /**

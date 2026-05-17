@@ -52,6 +52,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Page with bad media',
                 'media' => 'not-an-array',
@@ -68,6 +69,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Page with bad file refs',
                 'media' => ['not-a-uid', 'also-not-a-uid'],
@@ -84,6 +86,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Page with incomplete file ref',
                 'media' => [['title' => 'No uid provided']],

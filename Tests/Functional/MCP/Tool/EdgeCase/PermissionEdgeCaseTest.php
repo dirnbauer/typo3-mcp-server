@@ -388,6 +388,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'New Page'],
         ]);
 
@@ -616,6 +617,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Outside Mount Point',
                 'doktype' => 1,

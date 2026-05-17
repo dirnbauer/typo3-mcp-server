@@ -174,6 +174,28 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
         self::assertTrue($result->isError);
     }
 
+    public function testCreatePageAtRootLevelRequiresExplicitOptIn(): void
+    {
+        $result = $this->tool->execute([
+            'operations' => [
+                [
+                    'action' => 'create',
+                    'table' => 'pages',
+                    'pid' => 0,
+                    'data' => [
+                        'title' => 'Accidental Bulk Home Page',
+                        'slug' => '/accidental-bulk-home-page',
+                        'doktype' => 1,
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('creating pages at pid=0 is reserved', $this->getFirstTextContent($result));
+        self::assertStringContainsString('use CreateSite with parentPageId', $this->getFirstTextContent($result));
+    }
+
     public function testReturnsPerOperationResults(): void
     {
         $result = $this->tool->execute([

@@ -143,6 +143,13 @@ final class WriteTableTool extends AbstractRecordTool
                             . 'Set to true to keep translations hidden for review.',
                         'default' => false,
                     ],
+                    'allowRootLevelPageCreation' => [
+                        'type' => 'boolean',
+                        'description' => 'create action with table="pages" only. Defaults to false so accidental website/root-page creation at pid=0 is rejected. '
+                            . 'For new websites, use CreateSite with parentPageId so the root page is created below an existing visible page. '
+                            . 'Set true only for intentional TYPO3 root-level pages.',
+                        'default' => false,
+                    ],
                 ],
                 'required' => ['action', 'table'],
             ],
@@ -167,6 +174,7 @@ final class WriteTableTool extends AbstractRecordTool
         $data = $params['data'] ?? [];
         $rawPosition = $params['position'] ?? null;
         $position = is_string($rawPosition) ? $rawPosition : null;
+        $allowRootLevelPageCreation = ($params['allowRootLevelPageCreation'] ?? false) === true;
         if ($action === 'create' && $position === null) {
             $position = 'bottom';
         }
@@ -239,6 +247,7 @@ final class WriteTableTool extends AbstractRecordTool
                 if (empty($data)) {
                     throw new ValidationException(['Data is required for create action']);
                 }
+                $this->assertRootLevelPageCreationAllowed($table, $pid, $allowRootLevelPageCreation);
                 break;
 
             case 'update':
@@ -300,6 +309,9 @@ final class WriteTableTool extends AbstractRecordTool
         if ($action === 'create' && is_array($data) && array_key_exists('pid', $data)) {
             $pid = (int)$data['pid'];
             unset($data['pid']);
+        }
+        if ($action === 'create' && $pid !== null) {
+            $this->assertRootLevelPageCreationAllowed($table, $pid, $allowRootLevelPageCreation);
         }
 
         // Execute the action
@@ -543,6 +555,19 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         return $this->createJsonResult($result);
+    }
+
+    private function assertRootLevelPageCreationAllowed(string $table, int $pid, bool $allowRootLevelPageCreation): void
+    {
+        if ($table !== 'pages' || $pid !== 0 || $allowRootLevelPageCreation) {
+            return;
+        }
+
+        throw new ValidationException([
+            'Creating pages at pid=0 is reserved for intentional TYPO3 root-level pages. '
+            . 'For a new website, use CreateSite with parentPageId so the site root page is created below an existing visible page. '
+            . 'If you really need a root-level page, pass allowRootLevelPageCreation=true.',
+        ]);
     }
 
     /**

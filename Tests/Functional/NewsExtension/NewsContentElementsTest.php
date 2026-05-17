@@ -42,6 +42,7 @@ class NewsContentElementsTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,

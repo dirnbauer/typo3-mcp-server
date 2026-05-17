@@ -124,6 +124,24 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         self::assertStringContainsString('data', $msg);
     }
 
+    public function testCreatePageAtRootLevelRequiresExplicitOptIn(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'table' => 'pages',
+            'pid' => 0,
+            'data' => [
+                'title' => 'Accidental Home Page',
+                'slug' => '/accidental-home-page',
+                'doktype' => 1,
+            ],
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Creating pages at pid=0 is reserved', $result->content[0]->text);
+        self::assertStringContainsString('use CreateSite with parentPageId', $result->content[0]->text);
+    }
+
     /**
      * Test invalid data parameter types
      */
@@ -241,6 +259,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'sys_language_uid' => 'invalid_lang_code',
@@ -282,6 +301,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'media' => 'some_value',
@@ -404,6 +424,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => $longString,
                 'doktype' => 1,
@@ -424,6 +445,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'doktype' => 1,
                 // Missing required 'title' field

@@ -9,6 +9,7 @@ use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class CreateSiteToolTest extends AbstractFunctionalTest
@@ -88,6 +89,65 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         $data = $this->extractJsonFromResult($result);
         self::assertSame('gb', $data['config']['languages'][0]['flag']);
         self::assertSame('at', $data['config']['languages'][1]['flag']);
+    }
+
+    public function testCreateCanCreateRootPageBelowVisibleParent(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'new-website',
+            'parentPageId' => $this->getRootPageUid(),
+            'rootPageTitle' => 'New Website',
+            'base' => 'https://new-website.example.com/',
+            'dependencies' => ['vendor/site-package'],
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+        self::assertSame('new-website', $data['identifier']);
+        self::assertSame($this->getRootPageUid(), $data['rootPage']['parentPageId']);
+        self::assertSame('New Website', $data['rootPage']['title']);
+        self::assertSame('/new-website', $data['rootPage']['slug']);
+        self::assertSame($data['rootPage']['uid'], $data['config']['rootPageId']);
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('pages');
+        $createdPage = $connection
+            ->select(['uid', 'pid', 'title', 'slug'], 'pages', ['uid' => (int)$data['rootPage']['uid']])
+            ->fetchAssociative();
+
+        self::assertIsArray($createdPage);
+        self::assertSame($this->getRootPageUid(), (int)$createdPage['pid']);
+        self::assertSame('New Website', $createdPage['title']);
+        self::assertSame('/new-website', $createdPage['slug']);
+
+        $config = $this->readSiteConfiguration('new-website');
+        self::assertSame((int)$createdPage['uid'], $config['rootPageId']);
+        self::assertSame('https://new-website.example.com/', $config['base']);
+    }
+
+    public function testCreateRootPageRejectsPidZeroParent(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'root-level-website',
+            'parentPageId' => 0,
+            'rootPageTitle' => 'Root Level Website',
+            'base' => 'https://root-level.example.com/',
+        ]);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('pid=0 is intentionally rejected', $this->getFirstTextContent($result));
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('pages');
+        $rootLevelRows = $connection
+            ->select(['uid'], 'pages', ['pid' => 0, 'title' => 'Root Level Website'])
+            ->fetchAllAssociative();
+
+        self::assertSame([], $rootLevelRows);
     }
 
     public function testAddLanguagePreservesExistingSiteConfiguration(): void

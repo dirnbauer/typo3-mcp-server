@@ -45,6 +45,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,
@@ -155,6 +156,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,
@@ -234,6 +236,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,
@@ -299,6 +302,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,
@@ -416,6 +420,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 1,
@@ -513,6 +518,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Validation Parent Page',
                 'doktype' => 1,
@@ -600,6 +606,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'Page for ref-update', 'doktype' => 1],
         ]);
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
@@ -666,6 +673,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'Page for steal-test', 'doktype' => 1],
         ]);
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
@@ -751,6 +759,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'Page for create-steal-test', 'doktype' => 1],
         ]);
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
@@ -811,6 +820,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'pages',
             'action' => 'create',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'Page for reorder', 'doktype' => 1],
         ]);
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];

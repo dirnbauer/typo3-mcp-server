@@ -61,6 +61,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
                 'action' => 'create',
                 'table' => 'pages',
                 'pid' => 0,
+                'allowRootLevelPageCreation' => true,
                 'data' => ['title' => "Timeout Test Page $i"],
             ]);
         }
@@ -87,6 +88,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Page with unique alias',
                 'slug' => '/unique-alias',
@@ -98,6 +100,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Another page',
                 'slug' => '/unique-alias', // Same slug - should be handled by TYPO3
@@ -142,6 +145,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'doktype' => 999999, // Invalid doktype that should fail

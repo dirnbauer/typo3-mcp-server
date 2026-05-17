@@ -146,6 +146,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => ['title' => 'To be deleted'],
         ]);
 
@@ -422,6 +423,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'categories' => [-1, 0, 999999], // Invalid UIDs for sys_category
@@ -454,6 +456,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             'action' => 'create',
             'table' => 'pages',
             'pid' => 0,
+            'allowRootLevelPageCreation' => true,
             'data' => [
                 'title' => 'Test Page',
                 'slug' => '/../../../etc/passwd', // Path traversal attempt
