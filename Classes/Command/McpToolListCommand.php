@@ -62,7 +62,8 @@ final class McpToolListCommand extends Command
             return Command::SUCCESS;
         }
 
-        $plain = $input->getOption('plain') === true || $input->getOption('no-ansi') === true;
+        $plain = $input->getOption('plain') === true
+            || ($input->hasOption('no-ansi') && $input->getOption('no-ansi') === true);
         ksort($tools);
         foreach ($tools as $name => $tool) {
             $description = '';

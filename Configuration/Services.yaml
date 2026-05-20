@@ -367,39 +367,27 @@ services:
       - name: 'console.command'
         command: 'mcp:install-editor-skills'
         description: 'Install editor workflow skills into .claude/skills for Claude Code / OpenCode.'
+  Hn\McpServer\Command\TcaResourceCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:tca-resource'
+        description: 'Read TYPO3 TCA reference markdown (dev-site only). Mirrors MCP resources typo3-mcp://tca.'
   Hn\McpServer\Command\Tool\SiteSettingsToolCommand:
-    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
-    arguments:
-      $toolName: 'SiteSettings'
-      $description: 'List, read, or update TYPO3 site settings (dev-site only).'
     tags:
       - name: 'console.command'
         command: 'mcp:site-settings'
         description: 'List, read, or update TYPO3 site settings (dev-site only).'
   Hn\McpServer\Command\Tool\ListViewHelpersToolCommand:
-    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
-    arguments:
-      $toolName: 'ListViewHelpers'
-      $description: 'List Fluid ViewHelpers (dev-site only).'
     tags:
       - name: 'console.command'
         command: 'mcp:list-viewhelpers'
         description: 'List Fluid ViewHelpers (dev-site only).'
   Hn\McpServer\Command\Tool\GetViewHelperDocumentationToolCommand:
-    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
-    arguments:
-      $toolName: 'GetViewHelperDocumentation'
-      $description: 'Get Fluid ViewHelper documentation (dev-site only).'
-      $exposedOptions: ['tagName']
     tags:
       - name: 'console.command'
         command: 'mcp:get-viewhelper-documentation'
         description: 'Get Fluid ViewHelper documentation (dev-site only).'
   Hn\McpServer\Command\Tool\CreateLocallangToolCommand:
-    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
-    arguments:
-      $toolName: 'CreateLocallang'
-      $description: 'Create or extend XLF language files (dev-site only).'
     tags:
       - name: 'console.command'
         command: 'mcp:create-locallang'

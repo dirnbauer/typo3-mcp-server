@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Command;
 
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-#[AsCommand(
-    name: 'mcp:install-editor-skills',
-    description: 'Install editor workflow skills for Claude Code / OpenCode into the current project',
-)]
 final class InstallEditorSkillsCommand extends Command
 {
+    protected function configure(): void
+    {
+        $this->setDescription('Install editor workflow skills for Claude Code / OpenCode into the current project.');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $filesystem = new Filesystem();
@@ -33,7 +33,7 @@ final class InstallEditorSkillsCommand extends Command
         $filesystem->mirror($skillsSourcePath, $targetPath, options: ['override' => true]);
 
         $copiedSkills = array_values(array_filter(
-            scandir($targetPath) ?: [],
+            is_array($entries = scandir($targetPath)) ? $entries : [],
             static fn(string $item): bool => $item !== '.' && $item !== '..' && is_dir($targetPath . '/' . $item),
         ));
 

@@ -131,15 +131,18 @@ final class SiteSettingsTool extends AbstractRecordTool
             'identifier' => $site->getIdentifier(),
             'sets' => $site->getSets(),
             'categories' => array_values($categories),
-            'definitions' => array_map(
-                static fn(SettingDefinition $definition): array => json_decode(
-                    json_encode($definition, JSON_THROW_ON_ERROR),
-                    true,
-                    512,
-                    JSON_THROW_ON_ERROR,
-                ),
+            'definitions' => array_values(array_map(
+                static function (SettingDefinition $definition): array {
+                    $encoded = json_encode($definition, JSON_THROW_ON_ERROR);
+                    $decoded = json_decode($encoded, true, 512, JSON_THROW_ON_ERROR);
+                    if (!is_array($decoded)) {
+                        throw new \RuntimeException('Failed to serialize setting definition.');
+                    }
+
+                    return $decoded;
+                },
                 array_values($definitions),
-            ),
+            )),
             'total' => count($definitions),
         ]);
     }

@@ -36,7 +36,7 @@ final class CreateLocallangToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         self::assertFileExists($targetFile);
         $contents = file_get_contents($targetFile);
         self::assertIsString($contents);

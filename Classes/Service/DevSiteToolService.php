@@ -9,12 +9,13 @@ use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 
 /**
- * Gates MCP tools and resources that should only appear on local development
- * installations (DDEV, TYPO3 Development context, or localUnsafeMode=on).
+ * Gates MCP tools and resources that should only appear when
+ * {@see LocalModeService::isLocalMode()} is active (DDEV, TYPO3 Development
+ * context, or explicit localUnsafeMode=on).
  *
- * This is separate from the safety-net relaxations in LocalModeService: dev
- * tools expose site-configuration authoring, template references, and file
- * generation that are inappropriate for production MCP endpoints.
+ * Dev-site tools share the same master toggle as live workspace writes and
+ * unrestricted file access. {@see LocalModeService::enforcesStrictSandbox()}
+ * disables all three relaxations even inside DDEV.
  */
 final readonly class DevSiteToolService
 {
@@ -24,7 +25,7 @@ final readonly class DevSiteToolService
 
     public function isAvailable(): bool
     {
-        return $this->localMode->isLocalMode();
+        return $this->localMode->allowsDevTools();
     }
 
     /**
@@ -58,12 +59,14 @@ final readonly class DevSiteToolService
         return (new \ReflectionClass($class))->getAttributes(DevSiteOnly::class) !== [];
     }
 
+    /**
+     * @return class-string
+     */
     private static function resolveToolClass(object $tool): string
     {
         if ($tool instanceof CompatibleToolAdapter) {
             $reflection = new \ReflectionClass($tool);
             $property = $reflection->getProperty('tool');
-            $property->setAccessible(true);
             $wrapped = $property->getValue($tool);
             if (is_object($wrapped)) {
                 return $wrapped::class;

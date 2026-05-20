@@ -11,11 +11,11 @@ use Mcp\Types\TextContent;
 /**
  * Formats TCA data for MCP resources and dev-site reference output.
  */
-final class TcaResourceFormatter
+final readonly class TcaResourceFormatter
 {
     public function __construct(
-        private readonly TableAccessService $tableAccessService,
-        private readonly GetTableSchemaTool $getTableSchemaTool,
+        private TableAccessService $tableAccessService,
+        private GetTableSchemaTool $getTableSchemaTool,
     ) {}
 
     public function renderOverview(): string
@@ -29,7 +29,10 @@ final class TcaResourceFormatter
 
         foreach ($accessibleTables as $tableName => $info) {
             $label = TableAccessService::translateLabel($info['title'] ?? $tableName);
-            $labelField = $GLOBALS['TCA'][$tableName]['ctrl']['label'] ?? 'N/A';
+            $tca = $GLOBALS['TCA'] ?? [];
+            $tableTca = is_array($tca) && is_array($tca[$tableName] ?? null) ? $tca[$tableName] : [];
+            $ctrl = is_array($tableTca['ctrl'] ?? null) ? $tableTca['ctrl'] : [];
+            $labelField = $ctrl['label'] ?? 'N/A';
             $readOnly = ($info['read_only'] ?? false) ? ' (read-only)' : '';
             $output .= sprintf(
                 "- **%s** (`%s`) — label field: `%s`%s\n",
@@ -53,7 +56,7 @@ final class TcaResourceFormatter
             return "# Access denied\n\nTable `{$tableName}` is not accessible to the current backend user.\n";
         }
 
-        if (!isset($GLOBALS['TCA'][$tableName])) {
+        if (!is_array($GLOBALS['TCA'] ?? null) || !is_array($GLOBALS['TCA'][$tableName] ?? null)) {
             return "# Error\n\nTable `{$tableName}` not found in TCA.\n\nUse `typo3-mcp://tca` to see accessible tables.";
         }
 
@@ -70,19 +73,20 @@ final class TcaResourceFormatter
         $output .= $schemaText;
         $output .= "\n\n## Raw field summary\n\n";
 
+        /** @var array<string, mixed> $tca */
         $tca = $GLOBALS['TCA'][$tableName];
-        if (isset($tca['columns']) && is_array($tca['columns'])) {
-            foreach ($tca['columns'] as $fieldName => $fieldConfig) {
-                if (!is_array($fieldConfig)) {
-                    continue;
-                }
-                if (!$this->tableAccessService->canAccessField($tableName, (string)$fieldName)) {
-                    continue;
-                }
-                $output .= '- `' . $fieldName . '`';
-                TcaFormattingUtility::addFieldDetailsInline($output, $fieldConfig, (string)$fieldName, $tableName);
-                $output .= "\n";
+        $columns = is_array($tca['columns'] ?? null) ? $tca['columns'] : [];
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (!is_string($fieldName) || !is_array($fieldConfig)) {
+                continue;
             }
+            if (!$this->tableAccessService->canAccessField($tableName, $fieldName)) {
+                continue;
+            }
+            $output .= '- `' . $fieldName . '`';
+            /** @var array<string, mixed> $fieldConfig */
+            TcaFormattingUtility::addFieldDetailsInline($output, $fieldConfig, $fieldName, $tableName);
+            $output .= "\n";
         }
 
         return $output;

@@ -48,7 +48,7 @@ final class SiteSettingsToolTest extends AbstractFunctionalTest
             'identifier' => 'dev-site-settings',
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         self::assertSame('ok', $data['status']);
         self::assertGreaterThan(0, $data['total']);
@@ -72,7 +72,7 @@ final class SiteSettingsToolTest extends AbstractFunctionalTest
             'settings' => ['email.format' => 'html'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         self::assertSame('updated', $data['status']);
         self::assertSame('html', $data['settings']['email.format']);

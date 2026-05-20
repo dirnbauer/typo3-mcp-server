@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
-use DOMDocument;
-use DOMElement;
 use Hn\McpServer\Exception\ValidationException;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -37,7 +35,7 @@ final class LocallangFileService
 
         $document = $this->loadOrCreateDocument($targetFile);
         $fileNode = $document->getElementsByTagName('file')->item(0);
-        if (!$fileNode instanceof DOMElement) {
+        if (!$fileNode instanceof \DOMElement) {
             throw new ValidationException(['Unable to prepare XLF document root.']);
         }
 
@@ -45,7 +43,7 @@ final class LocallangFileService
         $updated = 0;
         foreach ($transUnits as $unit) {
             $existing = $this->findTransUnit($fileNode, $unit['id']);
-            if ($existing instanceof DOMElement) {
+            if ($existing instanceof \DOMElement) {
                 $this->setTransUnitText($existing, 'source', $unit['source']);
                 if (isset($unit['target']) && $unit['target'] !== '') {
                     $this->setTransUnitText($existing, 'target', $unit['target']);
@@ -91,9 +89,9 @@ final class LocallangFileService
         ]);
     }
 
-    private function loadOrCreateDocument(string $targetFile): DOMDocument
+    private function loadOrCreateDocument(string $targetFile): \DOMDocument
     {
-        $document = new DOMDocument('1.0', 'UTF-8');
+        $document = new \DOMDocument('1.0', 'UTF-8');
         $document->preserveWhiteSpace = false;
 
         if (is_file($targetFile)) {
@@ -116,10 +114,10 @@ final class LocallangFileService
         return $document;
     }
 
-    private function findTransUnit(DOMElement $fileNode, string $id): ?DOMElement
+    private function findTransUnit(\DOMElement $fileNode, string $id): ?\DOMElement
     {
         foreach ($fileNode->getElementsByTagName('trans-unit') as $node) {
-            if ($node instanceof DOMElement && $node->getAttribute('id') === $id) {
+            if ($node instanceof \DOMElement && $node->getAttribute('id') === $id) {
                 return $node;
             }
         }
@@ -127,10 +125,10 @@ final class LocallangFileService
         return null;
     }
 
-    private function setTransUnitText(DOMElement $transUnit, string $tagName, string $value): void
+    private function setTransUnitText(\DOMElement $transUnit, string $tagName, string $value): void
     {
         foreach ($transUnit->getElementsByTagName($tagName) as $node) {
-            if ($node instanceof DOMElement) {
+            if ($node instanceof \DOMElement) {
                 while ($node->firstChild !== null) {
                     $node->removeChild($node->firstChild);
                 }
@@ -149,7 +147,7 @@ final class LocallangFileService
 
     private function validateExtensionKey(string $extensionKey): void
     {
-        if (!preg_match(self::EXTENSION_KEY_PATTERN, $extensionKey)) {
+        if (preg_match(self::EXTENSION_KEY_PATTERN, $extensionKey) !== 1) {
             throw new ValidationException(['Invalid extension key "' . $extensionKey . '".']);
         }
     }

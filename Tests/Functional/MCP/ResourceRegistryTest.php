@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP;
 
+use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\ResourceRegistry;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
@@ -47,7 +48,7 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
         $this->disableDevSiteTools();
         self::assertFalse($this->registry->isAvailable());
 
-        $this->expectException(\Hn\McpServer\Exception\ValidationException::class);
+        $this->expectException(ValidationException::class);
         $this->registry->listResources();
     }
 }

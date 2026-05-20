@@ -31,9 +31,20 @@ Dev-site tools
 --------------
 
 When DDEV, TYPO3 Development context, or ``localUnsafeMode=on`` is active,
-additional tools and MCP resources are exposed. They are filtered from
-``tools/list`` and ``resources/list`` on production endpoints. Check
-``GetCapabilities`` → ``devSiteTools.available``.
+additional tools and MCP resources are exposed. They share the same
+``localMode`` gate as live workspace writes (``workspace_id: 0``) and
+unrestricted FAL file access; ``mcpServer.strictSandbox`` disables all three
+even inside DDEV.
+
+On production (``localUnsafeMode=auto`` outside DDEV/Development, or
+``localUnsafeMode=off``):
+
+- Record writes stay workspace-staged (auto-select/create workspace > 0).
+- File tools stay inside the ``fileadmin/mcp/`` sandbox.
+
+Dev-site tools and MCP resources are filtered from ``tools/list`` and
+``resources/list`` on those endpoints. Check ``GetCapabilities`` →
+``localMode`` and ``devSiteTools.available``.
 
 Third-party tools
 -----------------
@@ -1317,6 +1328,19 @@ When dev-site mode is active, the MCP server exposes read-only TCA resources:
 
 Use ``resources/list``, ``resources/templates/list``, and ``resources/read`` in
 MCP clients that support contextual resources.
+
+CLI mirror:
+
+.. code-block:: bash
+
+   vendor/bin/typo3 mcp:tca-resource --json
+   vendor/bin/typo3 mcp:tca-resource --table=pages --json
+   vendor/bin/typo3 mcp:site-settings --action=listDefinitions --identifier=main --json
+   vendor/bin/typo3 mcp:list-viewhelpers --json
+   vendor/bin/typo3 mcp:get-viewhelper-documentation --tagName=f:for --json
+   vendor/bin/typo3 mcp:create-locallang --extensionKey=my_ext --fileName=locallang.xlf \
+     --params '{"transUnits":[{"id":"label","source":"Label"}]}' --json
+   vendor/bin/typo3 mcp:install-extension --action=list --json
 
 Editor skills
 -------------

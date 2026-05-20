@@ -1,22 +1,28 @@
 <?php
 
+use Hn\McpServer\Command\InstallEditorSkillsCommand;
 use Hn\McpServer\Command\McpServerCommand;
 use Hn\McpServer\Command\McpTestCommand;
 use Hn\McpServer\Command\McpToolListCommand;
 use Hn\McpServer\Command\McpToolRunCommand;
 use Hn\McpServer\Command\OAuthManageCommand;
+use Hn\McpServer\Command\TcaResourceCommand;
 use Hn\McpServer\Command\Tool\ApplyShadcnPresetToolCommand;
+use Hn\McpServer\Command\Tool\CreateLocallangToolCommand;
 use Hn\McpServer\Command\Tool\GetCapabilitiesToolCommand;
 use Hn\McpServer\Command\Tool\GetPageToolCommand;
 use Hn\McpServer\Command\Tool\GetPageTreeToolCommand;
 use Hn\McpServer\Command\Tool\GetPreviewUrlToolCommand;
 use Hn\McpServer\Command\Tool\GetTableSchemaToolCommand;
+use Hn\McpServer\Command\Tool\GetViewHelperDocumentationToolCommand;
 use Hn\McpServer\Command\Tool\ListTablesToolCommand;
+use Hn\McpServer\Command\Tool\ListViewHelpersToolCommand;
 use Hn\McpServer\Command\Tool\ListWorkspacesToolCommand;
 use Hn\McpServer\Command\Tool\PublishWorkspaceToolCommand;
 use Hn\McpServer\Command\Tool\ReadTableToolCommand;
 use Hn\McpServer\Command\Tool\RenderRecordToolCommand;
 use Hn\McpServer\Command\Tool\SearchToolCommand;
+use Hn\McpServer\Command\Tool\SiteSettingsToolCommand;
 use Hn\McpServer\Command\Tool\SiteSetToolCommand;
 use Hn\McpServer\Command\Tool\WriteTableToolCommand;
 
@@ -102,8 +108,28 @@ return [
         'class' => ApplyShadcnPresetToolCommand::class,
         'schedulable' => false,
     ],
+    'mcp:site-settings' => [
+        'class' => SiteSettingsToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:list-viewhelpers' => [
+        'class' => ListViewHelpersToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:get-viewhelper-documentation' => [
+        'class' => GetViewHelperDocumentationToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:create-locallang' => [
+        'class' => CreateLocallangToolCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:tca-resource' => [
+        'class' => TcaResourceCommand::class,
+        'schedulable' => false,
+    ],
     'mcp:install-editor-skills' => [
-        'class' => \Hn\McpServer\Command\InstallEditorSkillsCommand::class,
+        'class' => InstallEditorSkillsCommand::class,
         'schedulable' => false,
     ],
 ];

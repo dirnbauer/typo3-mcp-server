@@ -117,6 +117,10 @@ final readonly class LocalModeService
     /**
      * Whether dev-site MCP tools (site settings authoring, ViewHelper reference,
      * TCA resources, XLF scaffolding) should be exposed.
+     *
+     * Intentionally tied to {@see isLocalMode()} — the same gate that unlocks
+     * live writes and the file sandbox. Use strictSandbox to force production
+     * behaviour on DDEV for all three.
      */
     public function allowsDevTools(): bool
     {

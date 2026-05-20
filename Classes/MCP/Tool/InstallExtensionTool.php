@@ -193,9 +193,13 @@ final class InstallExtensionTool extends AbstractTool
     private function executeList(): CallToolResult
     {
         $packageManager = GeneralUtility::makeInstance(PackageManager::class);
+        /** @var list<array{key: string, version: string, package: string, state: string}> $extensions */
         $extensions = [];
 
         foreach (ExtensionManagementUtility::getLoadedExtensionListArray() as $extensionKey) {
+            if (!is_string($extensionKey)) {
+                continue;
+            }
             $package = $packageManager->getPackage($extensionKey);
             $extensions[] = [
                 'key' => $extensionKey,
@@ -211,7 +215,10 @@ final class InstallExtensionTool extends AbstractTool
             'action' => 'list',
             'total' => count($extensions),
             'extensions' => $extensions,
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?: '{}';
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if ($json === false) {
+            $json = '{}';
+        }
 
         return new CallToolResult([new TextContent($json)]);
     }

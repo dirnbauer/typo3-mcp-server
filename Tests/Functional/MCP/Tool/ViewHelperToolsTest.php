@@ -34,7 +34,7 @@ final class ViewHelperToolsTest extends AbstractFunctionalTest
     {
         $result = $this->listTool->execute([]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $data = $this->extractJsonFromResult($result);
         self::assertGreaterThan(0, $data['total']);
         self::assertNotEmpty($data['viewHelpers'][0]['tagName']);
@@ -49,7 +49,7 @@ final class ViewHelperToolsTest extends AbstractFunctionalTest
 
         $result = $this->docTool->execute(['tagName' => $tagName]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $text = $this->getFirstTextContent($result);
         self::assertStringContainsString('# ' . $tagName, $text);
         self::assertStringContainsString('XML Namespace', $text);

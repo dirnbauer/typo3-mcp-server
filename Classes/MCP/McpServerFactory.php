@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
+use Mcp\Types\ListResourcesResult;
+use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
 use Mcp\Server\Server;
@@ -162,7 +164,7 @@ final readonly class McpServerFactory
         $server->registerHandler('resources/list', static function () use ($resourceRegistry, $debug) {
             $debug('Handling resources/list request');
             if (!$resourceRegistry->isAvailable()) {
-                return new \Mcp\Types\ListResourcesResult([]);
+                return new ListResourcesResult([]);
             }
 
             return $resourceRegistry->listResources();
@@ -171,14 +173,17 @@ final readonly class McpServerFactory
         $server->registerHandler('resources/templates/list', static function () use ($resourceRegistry, $debug) {
             $debug('Handling resources/templates/list request');
             if (!$resourceRegistry->isAvailable()) {
-                return new \Mcp\Types\ListResourceTemplatesResult([]);
+                return new ListResourceTemplatesResult([]);
             }
 
             return $resourceRegistry->listResourceTemplates();
         });
 
         $server->registerHandler('resources/read', static function ($params) use ($resourceRegistry, $debug) {
-            $uri = is_object($params) && isset($params->uri) && is_string($params->uri) ? $params->uri : '';
+            $uri = '';
+            if (is_object($params) && property_exists($params, 'uri') && is_string($params->uri)) {
+                $uri = $params->uri;
+            }
             $debug('Handling resources/read request for URI: ' . $uri);
 
             if (!$resourceRegistry->isAvailable()) {

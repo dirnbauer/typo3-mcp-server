@@ -47,6 +47,7 @@ final class LocalModeServiceTest extends FunctionalTestCase
         self::assertTrue($service->isLocalMode());
         self::assertTrue($service->allowsLiveWrites());
         self::assertTrue($service->allowsUnrestrictedFileAccess());
+        self::assertTrue($service->allowsDevTools());
     }
 
     public function testUserTsconfigStrictSandboxOverridesUnsafeExtensionSetting(): void
@@ -59,6 +60,7 @@ final class LocalModeServiceTest extends FunctionalTestCase
         self::assertFalse($service->isLocalMode());
         self::assertFalse($service->allowsLiveWrites());
         self::assertFalse($service->allowsUnrestrictedFileAccess());
+        self::assertFalse($service->allowsDevTools());
     }
 
     public function testCoreFeatureFlagStrictSandboxOverridesUnsafeExtensionSetting(): void
@@ -71,6 +73,7 @@ final class LocalModeServiceTest extends FunctionalTestCase
         self::assertFalse($service->isLocalMode());
         self::assertFalse($service->allowsLiveWrites());
         self::assertFalse($service->allowsUnrestrictedFileAccess());
+        self::assertFalse($service->allowsDevTools());
     }
 
     private function setUserTsConfig(string $tsConfig): void

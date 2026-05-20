@@ -117,11 +117,16 @@ final class CreateLocallangTool extends AbstractTool
             $extensionBasePath,
         );
 
-        return new CallToolResult([new TextContent(json_encode([
+        $json = json_encode([
             'status' => 'ok',
             'extensionKey' => $extensionKey,
             'fileName' => $fileName,
             'summary' => $summary,
-        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}')]);
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            $json = '{}';
+        }
+
+        return new CallToolResult([new TextContent($json)]);
     }
 }

@@ -6,8 +6,8 @@ namespace Hn\McpServer\MCP;
 
 use Hn\McpServer\Service\DevSiteToolService;
 use Hn\McpServer\Service\TcaResourceFormatter;
-use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ListResourcesResult;
+use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ReadResourceResult;
 use Mcp\Types\Resource;
 use Mcp\Types\ResourceTemplate;
@@ -16,14 +16,14 @@ use Mcp\Types\TextResourceContents;
 /**
  * MCP resources exposed on dev sites (DDEV / local development mode).
  */
-final class ResourceRegistry
+final readonly class ResourceRegistry
 {
     public const URI_OVERVIEW = 'typo3-mcp://tca';
     public const URI_TABLE_PREFIX = 'typo3-mcp://tca/';
 
     public function __construct(
-        private readonly TcaResourceFormatter $tcaResourceFormatter,
-        private readonly DevSiteToolService $devSiteToolService,
+        private TcaResourceFormatter $tcaResourceFormatter,
+        private DevSiteToolService $devSiteToolService,
     ) {}
 
     public function isAvailable(): bool
@@ -75,7 +75,7 @@ final class ResourceRegistry
 
         if (str_starts_with($uri, self::URI_TABLE_PREFIX)) {
             $tableName = substr($uri, strlen(self::URI_TABLE_PREFIX));
-            if ($tableName === '' || !preg_match('/^[a-z0-9_]+$/', $tableName)) {
+            if ($tableName === '' || preg_match('/^[a-z0-9_]+$/', $tableName) !== 1) {
                 throw new \InvalidArgumentException('Invalid TCA resource URI: ' . $uri);
             }
 

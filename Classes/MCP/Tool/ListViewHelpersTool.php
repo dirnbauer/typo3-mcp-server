@@ -51,11 +51,14 @@ final class ListViewHelpersTool extends AbstractTool
             ];
         }
 
-        return new CallToolResult([new TextContent(
-            json_encode([
-                'total' => count($viewHelpers),
-                'viewHelpers' => $viewHelpers,
-            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?: '{}',
-        )]);
+        $json = json_encode([
+            'total' => count($viewHelpers),
+            'viewHelpers' => $viewHelpers,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if ($json === false) {
+            $json = '{}';
+        }
+
+        return new CallToolResult([new TextContent($json)]);
     }
 }

@@ -247,7 +247,8 @@ abstract class AbstractMcpToolCommand extends Command
         $isError = $result->isError ?? false;
         $text = $this->extractText($result);
         $json = $input->getOption('json') === true;
-        $plain = $input->getOption('plain') === true || $input->getOption('no-ansi') === true;
+        $plain = $input->getOption('plain') === true
+            || ($input->hasOption('no-ansi') && $input->getOption('no-ansi') === true);
 
         if ($json) {
             // The MCP SDK already returns JSON-as-text; pretty-print if it's
@@ -300,7 +301,8 @@ abstract class AbstractMcpToolCommand extends Command
             $output->writeln(json_encode(['ok' => false, 'error' => $message]) ?: '{}');
             return;
         }
-        if ($input->getOption('plain') === true || $input->getOption('no-ansi') === true) {
+        if ($input->getOption('plain') === true
+            || ($input->hasOption('no-ansi') && $input->getOption('no-ansi') === true)) {
             $output->writeln('Error: ' . $message);
             return;
         }

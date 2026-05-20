@@ -202,9 +202,16 @@ areas, site settings, CSS tokens, and template overrides can evolve together.
 
 ### Dev-site tools (DDEV / local development)
 
-When `localUnsafeMode` resolves to **on** (DDEV, TYPO3 Development context, or
-explicit `localUnsafeMode=on`), the MCP server exposes additional tools that
-are hidden on production endpoints:
+Dev-site tools use the **same** `localMode` gate as live workspace writes and
+unrestricted file access (see [DDEV / local-development mode](#ddev--local-development-mode)
+below). When `localUnsafeMode` resolves to **on** — via DDEV, TYPO3
+Development context, or explicit `localUnsafeMode=on` — the MCP server also
+exposes tools that stay hidden on production endpoints. `mcpServer.strictSandbox`
+turns all relaxations off, including dev-site tools, even inside DDEV.
+
+Record tools still **default** to workspace staging unless you pass
+`workspace_id: 0`; local mode only *permits* live writes, it does not make them
+the default.
 
 | Tool | Purpose |
 |------|---------|
@@ -223,6 +230,20 @@ vendor/bin/typo3 mcp:install-editor-skills
 
 This copies `typo3-content-edit` and `typo3-translate-page` skills into
 `.claude/skills/`.
+
+CLI shortcuts (dev-site / DDEV):
+
+```bash
+ddev typo3 mcp:site-settings --action=listDefinitions --identifier=main --json
+ddev typo3 mcp:list-viewhelpers --json
+ddev typo3 mcp:get-viewhelper-documentation --tagName=f:for --json
+ddev typo3 mcp:create-locallang --extensionKey=my_ext --fileName=locallang.xlf \
+  --params '{"transUnits":[{"id":"label","source":"Label"}]}' --json
+ddev typo3 mcp:tca-resource --json                    # MCP resource typo3-mcp://tca
+ddev typo3 mcp:tca-resource --table=pages --json      # typo3-mcp://tca/pages
+ddev typo3 mcp:install-extension --action=list --json
+ddev typo3 mcp:install-editor-skills
+```
 
 ### Adding a site configuration
 

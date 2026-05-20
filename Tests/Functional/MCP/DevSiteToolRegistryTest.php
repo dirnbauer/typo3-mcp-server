@@ -35,6 +35,18 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
         self::assertContains('ListViewHelpers', $names);
     }
 
+    public function testStrictSandboxHidesDevSiteToolsEvenWhenLocalUnsafeModeIsOn(): void
+    {
+        $this->enableDevSiteTools();
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox'] = true;
+
+        $registry = $this->getService(ToolRegistry::class);
+        $names = array_map(static fn($tool) => $tool->getName(), $registry->getTools());
+
+        self::assertNotContains('SiteSettings', $names);
+        self::assertNotContains('ListViewHelpers', $names);
+    }
+
     public function testInstallEditorSkillsCommandCopiesSkills(): void
     {
         $previousCwd = getcwd();
