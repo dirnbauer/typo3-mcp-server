@@ -1,0 +1,32 @@
+---
+description: Use only dirnbauer/typo3-mcp-server for git push and GitHub CLI — never hauptsacheNet
+alwaysApply: true
+---
+
+# Git remote: dirnbauer only
+
+This workspace is **`dirnbauer/typo3-mcp-server`**. Do not use or push to **`hauptsacheNet/typo3-mcp-server`**.
+
+## Git
+
+- **Push only to `origin`** → `https://github.com/dirnbauer/typo3-mcp-server.git`
+- Never run `git push upstream`, `git push hauptsacheNet`, or any push targeting `hauptsacheNet/typo3-mcp-server`
+- If an `upstream` remote exists, treat it as read-only context only; never push to it
+
+## GitHub CLI (`gh`)
+
+`gh` may default to `hauptsacheNet/typo3-mcp-server` in this clone. Always pass the repo explicitly:
+
+```bash
+gh run list --repo dirnbauer/typo3-mcp-server
+gh pr create --repo dirnbauer/typo3-mcp-server
+gh run watch <id> --repo dirnbauer/typo3-mcp-server
+```
+
+Never use `--repo hauptsacheNet/typo3-mcp-server` and never create PRs or push commits on that remote.
+
+## CI and releases
+
+When checking Actions, opening PRs, or reporting CI URLs, use:
+
+`https://github.com/dirnbauer/typo3-mcp-server`
