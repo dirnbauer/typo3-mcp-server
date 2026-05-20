@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
-use Mcp\Types\ListResourcesResult;
-use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
 use Mcp\Server\Server;
 use Mcp\Types\CallToolResult;
+use Mcp\Types\ListResourcesResult;
+use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
