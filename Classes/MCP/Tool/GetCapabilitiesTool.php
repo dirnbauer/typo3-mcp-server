@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\DevSiteToolService;
 use Hn\McpServer\Service\LocalModeService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -24,6 +25,7 @@ final class GetCapabilitiesTool extends AbstractTool
     public function __construct(
         private readonly CapabilityManifestService $manifest,
         private readonly LocalModeService $localMode,
+        private readonly DevSiteToolService $devSiteTools,
     ) {}
 
     /**
@@ -56,6 +58,7 @@ final class GetCapabilitiesTool extends AbstractTool
             'manifest' => $manifest['capabilities'] ?? [],
             'enforced' => $this->manifest->isEnforced(),
             'localMode' => $this->localMode->describe(),
+            'devSiteTools' => $this->devSiteTools->describe(),
         ];
 
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

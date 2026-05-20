@@ -13,9 +13,10 @@ use PHPUnit\Framework\TestCase;
 
 final class McpServerFactoryTest extends TestCase
 {
-    private function createFactory(): McpServerFactory
+    private function createFactory(?ToolRegistry $registry = null): McpServerFactory
     {
-        $registry = new ToolRegistry([]);
+        $registry ??= new ToolRegistry([]);
+
         return new McpServerFactory($registry);
     }
 
@@ -103,7 +104,7 @@ final class McpServerFactoryTest extends TestCase
             }
         };
 
-        $factory = new McpServerFactory(new ToolRegistry([$legacyTool]));
+        $factory = $this->createFactory(new ToolRegistry([$legacyTool]));
         $server = $factory->createServer();
         $handlers = $server->getHandlers();
 

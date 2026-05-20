@@ -24,6 +24,7 @@ final readonly class McpServerFactory
 {
     public function __construct(
         private ToolRegistry $toolRegistry,
+        private ?ResourceRegistry $resourceRegistry = null,
     ) {}
 
     /**
@@ -145,6 +146,48 @@ final readonly class McpServerFactory
 
             // Exceptions are normalized to CallToolResult by AbstractTool::executeInternal().
             return $tool->execute($arguments);
+        });
+
+        $this->registerResourceHandlers($server, $debug);
+    }
+
+    private function registerResourceHandlers(Server $server, callable $debug): void
+    {
+        if ($this->resourceRegistry === null) {
+            return;
+        }
+
+        $resourceRegistry = $this->resourceRegistry;
+
+        $server->registerHandler('resources/list', static function () use ($resourceRegistry, $debug) {
+            $debug('Handling resources/list request');
+            if (!$resourceRegistry->isAvailable()) {
+                return new \Mcp\Types\ListResourcesResult([]);
+            }
+
+            return $resourceRegistry->listResources();
+        });
+
+        $server->registerHandler('resources/templates/list', static function () use ($resourceRegistry, $debug) {
+            $debug('Handling resources/templates/list request');
+            if (!$resourceRegistry->isAvailable()) {
+                return new \Mcp\Types\ListResourceTemplatesResult([]);
+            }
+
+            return $resourceRegistry->listResourceTemplates();
+        });
+
+        $server->registerHandler('resources/read', static function ($params) use ($resourceRegistry, $debug) {
+            $uri = is_object($params) && isset($params->uri) && is_string($params->uri) ? $params->uri : '';
+            $debug('Handling resources/read request for URI: ' . $uri);
+
+            if (!$resourceRegistry->isAvailable()) {
+                throw new \InvalidArgumentException(
+                    'MCP resources are only available in DDEV / local development mode.',
+                );
+            }
+
+            return $resourceRegistry->readResource($uri);
         });
     }
 

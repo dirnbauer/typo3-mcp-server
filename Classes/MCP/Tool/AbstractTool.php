@@ -6,7 +6,9 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\DevSiteToolService;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -52,6 +54,7 @@ abstract class AbstractTool implements ToolInterface
         try {
             $this->enforceCapabilityManifest();
             $this->enforceAdminOnly();
+            $this->enforceDevSiteOnly();
             $this->initialize();
             return $this->doExecute($params);
         } catch (\Throwable $e) {
@@ -92,6 +95,22 @@ abstract class AbstractTool implements ToolInterface
         if (!$backendUser instanceof BackendUserAuthentication || !$backendUser->isAdmin()) {
             throw new ValidationException(['This tool requires admin privileges.']);
         }
+    }
+
+    private function enforceDevSiteOnly(): void
+    {
+        $reflection = new \ReflectionClass($this);
+        if ($reflection->getAttributes(DevSiteOnly::class) === []) {
+            return;
+        }
+
+        try {
+            $devSiteTools = GeneralUtility::makeInstance(DevSiteToolService::class);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $devSiteTools->assertAvailable();
     }
 
     /**

@@ -59,4 +59,15 @@ final class InstallExtensionToolTest extends AbstractFunctionalTest
         self::assertTrue($result->isError);
         self::assertStringContainsString('admin privileges', $this->getFirstTextContent($result));
     }
+
+    public function testListReturnsLoadedExtensions(): void
+    {
+        $result = $this->tool->execute(['action' => 'list']);
+
+        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('list', $data['action']);
+        self::assertGreaterThan(0, $data['total']);
+        self::assertContains('mcp_server', array_column($data['extensions'], 'key'));
+    }
 }

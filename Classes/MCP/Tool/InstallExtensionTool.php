@@ -10,6 +10,9 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Process\Process;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Install, activate, or search for TYPO3 extensions via Composer and TYPO3 CLI.
@@ -45,14 +48,14 @@ final class InstallExtensionTool extends AbstractTool
         return [
             'description' => 'Install, activate, or search for TYPO3 extensions. '
                 . 'Actions: "require" installs a Composer package, "activate" enables an installed extension, '
-                . '"search" finds TYPO3 extensions on Packagist. Admin-only.',
+                . '"search" finds TYPO3 extensions on Packagist, "list" returns loaded extensions with version and state. Admin-only.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'action' => [
                         'type' => 'string',
-                        'description' => 'Action to perform: "require" (composer require), "activate" (extension:activate), or "search" (composer search)',
-                        'enum' => ['require', 'activate', 'search'],
+                        'description' => 'Action to perform: "require" (composer require), "activate" (extension:activate), "search" (composer search), or "list" (loaded extensions)',
+                        'enum' => ['require', 'activate', 'search', 'list'],
                     ],
                     'package' => [
                         'type' => 'string',
@@ -89,7 +92,8 @@ final class InstallExtensionTool extends AbstractTool
             'require' => $this->executeRequire($params),
             'activate' => $this->executeActivate($params),
             'search' => $this->executeSearch($params),
-            default => throw new ValidationException(['Unknown action "' . $action . '". Allowed: require, activate, search']),
+            'list' => $this->executeList(),
+            default => throw new ValidationException(['Unknown action "' . $action . '". Allowed: require, activate, search, list']),
         };
     }
 
@@ -184,6 +188,32 @@ final class InstallExtensionTool extends AbstractTool
 
         $json = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}';
         return new CallToolResult([new TextContent($json)], $result['exitCode'] !== 0);
+    }
+
+    private function executeList(): CallToolResult
+    {
+        $packageManager = GeneralUtility::makeInstance(PackageManager::class);
+        $extensions = [];
+
+        foreach (ExtensionManagementUtility::getLoadedExtensionListArray() as $extensionKey) {
+            $package = $packageManager->getPackage($extensionKey);
+            $extensions[] = [
+                'key' => $extensionKey,
+                'version' => $package->getValueFromComposerManifest('version') ?? '',
+                'package' => $package->getValueFromComposerManifest('name') ?? '',
+                'state' => 'active',
+            ];
+        }
+
+        usort($extensions, static fn(array $a, array $b): int => strcmp($a['key'], $b['key']));
+
+        $json = json_encode([
+            'action' => 'list',
+            'total' => count($extensions),
+            'extensions' => $extensions,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?: '{}';
+
+        return new CallToolResult([new TextContent($json)]);
     }
 
     /**

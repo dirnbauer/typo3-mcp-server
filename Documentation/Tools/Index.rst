@@ -27,6 +27,14 @@ General notes
 - Several tools return human-readable text, while record and file write tools
   typically return JSON encoded into MCP text content.
 
+Dev-site tools
+--------------
+
+When DDEV, TYPO3 Development context, or ``localUnsafeMode=on`` is active,
+additional tools and MCP resources are exposed. They are filtered from
+``tools/list`` and ``resources/list`` on production endpoints. Check
+``GetCapabilities`` → ``devSiteTools.available``.
+
 Third-party tools
 -----------------
 
@@ -189,7 +197,19 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Find installed Site Sets and attach/detach them on sites (admin-only)
    * - ``InstallExtension``
      - Execute
-     - Install, activate, or search TYPO3 extensions (admin-only)
+     - Install, activate, search, or list loaded TYPO3 extensions (admin-only)
+   * - ``SiteSettings``
+     - Dev / Admin
+     - List/read/update site settings from Site Sets (dev-site only)
+   * - ``ListViewHelpers``
+     - Dev
+     - List Fluid ViewHelpers (dev-site only)
+   * - ``GetViewHelperDocumentation``
+     - Dev
+     - ViewHelper documentation by tag name (dev-site only)
+   * - ``CreateLocallang``
+     - Dev / Admin
+     - Create or extend XLF language files (dev-site only)
    * - ``ListPaidContent``
      - Read
      - List pages gated by the optional x402 paywall extension
@@ -1239,7 +1259,74 @@ calls.
 
 Useful as the first call of an MCP session: the LLM learns which tools
 are available, which subsystems are declared, whether live writes are
-unlocked (DDEV/localUnsafeMode), and whether outbound HTTP is open.
+unlocked (DDEV/localUnsafeMode), whether dev-site tools are active, and
+whether outbound HTTP is open.
+
+Dev-site tools
+==============
+
+SiteSettings
+------------
+
+List Site Set setting definitions and read or update values in the per-site
+``settings.yaml`` file. Validation uses TYPO3's settings type registry (enums,
+types, readonly flags from attached Site Sets).
+
+:Parameters:
+   - ``action`` (string, required): ``listDefinitions``, ``get``, or ``update``
+   - ``identifier`` (string, required): site identifier
+   - ``settings`` (object): key/value map for ``update``
+
+Admin-only. Dev-site only. Changes take effect immediately (not workspace-versioned).
+
+ListViewHelpers
+---------------
+
+List Fluid ViewHelpers (tag name + XML namespace) from the Composer project.
+Dev-site only. Read-only.
+
+GetViewHelperDocumentation
+--------------------------
+
+Return markdown documentation for one ViewHelper tag (from ``ListViewHelpers``).
+
+:Parameters:
+   - ``tagName`` (string, required): e.g. the tag returned by ``ListViewHelpers``
+
+CreateLocallang
+-------------
+
+Create or extend an XLF file under ``Resources/Private/Language/`` in a TYPO3
+extension. Existing translation units with the same ``id`` are updated.
+
+:Parameters:
+   - ``extensionKey`` (string, required)
+   - ``fileName`` (string, required): must end with ``.xlf``
+   - ``transUnits`` (array, required): ``[{id, source, target?}, ...]``
+   - ``extensionBasePath`` (string): default ``packages`` for non-loaded extensions
+
+Admin-only. Dev-site only.
+
+MCP resources (dev-site)
+------------------------
+
+When dev-site mode is active, the MCP server exposes read-only TCA resources:
+
+- ``typo3-mcp://tca`` — overview of tables accessible to the current backend user
+- ``typo3-mcp://tca/{tableName}`` — schema summary plus permission-filtered field list
+
+Use ``resources/list``, ``resources/templates/list``, and ``resources/read`` in
+MCP clients that support contextual resources.
+
+Editor skills
+-------------
+
+Install bundled editor workflow skills (``typo3-content-edit``,
+``typo3-translate-page``) into ``.claude/skills/``:
+
+.. code-block:: bash
+
+   vendor/bin/typo3 mcp:install-editor-skills
 
 File safety model
 =================

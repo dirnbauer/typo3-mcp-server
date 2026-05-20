@@ -93,7 +93,8 @@ final readonly class LocalModeService
      *     development_context: bool,
      *     allows_live_writes: bool,
      *     allows_unrestricted_files: bool,
-     *     allows_unrestricted_outbound: bool
+     *     allows_unrestricted_outbound: bool,
+     *     allows_dev_tools: bool
      * }
      */
     public function describe(): array
@@ -109,7 +110,17 @@ final readonly class LocalModeService
             'allows_live_writes' => $this->allowsLiveWrites(),
             'allows_unrestricted_files' => $this->allowsUnrestrictedFileAccess(),
             'allows_unrestricted_outbound' => $this->allowsUnrestrictedOutbound(),
+            'allows_dev_tools' => $this->isLocalMode(),
         ];
+    }
+
+    /**
+     * Whether dev-site MCP tools (site settings authoring, ViewHelper reference,
+     * TCA resources, XLF scaffolding) should be exposed.
+     */
+    public function allowsDevTools(): bool
+    {
+        return $this->isLocalMode();
     }
 
     private function isDdev(): bool

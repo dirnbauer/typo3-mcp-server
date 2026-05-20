@@ -186,6 +186,9 @@ list is also returned by the `GetCapabilities` tool, gated by
   `SearchMedia`, `ListStorages`
 - **Diagnostics** — `ContentAudit`, `GetSystemLog`, `ManageRedirects`
 - **Admin / operations** — `CreateSite`, `SiteSet`, `InstallExtension`, `SafeCli`
+- **Dev-site only (DDEV / `localUnsafeMode`)** — `SiteSettings`, `ListViewHelpers`,
+  `GetViewHelperDocumentation`, `CreateLocallang`, MCP TCA resources
+  (`typo3-mcp://tca`, `typo3-mcp://tca/{table}`)
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats` (when `typo3-x402-paywall` is installed)
 
@@ -196,6 +199,30 @@ shadcn/create preset to an existing frontend project directory. The MCP server
 does not own TYPO3 Fluid template sets or Desiderio's frontend component
 recipes; those stay in the consuming sitepackage where Visual Editor content
 areas, site settings, CSS tokens, and template overrides can evolve together.
+
+### Dev-site tools (DDEV / local development)
+
+When `localUnsafeMode` resolves to **on** (DDEV, TYPO3 Development context, or
+explicit `localUnsafeMode=on`), the MCP server exposes additional tools that
+are hidden on production endpoints:
+
+| Tool | Purpose |
+|------|---------|
+| `SiteSettings` | List Site Set setting definitions; read/update `settings.yaml` |
+| `ListViewHelpers` / `GetViewHelperDocumentation` | Fluid ViewHelper reference |
+| `CreateLocallang` | Create or extend XLF files in extensions |
+| MCP resources | `typo3-mcp://tca` overview + `typo3-mcp://tca/{table}` with access checks |
+
+`GetCapabilities` reports `devSiteTools.available` alongside `localMode`. Install
+editor workflow skills for Claude Code / OpenCode:
+
+```bash
+vendor/bin/typo3 mcp:install-editor-skills
+# DDEV: ddev typo3 mcp:install-editor-skills
+```
+
+This copies `typo3-content-edit` and `typo3-translate-page` skills into
+`.claude/skills/`.
 
 ### Adding a site configuration
 

@@ -102,4 +102,8 @@ return [
         'class' => ApplyShadcnPresetToolCommand::class,
         'schedulable' => false,
     ],
+    'mcp:install-editor-skills' => [
+        'class' => \Hn\McpServer\Command\InstallEditorSkillsCommand::class,
+        'schedulable' => false,
+    ],
 ];

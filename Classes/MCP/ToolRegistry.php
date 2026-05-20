@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP;
 use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\DevSiteToolService;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 /**
@@ -26,6 +27,7 @@ final class ToolRegistry
         #[AutowireIterator('mcp.tool')]
         iterable $tools,
         private readonly ?CapabilityManifestService $capabilityManifest = null,
+        private readonly ?DevSiteToolService $devSiteToolService = null,
     ) {
         foreach ($tools as $tool) {
             $normalizedTool = $this->normalizeTool($tool);
@@ -44,7 +46,14 @@ final class ToolRegistry
      */
     public function getTools(): array
     {
-        return $this->tools;
+        if ($this->devSiteToolService === null || $this->devSiteToolService->isAvailable()) {
+            return $this->tools;
+        }
+
+        return array_filter(
+            $this->tools,
+            static fn(ToolInterface $tool): bool => !DevSiteToolService::hasDevSiteOnlyAttribute($tool),
+        );
     }
 
     /**
