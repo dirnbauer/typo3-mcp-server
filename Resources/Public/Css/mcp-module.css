@@ -1,14 +1,8 @@
-/* ---------------------------------------------------------------------------
- * TYPO3 MCP Server backend module
- *
- * Uses TYPO3 v14 design tokens exclusively (no hardcoded colors).
- * Token reference: vendor/typo3/cms-backend/Resources/Public/Css/backend.css
- * ------------------------------------------------------------------------- */
+/* TYPO3 MCP Server backend module — design tokens only */
 
-
-/* ---------------------------------------------------------------------------
- * Custom tab/panel visibility (Bootstrap-independent)
- * ------------------------------------------------------------------------- */
+.mcp-module-column {
+    max-width: 56rem;
+}
 
 .mcp-panel-group > .mcp-panel {
     display: none;
@@ -18,41 +12,22 @@
     display: block;
 }
 
-
-/* ---------------------------------------------------------------------------
- * Main setup tabs — icon + label tabs
- * Uses --typo3-nav-link-* tokens (default, hover, focus, active states).
- * ------------------------------------------------------------------------- */
-
 .mcp-setup-tabs {
     border-bottom: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
     gap: calc(var(--typo3-spacing) * 0.25);
 }
 
 .mcp-setup-tabs .nav-link {
-    align-items: center;
     background-color: var(--typo3-nav-link-bg);
     border-color: var(--typo3-nav-link-border-color);
     color: var(--typo3-nav-link-color);
-    display: inline-flex;
     font-weight: 500;
-    gap: calc(var(--typo3-spacing) * 0.5);
     padding: var(--typo3-nav-link-padding-y) var(--typo3-nav-link-padding-x);
-    transition: var(--typo3-btn-transition);
 }
 
 .mcp-setup-tabs .nav-link:hover {
     background-color: var(--typo3-nav-link-hover-bg);
-    border-color: var(--typo3-nav-link-hover-border-color);
     color: var(--typo3-nav-link-hover-color);
-}
-
-.mcp-setup-tabs .nav-link:focus-visible {
-    background-color: var(--typo3-nav-link-focus-bg);
-    border-color: var(--typo3-nav-link-focus-border-color);
-    color: var(--typo3-nav-link-focus-color);
-    outline: var(--typo3-outline-width) var(--typo3-outline-style) color-mix(in srgb, var(--typo3-state-primary-border-color), transparent var(--typo3-outline-transparent-mix));
-    outline-offset: 2px;
 }
 
 .mcp-setup-tabs .nav-link.active {
@@ -61,87 +36,21 @@
     color: var(--typo3-nav-link-active-color);
 }
 
-.mcp-tab-icon {
-    align-items: center;
-    color: currentColor;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 1.1em;
-    justify-content: center;
-    width: 1.1em;
-}
-
-.mcp-tab-icon svg {
-    height: 100%;
-    width: 100%;
-}
-
-
-/* ---------------------------------------------------------------------------
- * Button icons — inline SVGs that inherit the button text color via
- * currentColor. This lets every button (primary, outline-secondary,
- * outline-danger, danger) theme itself correctly in both light and dark mode.
- * ------------------------------------------------------------------------- */
-
-.mcp-btn-icon {
-    align-items: center;
-    color: currentColor;
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 1em;
-    justify-content: center;
-    margin-inline-end: calc(var(--typo3-spacing) * 0.25);
-    vertical-align: -0.125em;
-    width: 1em;
-}
-
-.mcp-btn-icon svg {
-    height: 100%;
-    width: 100%;
-}
-
-
-/* ---------------------------------------------------------------------------
- * Client pills — branded button-style selectors (icon + label)
- * Uses --typo3-nav-link-* tokens for the base states and
- * --typo3-state-primary-* for the active state. Per-client accent borders
- * on hover use the named state color tokens (green, orange, purple, ...).
- * ------------------------------------------------------------------------- */
-
 .mcp-client-pills {
     gap: calc(var(--typo3-spacing) * 0.5);
 }
 
 .mcp-client-pill {
-    align-items: center;
     background-color: var(--typo3-nav-link-bg);
     border: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
     border-radius: 999px;
     color: var(--typo3-nav-link-color);
-    cursor: pointer;
-    display: inline-flex;
     font-weight: 500;
-    gap: calc(var(--typo3-spacing) * 0.5);
-    line-height: 1.2;
-    padding: calc(var(--typo3-nav-link-padding-y) * 0.85)
-             calc(var(--typo3-nav-link-padding-x) * 1.1)
-             calc(var(--typo3-nav-link-padding-y) * 0.85)
-             calc(var(--typo3-nav-link-padding-y) * 0.85);
-    transition: var(--typo3-btn-transition);
+    padding: calc(var(--typo3-nav-link-padding-y) * 0.85) calc(var(--typo3-nav-link-padding-x) * 1.1);
 }
 
 .mcp-client-pill:hover {
-    background-color: var(--typo3-nav-link-hover-bg);
     border-color: var(--typo3-state-primary-border-color);
-    color: var(--typo3-nav-link-hover-color);
-}
-
-.mcp-client-pill:focus-visible {
-    background-color: var(--typo3-nav-link-focus-bg);
-    border-color: var(--typo3-nav-link-focus-border-color);
-    color: var(--typo3-nav-link-focus-color);
-    outline: var(--typo3-outline-width) var(--typo3-outline-style) color-mix(in srgb, var(--typo3-state-primary-border-color), transparent var(--typo3-outline-transparent-mix));
-    outline-offset: 2px;
 }
 
 .mcp-client-pill.active {
@@ -150,129 +59,41 @@
     color: var(--typo3-state-primary-color);
 }
 
-.mcp-client-pill.active:hover {
-    background-color: var(--typo3-state-primary-hover-bg);
-    border-color: var(--typo3-state-primary-hover-border-color);
-    color: var(--typo3-state-primary-hover-color);
+.mcp-diagnostic-table th,
+.mcp-diagnostic-table td {
+    vertical-align: top;
 }
 
-.mcp-client-pill.active:focus-visible {
-    background-color: var(--typo3-state-primary-focus-bg);
-    border-color: var(--typo3-state-primary-focus-border-color);
-    color: var(--typo3-state-primary-focus-color);
-}
-
-.mcp-client-icon {
-    align-items: center;
-    background-color: var(--typo3-component-bg);
-    border-radius: 50%;
-    color: var(--typo3-component-color);
-    display: inline-flex;
-    flex: 0 0 auto;
-    height: 1.65em;
-    justify-content: center;
-    transition: var(--typo3-btn-transition);
-    width: 1.65em;
-}
-
-.mcp-client-icon svg {
-    height: 1em;
-    width: 1em;
-}
-
-.mcp-client-pill.active .mcp-client-icon {
-    background-color: var(--typo3-state-primary-color);
-    color: var(--typo3-state-primary-bg);
-}
-
-.mcp-client-label {
+.mcp-diagnostic-col-status {
+    width: 6.5rem;
     white-space: nowrap;
 }
 
-/*
- * Per-client accent on hover — uses named TYPO3 state-color border tokens.
- * These tokens follow TYPO3's palette and automatically adapt to the active
- * backend theme (light / dark).
- */
-.mcp-client-pill[data-mcp-client="cursor"]:hover    { border-color: var(--typo3-state-secondary-border-color); }
-.mcp-client-pill[data-mcp-client="claude"]:hover    { border-color: var(--typo3-state-orange-border-color); }
-.mcp-client-pill[data-mcp-client="n8n"]:hover       { border-color: var(--typo3-state-magenta-border-color); }
-.mcp-client-pill[data-mcp-client="manus"]:hover     { border-color: var(--typo3-state-indigo-border-color); }
-.mcp-client-pill[data-mcp-client="inspector"]:hover { border-color: var(--typo3-state-success-border-color); }
-.mcp-client-pill[data-mcp-client="other"]:hover     { border-color: var(--typo3-state-default-border-color); }
-
-
-/* ---------------------------------------------------------------------------
- * Endpoint status indicator
- * ------------------------------------------------------------------------- */
-
-.endpoint-status {
-    display: inline-block;
-    position: relative;
-    vertical-align: middle;
+.mcp-diagnostic-badge {
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
-.endpoint-status .status-icon {
-    cursor: help;
-    display: inline-block;
-    height: 20px;
-    line-height: 20px;
-    text-align: center;
-    vertical-align: middle;
-    width: 20px;
+.mcp-diagnostic-badge-ok {
+    background-color: var(--typo3-state-success-bg);
+    color: var(--typo3-state-success-color);
 }
 
-.endpoint-status.checking .status-icon::after {
-    content: '\23F3';
-    font-size: 12px;
+.mcp-diagnostic-badge-warning {
+    background-color: var(--typo3-state-warning-bg);
+    color: var(--typo3-state-warning-color);
 }
 
-.endpoint-status.success .status-icon::after {
-    content: '\2705';
-    font-size: 12px;
+.mcp-diagnostic-badge-error {
+    background-color: var(--typo3-state-danger-bg);
+    color: var(--typo3-state-danger-color);
 }
 
-.endpoint-status.warning .status-icon::after {
-    content: '\26A0\FE0F';
-    font-size: 12px;
+.mcp-diagnostic-badge-info {
+    background-color: var(--typo3-state-info-bg);
+    color: var(--typo3-state-info-color);
 }
 
-.endpoint-status.error .status-icon::after {
-    content: '\274C';
-    font-size: 12px;
-}
-
-.endpoint-status .status-tooltip {
-    background-color: var(--typo3-surface-container-highest);
-    border: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
-    border-radius: var(--typo3-component-border-radius);
-    bottom: 100%;
-    box-shadow: var(--typo3-component-box-shadow-tooltip);
-    color: var(--typo3-component-color);
-    display: none;
-    font-size: var(--typo3-font-size);
-    left: 0;
-    margin-bottom: var(--typo3-spacing);
-    min-width: 200px;
-    padding: var(--typo3-component-padding-y) var(--typo3-component-padding-x);
-    position: absolute;
-    text-align: center;
-    white-space: nowrap;
-    z-index: var(--typo3-zindex-dropdown);
-}
-
-.endpoint-status .status-tooltip::after {
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 6px solid var(--typo3-surface-container-highest);
-    content: '';
-    height: 0;
-    left: 10px;
-    position: absolute;
-    top: 100%;
-    width: 0;
-}
-
-.endpoint-status:hover .status-tooltip {
-    display: block;
+.font-monospace {
+    font-family: var(--typo3-font-family-monospace, ui-monospace, monospace);
 }

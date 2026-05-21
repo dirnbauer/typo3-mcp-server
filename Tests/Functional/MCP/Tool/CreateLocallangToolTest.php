@@ -42,6 +42,8 @@ final class CreateLocallangToolTest extends AbstractFunctionalTest
         self::assertIsString($contents);
         self::assertStringContainsString('label.example', $contents);
         self::assertStringContainsString('Example label', $contents);
+        self::assertStringContainsString('urn:oasis:names:tc:xliff:document:2.0', $contents);
+        self::assertStringContainsString('<unit id="label.example">', $contents);
     }
 
     protected function tearDown(): void

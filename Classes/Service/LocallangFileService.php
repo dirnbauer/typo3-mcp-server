@@ -10,11 +10,12 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Creates or extends XLF language files inside TYPO3 extensions.
+ * Creates or extends XLIFF 2.0 language files (ICU message syntax) inside TYPO3 extensions.
  */
 final class LocallangFileService
 {
     private const EXTENSION_KEY_PATTERN = '/^[a-z][a-z0-9_]*$/';
+    private const XLIFF2_NS = 'urn:oasis:names:tc:xliff:document:2.0';
 
     /**
      * @param list<array{id: string, source: string, target?: string}> $transUnits
@@ -42,25 +43,18 @@ final class LocallangFileService
         $added = 0;
         $updated = 0;
         foreach ($transUnits as $unit) {
-            $existing = $this->findTransUnit($fileNode, $unit['id']);
+            $existing = $this->findUnit($fileNode, $unit['id']);
             if ($existing instanceof \DOMElement) {
-                $this->setTransUnitText($existing, 'source', $unit['source']);
+                $this->setSegmentText($existing, 'source', $unit['source']);
                 if (isset($unit['target']) && $unit['target'] !== '') {
-                    $this->setTransUnitText($existing, 'target', $unit['target']);
+                    $this->setSegmentText($existing, 'target', $unit['target']);
                 }
                 ++$updated;
                 continue;
             }
 
-            $transUnit = $document->createElement('trans-unit');
-            $transUnit->setAttribute('id', $unit['id']);
-            $source = $document->createElement('source', $unit['source']);
-            $transUnit->appendChild($source);
-            if (isset($unit['target']) && $unit['target'] !== '') {
-                $target = $document->createElement('target', $unit['target']);
-                $transUnit->appendChild($target);
-            }
-            $fileNode->appendChild($transUnit);
+            $unitElement = $this->createUnitElement($document, $unit['id'], $unit['source'], $unit['target'] ?? null);
+            $fileNode->appendChild($unitElement);
             ++$added;
         }
 
@@ -98,15 +92,15 @@ final class LocallangFileService
             if (!$document->load($targetFile)) {
                 throw new ValidationException(['Existing language file is not valid XML: ' . $targetFile]);
             }
+
             return $document;
         }
 
-        $xliff = $document->createElement('xliff');
-        $xliff->setAttribute('version', '1.2');
-        $xliff->setAttribute('xmlns', 'urn:oasis:names:tc:xliff:document:1.2');
+        $xliff = $document->createElementNS(self::XLIFF2_NS, 'xliff');
+        $xliff->setAttribute('version', '2.0');
+        $xliff->setAttribute('srcLang', 'en');
         $file = $document->createElement('file');
-        $file->setAttribute('source-language', 'en');
-        $file->setAttribute('datatype', 'plaintext');
+        $file->setAttribute('id', 'messages');
         $file->setAttribute('original', 'messages');
         $xliff->appendChild($file);
         $document->appendChild($xliff);
@@ -114,9 +108,9 @@ final class LocallangFileService
         return $document;
     }
 
-    private function findTransUnit(\DOMElement $fileNode, string $id): ?\DOMElement
+    private function findUnit(\DOMElement $fileNode, string $id): ?\DOMElement
     {
-        foreach ($fileNode->getElementsByTagName('trans-unit') as $node) {
+        foreach ($fileNode->getElementsByTagName('unit') as $node) {
             if ($node instanceof \DOMElement && $node->getAttribute('id') === $id) {
                 return $node;
             }
@@ -125,24 +119,58 @@ final class LocallangFileService
         return null;
     }
 
-    private function setTransUnitText(\DOMElement $transUnit, string $tagName, string $value): void
+    private function createUnitElement(\DOMDocument $document, string $id, string $source, ?string $target): \DOMElement
     {
-        foreach ($transUnit->getElementsByTagName($tagName) as $node) {
+        $unit = $document->createElement('unit');
+        $unit->setAttribute('id', $id);
+        $segment = $document->createElement('segment');
+
+        $sourceElement = $document->createElement('source');
+        $sourceElement->appendChild($document->createTextNode($source));
+        $segment->appendChild($sourceElement);
+
+        if ($target !== null && $target !== '') {
+            $targetElement = $document->createElement('target');
+            $targetElement->appendChild($document->createTextNode($target));
+            $segment->appendChild($targetElement);
+        }
+
+        $unit->appendChild($segment);
+
+        return $unit;
+    }
+
+    private function setSegmentText(\DOMElement $unit, string $tagName, string $value): void
+    {
+        $segment = $unit->getElementsByTagName('segment')->item(0);
+        if (!$segment instanceof \DOMElement) {
+            $document = $unit->ownerDocument;
+            if ($document === null) {
+                return;
+            }
+            $segment = $document->createElement('segment');
+            $unit->appendChild($segment);
+        }
+
+        foreach ($segment->getElementsByTagName($tagName) as $node) {
             if ($node instanceof \DOMElement) {
                 while ($node->firstChild !== null) {
                     $node->removeChild($node->firstChild);
                 }
                 $node->appendChild($node->ownerDocument?->createTextNode($value) ?? new \DOMText($value));
+
                 return;
             }
         }
 
-        $document = $transUnit->ownerDocument;
+        $document = $segment->ownerDocument;
         if ($document === null) {
             return;
         }
-        $element = $document->createElement($tagName, $value);
-        $transUnit->appendChild($element);
+
+        $element = $document->createElement($tagName);
+        $element->appendChild($document->createTextNode($value));
+        $segment->appendChild($element);
     }
 
     private function validateExtensionKey(string $extensionKey): void

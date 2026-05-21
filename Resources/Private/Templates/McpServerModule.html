@@ -2,413 +2,214 @@
 
 <f:be.pageRenderer includeJavaScriptModules="{0: '@hn/mcp-server/mcp-module.js'}" />
 
-<div class="module-body">
-    <!-- MCP Connection Setup -->
+<div class="module-body mcp-module">
     <div class="row">
-        <div class="col-12" style="max-width: 800px;">
+        <div class="col-12 mcp-module-column">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        🌐 <f:translate id="connectionSetup.title" domain="mcp_server.mod" />
-                    </h3>
+                    <h2 class="card-title h4 mb-1">
+                        <f:translate id="connectionSetup.title" domain="mcp_server.mod" />
+                    </h2>
                     <p class="text-muted mb-0">
                         <f:translate id="connectionSetup.description" domain="mcp_server.mod" />
                     </p>
                 </div>
-                <div class="card-body pb-0">
-                    <!-- Warnings -->
-                    <f:if condition="!{hasWorkspace}">
-                        <div class="alert alert-warning mb-3">
-                            <h6><strong><f:translate id="warning.noWorkspace.title" domain="mcp_server.mod" /></strong></h6>
-                            <p class="mb-0">
-                                <f:translate id="warning.noWorkspace.text" domain="mcp_server.mod" />
-                                <a href="{createWorkspaceUrl}"><f:translate id="warning.noWorkspace.createLink" domain="mcp_server.mod" /></a>
-                                <f:translate id="warning.noWorkspace.suffix" domain="mcp_server.mod" />
-                            </p>
-                        </div>
-                    </f:if>
-                    <f:if condition="{isLocalhost}">
-                        <div class="alert alert-warning mb-3">
-                            <h6><strong><f:translate id="warning.localhost.title" domain="mcp_server.mod" /></strong></h6>
-                            <p class="mb-2">
-                                <f:translate id="warning.localhost.text" domain="mcp_server.mod" arguments="{url: baseUrl}" />
-                            </p>
-                            <p class="mb-0">
-                                <strong><f:translate id="warning.localhost.worksLocally" domain="mcp_server.mod" /></strong> <f:translate id="warning.localhost.localTools" domain="mcp_server.mod" />
-                            </p>
-                        </div>
-                    </f:if>
-                    <!-- Authorization Header Warning (shown/hidden by JS after endpoint check) -->
-                    <div class="alert alert-warning mb-3" id="auth-header-warning" style="display: none;">
-                        <h6><strong><f:translate id="warning.authHeader.title" domain="mcp_server.mod" /></strong></h6>
-                        <p class="mb-2"><f:translate id="warning.authHeader.text" domain="mcp_server.mod" /></p>
-                        <p class="mb-2"><strong><f:translate id="warning.authHeader.causes" domain="mcp_server.mod" /></strong></p>
-                        <ul class="mb-0">
-                            <li>
-                                <strong>Apache:</strong> <f:translate id="warning.authHeader.apache" domain="mcp_server.mod" />
-                                <pre class="mb-1 mt-1" style="background: #f5f5f5; padding: 8px; border-radius: 4px;"><code>RewriteEngine On
-RewriteCond %{HTTP:Authorization} ^(.*)
-RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
-                            </li>
-                            <li><strong>HTTP Basic Auth:</strong> <f:translate id="warning.authHeader.basicAuth" domain="mcp_server.mod" /></li>
-                            <li><strong>Proxy/CDN:</strong> <f:translate id="warning.authHeader.proxy" domain="mcp_server.mod" /></li>
-                        </ul>
-                    </div>
-
-                    <!-- Main Navigation Tabs -->
-                    <ul class="nav nav-tabs mcp-setup-tabs" id="mcpSetupTabs">
-                        <li class="nav-item">
-                            <button id="remote-setup-tab" class="nav-link active" type="button" data-mcp-target="remote-setup">
-                                <span class="mcp-tab-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" stroke="currentColor" stroke-width="1.75"/></svg>
-                                </span>
-                                <f:translate id="tab.remoteSetup" domain="mcp_server.mod" />
+                <div class="card-body">
+                    <ul class="nav nav-tabs mcp-setup-tabs" id="mcpSetupTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button id="setup-tab" class="nav-link active" type="button" role="tab" aria-selected="true" data-mcp-target="setup-panel">
+                                <f:translate id="tab.setup" domain="mcp_server.mod" />
                             </button>
                         </li>
-                        <li class="nav-item">
-                            <button id="local-mcp-remote-tab" class="nav-link" type="button" data-mcp-target="local-mcp-remote">
-                                <span class="mcp-tab-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 14a4 4 0 0 1 0-5.7l3-3a4 4 0 1 1 5.7 5.7l-1.4 1.4M14 10a4 4 0 0 1 0 5.7l-3 3a4 4 0 1 1-5.7-5.7l1.4-1.4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg>
-                                </span>
-                                <f:translate id="tab.localMcpRemote" domain="mcp_server.mod" />
-                            </button>
-                        </li>
-                        <li class="nav-item">
-                            <button id="local-cli-tab" class="nav-link" type="button" data-mcp-target="local-cli">
-                                <span class="mcp-tab-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.75"/><path d="m7 9 3 3-3 3M12 15h5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                </span>
-                                <f:translate id="tab.localCli" domain="mcp_server.mod" />
+                        <li class="nav-item" role="presentation">
+                            <button id="connection-check-tab" class="nav-link" type="button" role="tab" aria-selected="false" data-mcp-target="connection-check-panel">
+                                <f:translate id="tab.connectionCheck" domain="mcp_server.mod" />
                             </button>
                         </li>
                     </ul>
 
-                    <!-- Tab Content -->
                     <div class="mcp-panel-group mt-3" id="mcpSetupTabsContent">
+                        <div class="mcp-panel mcp-active" id="setup-panel" role="tabpanel">
+                            <f:if condition="{diagnostics.overallStatus} == 'error'">
+                                <div class="callout callout-danger mb-3">
+                                    <f:translate id="setup.diagnosticHintError" domain="mcp_server.mod" />
+                                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-mcp-switch-tab="connection-check-panel">
+                                        <f:translate id="tab.connectionCheck" domain="mcp_server.mod" />
+                                    </button>
+                                </div>
+                            </f:if>
 
-                        <!-- Remote MCP Setup Tab -->
-                        <div class="mcp-panel mcp-active" id="remote-setup">
-                            <p class="text-muted mb-3">
-                                <f:translate id="remote.description" domain="mcp_server.mod" />
-                            </p>
-
-                            <!-- Shared MCP Endpoint URL -->
-                            <div class="mb-3">
-                                <label for="remote-server-url" class="form-label"><strong><f:translate id="remote.serverUrl" domain="mcp_server.mod" /></strong></label>
+                            <div class="mb-4">
+                                <label for="remote-server-url" class="form-label">
+                                    <f:translate id="remote.serverUrl" domain="mcp_server.mod" />
+                                </label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control form-control-lg" value="{baseUrl}/mcp" readonly id="remote-server-url" style="font-family: monospace; font-weight: bold;">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary btn-lg copy-button" type="button" data-copy-target="remote-server-url">
-                                            <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                                <span class="icon-markup">📋</span>
-                                            </span>
-                                            <f:translate id="remote.copyServerUrl" domain="mcp_server.mod" />
-                                        </button>
-                                    </div>
+                                    <input type="text" class="form-control font-monospace" value="{mcpEndpointUrl}" readonly id="remote-server-url" />
+                                    <button class="btn btn-default copy-button" type="button" data-copy-target="remote-server-url">
+                                        <f:translate id="remote.copyServerUrl" domain="mcp_server.mod" />
+                                    </button>
                                 </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">
-                                        <f:translate id="remote.endpointStatus" domain="mcp_server.mod" />
-                                        <span class="endpoint-status" data-endpoint="{baseUrl}/mcp" data-check-auth="true" id="mcp-endpoint-status">
-                                            <span class="status-icon"></span>
-                                            <span class="status-tooltip"></span>
-                                        </span>
-                                        <br>
-                                        <code class="small">{baseUrl}/.well-known/oauth-authorization-server</code>
-                                        <span class="endpoint-status" data-endpoint="{baseUrl}/.well-known/oauth-authorization-server" data-check-content="true">
-                                            <span class="status-icon"></span>
-                                            <span class="status-tooltip"></span>
-                                        </span>
-                                        <br>
-                                        <code class="small">{baseUrl}/.well-known/oauth-protected-resource</code>
-                                        <span class="endpoint-status" data-endpoint="{baseUrl}/.well-known/oauth-protected-resource" data-check-content="true">
-                                            <span class="status-icon"></span>
-                                            <span class="status-tooltip"></span>
-                                        </span>
-                                    </small>
-                                </div>
+                                <p class="form-text text-muted mb-0">
+                                    <f:translate id="setup.serverUrlHint" domain="mcp_server.mod" />
+                                </p>
                             </div>
 
-                            <!-- Nested tabs for different clients -->
-                            <ul class="nav nav-pills mcp-client-pills mb-3" id="remoteClientTabs">
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill active" type="button" data-mcp-target="cursor" data-mcp-client="cursor">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2 2 7v10l10 5 10-5V7L12 2Zm0 2.236 7.618 3.809L12 11.854 4.382 8.045 12 4.236ZM4 9.618l7.5 3.75V20.5L4 16.75V9.618Zm16 0v7.132l-7.5 3.75v-7.132l7.5-3.75Z" fill="currentColor"/></svg>
-                                        </span>
+                            <ul class="nav nav-pills mcp-client-pills mb-3" id="clientTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link mcp-client-pill active" type="button" role="tab" data-mcp-target="cursor-panel" data-mcp-client="cursor">
                                         <span class="mcp-client-label"><f:translate id="client.cursor" domain="mcp_server.mod" /></span>
                                     </button>
                                 </li>
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill" type="button" data-mcp-target="claude-desktop" data-mcp-client="claude">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3c-3 0-5.5 2.5-5.5 5.5 0 1.1.32 2.12.86 2.98C3.31 12.6 2 14.68 2 17c0 2.76 2.24 5 5 5 1.54 0 2.9-.7 3.82-1.8A5.52 5.52 0 0 0 14.5 22c3.04 0 5.5-2.46 5.5-5.5 0-1.11-.33-2.14-.88-3A5.5 5.5 0 0 0 20 9c0-3.04-2.46-5.5-5.5-5.5-.93 0-1.81.23-2.58.64A5.48 5.48 0 0 0 9.5 3Z" fill="currentColor"/></svg>
-                                        </span>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link mcp-client-pill" type="button" role="tab" data-mcp-target="claude-panel" data-mcp-client="claude">
                                         <span class="mcp-client-label"><f:translate id="client.claudeDesktop" domain="mcp_server.mod" /></span>
                                     </button>
                                 </li>
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill" type="button" data-mcp-target="n8n" data-mcp-client="n8n">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="12" r="2.25" fill="currentColor"/><circle cx="19" cy="6" r="2.25" fill="currentColor"/><circle cx="19" cy="18" r="2.25" fill="currentColor"/><circle cx="12" cy="12" r="1.75" fill="currentColor"/><path d="M7 12h3.25M13.75 12h3.25l2-6M13.75 12h3.25l2 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                                        </span>
-                                        <span class="mcp-client-label"><f:translate id="client.n8n" domain="mcp_server.mod" /></span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill" type="button" data-mcp-target="manus" data-mcp-client="manus">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3.5a1.5 1.5 0 0 1 3 0V12h1V2.5a1.5 1.5 0 0 1 3 0V12h1V4.5a1.5 1.5 0 0 1 3 0v10.25c0 3.46-2.79 6.25-6.25 6.25h-.5A6.25 6.25 0 0 1 6 14.75V7.5a1.5 1.5 0 0 1 2-1.41V12h1V5.5a1.5 1.5 0 0 1-1-1.99V3.5Z" fill="currentColor"/></svg>
-                                        </span>
-                                        <span class="mcp-client-label"><f:translate id="client.manus" domain="mcp_server.mod" /></span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill" type="button" data-mcp-target="mcp-inspector" data-mcp-client="inspector">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                                        </span>
-                                        <span class="mcp-client-label"><f:translate id="client.mcpInspector" domain="mcp_server.mod" /></span>
-                                    </button>
-                                </li>
-                                <li class="nav-item">
-                                    <button class="nav-link mcp-client-pill" type="button" data-mcp-target="other-clients" data-mcp-client="other">
-                                        <span class="mcp-client-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="12" r="1.75" fill="currentColor"/><circle cx="12" cy="12" r="1.75" fill="currentColor"/><circle cx="18" cy="12" r="1.75" fill="currentColor"/></svg>
-                                        </span>
-                                        <span class="mcp-client-label"><f:translate id="client.otherClients" domain="mcp_server.mod" /></span>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link mcp-client-pill" type="button" role="tab" data-mcp-target="codex-panel" data-mcp-client="codex">
+                                        <span class="mcp-client-label"><f:translate id="client.codex" domain="mcp_server.mod" /></span>
                                     </button>
                                 </li>
                             </ul>
 
-                            <div class="mcp-panel-group" id="remoteClientTabsContent">
-
-                                <!-- Cursor Instructions -->
-                                <div class="mcp-panel mcp-active" id="cursor">
-                                    <h5><f:translate id="cursor.title" domain="mcp_server.mod" /></h5>
-                                    <p><f:translate id="cursor.description" domain="mcp_server.mod" /></p>
-
+                            <div class="mcp-panel-group" id="clientTabsContent">
+                                <div class="mcp-panel mcp-active" id="cursor-panel" role="tabpanel">
+                                    <h3 class="h5"><f:translate id="cursor.title" domain="mcp_server.mod" /></h3>
+                                    <p class="text-muted"><f:translate id="cursor.description" domain="mcp_server.mod" /></p>
                                     <div class="mb-3">
-                                        <a class="btn btn-primary btn-lg" href="{cursorInstallUrl}" target="_top">
+                                        <a class="btn btn-primary" href="{cursorInstallUrl}" target="_top">
                                             <f:translate id="cursor.installButton" domain="mcp_server.mod" />
                                         </a>
                                     </div>
-
-                                    <p class="small text-muted mb-3">
-                                        <f:translate id="cursor.authReuseNote" domain="mcp_server.mod" />
-                                    </p>
-
-                                    <p class="text-muted"><f:translate id="cursor.manualConfig" domain="mcp_server.mod" /></p>
-                                    <textarea class="form-control mb-2" rows="9" readonly id="cursor-config" style="font-family: monospace; font-size: 12px; white-space: pre"><f:format.raw>{localStdioConfigJson}</f:format.raw></textarea>
-                                    <button class="btn btn-sm btn-outline-secondary copy-button" type="button" data-copy-target="cursor-config">
-                                        <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                            <span class="icon-markup">📋</span>
-                                        </span>
+                                    <p class="small text-muted"><f:translate id="cursor.authReuseNote" domain="mcp_server.mod" /></p>
+                                    <p class="mb-2"><f:translate id="cursor.manualConfig" domain="mcp_server.mod" /></p>
+                                    <textarea class="form-control font-monospace mb-2" rows="8" readonly id="cursor-config"><f:format.raw>{localStdioConfigJson}</f:format.raw></textarea>
+                                    <button class="btn btn-default btn-sm copy-button" type="button" data-copy-target="cursor-config">
                                         <f:translate id="cursor.copyConfig" domain="mcp_server.mod" />
                                     </button>
-
-                                    <p class="mt-3"><strong><f:translate id="cursor.whatHappensNext" domain="mcp_server.mod" /></strong></p>
-                                    <ol>
-                                        <li><f:translate id="cursor.step1" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="cursor.step2" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="cursor.step3" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="cursor.step4" domain="mcp_server.mod" /></li>
-                                    </ol>
                                 </div>
 
-                                <!-- Claude Desktop Instructions -->
-                                <div class="mcp-panel" id="claude-desktop">
-                                    <h5>🚀 <f:translate id="claude.title" domain="mcp_server.mod" /></h5>
-                                    <p><f:translate id="claude.description" domain="mcp_server.mod" /></p>
-                                    <ol>
+                                <div class="mcp-panel" id="claude-panel" role="tabpanel">
+                                    <h3 class="h5"><f:translate id="claude.title" domain="mcp_server.mod" /></h3>
+                                    <p class="text-muted"><f:translate id="claude.description" domain="mcp_server.mod" /></p>
+                                    <ol class="mb-3">
                                         <li><f:translate id="claude.step1" domain="mcp_server.mod" /></li>
                                         <li><f:translate id="claude.step2" domain="mcp_server.mod" /></li>
                                         <li><f:translate id="claude.step3" domain="mcp_server.mod" arguments="{name: siteName}" /></li>
-                                        <li><f:translate id="claude.step4" domain="mcp_server.mod" arguments="{url: '{baseUrl}/mcp'}" /></li>
+                                        <li><f:translate id="claude.step4" domain="mcp_server.mod" arguments="{url: mcpEndpointUrl}" /></li>
                                         <li><f:translate id="claude.step5" domain="mcp_server.mod" /></li>
                                     </ol>
+                                    <p class="small text-muted mb-0">
+                                        <f:translate id="claude.oauthHint" domain="mcp_server.mod" />
+                                    </p>
                                 </div>
 
-                                <!-- n8n Integration -->
-                                <div class="mcp-panel" id="n8n">
-                                    <h5>🔄 <f:translate id="n8n.title" domain="mcp_server.mod" /></h5>
-
-                                    <p><f:translate id="n8n.description" domain="mcp_server.mod" /></p>
-                                    <ol>
-                                        <li><f:translate id="n8n.step1" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="n8n.step2" domain="mcp_server.mod" arguments="{url: '{baseUrl}/mcp'}" /></li>
-                                        <li><f:translate id="n8n.step3" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="n8n.step4" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="n8n.step5" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="n8n.step6" domain="mcp_server.mod" /></li>
-                                    </ol>
-                                </div>
-
-                                <!-- manus Integration -->
-                                <div class="mcp-panel" id="manus">
-                                    <h5>🤖 <f:translate id="manus.title" domain="mcp_server.mod" /></h5>
-
-                                    <p><f:translate id="manus.description" domain="mcp_server.mod" /></p>
-                                    <ol>
-                                        <li><f:translate id="manus.step1" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="manus.step2" domain="mcp_server.mod" arguments="{name: siteName}" /></li>
-                                        <li><f:translate id="manus.step3" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="manus.step4" domain="mcp_server.mod" arguments="{url: '{baseUrl}/mcp'}" /></li>
-                                        <li><f:translate id="manus.step5" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="manus.step6" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="manus.step7" domain="mcp_server.mod" /></li>
-                                    </ol>
-                                </div>
-
-                                <!-- MCP Inspector -->
-                                <div class="mcp-panel" id="mcp-inspector">
-                                    <h5>🔍 <f:translate id="inspector.title" domain="mcp_server.mod" /></h5>
-                                    <p><f:translate id="inspector.description" domain="mcp_server.mod" /></p>
-
-                                    <div class="mb-3">
-                                        <label for="inspector-command" class="form-label"><strong><f:translate id="inspector.runCommand" domain="mcp_server.mod" /></strong></label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" value="npx @modelcontextprotocol/inspector --transport http --server-url {baseUrl}/mcp" readonly id="inspector-command" style="font-family: monospace;">
-                                            <div class="input-group-append">
-                                                <button class="btn btn-outline-secondary copy-button" type="button" data-copy-target="inspector-command">
-                                                    <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                                        <span class="icon-markup">📋</span>
-                                                    </span>
-                                                    <f:translate id="inspector.copy" domain="mcp_server.mod" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <p class="mt-3"><strong><f:translate id="inspector.whatHappensNext" domain="mcp_server.mod" /></strong></p>
-                                    <ol>
-                                        <li><f:translate id="inspector.step1" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="inspector.step2" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="inspector.step3" domain="mcp_server.mod" /></li>
-                                    </ol>
-
-                                    <p class="small text-muted"><strong>Note:</strong> <f:translate id="inspector.requiresNode" domain="mcp_server.mod" /></p>
-                                </div>
-
-                                <!-- Other MCP Clients Instructions -->
-                                <div class="mcp-panel" id="other-clients">
-                                    <h5>🔧 <f:translate id="other.title" domain="mcp_server.mod" /></h5>
-                                    <p><f:translate id="other.description" domain="mcp_server.mod" /></p>
-                                    <ol>
-                                        <li><f:translate id="other.step1" domain="mcp_server.mod" arguments="{url: '{baseUrl}/mcp'}" /></li>
-                                        <li><f:translate id="other.step2" domain="mcp_server.mod" arguments="{name: siteName}" /></li>
-                                        <li><f:translate id="other.step3" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="other.step4" domain="mcp_server.mod" /></li>
-                                        <li><f:translate id="other.step5" domain="mcp_server.mod" /></li>
-                                    </ol>
-                                    <p class="small text-muted"><strong>Note:</strong> <f:translate id="other.note" domain="mcp_server.mod" /></p>
+                                <div class="mcp-panel" id="codex-panel" role="tabpanel">
+                                    <h3 class="h5"><f:translate id="codex.title" domain="mcp_server.mod" /></h3>
+                                    <p class="text-muted"><f:translate id="codex.description" domain="mcp_server.mod" /></p>
+                                    <p class="mb-2"><f:translate id="codex.manualConfig" domain="mcp_server.mod" /></p>
+                                    <textarea class="form-control font-monospace mb-2" rows="8" readonly id="codex-config"><f:format.raw>{codexConfigToml}</f:format.raw></textarea>
+                                    <button class="btn btn-default btn-sm copy-button" type="button" data-copy-target="codex-config">
+                                        <f:translate id="codex.copyConfig" domain="mcp_server.mod" />
+                                    </button>
+                                    <p class="small text-muted mt-3 mb-0"><f:translate id="codex.restartHint" domain="mcp_server.mod" /></p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Local Setup (mcp-remote) Tab -->
-                        <div class="mcp-panel" id="local-mcp-remote">
-                            <p class="text-muted mb-3">
-                                <f:translate id="localMcpRemote.description" domain="mcp_server.mod" />
-                            </p>
-
-                            <div class="mt-3">
-                                <h6><strong><f:translate id="localMcpRemote.configTitle" domain="mcp_server.mod" /></strong></h6>
-                                <textarea class="form-control mb-2" rows="9" readonly id="mcp-remote-config" style="font-family: monospace; font-size: 12px; white-space: pre"><f:format.raw>{
-  "mcpServers": {
-    "</f:format.raw>{siteName}<f:format.raw>": {
-      "command": "npx",
-      "args": ["mcp-remote", "</f:format.raw>{baseUrl}/mcp?token=YOUR_TOKEN<f:format.raw>"]
-    }
-  }
-}</f:format.raw></textarea>
-                                <p class="text-muted small"><f:translate id="localMcpRemote.tokenHint" domain="mcp_server.mod" /></p>
-                                <button class="btn btn-sm btn-outline-secondary copy-button" type="button" data-copy-target="mcp-remote-config">
-                                    <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                        <span class="icon-markup">📋</span>
-                                    </span>
-                                    <f:translate id="localMcpRemote.copyConfig" domain="mcp_server.mod" />
+                        <div class="mcp-panel" id="connection-check-panel" role="tabpanel">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                                <div>
+                                    <h3 class="h5 mb-1"><f:translate id="diagnostic.title" domain="mcp_server.mod" /></h3>
+                                    <p class="text-muted mb-0"><f:translate id="diagnostic.intro" domain="mcp_server.mod" /></p>
+                                </div>
+                                <button type="button" class="btn btn-default" id="refresh-diagnostics-btn">
+                                    <f:translate id="diagnostic.refresh" domain="mcp_server.mod" />
                                 </button>
                             </div>
 
-                            <div class="alert alert-secondary mt-3">
-                                <h6><strong>⚠️ <f:translate id="localMcpRemote.securityNote" domain="mcp_server.mod" /></strong></h6>
-                                <p class="mb-0"><f:translate id="localMcpRemote.securityText" domain="mcp_server.mod" /></p>
-                            </div>
-                        </div>
+                            <f:switch expression="{diagnostics.overallStatus}">
+                                <f:case value="error">
+                                    <div class="callout callout-danger mb-3" id="diagnostic-summary">
+                                        <f:translate id="diagnostic.summaryError" domain="mcp_server.mod" />
+                                    </div>
+                                </f:case>
+                                <f:case value="warning">
+                                    <div class="callout callout-warning mb-3" id="diagnostic-summary">
+                                        <f:translate id="diagnostic.summaryWarning" domain="mcp_server.mod" />
+                                    </div>
+                                </f:case>
+                                <f:defaultCase>
+                                    <div class="callout callout-success mb-3" id="diagnostic-summary">
+                                        <f:translate id="diagnostic.summaryOk" domain="mcp_server.mod" />
+                                    </div>
+                                </f:defaultCase>
+                            </f:switch>
 
-                        <!-- Local Setup (TYPO3 CLI) Tab -->
-                        <div class="mcp-panel" id="local-cli">
-                            <p class="text-muted mb-3">
-                                <f:translate id="localCli.description" domain="mcp_server.mod" />
-                            </p>
-
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <textarea class="form-control mb-2" rows="9" readonly id="cli-config" style="font-family: monospace; font-size: 12px;"><f:format.raw>{localStdioConfigJson}</f:format.raw></textarea>
-                                    <button class="btn btn-sm btn-outline-secondary copy-button" type="button" data-copy-target="cli-config">
-                                        <span class="t3js-icon icon icon-size-small icon-state-default icon-actions-edit-copy" data-identifier="actions-edit-copy">
-                                            <span class="icon-markup">📋</span>
-                                        </span>
-                                        <f:translate id="localCli.copyConfig" domain="mcp_server.mod" />
-                                    </button>
-                                </div>
+                            <div class="table-responsive" id="diagnostics-table-wrapper">
+                                <table class="table table-striped table-sm mcp-diagnostic-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="mcp-diagnostic-col-status"><f:translate id="diagnostic.colStatus" domain="mcp_server.mod" /></th>
+                                            <th scope="col"><f:translate id="diagnostic.colCheck" domain="mcp_server.mod" /></th>
+                                            <th scope="col"><f:translate id="diagnostic.colResult" domain="mcp_server.mod" /></th>
+                                            <th scope="col"><f:translate id="diagnostic.colHowToCheck" domain="mcp_server.mod" /></th>
+                                            <th scope="col"><f:translate id="diagnostic.colFix" domain="mcp_server.mod" /></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="diagnostics-table-body">
+                                        <f:for each="{diagnostics.checks}" as="check">
+                                            <tr data-check-id="{check.id}">
+                                                <td>
+                                                    <span class="badge mcp-diagnostic-badge mcp-diagnostic-badge-{check.status}">
+                                                        <f:translate id="diagnostic.status.{check.status}" domain="mcp_server.mod" />
+                                                    </span>
+                                                </td>
+                                                <td><strong>{check.label}</strong></td>
+                                                <td>{check.message}</td>
+                                                <td class="text-muted">{check.howToCheck}</td>
+                                                <td>{check.fixHint}</td>
+                                            </tr>
+                                        </f:for>
+                                    </tbody>
+                                </table>
                             </div>
 
-                            <div class="alert alert-info mt-3">
-                                <h6><strong><f:translate id="localCli.howItWorks" domain="mcp_server.mod" /></strong></h6>
-                                <ul class="mb-2">
-                                    <li><strong>Direct access:</strong> <f:translate id="localCli.directAccess" domain="mcp_server.mod" /></li>
-                                    <li><strong>Local only:</strong> <f:translate id="localCli.localOnly" domain="mcp_server.mod" /></li>
-                                </ul>
-                                <h6 class="mt-3"><strong><f:translate id="localCli.important" domain="mcp_server.mod" /></strong></h6>
-                                <ul class="mb-0">
-                                    <li><strong>Long-running process:</strong> <f:translate id="localCli.longRunning" domain="mcp_server.mod" /></li>
-                                    <li><strong>Code changes:</strong> <f:translate id="localCli.codeChanges" domain="mcp_server.mod" /></li>
-                                </ul>
-                            </div>
+                            <f:if condition="{createWorkspaceUrl}">
+                                <p class="small text-muted mb-0">
+                                    <f:translate id="diagnostic.workspaceLinkPrefix" domain="mcp_server.mod" />
+                                    <a href="{createWorkspaceUrl}"><f:translate id="warning.noWorkspace.createLink" domain="mcp_server.mod" /></a>
+                                </p>
+                            </f:if>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Active Tokens -->
-        <div class="col-12" style="max-width: 800px">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
-                        🔑 <f:translate id="tokens.title" domain="mcp_server.mod" />
-                    </h3>
-                    <div class="d-flex gap-2">
-                        <div class="btn-group" role="group">
-                            <button id="refresh-tokens-btn" class="btn btn-sm btn-outline-secondary">
-                            <span class="mcp-btn-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12a8 8 0 0 1 13.66-5.66L20 8M20 4v4h-4M20 12a8 8 0 0 1-13.66 5.66L4 16M4 20v-4h4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
+            <div class="card mt-3">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="card-title h4 mb-0">
+                            <f:translate id="tokens.title" domain="mcp_server.mod" />
+                        </h2>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button id="refresh-tokens-btn" class="btn btn-default btn-sm" type="button">
                             <f:translate id="tokens.refresh" domain="mcp_server.mod" />
                         </button>
-                        <button id="revoke-all-tokens-btn" class="btn btn-sm btn-outline-danger">
-                            <span class="mcp-btn-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </span>
+                        <button id="revoke-all-tokens-btn" class="btn btn-danger btn-sm" type="button">
                             <f:translate id="tokens.revokeAll" domain="mcp_server.mod" />
                         </button>
-                        </div>
-                        <button id="create-token-btn" class="btn btn-sm btn-primary">
-                            <span class="mcp-btn-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                            </span>
+                        <button id="create-token-btn" class="btn btn-primary btn-sm" type="button">
                             <f:translate id="tokens.createToken" domain="mcp_server.mod" />
                         </button>
                     </div>
                 </div>
-                <div class="card-body pb-0">
+                <div class="card-body">
                     <p class="text-muted">
                         <f:translate id="tokens.description" domain="mcp_server.mod" />
                     </p>
 
-                    <!-- Token List -->
                     <div id="tokens-container" data-csrf-token="{csrfToken}">
                         <f:if condition="{tokens}">
                             <f:then>
@@ -431,10 +232,7 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                                                     <td><small class="text-muted">{token.last_used}</small></td>
                                                     <td><small class="text-muted">{token.expires}</small></td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-danger revoke-token-btn" data-token-id="{token.uid}">
-                                                            <span class="mcp-btn-icon" aria-hidden="true">
-                                                                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                                            </span>
+                                                        <button class="btn btn-danger btn-sm revoke-token-btn" type="button" data-token-id="{token.uid}">
                                                             <f:translate id="tokens.revoke" domain="mcp_server.mod" />
                                                         </button>
                                                     </td>
@@ -446,61 +244,16 @@ RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]</code></pre>
                             </f:then>
                             <f:else>
                                 <div id="no-tokens-message" class="text-center text-muted py-4">
-                                    <div class="mb-3">
-                                        <span style="font-size: 2rem;">🔑</span>
-                                    </div>
                                     <p><f:translate id="tokens.noTokens" domain="mcp_server.mod" /></p>
-                                    <p class="small"><f:translate id="tokens.noTokensHint" domain="mcp_server.mod" /></p>
+                                    <p class="small mb-0"><f:translate id="tokens.noTokensHint" domain="mcp_server.mod" /></p>
                                 </div>
                             </f:else>
                         </f:if>
                     </div>
-
-                    <!-- Status Messages -->
-                    <div id="token-messages" class="mt-3" style="display: none;">
-                        <div id="token-success" class="alert alert-success" style="display: none;"></div>
-                        <div id="token-error" class="alert alert-danger" style="display: none;"></div>
-                        <div id="token-loading" class="alert alert-info" style="display: none;">
-                            <div class="d-flex align-items-center">
-                                <div class="spinner-border spinner-border-sm me-2" role="status">
-                                    <span class="visually-hidden"><f:translate id="tokens.loading" domain="mcp_server.mod" /></span>
-                                </div>
-                                <span><f:translate id="tokens.processing" domain="mcp_server.mod" /></span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
-
-        <f:comment>
-            <!-- Available Tools -->
-            <div class="col-md-12" style="max-width: 800px;">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <f:translate id="available_tools" domain="mcp_server.mod" />
-                        </h3>
-                    </div>
-                    <div class="card-body pb-0">
-                        <p class="text-muted">
-                            <f:translate id="tools_description" domain="mcp_server.mod" />
-                        </p>
-
-                        <f:for each="{tools}" as="tool">
-                            <div class="card card-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title">{tool.name}</h6>
-                                    <p class="card-text text-muted small">{tool.description -> f:format.nl2br()}</p>
-                                </div>
-                            </div>
-                        </f:for>
-                    </div>
-                </div>
-            </div>
-        </f:comment>
     </div>
 </div>
-
 
 </html>

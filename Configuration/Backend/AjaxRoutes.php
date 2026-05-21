@@ -28,4 +28,9 @@ return [
         'target' => McpServerModuleController::class . '::createTokenAction',
         'inheritAccessFromModule' => 'user_mcp_server',
     ],
+    'mcp_server_run_diagnostics' => [
+        'path' => '/mcp-server/run-diagnostics',
+        'target' => McpServerModuleController::class . '::runDiagnosticsAction',
+        'inheritAccessFromModule' => 'user_mcp_server',
+    ],
 ];

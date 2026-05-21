@@ -51,6 +51,21 @@ final class McpServerModuleControllerTest extends TestCase
         });
     }
 
+    public function testCodexTomlConfigContainsCommandAndArgs(): void
+    {
+        $config = [
+            'command' => 'php',
+            'args' => [Environment::getProjectPath() . '/vendor/bin/typo3', 'mcp:server'],
+            'cwd' => Environment::getProjectPath(),
+        ];
+
+        $toml = $this->invokePrivate('buildCodexTomlConfig', ['My Site', $config]);
+
+        self::assertStringContainsString('[mcp_servers.my_site]', $toml);
+        self::assertStringContainsString('command = "php"', $toml);
+        self::assertStringContainsString('mcp:server', $toml);
+    }
+
     public function testCursorInstallUrlEncodesLocalStdioConfig(): void
     {
         $config = [

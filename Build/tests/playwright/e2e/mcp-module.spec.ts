@@ -16,14 +16,18 @@ test.describe('MCP Server Backend Module', () => {
   });
 
   test('tab navigation works', async () => {
-    await frame.locator('#local-mcp-remote-tab').click();
-    await expect(frame.locator('#local-mcp-remote')).toBeVisible();
+    await frame.locator('#connection-check-tab').click();
+    await expect(frame.locator('#connection-check-panel')).toBeVisible();
+    await expect(frame.locator('#diagnostics-table-body tr').first()).toBeVisible();
 
-    await frame.locator('#local-cli-tab').click();
-    await expect(frame.locator('#local-cli')).toBeVisible();
+    await frame.locator('#setup-tab').click();
+    await expect(frame.locator('#setup-panel')).toBeVisible();
 
-    await frame.locator('#remote-setup-tab').click();
-    await expect(frame.locator('#remote-setup')).toBeVisible();
+    await frame.locator('[data-mcp-target="claude-panel"]').click();
+    await expect(frame.locator('#claude-panel')).toBeVisible();
+
+    await frame.locator('[data-mcp-target="codex-panel"]').click();
+    await expect(frame.locator('#codex-panel')).toBeVisible();
   });
 
   test('create token via central button shows name modal then token modal', async ({ page }) => {
@@ -82,8 +86,10 @@ test.describe('MCP Server Backend Module', () => {
     await expect(frame.locator('#tokens-container')).toBeVisible();
   });
 
-  test('endpoint status indicators exist', async () => {
-    await expect(frame.locator('.endpoint-status').first()).toBeVisible({ timeout: 10000 });
+  test('connection check table is populated', async () => {
+    await frame.locator('#connection-check-tab').click();
+    await expect(frame.locator('.mcp-diagnostic-table')).toBeVisible();
+    await expect(frame.locator('#diagnostics-table-body tr')).toHaveCount(10, { timeout: 10000 });
   });
 
   test('copy buttons exist', async () => {

@@ -1,755 +1,1811 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-	<file source-language="en" target-language="de" datatype="plaintext" original="EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf">
-		<header/>
-		<body>
-			<!-- Module registration -->
-			<trans-unit id="mlang_tabs_tab">
-				<source>MCP Server</source>
-				<target>MCP-Server</target>
-			</trans-unit>
-			<trans-unit id="mlang_labels_tabdescr">
-				<source>Access your Model Context Protocol (MCP) server endpoint and authentication tokens</source>
-				<target>Zugriff auf den Model Context Protocol (MCP) Server-Endpunkt und Authentifizierungstoken</target>
-			</trans-unit>
-			<trans-unit id="title">
-				<source>MCP Server Configuration</source>
-				<target>MCP-Server-Konfiguration</target>
-			</trans-unit>
-			<trans-unit id="description">
-				<source>Your personal MCP server endpoint for connecting external applications like Claude Desktop, VS Code, or other MCP-compatible clients.</source>
-				<target>Ihr persönlicher MCP-Server-Endpunkt zum Verbinden externer Anwendungen wie Claude Desktop, VS Code oder anderer MCP-kompatibler Clients.</target>
-			</trans-unit>
-
-			<!-- Extension configuration labels -->
-			<trans-unit id="extconf.additionalReadOnlyTables">
-				<source>Additional read-only tables: comma-separated list of non-workspace-capable tables to expose for reads via MCP (e.g. sys_file). These cannot be written through workspace tools.</source>
-				<target>Zusätzliche nur-lesen-Tabellen: kommagetrennte Liste nicht-Workspace-fähiger Tabellen, die für Lesezugriff über MCP freigegeben werden (z. B. sys_file). Schreiben über Workspace-Tools ist nicht möglich.</target>
-			</trans-unit>
-			<trans-unit id="extconf.fileSandboxRoot">
-				<source>MCP file sandbox root folder. Use a combined identifier such as "1:/mcp/". This defaults to fileadmin/mcp/ in the default storage.</source>
-				<target>MCP-Datei-Sandbox-Stammverzeichnis. Verwenden Sie einen kombinierten Bezeichner wie "1:/mcp/". Standardmäßig wird fileadmin/mcp/ im Standard-Speicher verwendet.</target>
-			</trans-unit>
-			<trans-unit id="extconf.workspaceUploadSubfolders">
-				<source>Store MCP uploads in workspace-specific subfolders below the sandbox root for safer draft handling.</source>
-				<target>MCP-Uploads in Workspace-spezifischen Unterordnern unterhalb des Sandbox-Stammverzeichnisses speichern für sicherere Entwurfsbearbeitung.</target>
-			</trans-unit>
-			<trans-unit id="extconf.allowMcpTokenInQueryString">
-				<source>Allow passing the MCP bearer token as a query parameter (insecure: URLs are logged by proxies). Use only for legacy clients; prefer the Authorization header.</source>
-				<target>Erlaubt die Übergabe des MCP-Bearer-Tokens als Query-Parameter (unsicher: URLs werden von Proxies protokolliert). Nur für ältere Clients verwenden; bevorzugt den Authorization-Header nutzen.</target>
-			</trans-unit>
-			<trans-unit id="extconf.enableMcpAuthHeaderDiagnostic">
-				<source>Enable the public ?test=auth diagnostic on the MCP endpoint (used by the backend connection check). Disable on hardened sites if you do not need it.</source>
-				<target>Aktiviert die öffentliche ?test=auth Diagnose am MCP-Endpunkt (wird vom Backend-Verbindungstest verwendet). Auf gehärteten Seiten deaktivieren, wenn nicht benötigt.</target>
-			</trans-unit>
-
-			<!-- Connection setup card -->
-			<trans-unit id="connectionSetup.title">
-				<source>MCP Connection Setup</source>
-				<target>MCP-Verbindungseinrichtung</target>
-			</trans-unit>
-			<trans-unit id="connectionSetup.description">
-				<source>Choose your preferred method to connect MCP clients to this TYPO3 instance.</source>
-				<target>Wählen Sie Ihre bevorzugte Methode, um MCP-Clients mit dieser TYPO3-Instanz zu verbinden.</target>
-			</trans-unit>
-
-			<!-- Warnings -->
-			<trans-unit id="warning.noWorkspace.title">
-				<source>No workspace configured</source>
-				<target>Kein Workspace konfiguriert</target>
-			</trans-unit>
-			<trans-unit id="warning.noWorkspace.text">
-				<source>All changes made through MCP are staged in a TYPO3 Workspace before publishing. One will be created automatically, but you should</source>
-				<target>Alle über MCP vorgenommenen Änderungen werden in einem TYPO3-Workspace zwischengespeichert, bevor sie veröffentlicht werden. Ein Workspace wird automatisch erstellt, aber Sie sollten</target>
-			</trans-unit>
-			<trans-unit id="warning.noWorkspace.createLink">
-				<source>create one manually</source>
-				<target>manuell einen erstellen</target>
-			</trans-unit>
-			<trans-unit id="warning.noWorkspace.suffix">
-				<source>to control permissions and review workflow.</source>
-				<target>um Berechtigungen und den Prüfungs-Workflow zu steuern.</target>
-			</trans-unit>
-			<trans-unit id="warning.localhost.title">
-				<source>Local/private network detected</source>
-				<target>Lokales/privates Netzwerk erkannt</target>
-			</trans-unit>
-			<trans-unit id="warning.localhost.text">
-				<source>{url} resolves to a private network address. Most remote MCP clients (Claude Desktop, n8n cloud, manus) cannot reach this server from the internet.</source>
-				<target>{url} löst zu einer privaten Netzwerkadresse auf. Die meisten entfernten MCP-Clients (Claude Desktop, n8n Cloud, manus) können diesen Server nicht aus dem Internet erreichen.</target>
-			</trans-unit>
-			<trans-unit id="warning.localhost.worksLocally">
-				<source>What works locally:</source>
-				<target>Was lokal funktioniert:</target>
-			</trans-unit>
-			<trans-unit id="warning.localhost.localTools">
-				<source>The MCP Inspector (runs on your machine) and the Local Setup (TYPO3 CLI) tab. The Local Setup (mcp-remote) may also work since mcp-remote runs on your machine.</source>
-				<target>Der MCP Inspector (läuft auf Ihrem Rechner) und der Tab „Lokale Einrichtung (TYPO3 CLI)". Die lokale Einrichtung (mcp-remote) kann ebenfalls funktionieren, da mcp-remote auf Ihrem Rechner läuft.</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.title">
-				<source>Authorization header issue detected</source>
-				<target>Problem mit dem Authorization-Header erkannt</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.text">
-				<source>The MCP endpoint cannot receive Authorization headers. This prevents OAuth authentication from working.</source>
-				<target>Der MCP-Endpunkt kann keine Authorization-Header empfangen. Dies verhindert, dass die OAuth-Authentifizierung funktioniert.</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.causes">
-				<source>Common causes and solutions:</source>
-				<target>Häufige Ursachen und Lösungen:</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.apache">
-				<source>Add to your .htaccess:</source>
-				<target>Fügen Sie Folgendes in Ihre .htaccess ein:</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.basicAuth">
-				<source>May conflict with OAuth headers. Consider IP-based restrictions instead.</source>
-				<target>Kann mit OAuth-Headern kollidieren. Erwägen Sie stattdessen IP-basierte Einschränkungen.</target>
-			</trans-unit>
-			<trans-unit id="warning.authHeader.proxy">
-				<source>Some proxies strip Authorization headers. Check your infrastructure settings.</source>
-				<target>Einige Proxies entfernen Authorization-Header. Überprüfen Sie Ihre Infrastruktureinstellungen.</target>
-			</trans-unit>
-
-			<!-- Main tabs -->
-			<trans-unit id="tab.remoteSetup">
-				<source>Client Setup</source>
-				<target>Client-Einrichtung</target>
-			</trans-unit>
-			<trans-unit id="tab.localMcpRemote">
-				<source>Local Setup (mcp-remote)</source>
-				<target>Lokale Einrichtung (mcp-remote)</target>
-			</trans-unit>
-			<trans-unit id="tab.localCli">
-				<source>Local Setup (TYPO3 CLI)</source>
-				<target>Lokale Einrichtung (TYPO3 CLI)</target>
-			</trans-unit>
-
-			<!-- Remote setup -->
-			<trans-unit id="remote.description">
-				<source>Use local stdio for Cursor's AI chat by default. Remote HTTP clients can still connect to this TYPO3 instance with OAuth.</source>
-				<target>Nutzen Sie standardmäßig lokales stdio für den Cursor AI Chat. Remote-HTTP-Clients können diese TYPO3-Instanz weiterhin mit OAuth verbinden.</target>
-			</trans-unit>
-			<trans-unit id="remote.serverUrl">
-				<source>Server URL</source>
-				<target>Server-URL</target>
-			</trans-unit>
-			<trans-unit id="remote.copyServerUrl">
-				<source>Copy Server URL</source>
-				<target>Server-URL kopieren</target>
-			</trans-unit>
-			<trans-unit id="remote.endpointStatus">
-				<source>MCP endpoint status:</source>
-				<target>MCP-Endpunkt-Status:</target>
-			</trans-unit>
-
-			<!-- Client tabs -->
-			<trans-unit id="client.cursor">
-				<source>Cursor</source>
-				<target>Cursor</target>
-			</trans-unit>
-			<trans-unit id="client.claudeDesktop">
-				<source>Claude Desktop</source>
-				<target>Claude Desktop</target>
-			</trans-unit>
-			<trans-unit id="client.n8n">
-				<source>n8n</source>
-				<target>n8n</target>
-			</trans-unit>
-			<trans-unit id="client.manus">
-				<source>manus</source>
-				<target>manus</target>
-			</trans-unit>
-			<trans-unit id="client.mcpInspector">
-				<source>MCP Inspector</source>
-				<target>MCP Inspector</target>
-			</trans-unit>
-			<trans-unit id="client.otherClients">
-				<source>Other MCP Clients</source>
-				<target>Andere MCP-Clients</target>
-			</trans-unit>
-
-			<!-- Cursor instructions -->
-			<trans-unit id="cursor.title">
-				<source>Cursor IDE Integration</source>
-				<target>Cursor-IDE-Integration</target>
-			</trans-unit>
-			<trans-unit id="cursor.description">
-				<source>Connect Cursor's AI chat through the local TYPO3 CLI MCP server:</source>
-				<target>Verbinden Sie den Cursor AI Chat über den lokalen TYPO3-CLI-MCP-Server:</target>
-			</trans-unit>
-			<trans-unit id="cursor.installButton">
-				<source>Install in Cursor</source>
-				<target>In Cursor installieren</target>
-			</trans-unit>
-			<trans-unit id="cursor.authReuseNote">
-				<source>The install link uses local stdio and starts vendor/bin/typo3 mcp:server in this project. No OAuth token is needed.</source>
-				<target>Der Installationslink nutzt lokales stdio und startet vendor/bin/typo3 mcp:server in diesem Projekt. Es ist kein OAuth-Token erforderlich.</target>
-			</trans-unit>
-			<trans-unit id="cursor.manualConfig">
-				<source>Or add to your ~/.cursor/mcp.json manually:</source>
-				<target>Oder manuell in Ihre ~/.cursor/mcp.json einfügen:</target>
-			</trans-unit>
-			<trans-unit id="cursor.copyConfig">
-				<source>Copy Configuration</source>
-				<target>Konfiguration kopieren</target>
-			</trans-unit>
-			<trans-unit id="cursor.whatHappensNext">
-				<source>What happens next:</source>
-				<target>Was als Nächstes passiert:</target>
-			</trans-unit>
-			<trans-unit id="cursor.step1">
-				<source>Cursor starts the TYPO3 CLI MCP server from this project</source>
-				<target>Cursor startet den TYPO3-CLI-MCP-Server aus diesem Projekt</target>
-			</trans-unit>
-			<trans-unit id="cursor.step2">
-				<source>The AI chat talks to the server over stdin/stdout</source>
-				<target>Der AI Chat kommuniziert über stdin/stdout mit dem Server</target>
-			</trans-unit>
-			<trans-unit id="cursor.step3">
-				<source>TYPO3 tools are available without an extra OAuth flow</source>
-				<target>TYPO3-Tools sind ohne zusätzlichen OAuth-Ablauf verfügbar</target>
-			</trans-unit>
-			<trans-unit id="cursor.step4">
-				<source>MCP tools become available in Cursor's agent</source>
-				<target>MCP-Tools werden im Cursor-Agent verfügbar</target>
-			</trans-unit>
-
-			<!-- Claude Desktop instructions -->
-			<trans-unit id="claude.title">
-				<source>Claude Desktop Integration</source>
-				<target>Claude-Desktop-Integration</target>
-			</trans-unit>
-			<trans-unit id="claude.description">
-				<source>To connect Claude Desktop to this TYPO3 instance:</source>
-				<target>Um Claude Desktop mit dieser TYPO3-Instanz zu verbinden:</target>
-			</trans-unit>
-			<trans-unit id="claude.step1">
-				<source>In Claude Desktop, go to Settings → Integrations</source>
-				<target>Gehen Sie in Claude Desktop zu Einstellungen → Integrationen</target>
-			</trans-unit>
-			<trans-unit id="claude.step2">
-				<source>Click "Add Integration"</source>
-				<target>Klicken Sie auf „Integration hinzufügen"</target>
-			</trans-unit>
-			<trans-unit id="claude.step3">
-				<source>Enter Integration Name: {name}</source>
-				<target>Geben Sie den Integrationsnamen ein: {name}</target>
-			</trans-unit>
-			<trans-unit id="claude.step4">
-				<source>Paste the Server URL: {url}</source>
-				<target>Fügen Sie die Server-URL ein: {url}</target>
-			</trans-unit>
-			<trans-unit id="claude.step5">
-				<source>Claude Desktop will automatically handle OAuth authentication</source>
-				<target>Claude Desktop übernimmt die OAuth-Authentifizierung automatisch</target>
-			</trans-unit>
-
-			<!-- n8n instructions -->
-			<trans-unit id="n8n.title">
-				<source>n8n Integration</source>
-				<target>n8n-Integration</target>
-			</trans-unit>
-			<trans-unit id="n8n.description">
-				<source>To configure your n8n MCP Client node:</source>
-				<target>So konfigurieren Sie Ihren n8n-MCP-Client-Node:</target>
-			</trans-unit>
-			<trans-unit id="n8n.step1">
-				<source>In n8n, add an MCP Client node to your workflow</source>
-				<target>Fügen Sie in n8n einen MCP-Client-Node zu Ihrem Workflow hinzu</target>
-			</trans-unit>
-			<trans-unit id="n8n.step2">
-				<source>Set Endpoint to: {url}</source>
-				<target>Setzen Sie den Endpunkt auf: {url}</target>
-			</trans-unit>
-			<trans-unit id="n8n.step3">
-				<source>Set Server Transport to: HTTP Streamable</source>
-				<target>Setzen Sie Server Transport auf: HTTP Streamable</target>
-			</trans-unit>
-			<trans-unit id="n8n.step4">
-				<source>Set Authentication to: Bearer Auth</source>
-				<target>Setzen Sie Authentifizierung auf: Bearer Auth</target>
-			</trans-unit>
-			<trans-unit id="n8n.step5">
-				<source>Create a token in the Active OAuth Tokens section (e.g. name it "n8n"), create a new credential and paste the token</source>
-				<target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token" (z.B. „n8n" benennen), erstellen Sie eine neue Berechtigung und fügen Sie den Token ein</target>
-			</trans-unit>
-			<trans-unit id="n8n.step6">
-				<source>Select which tools to include or choose "All"</source>
-				<target>Wählen Sie die einzuschließenden Tools oder wählen Sie „Alle"</target>
-			</trans-unit>
-
-			<!-- manus instructions -->
-			<trans-unit id="manus.title">
-				<source>manus Integration</source>
-				<target>manus-Integration</target>
-			</trans-unit>
-			<trans-unit id="manus.description">
-				<source>To configure your manus MCP connection:</source>
-				<target>So konfigurieren Sie Ihre manus-MCP-Verbindung:</target>
-			</trans-unit>
-			<trans-unit id="manus.step1">
-				<source>In manus, go to Connectors settings and add a connector</source>
-				<target>Gehen Sie in manus zu den Connector-Einstellungen und fügen Sie einen Connector hinzu</target>
-			</trans-unit>
-			<trans-unit id="manus.step2">
-				<source>Set Server Name to: {name}</source>
-				<target>Setzen Sie den Servernamen auf: {name}</target>
-			</trans-unit>
-			<trans-unit id="manus.step3">
-				<source>Set Transport to: HTTP</source>
-				<target>Setzen Sie Transport auf: HTTP</target>
-			</trans-unit>
-			<trans-unit id="manus.step4">
-				<source>Set Server URL to: {url}</source>
-				<target>Setzen Sie die Server-URL auf: {url}</target>
-			</trans-unit>
-			<trans-unit id="manus.step5">
-				<source>Create a token in the Active OAuth Tokens section (e.g. name it "manus")</source>
-				<target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token" (z.B. „manus" benennen)</target>
-			</trans-unit>
-			<trans-unit id="manus.step6">
-				<source>Add a custom header "Authorization" with the value "Bearer YOUR_TOKEN" (use the token shown at creation)</source>
-				<target>Fügen Sie einen benutzerdefinierten Header „Authorization" mit dem Wert „Bearer YOUR_TOKEN" hinzu (verwenden Sie den bei der Erstellung angezeigten Token)</target>
-			</trans-unit>
-			<trans-unit id="manus.step7">
-				<source>Save your MCP configuration</source>
-				<target>Speichern Sie Ihre MCP-Konfiguration</target>
-			</trans-unit>
-
-			<!-- MCP Inspector instructions -->
-			<trans-unit id="inspector.title">
-				<source>MCP Inspector</source>
-				<target>MCP Inspector</target>
-			</trans-unit>
-			<trans-unit id="inspector.description">
-				<source>Debug and test tools using the official MCP Inspector CLI:</source>
-				<target>Debuggen und testen Sie Tools mit dem offiziellen MCP Inspector CLI:</target>
-			</trans-unit>
-			<trans-unit id="inspector.runCommand">
-				<source>Run this command in your terminal:</source>
-				<target>Führen Sie diesen Befehl in Ihrem Terminal aus:</target>
-			</trans-unit>
-			<trans-unit id="inspector.copy">
-				<source>Copy</source>
-				<target>Kopieren</target>
-			</trans-unit>
-			<trans-unit id="inspector.whatHappensNext">
-				<source>What happens next:</source>
-				<target>Was als Nächstes passiert:</target>
-			</trans-unit>
-			<trans-unit id="inspector.step1">
-				<source>The Inspector UI opens in your browser</source>
-				<target>Die Inspector-Benutzeroberfläche öffnet sich in Ihrem Browser</target>
-			</trans-unit>
-			<trans-unit id="inspector.step2">
-				<source>All parameters are pre-configured. It's enough to click Connect.</source>
-				<target>Alle Parameter sind vorkonfiguriert. Es genügt, auf „Verbinden" zu klicken.</target>
-			</trans-unit>
-			<trans-unit id="inspector.step3">
-				<source>After authorization, you can test all available tools</source>
-				<target>Nach der Autorisierung können Sie alle verfügbaren Tools testen</target>
-			</trans-unit>
-			<trans-unit id="inspector.requiresNode">
-				<source>Requires Node.js to be installed on your system.</source>
-				<target>Erfordert, dass Node.js auf Ihrem System installiert ist.</target>
-			</trans-unit>
-
-			<!-- Other clients instructions -->
-			<trans-unit id="other.title">
-				<source>Generic MCP Client Setup</source>
-				<target>Allgemeine MCP-Client-Einrichtung</target>
-			</trans-unit>
-			<trans-unit id="other.description">
-				<source>For MCP clients that support OAuth and remote connections:</source>
-				<target>Für MCP-Clients, die OAuth und Remote-Verbindungen unterstützen:</target>
-			</trans-unit>
-			<trans-unit id="other.step1">
-				<source>Configure your client with server URL: {url}</source>
-				<target>Konfigurieren Sie Ihren Client mit der Server-URL: {url}</target>
-			</trans-unit>
-			<trans-unit id="other.step2">
-				<source>Optionally set integration name: {name}</source>
-				<target>Optional Integrationsnamen setzen: {name}</target>
-			</trans-unit>
-			<trans-unit id="other.step3">
-				<source>Your client should automatically discover OAuth endpoints</source>
-				<target>Ihr Client sollte OAuth-Endpunkte automatisch erkennen</target>
-			</trans-unit>
-			<trans-unit id="other.step4">
-				<source>During authentication, you'll be redirected to this TYPO3 backend</source>
-				<target>Während der Authentifizierung werden Sie zu diesem TYPO3-Backend weitergeleitet</target>
-			</trans-unit>
-			<trans-unit id="other.step5">
-				<source>After authorization, your client will receive secure access tokens</source>
-				<target>Nach der Autorisierung erhält Ihr Client sichere Zugriffstoken</target>
-			</trans-unit>
-			<trans-unit id="other.note">
-				<source>Your MCP client must support OAuth 2.0 and automatic endpoint discovery.</source>
-				<target>Ihr MCP-Client muss OAuth 2.0 und automatische Endpunkt-Erkennung unterstützen.</target>
-			</trans-unit>
-
-			<!-- Local mcp-remote setup -->
-			<trans-unit id="localMcpRemote.description">
-				<source>For MCP clients that don't support remote connections natively. The mcp-remote package acts as a local bridge, connecting to this TYPO3 instance on behalf of your MCP client.</source>
-				<target>Für MCP-Clients, die keine nativen Remote-Verbindungen unterstützen. Das mcp-remote-Paket fungiert als lokale Brücke und verbindet sich im Auftrag Ihres MCP-Clients mit dieser TYPO3-Instanz.</target>
-			</trans-unit>
-			<trans-unit id="localMcpRemote.configTitle">
-				<source>Example mcp-remote configuration:</source>
-				<target>Beispiel mcp-remote Konfiguration:</target>
-			</trans-unit>
-			<trans-unit id="localMcpRemote.tokenHint">
-				<source>Create a token in the Active OAuth Tokens section (e.g. name it "mcp-remote") and replace YOUR_TOKEN with the plain token shown at creation.</source>
-				<target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token" (z.B. „mcp-remote" benennen) und ersetzen Sie YOUR_TOKEN durch den bei der Erstellung angezeigten Klartext-Token.</target>
-			</trans-unit>
-			<trans-unit id="localMcpRemote.copyConfig">
-				<source>Copy Configuration</source>
-				<target>Konfiguration kopieren</target>
-			</trans-unit>
-			<trans-unit id="localMcpRemote.securityNote">
-				<source>Security Note:</source>
-				<target>Sicherheitshinweis:</target>
-			</trans-unit>
-			<trans-unit id="localMcpRemote.securityText">
-				<source>The token URL includes your authentication token in the URL. Only use this method when your MCP client doesn't support Authorization headers or when using mcp-remote configurations that require tokens in the URL.</source>
-				<target>Die Token-URL enthält Ihren Authentifizierungstoken in der URL. Verwenden Sie diese Methode nur, wenn Ihr MCP-Client keine Authorization-Header unterstützt oder wenn mcp-remote-Konfigurationen Tokens in der URL erfordern.</target>
-			</trans-unit>
-
-			<!-- Local CLI setup -->
-			<trans-unit id="localCli.description">
-				<source>For local development where your MCP client has direct shell access to this TYPO3 installation.</source>
-				<target>Für die lokale Entwicklung, bei der Ihr MCP-Client direkten Shell-Zugriff auf diese TYPO3-Installation hat.</target>
-			</trans-unit>
-			<trans-unit id="localCli.copyConfig">
-				<source>Copy Configuration</source>
-				<target>Konfiguration kopieren</target>
-			</trans-unit>
-			<trans-unit id="localCli.howItWorks">
-				<source>How CLI access works:</source>
-				<target>Wie der CLI-Zugriff funktioniert:</target>
-			</trans-unit>
-			<trans-unit id="localCli.directAccess">
-				<source>No OAuth needed</source>
-				<target>Kein OAuth erforderlich</target>
-			</trans-unit>
-			<trans-unit id="localCli.localOnly">
-				<source>Only works when your client has shell access to TYPO3</source>
-				<target>Funktioniert nur, wenn Ihr Client Shell-Zugriff auf TYPO3 hat</target>
-			</trans-unit>
-			<trans-unit id="localCli.important">
-				<source>Important considerations:</source>
-				<target>Wichtige Hinweise:</target>
-			</trans-unit>
-			<trans-unit id="localCli.longRunning">
-				<source>The CLI server runs continuously and may accumulate memory usage over time. Restart periodically if you notice performance issues.</source>
-				<target>Der CLI-Server läuft kontinuierlich und kann im Laufe der Zeit Arbeitsspeicher ansammeln. Starten Sie ihn regelmäßig neu, wenn Sie Leistungsprobleme bemerken.</target>
-			</trans-unit>
-			<trans-unit id="localCli.codeChanges">
-				<source>Changes to PHP code won't be reflected immediately. You'll need to restart the CLI server to pick up code modifications.</source>
-				<target>Änderungen am PHP-Code werden nicht sofort übernommen. Sie müssen den CLI-Server neu starten, um Code-Änderungen zu übernehmen.</target>
-			</trans-unit>
-
-			<!-- Tokens section -->
-			<trans-unit id="tokens.title">
-				<source>Active OAuth Tokens</source>
-				<target>Aktive OAuth-Token</target>
-			</trans-unit>
-			<trans-unit id="tokens.refresh">
-				<source>Refresh</source>
-				<target>Aktualisieren</target>
-			</trans-unit>
-			<trans-unit id="tokens.revokeAll">
-				<source>Revoke All</source>
-				<target>Alle widerrufen</target>
-			</trans-unit>
-			<trans-unit id="tokens.createToken">
-				<source>Create Token</source>
-				<target>Token erstellen</target>
-			</trans-unit>
-			<trans-unit id="tokens.description">
-				<source>Manage your active OAuth tokens. Each token represents an authorized MCP client connection.</source>
-				<target>Verwalten Sie Ihre aktiven OAuth-Token. Jeder Token repräsentiert eine autorisierte MCP-Client-Verbindung.</target>
-			</trans-unit>
-			<trans-unit id="tokens.clientName">
-				<source>Client Name</source>
-				<target>Client-Name</target>
-			</trans-unit>
-			<trans-unit id="tokens.created">
-				<source>Created</source>
-				<target>Erstellt</target>
-			</trans-unit>
-			<trans-unit id="tokens.lastUsed">
-				<source>Last Used</source>
-				<target>Zuletzt verwendet</target>
-			</trans-unit>
-			<trans-unit id="tokens.expires">
-				<source>Expires</source>
-				<target>Läuft ab</target>
-			</trans-unit>
-			<trans-unit id="tokens.actions">
-				<source>Actions</source>
-				<target>Aktionen</target>
-			</trans-unit>
-			<trans-unit id="tokens.revoke">
-				<source>Revoke</source>
-				<target>Widerrufen</target>
-			</trans-unit>
-			<trans-unit id="tokens.noTokens">
-				<source>No active tokens found.</source>
-				<target>Keine aktiven Token gefunden.</target>
-			</trans-unit>
-			<trans-unit id="tokens.noTokensHint">
-				<source>Click Create Token above to create your first token.</source>
-				<target>Klicken Sie oben auf „Token erstellen", um Ihren ersten Token zu erstellen.</target>
-			</trans-unit>
-			<trans-unit id="tokens.revokedCount">
-				<source>{count, plural, one {Successfully revoked # token} other {Successfully revoked # tokens}}</source>
-				<target>{count, plural, one {# Token erfolgreich widerrufen} other {# Token erfolgreich widerrufen}}</target>
-			</trans-unit>
-			<trans-unit id="tokens.revokedSuccess">
-				<source>Token revoked successfully</source>
-				<target>Token erfolgreich widerrufen</target>
-			</trans-unit>
-			<trans-unit id="tokens.notFoundOrDenied">
-				<source>Token not found or access denied</source>
-				<target>Token nicht gefunden oder Zugriff verweigert</target>
-			</trans-unit>
-			<trans-unit id="tokens.revokeError">
-				<source>Unable to revoke the token right now.</source>
-				<target>Token kann derzeit nicht widerrufen werden.</target>
-			</trans-unit>
-			<trans-unit id="tokens.noTokensToRevoke">
-				<source>No tokens found to revoke</source>
-				<target>Keine Token zum Widerrufen gefunden</target>
-			</trans-unit>
-			<trans-unit id="tokens.revokeAllError">
-				<source>Unable to revoke tokens right now.</source>
-				<target>Token können derzeit nicht widerrufen werden.</target>
-			</trans-unit>
-			<trans-unit id="tokens.loadError">
-				<source>Unable to load tokens right now.</source>
-				<target>Token können derzeit nicht geladen werden.</target>
-			</trans-unit>
-			<trans-unit id="tokens.neverUsed">
-				<source>Never</source>
-				<target>Nie</target>
-			</trans-unit>
-			<trans-unit id="tokens.invalidId">
-				<source>Invalid token ID</source>
-				<target>Ungültige Token-ID</target>
-			</trans-unit>
-			<trans-unit id="tokens.invalidClientType">
-				<source>Invalid client type</source>
-				<target>Ungültiger Client-Typ</target>
-			</trans-unit>
-			<trans-unit id="tokens.alreadyExists">
-				<source>You already have a {clientType}. Please revoke it first if you want to create a new one.</source>
-				<target>Sie haben bereits ein {clientType}. Bitte widerrufen Sie es zuerst, wenn Sie ein neues erstellen möchten.</target>
-			</trans-unit>
-			<trans-unit id="tokens.createdSuccessfully">
-				<source>{clientType} created successfully</source>
-				<target>{clientType} erfolgreich erstellt</target>
-			</trans-unit>
-			<trans-unit id="tokens.createError">
-				<source>Unable to create a token right now.</source>
-				<target>Token kann derzeit nicht erstellt werden.</target>
-			</trans-unit>
-			<trans-unit id="csrfFailed">
-				<source>CSRF validation failed</source>
-				<target>CSRF-Validierung fehlgeschlagen</target>
-			</trans-unit>
-			<trans-unit id="tokens.secureHashDescription">
-				<source>Existing tokens are stored as secure hashes and cannot be shown again after creation.</source>
-				<target>Vorhandene Token werden als sichere Hashes gespeichert und können nach der Erstellung nicht mehr angezeigt werden.</target>
-			</trans-unit>
-			<trans-unit id="tokens.loading">
-				<source>Loading...</source>
-				<target>Laden...</target>
-			</trans-unit>
-			<trans-unit id="tokens.processing">
-				<source>Processing request...</source>
-				<target>Anfrage wird verarbeitet...</target>
-			</trans-unit>
-
-			<!-- Shared labels -->
-			<trans-unit id="accessDenied">
-				<source>Access denied</source>
-				<target>Zugriff verweigert</target>
-			</trans-unit>
-
-			<!-- JavaScript labels -->
-			<trans-unit id="js.copyFailed">
-				<source>Copy failed</source>
-				<target>Kopieren fehlgeschlagen</target>
-			</trans-unit>
-			<trans-unit id="js.copyFailedMessage">
-				<source>Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).</source>
-				<target>Bitte wählen Sie den Text manuell aus und kopieren Sie mit Strg+C (Cmd+C auf Mac).</target>
-			</trans-unit>
-			<trans-unit id="js.copied">
-				<source>Copied!</source>
-				<target>Kopiert!</target>
-			</trans-unit>
-			<trans-unit id="js.revokeToken">
-				<source>Revoke Token</source>
-				<target>Token widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.revokeTokenConfirm">
-				<source>Are you sure you want to revoke this token? The associated MCP client will lose access immediately.</source>
-				<target>Möchten Sie diesen Token wirklich widerrufen? Der zugehörige MCP-Client verliert sofort den Zugriff.</target>
-			</trans-unit>
-			<trans-unit id="js.cancel">
-				<source>Cancel</source>
-				<target>Abbrechen</target>
-			</trans-unit>
-			<trans-unit id="js.revoke">
-				<source>Revoke</source>
-				<target>Widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.revokeAllTokens">
-				<source>Revoke All Tokens</source>
-				<target>Alle Token widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.revokeAllConfirm">
-				<source>Are you sure you want to revoke ALL tokens? This will disconnect all MCP clients and require re-authentication.</source>
-				<target>Möchten Sie wirklich ALLE Token widerrufen? Dadurch werden alle MCP-Clients getrennt und eine erneute Authentifizierung ist erforderlich.</target>
-			</trans-unit>
-			<trans-unit id="js.revokeAll">
-				<source>Revoke All</source>
-				<target>Alle widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.tokenRevoked">
-				<source>Token revoked</source>
-				<target>Token widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.refreshFailed">
-				<source>Refresh failed</source>
-				<target>Aktualisierung fehlgeschlagen</target>
-			</trans-unit>
-			<trans-unit id="js.refreshFailedMessage">
-				<source>Failed to refresh tokens: %s</source>
-				<target>Token konnten nicht aktualisiert werden: %s</target>
-			</trans-unit>
-			<trans-unit id="js.networkError">
-				<source>Network error</source>
-				<target>Netzwerkfehler</target>
-			</trans-unit>
-			<trans-unit id="js.invalidToken">
-				<source>Invalid token</source>
-				<target>Ungültiger Token</target>
-			</trans-unit>
-			<trans-unit id="js.revokeFailed">
-				<source>Revoke failed</source>
-				<target>Widerruf fehlgeschlagen</target>
-			</trans-unit>
-			<trans-unit id="js.revokeFailedMessage">
-				<source>Failed to revoke token: %s</source>
-				<target>Token konnte nicht widerrufen werden: %s</target>
-			</trans-unit>
-			<trans-unit id="js.tokensRevoked">
-				<source>Tokens revoked</source>
-				<target>Token widerrufen</target>
-			</trans-unit>
-			<trans-unit id="js.revokeAllFailed">
-				<source>Failed to revoke all tokens: %s</source>
-				<target>Alle Token konnten nicht widerrufen werden: %s</target>
-			</trans-unit>
-			<trans-unit id="js.createToken">
-				<source>Create Token</source>
-				<target>Token erstellen</target>
-			</trans-unit>
-			<trans-unit id="js.tokenName">
-				<source>Token name</source>
-				<target>Token-Name</target>
-			</trans-unit>
-			<trans-unit id="js.tokenNamePlaceholder">
-				<source>e.g. n8n, manus, my-app</source>
-				<target>z.B. n8n, manus, meine-app</target>
-			</trans-unit>
-			<trans-unit id="js.tokenNameHint">
-				<source>Choose a name to identify this token later. It will appear in the token list.</source>
-				<target>Wählen Sie einen Namen, um diesen Token später zu identifizieren. Er wird in der Token-Liste angezeigt.</target>
-			</trans-unit>
-			<trans-unit id="js.nameRequired">
-				<source>Name required</source>
-				<target>Name erforderlich</target>
-			</trans-unit>
-			<trans-unit id="js.nameRequiredMessage">
-				<source>Please enter a name for the token.</source>
-				<target>Bitte geben Sie einen Namen für den Token ein.</target>
-			</trans-unit>
-			<trans-unit id="js.create">
-				<source>Create</source>
-				<target>Erstellen</target>
-			</trans-unit>
-			<trans-unit id="js.tokenCreated">
-				<source>Token Created</source>
-				<target>Token erstellt</target>
-			</trans-unit>
-			<trans-unit id="js.tokenShownOnce">
-				<source>This token will only be shown once.</source>
-				<target>Dieser Token wird nur einmal angezeigt.</target>
-			</trans-unit>
-			<trans-unit id="js.tokenCopyWarning">
-				<source>Copy it now and store it securely. You will not be able to see it again.</source>
-				<target>Kopieren Sie ihn jetzt und speichern Sie ihn sicher. Sie können ihn nicht erneut anzeigen.</target>
-			</trans-unit>
-			<trans-unit id="js.tokenNameLabel">
-				<source>Token name:</source>
-				<target>Token-Name:</target>
-			</trans-unit>
-			<trans-unit id="js.copy">
-				<source>Copy</source>
-				<target>Kopieren</target>
-			</trans-unit>
-			<trans-unit id="js.iHaveCopiedToken">
-				<source>I have copied the token</source>
-				<target>Ich habe den Token kopiert</target>
-			</trans-unit>
-			<trans-unit id="js.tokenCreationFailed">
-				<source>Token creation failed</source>
-				<target>Token-Erstellung fehlgeschlagen</target>
-			</trans-unit>
-			<trans-unit id="js.noActiveTokens">
-				<source>No active tokens found.</source>
-				<target>Keine aktiven Token gefunden.</target>
-			</trans-unit>
-			<trans-unit id="js.noActiveTokensHint">
-				<source>Click Create Token above to create your first token.</source>
-				<target>Klicken Sie oben auf „Token erstellen", um Ihren ersten Token zu erstellen.</target>
-			</trans-unit>
-			<trans-unit id="js.selectAndCopy">
-				<source>Select &amp; copy with Ctrl+C</source>
-				<target>Auswählen &amp; mit Strg+C kopieren</target>
-			</trans-unit>
-			<trans-unit id="js.endpointWorking">
-				<source>Endpoint is working correctly</source>
-				<target>Endpunkt funktioniert korrekt</target>
-			</trans-unit>
-			<trans-unit id="js.endpointReachable">
-				<source>Endpoint is reachable</source>
-				<target>Endpunkt ist erreichbar</target>
-			</trans-unit>
-			<trans-unit id="js.endpointNoMcp">
-				<source>Endpoint is reachable but does not mention MCP endpoint</source>
-				<target>Endpunkt ist erreichbar, erwähnt aber keinen MCP-Endpunkt</target>
-			</trans-unit>
-			<trans-unit id="js.endpointAuthOk">
-				<source>MCP endpoint is accessible and can receive Authorization headers</source>
-				<target>MCP-Endpunkt ist erreichbar und kann Authorization-Header empfangen</target>
-			</trans-unit>
-			<trans-unit id="js.endpointAuthFail">
-				<source>MCP endpoint cannot receive Authorization headers - see warning below</source>
-				<target>MCP-Endpunkt kann keine Authorization-Header empfangen – siehe Warnung unten</target>
-			</trans-unit>
-			<trans-unit id="js.endpointCorsBlocked">
-				<source>Endpoint may be blocked by CORS policy or security settings</source>
-				<target>Endpunkt wird möglicherweise durch CORS-Richtlinie oder Sicherheitseinstellungen blockiert</target>
-			</trans-unit>
-			<trans-unit id="js.endpointHttpBasicAuth">
-				<source>MCP endpoint returned 401 - if behind HTTP basic auth, the Authorization header may be blocked</source>
-				<target>MCP-Endpunkt hat 401 zurückgegeben – bei HTTP-Basic-Auth wird der Authorization-Header möglicherweise blockiert</target>
-			</trans-unit>
-		</body>
-	</file>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
+  <file id="mcp_server.mod" original="EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf">
+    <unit id="mlang_tabs_tab">
+      <segment>
+        <source>MCP Server</source>
+        <target>MCP-Server</target>
+      </segment>
+    </unit>
+    <unit id="mlang_labels_tabdescr">
+      <segment>
+        <source>Access your Model Context Protocol (MCP) server endpoint and authentication tokens</source>
+        <target>Zugriff auf den Model Context Protocol (MCP) Server-Endpunkt und Authentifizierungstoken</target>
+      </segment>
+    </unit>
+    <unit id="title">
+      <segment>
+        <source>MCP Server Configuration</source>
+        <target>MCP-Server-Konfiguration</target>
+      </segment>
+    </unit>
+    <unit id="description">
+      <segment>
+        <source>Your personal MCP server endpoint for connecting external applications like Claude Desktop, VS Code, or other MCP-compatible clients.</source>
+        <target>Ihr persönlicher MCP-Server-Endpunkt zum Verbinden externer Anwendungen wie Claude Desktop, VS Code oder anderer MCP-kompatibler Clients.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.additionalReadOnlyTables">
+      <segment>
+        <source>Additional read-only tables: comma-separated list of non-workspace-capable tables to expose for reads via MCP (e.g. sys_file). These cannot be written through workspace tools.</source>
+        <target>Zusätzliche nur-lesen-Tabellen: kommagetrennte Liste nicht-Workspace-fähiger Tabellen, die für Lesezugriff über MCP freigegeben werden (z. B. sys_file). Schreiben über Workspace-Tools ist nicht möglich.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.fileSandboxRoot">
+      <segment>
+        <source>MCP file sandbox root folder. Use a combined identifier such as &quot;1:/mcp/&quot;. This defaults to fileadmin/mcp/ in the default storage.</source>
+        <target>MCP-Datei-Sandbox-Stammverzeichnis. Verwenden Sie einen kombinierten Bezeichner wie &quot;1:/mcp/&quot;. Standardmäßig wird fileadmin/mcp/ im Standard-Speicher verwendet.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.workspaceUploadSubfolders">
+      <segment>
+        <source>Store MCP uploads in workspace-specific subfolders below the sandbox root for safer draft handling.</source>
+        <target>MCP-Uploads in Workspace-spezifischen Unterordnern unterhalb des Sandbox-Stammverzeichnisses speichern für sicherere Entwurfsbearbeitung.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.allowMcpTokenInQueryString">
+      <segment>
+        <source>Allow passing the MCP bearer token as a query parameter (insecure: URLs are logged by proxies). Use only for legacy clients; prefer the Authorization header.</source>
+        <target>Erlaubt die Übergabe des MCP-Bearer-Tokens als Query-Parameter (unsicher: URLs werden von Proxies protokolliert). Nur für ältere Clients verwenden; bevorzugt den Authorization-Header nutzen.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.enableMcpAuthHeaderDiagnostic">
+      <segment>
+        <source>Enable the public ?test=auth diagnostic on the MCP endpoint (used by the backend connection check). Disable on hardened sites if you do not need it.</source>
+        <target>Aktiviert die öffentliche ?test=auth Diagnose am MCP-Endpunkt (wird vom Backend-Verbindungstest verwendet). Auf gehärteten Seiten deaktivieren, wenn nicht benötigt.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.localUnsafeMode">
+      <segment>
+        <source>Local development mode: relax workspace-only writes, non-workspace table blocking, and the file sandbox so MCP can edit live records and write anywhere in fileadmin. &quot;auto&quot; detects DDEV and the TYPO3 development context. User TSconfig options.mcpServer.localUnsafeMode can override this; options.mcpServer.strictSandbox or feature flag mcpServer.strictSandbox forces strict mode. NEVER enable unsafe mode on production.</source>
+        <target>Entwicklungsmodus: lockert Workspace-only-Schreibzugriffe, Sperre nicht-Workspace-fähiger Tabellen und die Datei-Sandbox, damit MCP Live-Datensätze bearbeiten und überall in fileadmin schreiben kann. „auto“ erkennt DDEV und den TYPO3-Development-Kontext. User-TSconfig options.mcpServer.localUnsafeMode kann das überschreiben; options.mcpServer.strictSandbox oder Feature-Flag mcpServer.strictSandbox erzwingt den strikten Modus. NIEMALS im Produktivbetrieb aktivieren.</target>
+      </segment>
+    </unit>
+    <unit id="extconf.enforceCapabilityManifest">
+      <segment>
+        <source>Enforce the capability manifest (Configuration/Capabilities.yaml). Tools whose required capabilities are not declared/granted are rejected at call time. Disable only for debugging.</source>
+        <target>Capability-Manifest erzwingen (Configuration/Capabilities.yaml). Tools ohne deklarierte/gewährte Capabilities werden beim Aufruf abgelehnt. Nur zum Debuggen deaktivieren.</target>
+      </segment>
+    </unit>
+    <unit id="connectionSetup.title">
+      <segment>
+        <source>MCP Connection Setup</source>
+        <target>MCP-Verbindungseinrichtung</target>
+      </segment>
+    </unit>
+    <unit id="connectionSetup.description">
+      <segment>
+        <source>Connect Cursor, Claude Desktop, or Codex. Use Connection check when something does not work.</source>
+        <target>Cursor, Claude Desktop oder Codex verbinden. Bei Problemen den Reiter „Verbindungscheck“ nutzen.</target>
+      </segment>
+    </unit>
+    <unit id="warning.noWorkspace.title">
+      <segment>
+        <source>No workspace configured</source>
+        <target>Kein Workspace konfiguriert</target>
+      </segment>
+    </unit>
+    <unit id="warning.noWorkspace.text">
+      <segment>
+        <source>All changes made through MCP are staged in a TYPO3 Workspace before publishing. One will be created automatically, but you should</source>
+        <target>Alle über MCP vorgenommenen Änderungen werden in einem TYPO3-Workspace zwischengespeichert, bevor sie veröffentlicht werden. Ein Workspace wird automatisch erstellt, aber Sie sollten</target>
+      </segment>
+    </unit>
+    <unit id="warning.noWorkspace.createLink">
+      <segment>
+        <source>create one manually</source>
+        <target>manuell einen erstellen</target>
+      </segment>
+    </unit>
+    <unit id="warning.noWorkspace.suffix">
+      <segment>
+        <source>to control permissions and review workflow.</source>
+        <target>um Berechtigungen und den Prüfungs-Workflow zu steuern.</target>
+      </segment>
+    </unit>
+    <unit id="warning.localhost.title">
+      <segment>
+        <source>Local/private network detected</source>
+        <target>Lokales/privates Netzwerk erkannt</target>
+      </segment>
+    </unit>
+    <unit id="warning.localhost.text">
+      <segment>
+        <source>{url} resolves to a private network address. Most remote MCP clients (Claude Desktop, n8n cloud, manus) cannot reach this server from the internet.</source>
+        <target>{url} löst auf eine private Netzwerkadresse auf. Claude Desktop in der Cloud kann diesen Server nicht erreichen.</target>
+      </segment>
+    </unit>
+    <unit id="warning.localhost.worksLocally">
+      <segment>
+        <source>What works locally:</source>
+        <target>Was lokal funktioniert:</target>
+      </segment>
+    </unit>
+    <unit id="warning.localhost.localTools">
+      <segment>
+        <source>The MCP Inspector (runs on your machine) and the Local Setup (TYPO3 CLI) tab. The Local Setup (mcp-remote) may also work since mcp-remote runs on your machine.</source>
+        <target>Cursor und Codex nutzen die lokale TYPO3-CLI auf diesem Rechner. Claude Desktop benötigt eine öffentlich erreichbare HTTPS-URL.</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.title">
+      <segment>
+        <source>Authorization header issue detected</source>
+        <target>Problem mit dem Authorization-Header erkannt</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.text">
+      <segment>
+        <source>The MCP endpoint cannot receive Authorization headers. This prevents OAuth authentication from working.</source>
+        <target>Der MCP-Endpunkt kann keine Authorization-Header empfangen. Dies verhindert, dass die OAuth-Authentifizierung funktioniert.</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.causes">
+      <segment>
+        <source>Common causes and solutions:</source>
+        <target>Häufige Ursachen und Lösungen:</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.apache">
+      <segment>
+        <source>Add to your .htaccess:</source>
+        <target>Fügen Sie Folgendes in Ihre .htaccess ein:</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.basicAuth">
+      <segment>
+        <source>May conflict with OAuth headers. Consider IP-based restrictions instead.</source>
+        <target>Kann mit OAuth-Headern kollidieren. Erwägen Sie stattdessen IP-basierte Einschränkungen.</target>
+      </segment>
+    </unit>
+    <unit id="warning.authHeader.proxy">
+      <segment>
+        <source>Some proxies strip Authorization headers. Check your infrastructure settings.</source>
+        <target>Einige Proxies entfernen Authorization-Header. Überprüfen Sie Ihre Infrastruktureinstellungen.</target>
+      </segment>
+    </unit>
+    <unit id="tab.setup">
+      <segment>
+        <source>Setup</source>
+        <target>Einrichtung</target>
+      </segment>
+    </unit>
+    <unit id="tab.connectionCheck">
+      <segment>
+        <source>Connection check</source>
+        <target>Verbindungscheck</target>
+      </segment>
+    </unit>
+    <unit id="tab.remoteSetup">
+      <segment>
+        <source>Client Setup</source>
+        <target>Client-Einrichtung</target>
+      </segment>
+    </unit>
+    <unit id="tab.localMcpRemote">
+      <segment>
+        <source>Local Setup (mcp-remote)</source>
+        <target>Lokale Einrichtung (mcp-remote)</target>
+      </segment>
+    </unit>
+    <unit id="tab.localCli">
+      <segment>
+        <source>Local Setup (TYPO3 CLI)</source>
+        <target>Lokale Einrichtung (TYPO3 CLI)</target>
+      </segment>
+    </unit>
+    <unit id="setup.diagnosticHintError">
+      <segment>
+        <source>MCP is not ready yet. Open the</source>
+        <target>MCP ist noch nicht bereit. Öffnen Sie den Reiter</target>
+      </segment>
+    </unit>
+    <unit id="setup.serverUrlHint">
+      <segment>
+        <source>Required for Claude Desktop (remote OAuth). Cursor and Codex use the local TYPO3 CLI on this machine.</source>
+        <target>Erforderlich für Claude Desktop (Remote-OAuth). Cursor und Codex nutzen die lokale TYPO3-CLI auf diesem Rechner.</target>
+      </segment>
+    </unit>
+    <unit id="remote.description">
+      <segment>
+        <source>Connect Cursor, Claude Desktop, or Codex to this TYPO3 instance.</source>
+        <target>Cursor, Claude Desktop oder Codex mit dieser TYPO3-Instanz verbinden.</target>
+      </segment>
+    </unit>
+    <unit id="remote.serverUrl">
+      <segment>
+        <source>Server URL</source>
+        <target>Server-URL</target>
+      </segment>
+    </unit>
+    <unit id="remote.copyServerUrl">
+      <segment>
+        <source>Copy Server URL</source>
+        <target>Server-URL kopieren</target>
+      </segment>
+    </unit>
+    <unit id="remote.endpointStatus">
+      <segment>
+        <source>MCP endpoint status:</source>
+        <target>MCP-Endpunkt-Status:</target>
+      </segment>
+    </unit>
+    <unit id="client.cursor">
+      <segment>
+        <source>Cursor</source>
+        <target>Cursor</target>
+      </segment>
+    </unit>
+    <unit id="client.claudeDesktop">
+      <segment>
+        <source>Claude Desktop</source>
+        <target>Claude Desktop</target>
+      </segment>
+    </unit>
+    <unit id="client.codex">
+      <segment>
+        <source>Codex</source>
+        <target>Codex</target>
+      </segment>
+    </unit>
+    <unit id="client.n8n">
+      <segment>
+        <source>n8n</source>
+        <target>n8n</target>
+      </segment>
+    </unit>
+    <unit id="client.manus">
+      <segment>
+        <source>manus</source>
+        <target>manus</target>
+      </segment>
+    </unit>
+    <unit id="client.mcpInspector">
+      <segment>
+        <source>MCP Inspector</source>
+        <target>MCP Inspector</target>
+      </segment>
+    </unit>
+    <unit id="client.otherClients">
+      <segment>
+        <source>Other MCP Clients</source>
+        <target>Andere MCP-Clients</target>
+      </segment>
+    </unit>
+    <unit id="cursor.title">
+      <segment>
+        <source>Cursor IDE Integration</source>
+        <target>Cursor-IDE-Integration</target>
+      </segment>
+    </unit>
+    <unit id="cursor.description">
+      <segment>
+        <source>Connect Cursor&apos;s AI chat through the local TYPO3 CLI MCP server:</source>
+        <target>Verbinden Sie den Cursor AI Chat über den lokalen TYPO3-CLI-MCP-Server:</target>
+      </segment>
+    </unit>
+    <unit id="cursor.installButton">
+      <segment>
+        <source>Install in Cursor</source>
+        <target>In Cursor installieren</target>
+      </segment>
+    </unit>
+    <unit id="cursor.authReuseNote">
+      <segment>
+        <source>The install link uses local stdio and starts vendor/bin/typo3 mcp:server in this project. No OAuth token is needed.</source>
+        <target>Der Installationslink nutzt lokales stdio und startet vendor/bin/typo3 mcp:server in diesem Projekt. Es ist kein OAuth-Token erforderlich.</target>
+      </segment>
+    </unit>
+    <unit id="cursor.manualConfig">
+      <segment>
+        <source>Or add to your ~/.cursor/mcp.json manually:</source>
+        <target>Oder manuell in Ihre ~/.cursor/mcp.json einfügen:</target>
+      </segment>
+    </unit>
+    <unit id="cursor.copyConfig">
+      <segment>
+        <source>Copy Configuration</source>
+        <target>Konfiguration kopieren</target>
+      </segment>
+    </unit>
+    <unit id="cursor.whatHappensNext">
+      <segment>
+        <source>What happens next:</source>
+        <target>Was als Nächstes passiert:</target>
+      </segment>
+    </unit>
+    <unit id="cursor.step1">
+      <segment>
+        <source>Cursor starts the TYPO3 CLI MCP server from this project</source>
+        <target>Cursor startet den TYPO3-CLI-MCP-Server aus diesem Projekt</target>
+      </segment>
+    </unit>
+    <unit id="cursor.step2">
+      <segment>
+        <source>The AI chat talks to the server over stdin/stdout</source>
+        <target>Der AI Chat kommuniziert über stdin/stdout mit dem Server</target>
+      </segment>
+    </unit>
+    <unit id="cursor.step3">
+      <segment>
+        <source>TYPO3 tools are available without an extra OAuth flow</source>
+        <target>TYPO3-Tools sind ohne zusätzlichen OAuth-Ablauf verfügbar</target>
+      </segment>
+    </unit>
+    <unit id="cursor.step4">
+      <segment>
+        <source>MCP tools become available in Cursor&apos;s agent</source>
+        <target>MCP-Tools werden im Cursor-Agent verfügbar</target>
+      </segment>
+    </unit>
+    <unit id="claude.title">
+      <segment>
+        <source>Claude Desktop Integration</source>
+        <target>Claude-Desktop-Integration</target>
+      </segment>
+    </unit>
+    <unit id="claude.description">
+      <segment>
+        <source>To connect Claude Desktop to this TYPO3 instance:</source>
+        <target>Um Claude Desktop mit dieser TYPO3-Instanz zu verbinden:</target>
+      </segment>
+    </unit>
+    <unit id="claude.step1">
+      <segment>
+        <source>In Claude Desktop, go to Settings → Integrations</source>
+        <target>Gehen Sie in Claude Desktop zu Einstellungen → Integrationen</target>
+      </segment>
+    </unit>
+    <unit id="claude.step2">
+      <segment>
+        <source>Click &quot;Add Integration&quot;</source>
+        <target>Klicken Sie auf „Integration hinzufügen&quot;</target>
+      </segment>
+    </unit>
+    <unit id="claude.step3">
+      <segment>
+        <source>Enter Integration Name: {name}</source>
+        <target>Geben Sie den Integrationsnamen ein: {name}</target>
+      </segment>
+    </unit>
+    <unit id="claude.step4">
+      <segment>
+        <source>Paste the Server URL: {url}</source>
+        <target>Fügen Sie die Server-URL ein: {url}</target>
+      </segment>
+    </unit>
+    <unit id="claude.step5">
+      <segment>
+        <source>Claude Desktop will automatically handle OAuth authentication</source>
+        <target>Claude Desktop übernimmt die OAuth-Authentifizierung automatisch</target>
+      </segment>
+    </unit>
+    <unit id="claude.oauthHint">
+      <segment>
+        <source>If connection fails, run the Connection check tab and fix any errors before retrying in Claude.</source>
+        <target>Wenn die Verbindung fehlschlägt, führen Sie den Verbindungscheck aus und beheben Sie Fehler, bevor Sie es in Claude erneut versuchen.</target>
+      </segment>
+    </unit>
+    <unit id="codex.title">
+      <segment>
+        <source>Codex CLI Integration</source>
+        <target>Codex-CLI-Integration</target>
+      </segment>
+    </unit>
+    <unit id="codex.description">
+      <segment>
+        <source>Connect OpenAI Codex through the local TYPO3 CLI MCP server (stdio, same as Cursor):</source>
+        <target>OpenAI Codex über den lokalen TYPO3-CLI-MCP-Server verbinden (stdio, wie bei Cursor):</target>
+      </segment>
+    </unit>
+    <unit id="codex.manualConfig">
+      <segment>
+        <source>Add to your Codex config file (~/.codex/config.toml):</source>
+        <target>In Ihre Codex-Konfigurationsdatei (~/.codex/config.toml) einfügen:</target>
+      </segment>
+    </unit>
+    <unit id="codex.copyConfig">
+      <segment>
+        <source>Copy configuration</source>
+        <target>Konfiguration kopieren</target>
+      </segment>
+    </unit>
+    <unit id="codex.restartHint">
+      <segment>
+        <source>Restart Codex after saving the config so the MCP server is picked up.</source>
+        <target>Codex nach dem Speichern der Konfiguration neu starten, damit der MCP-Server geladen wird.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.title">
+      <segment>
+        <source>Connection check</source>
+        <target>Verbindungscheck</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.intro">
+      <segment>
+        <source>Start here when MCP does not work. These checks run on the TYPO3 server (no browser CORS limits).</source>
+        <target>Hier starten, wenn MCP nicht funktioniert. Die Prüfungen laufen auf dem TYPO3-Server (ohne Browser-CORS).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.refresh">
+      <segment>
+        <source>Run checks again</source>
+        <target>Prüfungen erneut ausführen</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.refreshing">
+      <segment>
+        <source>Running checks…</source>
+        <target>Prüfungen laufen…</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.refreshed">
+      <segment>
+        <source>Connection checks updated.</source>
+        <target>Verbindungschecks aktualisiert.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.refreshFailed">
+      <segment>
+        <source>Could not refresh connection checks</source>
+        <target>Verbindungschecks konnten nicht aktualisiert werden</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.runError">
+      <segment>
+        <source>Could not run connection checks.</source>
+        <target>Verbindungschecks konnten nicht ausgeführt werden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.summaryOk">
+      <segment>
+        <source>All essential checks passed. If a client still fails, verify its own MCP settings.</source>
+        <target>Alle wesentlichen Prüfungen bestanden. Wenn ein Client weiterhin scheitert, prüfen Sie dessen eigene MCP-Einstellungen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.summaryWarning">
+      <segment>
+        <source>Some checks need attention. Review the table below before connecting a client.</source>
+        <target>Einige Prüfungen erfordern Aufmerksamkeit. Tabelle unten prüfen, bevor Sie einen Client verbinden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.summaryError">
+      <segment>
+        <source>Blocking issues found. Fix the errors below first — MCP clients will not work until these are resolved.</source>
+        <target>Blockierende Probleme gefunden. Beheben Sie zuerst die Fehler unten — MCP-Clients funktionieren erst danach.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.colStatus">
+      <segment>
+        <source>Status</source>
+        <target>Status</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.colCheck">
+      <segment>
+        <source>Check</source>
+        <target>Prüfung</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.colResult">
+      <segment>
+        <source>Result</source>
+        <target>Ergebnis</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.colHowToCheck">
+      <segment>
+        <source>How to verify</source>
+        <target>So prüfen</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.colFix">
+      <segment>
+        <source>What to do</source>
+        <target>Maßnahme</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspaceLinkPrefix">
+      <segment>
+        <source>Workspace staging:</source>
+        <target>Workspace-Staging:</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.status.ok">
+      <segment>
+        <source>OK</source>
+        <target>OK</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.status.warning">
+      <segment>
+        <source>Warning</source>
+        <target>Warnung</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.status.error">
+      <segment>
+        <source>Error</source>
+        <target>Fehler</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.status.info">
+      <segment>
+        <source>Info</source>
+        <target>Info</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.label">
+      <segment>
+        <source>Public site URL</source>
+        <target>Öffentliche Site-URL</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.ok">
+      <segment>
+        <source>reverseProxyBaseUrl is configured ({url}).</source>
+        <target>reverseProxyBaseUrl ist gesetzt ({url}).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.warning">
+      <segment>
+        <source>No reverseProxyBaseUrl — using request host ({url}). Remote clients may get the wrong URL.</source>
+        <target>Keine reverseProxyBaseUrl — Request-Host wird verwendet ({url}). Remote-Clients können die falsche URL erhalten.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.howToCheck">
+      <segment>
+        <source>In Admin Tools → Settings → Configure Installation-Wide Options, set [SYS][reverseProxyBaseUrl] to your public HTTPS URL.</source>
+        <target>Unter Admin Tools → Einstellungen → Installationsweite Einstellungen [SYS][reverseProxyBaseUrl] auf die öffentliche HTTPS-URL setzen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.baseUrl.fixHint">
+      <segment>
+        <source>Set $GLOBALS[&apos;TYPO3_CONF_VARS&apos;][&apos;SYS&apos;][&apos;reverseProxyBaseUrl&apos;] to the URL clients use (e.g. https://www.example.com).</source>
+        <target>$GLOBALS[&apos;TYPO3_CONF_VARS&apos;][&apos;SYS&apos;][&apos;reverseProxyBaseUrl&apos;] auf die URL setzen, die Clients nutzen (z. B. https://www.example.com).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.label">
+      <segment>
+        <source>MCP HTTP endpoint</source>
+        <target>MCP-HTTP-Endpunkt</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.ok">
+      <segment>
+        <source>{url} responds with HTTP {status} (authentication required — expected).</source>
+        <target>{url} antwortet mit HTTP {status} (Authentifizierung erforderlich — erwartet).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.okReachable">
+      <segment>
+        <source>{url} is reachable (HTTP {status}).</source>
+        <target>{url} ist erreichbar (HTTP {status}).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.unreachable">
+      <segment>
+        <source>Could not reach {url} from TYPO3.</source>
+        <target>{url} konnte von TYPO3 nicht erreicht werden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.badStatus">
+      <segment>
+        <source>{url} returned HTTP {status}.</source>
+        <target>{url} lieferte HTTP {status}.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.howToCheck">
+      <segment>
+        <source>Open {url} in a browser or run: curl -I {url}</source>
+        <target>{url} im Browser öffnen oder ausführen: curl -I {url}</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.fixUnreachable">
+      <segment>
+        <source>Ensure the web server routes /mcp to TYPO3, the site is online, and no firewall blocks loopback requests.</source>
+        <target>Webserver muss /mcp an TYPO3 weiterleiten, Site muss online sein, Firewall darf Loopback nicht blockieren.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.mcpEndpoint.fixBadStatus">
+      <segment>
+        <source>Check TYPO3 error logs, extension activation, and web server rewrite rules for the /mcp route.</source>
+        <target>TYPO3-Logs, Extension-Aktivierung und Rewrite-Regeln für /mcp prüfen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.label">
+      <segment>
+        <source>OAuth authorization metadata</source>
+        <target>OAuth-Authorization-Metadaten</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.ok">
+      <segment>
+        <source>{url} is available and references MCP.</source>
+        <target>{url} ist verfügbar und verweist auf MCP.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.fail">
+      <segment>
+        <source>{url} is not reachable (HTTP {status}).</source>
+        <target>{url} ist nicht erreichbar (HTTP {status}).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.noMcpReference">
+      <segment>
+        <source>{url} responds but does not reference the MCP resource.</source>
+        <target>{url} antwortet, verweist aber nicht auf die MCP-Ressource.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.howToCheck">
+      <segment>
+        <source>curl {url} and confirm JSON metadata is returned.</source>
+        <target>curl {url} ausführen und JSON-Metadaten prüfen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthAuthorization.fixHint">
+      <segment>
+        <source>Verify EXT:mcp_server middleware and .htaccess allow /.well-known/oauth-authorization-server.</source>
+        <target>EXT:mcp_server-Middleware und .htaccess für /.well-known/oauth-authorization-server prüfen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.label">
+      <segment>
+        <source>OAuth protected-resource metadata</source>
+        <target>OAuth-Protected-Resource-Metadaten</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.ok">
+      <segment>
+        <source>{url} is available and references MCP.</source>
+        <target>{url} ist verfügbar und verweist auf MCP.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.fail">
+      <segment>
+        <source>{url} is not reachable (HTTP {status}).</source>
+        <target>{url} ist nicht erreichbar (HTTP {status}).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.noMcpReference">
+      <segment>
+        <source>{url} responds but does not reference the MCP resource.</source>
+        <target>{url} antwortet, verweist aber nicht auf die MCP-Ressource.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.howToCheck">
+      <segment>
+        <source>curl {url} and confirm JSON metadata is returned.</source>
+        <target>curl {url} ausführen und JSON-Metadaten prüfen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthProtectedResource.fixHint">
+      <segment>
+        <source>Verify EXT:mcp_server middleware serves /.well-known/oauth-protected-resource.</source>
+        <target>EXT:mcp_server-Middleware für /.well-known/oauth-protected-resource prüfen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.label">
+      <segment>
+        <source>Authorization header (Apache/proxy)</source>
+        <target>Authorization-Header (Apache/Proxy)</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.ok">
+      <segment>
+        <source>TYPO3 receives Authorization headers — OAuth can work.</source>
+        <target>TYPO3 empfängt Authorization-Header — OAuth kann funktionieren.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.fail">
+      <segment>
+        <source>Authorization header did not reach PHP. OAuth and bearer tokens will fail.</source>
+        <target>Authorization-Header erreicht PHP nicht. OAuth und Bearer-Token schlagen fehl.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.disabled">
+      <segment>
+        <source>Auth header test is disabled in extension settings (enableMcpAuthHeaderDiagnostic).</source>
+        <target>Auth-Header-Test ist in den Extension-Einstellungen deaktiviert (enableMcpAuthHeaderDiagnostic).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.unreachable">
+      <segment>
+        <source>Could not call {url}.</source>
+        <target>{url} konnte nicht aufgerufen werden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.howToCheck">
+      <segment>
+        <source>Enable enableMcpAuthHeaderDiagnostic, then curl -H &quot;Authorization: Bearer test&quot; &quot;{url}&quot;</source>
+        <target>enableMcpAuthHeaderDiagnostic aktivieren, dann curl -H &quot;Authorization: Bearer test&quot; &quot;{url}&quot;</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.fixHint">
+      <segment>
+        <source>Add Apache RewriteRule for HTTP_AUTHORIZATION or remove HTTP Basic Auth in front of TYPO3. See TYPO3 docs for Authorization header forwarding.</source>
+        <target>Apache RewriteRule für HTTP_AUTHORIZATION ergänzen oder HTTP-Basic-Auth vor TYPO3 entfernen. Siehe TYPO3-Doku zur Header-Weiterleitung.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.fixDisabled">
+      <segment>
+        <source>Enable enableMcpAuthHeaderDiagnostic in extension configuration if you need this check (off by default on hardened sites).</source>
+        <target>enableMcpAuthHeaderDiagnostic in der Extension-Konfiguration aktivieren, wenn diese Prüfung benötigt wird (auf gehärteten Sites standardmäßig aus).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.authHeader.fixUnreachable">
+      <segment>
+        <source>Fix MCP endpoint reachability first.</source>
+        <target>Zuerst die Erreichbarkeit des MCP-Endpunkts beheben.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.label">
+      <segment>
+        <source>TYPO3 workspace</source>
+        <target>TYPO3-Workspace</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.ok">
+      <segment>
+        <source>At least one workspace exists for staged MCP edits.</source>
+        <target>Mindestens ein Workspace für gestaffelte MCP-Änderungen vorhanden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.missing">
+      <segment>
+        <source>No workspace found yet. MCP will create one automatically, but you should configure staging explicitly.</source>
+        <target>Noch kein Workspace gefunden. MCP legt einen automatisch an; Staging sollte dennoch explizit konfiguriert werden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.howToCheck">
+      <segment>
+        <source>In the backend, open Workspaces or create a new workspace record.</source>
+        <target>Im Backend Workspaces öffnen oder einen neuen Workspace-Datensatz anlegen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.workspace.fixHint">
+      <segment>
+        <source>Create a workspace and grant your backend user access so MCP changes can be reviewed before publish.</source>
+        <target>Workspace anlegen und Backend-Benutzer berechtigen, damit MCP-Änderungen vor dem Livegang geprüft werden können.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.label">
+      <segment>
+        <source>MCP tools registered</source>
+        <target>Registrierte MCP-Tools</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.ok">
+      <segment>
+        <source>{count} tools are registered for this instance.</source>
+        <target>{count} Tools sind für diese Instanz registriert.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.none">
+      <segment>
+        <source>No MCP tools are registered.</source>
+        <target>Keine MCP-Tools registriert.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.howToCheck">
+      <segment>
+        <source>Run vendor/bin/typo3 mcp:tool:list on the server.</source>
+        <target>Auf dem Server vendor/bin/typo3 mcp:tool:list ausführen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.fixOk">
+      <segment>
+        <source>No action needed.</source>
+        <target>Keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.tools.fixHint">
+      <segment>
+        <source>Clear TYPO3 caches and verify EXT:mcp_server is active.</source>
+        <target>TYPO3-Caches leeren und prüfen, ob EXT:mcp_server aktiv ist.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.label">
+      <segment>
+        <source>Local CLI (Cursor / Codex)</source>
+        <target>Lokale CLI (Cursor / Codex)</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.ok">
+      <segment>
+        <source>PHP and TYPO3 binary found ({path}).</source>
+        <target>PHP- und TYPO3-Binary gefunden ({path}).</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.ddev">
+      <segment>
+        <source>DDEV project &quot;{project}&quot; — use ddev exec for the MCP server.</source>
+        <target>DDEV-Projekt „{project}“ — MCP-Server per ddev exec starten.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.phpMissing">
+      <segment>
+        <source>PHP executable &quot;{command}&quot; is not available on the server.</source>
+        <target>PHP-Ausführbare „{command}“ ist auf dem Server nicht verfügbar.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.binaryMissing">
+      <segment>
+        <source>TYPO3 CLI binary not found at {path}.</source>
+        <target>TYPO3-CLI-Binary nicht gefunden unter {path}.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.howToCheck">
+      <segment>
+        <source>On the machine where Cursor/Codex runs, execute the command from the Setup tab config.</source>
+        <target>Auf dem Rechner mit Cursor/Codex den Befehl aus der Einrichtung-Konfiguration ausführen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.fixOk">
+      <segment>
+        <source>Use the configuration from the Setup tab in your client.</source>
+        <target>Konfiguration aus dem Einrichtung-Reiter im Client verwenden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.fixDdev">
+      <segment>
+        <source>Install MCP in Cursor/Codex using the generated ddev exec command; run commands inside the DDEV project.</source>
+        <target>MCP in Cursor/Codex mit dem generierten ddev-exec-Befehl einrichten; Befehle im DDEV-Projekt ausführen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.fixPhp">
+      <segment>
+        <source>Install PHP on the application server or fix the path in your MCP client config.</source>
+        <target>PHP auf dem Application-Server installieren oder den Pfad in der MCP-Client-Konfiguration korrigieren.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.localCli.fixBinary">
+      <segment>
+        <source>Run composer install in the project so vendor/bin/typo3 exists.</source>
+        <target>composer install im Projekt ausführen, damit vendor/bin/typo3 existiert.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.label">
+      <segment>
+        <source>Internet reachability (Claude Desktop)</source>
+        <target>Internet-Erreichbarkeit (Claude Desktop)</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.public">
+      <segment>
+        <source>Site URL looks publicly reachable — remote OAuth clients can connect.</source>
+        <target>Site-URL wirkt öffentlich erreichbar — Remote-OAuth-Clients können verbinden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.localhost">
+      <segment>
+        <source>Site URL resolves to localhost/private network — Claude Desktop in the cloud cannot reach this server.</source>
+        <target>Site-URL zeigt auf localhost/privates Netz — Claude Desktop in der Cloud kann diesen Server nicht erreichen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.howToCheck">
+      <segment>
+        <source>From another network, open the Server URL shown on the Setup tab.</source>
+        <target>Von einem anderen Netz die Server-URL im Einrichtung-Reiter öffnen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.fixOk">
+      <segment>
+        <source>Use Cursor or Codex with local stdio instead of Claude Desktop remote OAuth.</source>
+        <target>Cursor oder Codex mit lokaler stdio-Verbindung statt Claude-Desktop-Remote-OAuth nutzen.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.remoteReachability.fixHint">
+      <segment>
+        <source>Expose TYPO3 on a public HTTPS URL (reverse proxy, tunnel) or use only local MCP clients.</source>
+        <target>TYPO3 über öffentliche HTTPS-URL erreichbar machen (Reverse Proxy, Tunnel) oder nur lokale MCP-Clients verwenden.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.label">
+      <segment>
+        <source>Your access tokens</source>
+        <target>Ihre Zugangs-Token</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.ok">
+      <segment>
+        <source>You have {count} token(s). Required only for legacy bearer-auth clients.</source>
+        <target>Sie haben {count} Token. Nur für ältere Bearer-Auth-Clients erforderlich.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.none">
+      <segment>
+        <source>No personal tokens yet — not required for Cursor, Codex, or Claude Desktop OAuth.</source>
+        <target>Noch keine persönlichen Token — nicht nötig für Cursor, Codex oder Claude-Desktop-OAuth.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.howToCheck">
+      <segment>
+        <source>See the Access tokens card below this module.</source>
+        <target>Siehe die Karte „Aktive Token“ unterhalb dieses Moduls.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.fixOk">
+      <segment>
+        <source>No action needed for OAuth-based clients.</source>
+        <target>Für OAuth-basierte Clients keine Maßnahme nötig.</target>
+      </segment>
+    </unit>
+    <unit id="diagnostic.userTokens.fixHint">
+      <segment>
+        <source>Create a token only if your client cannot use OAuth and needs a bearer token.</source>
+        <target>Token nur anlegen, wenn der Client kein OAuth unterstützt und einen Bearer-Token braucht.</target>
+      </segment>
+    </unit>
+    <unit id="n8n.title">
+      <segment>
+        <source>n8n Integration</source>
+        <target>n8n-Integration</target>
+      </segment>
+    </unit>
+    <unit id="n8n.description">
+      <segment>
+        <source>To configure your n8n MCP Client node:</source>
+        <target>So konfigurieren Sie Ihren n8n-MCP-Client-Node:</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step1">
+      <segment>
+        <source>In n8n, add an MCP Client node to your workflow</source>
+        <target>Fügen Sie in n8n einen MCP-Client-Node zu Ihrem Workflow hinzu</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step2">
+      <segment>
+        <source>Set Endpoint to: {url}</source>
+        <target>Setzen Sie den Endpunkt auf: {url}</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step3">
+      <segment>
+        <source>Set Server Transport to: HTTP Streamable</source>
+        <target>Setzen Sie Server Transport auf: HTTP Streamable</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step4">
+      <segment>
+        <source>Set Authentication to: Bearer Auth</source>
+        <target>Setzen Sie Authentifizierung auf: Bearer Auth</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step5">
+      <segment>
+        <source>Create a token in the Active OAuth Tokens section (e.g. name it &quot;n8n&quot;), create a new credential and paste the token</source>
+        <target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token&quot; (z.B. „n8n&quot; benennen), erstellen Sie eine neue Berechtigung und fügen Sie den Token ein</target>
+      </segment>
+    </unit>
+    <unit id="n8n.step6">
+      <segment>
+        <source>Select which tools to include or choose &quot;All&quot;</source>
+        <target>Wählen Sie die einzuschließenden Tools oder wählen Sie „Alle&quot;</target>
+      </segment>
+    </unit>
+    <unit id="manus.title">
+      <segment>
+        <source>manus Integration</source>
+        <target>manus-Integration</target>
+      </segment>
+    </unit>
+    <unit id="manus.description">
+      <segment>
+        <source>To configure your manus MCP connection:</source>
+        <target>So konfigurieren Sie Ihre manus-MCP-Verbindung:</target>
+      </segment>
+    </unit>
+    <unit id="manus.step1">
+      <segment>
+        <source>In manus, go to Connectors settings and add a connector</source>
+        <target>Gehen Sie in manus zu den Connector-Einstellungen und fügen Sie einen Connector hinzu</target>
+      </segment>
+    </unit>
+    <unit id="manus.step2">
+      <segment>
+        <source>Set Server Name to: {name}</source>
+        <target>Setzen Sie den Servernamen auf: {name}</target>
+      </segment>
+    </unit>
+    <unit id="manus.step3">
+      <segment>
+        <source>Set Transport to: HTTP</source>
+        <target>Setzen Sie Transport auf: HTTP</target>
+      </segment>
+    </unit>
+    <unit id="manus.step4">
+      <segment>
+        <source>Set Server URL to: {url}</source>
+        <target>Setzen Sie die Server-URL auf: {url}</target>
+      </segment>
+    </unit>
+    <unit id="manus.step5">
+      <segment>
+        <source>Create a token in the Active OAuth Tokens section (e.g. name it &quot;manus&quot;)</source>
+        <target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token&quot; (z.B. „manus&quot; benennen)</target>
+      </segment>
+    </unit>
+    <unit id="manus.step6">
+      <segment>
+        <source>Add a custom header &quot;Authorization&quot; with the value &quot;Bearer YOUR_TOKEN&quot; (use the token shown at creation)</source>
+        <target>Fügen Sie einen benutzerdefinierten Header „Authorization&quot; mit dem Wert „Bearer YOUR_TOKEN&quot; hinzu (verwenden Sie den bei der Erstellung angezeigten Token)</target>
+      </segment>
+    </unit>
+    <unit id="manus.step7">
+      <segment>
+        <source>Save your MCP configuration</source>
+        <target>Speichern Sie Ihre MCP-Konfiguration</target>
+      </segment>
+    </unit>
+    <unit id="inspector.title">
+      <segment>
+        <source>MCP Inspector</source>
+        <target>MCP Inspector</target>
+      </segment>
+    </unit>
+    <unit id="inspector.description">
+      <segment>
+        <source>Debug and test tools using the official MCP Inspector CLI:</source>
+        <target>Debuggen und testen Sie Tools mit dem offiziellen MCP Inspector CLI:</target>
+      </segment>
+    </unit>
+    <unit id="inspector.runCommand">
+      <segment>
+        <source>Run this command in your terminal:</source>
+        <target>Führen Sie diesen Befehl in Ihrem Terminal aus:</target>
+      </segment>
+    </unit>
+    <unit id="inspector.copy">
+      <segment>
+        <source>Copy</source>
+        <target>Kopieren</target>
+      </segment>
+    </unit>
+    <unit id="inspector.whatHappensNext">
+      <segment>
+        <source>What happens next:</source>
+        <target>Was als Nächstes passiert:</target>
+      </segment>
+    </unit>
+    <unit id="inspector.step1">
+      <segment>
+        <source>The Inspector UI opens in your browser</source>
+        <target>Die Inspector-Benutzeroberfläche öffnet sich in Ihrem Browser</target>
+      </segment>
+    </unit>
+    <unit id="inspector.step2">
+      <segment>
+        <source>All parameters are pre-configured. It&apos;s enough to click Connect.</source>
+        <target>Alle Parameter sind vorkonfiguriert. Es genügt, auf „Verbinden&quot; zu klicken.</target>
+      </segment>
+    </unit>
+    <unit id="inspector.step3">
+      <segment>
+        <source>After authorization, you can test all available tools</source>
+        <target>Nach der Autorisierung können Sie alle verfügbaren Tools testen</target>
+      </segment>
+    </unit>
+    <unit id="inspector.requiresNode">
+      <segment>
+        <source>Requires Node.js to be installed on your system.</source>
+        <target>Erfordert, dass Node.js auf Ihrem System installiert ist.</target>
+      </segment>
+    </unit>
+    <unit id="other.title">
+      <segment>
+        <source>Generic MCP Client Setup</source>
+        <target>Allgemeine MCP-Client-Einrichtung</target>
+      </segment>
+    </unit>
+    <unit id="other.description">
+      <segment>
+        <source>For MCP clients that support OAuth and remote connections:</source>
+        <target>Für MCP-Clients, die OAuth und Remote-Verbindungen unterstützen:</target>
+      </segment>
+    </unit>
+    <unit id="other.step1">
+      <segment>
+        <source>Configure your client with server URL: {url}</source>
+        <target>Konfigurieren Sie Ihren Client mit der Server-URL: {url}</target>
+      </segment>
+    </unit>
+    <unit id="other.step2">
+      <segment>
+        <source>Optionally set integration name: {name}</source>
+        <target>Optional Integrationsnamen setzen: {name}</target>
+      </segment>
+    </unit>
+    <unit id="other.step3">
+      <segment>
+        <source>Your client should automatically discover OAuth endpoints</source>
+        <target>Ihr Client sollte OAuth-Endpunkte automatisch erkennen</target>
+      </segment>
+    </unit>
+    <unit id="other.step4">
+      <segment>
+        <source>During authentication, you&apos;ll be redirected to this TYPO3 backend</source>
+        <target>Während der Authentifizierung werden Sie zu diesem TYPO3-Backend weitergeleitet</target>
+      </segment>
+    </unit>
+    <unit id="other.step5">
+      <segment>
+        <source>After authorization, your client will receive secure access tokens</source>
+        <target>Nach der Autorisierung erhält Ihr Client sichere Zugriffstoken</target>
+      </segment>
+    </unit>
+    <unit id="other.note">
+      <segment>
+        <source>Your MCP client must support OAuth 2.0 and automatic endpoint discovery.</source>
+        <target>Ihr MCP-Client muss OAuth 2.0 und automatische Endpunkt-Erkennung unterstützen.</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.description">
+      <segment>
+        <source>For MCP clients that don&apos;t support remote connections natively. The mcp-remote package acts as a local bridge, connecting to this TYPO3 instance on behalf of your MCP client.</source>
+        <target>Für MCP-Clients, die keine nativen Remote-Verbindungen unterstützen. Das mcp-remote-Paket fungiert als lokale Brücke und verbindet sich im Auftrag Ihres MCP-Clients mit dieser TYPO3-Instanz.</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.configTitle">
+      <segment>
+        <source>Example mcp-remote configuration:</source>
+        <target>Beispiel mcp-remote Konfiguration:</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.tokenHint">
+      <segment>
+        <source>Create a token in the Active OAuth Tokens section (e.g. name it &quot;mcp-remote&quot;) and replace YOUR_TOKEN with the plain token shown at creation.</source>
+        <target>Erstellen Sie einen Token im Bereich „Aktive OAuth-Token&quot; (z.B. „mcp-remote&quot; benennen) und ersetzen Sie YOUR_TOKEN durch den bei der Erstellung angezeigten Klartext-Token.</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.copyConfig">
+      <segment>
+        <source>Copy Configuration</source>
+        <target>Konfiguration kopieren</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.securityNote">
+      <segment>
+        <source>Security Note:</source>
+        <target>Sicherheitshinweis:</target>
+      </segment>
+    </unit>
+    <unit id="localMcpRemote.securityText">
+      <segment>
+        <source>The token URL includes your authentication token in the URL. Only use this method when your MCP client doesn&apos;t support Authorization headers or when using mcp-remote configurations that require tokens in the URL.</source>
+        <target>Die Token-URL enthält Ihren Authentifizierungstoken in der URL. Verwenden Sie diese Methode nur, wenn Ihr MCP-Client keine Authorization-Header unterstützt oder wenn mcp-remote-Konfigurationen Tokens in der URL erfordern.</target>
+      </segment>
+    </unit>
+    <unit id="localCli.description">
+      <segment>
+        <source>For local development where your MCP client has direct shell access to this TYPO3 installation.</source>
+        <target>Für die lokale Entwicklung, bei der Ihr MCP-Client direkten Shell-Zugriff auf diese TYPO3-Installation hat.</target>
+      </segment>
+    </unit>
+    <unit id="localCli.copyConfig">
+      <segment>
+        <source>Copy Configuration</source>
+        <target>Konfiguration kopieren</target>
+      </segment>
+    </unit>
+    <unit id="localCli.howItWorks">
+      <segment>
+        <source>How CLI access works:</source>
+        <target>Wie der CLI-Zugriff funktioniert:</target>
+      </segment>
+    </unit>
+    <unit id="localCli.directAccess">
+      <segment>
+        <source>No OAuth needed</source>
+        <target>Kein OAuth erforderlich</target>
+      </segment>
+    </unit>
+    <unit id="localCli.localOnly">
+      <segment>
+        <source>Only works when your client has shell access to TYPO3</source>
+        <target>Funktioniert nur, wenn Ihr Client Shell-Zugriff auf TYPO3 hat</target>
+      </segment>
+    </unit>
+    <unit id="localCli.important">
+      <segment>
+        <source>Important considerations:</source>
+        <target>Wichtige Hinweise:</target>
+      </segment>
+    </unit>
+    <unit id="localCli.longRunning">
+      <segment>
+        <source>The CLI server runs continuously and may accumulate memory usage over time. Restart periodically if you notice performance issues.</source>
+        <target>Der CLI-Server läuft kontinuierlich und kann im Laufe der Zeit Arbeitsspeicher ansammeln. Starten Sie ihn regelmäßig neu, wenn Sie Leistungsprobleme bemerken.</target>
+      </segment>
+    </unit>
+    <unit id="localCli.codeChanges">
+      <segment>
+        <source>Changes to PHP code won&apos;t be reflected immediately. You&apos;ll need to restart the CLI server to pick up code modifications.</source>
+        <target>Änderungen am PHP-Code werden nicht sofort übernommen. Sie müssen den CLI-Server neu starten, um Code-Änderungen zu übernehmen.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.title">
+      <segment>
+        <source>Active OAuth Tokens</source>
+        <target>Aktive OAuth-Token</target>
+      </segment>
+    </unit>
+    <unit id="tokens.refresh">
+      <segment>
+        <source>Refresh</source>
+        <target>Aktualisieren</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revokeAll">
+      <segment>
+        <source>Revoke All</source>
+        <target>Alle widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.createToken">
+      <segment>
+        <source>Create Token</source>
+        <target>Token erstellen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.description">
+      <segment>
+        <source>Manage your active OAuth tokens. Each token represents an authorized MCP client connection.</source>
+        <target>Verwalten Sie Ihre aktiven OAuth-Token. Jeder Token repräsentiert eine autorisierte MCP-Client-Verbindung.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.clientName">
+      <segment>
+        <source>Client Name</source>
+        <target>Client-Name</target>
+      </segment>
+    </unit>
+    <unit id="tokens.created">
+      <segment>
+        <source>Created</source>
+        <target>Erstellt</target>
+      </segment>
+    </unit>
+    <unit id="tokens.lastUsed">
+      <segment>
+        <source>Last Used</source>
+        <target>Zuletzt verwendet</target>
+      </segment>
+    </unit>
+    <unit id="tokens.expires">
+      <segment>
+        <source>Expires</source>
+        <target>Läuft ab</target>
+      </segment>
+    </unit>
+    <unit id="tokens.actions">
+      <segment>
+        <source>Actions</source>
+        <target>Aktionen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revoke">
+      <segment>
+        <source>Revoke</source>
+        <target>Widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.noTokens">
+      <segment>
+        <source>No active tokens found.</source>
+        <target>Keine aktiven Token gefunden.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.noTokensHint">
+      <segment>
+        <source>Click Create Token above to create your first token.</source>
+        <target>Klicken Sie oben auf „Token erstellen&quot;, um Ihren ersten Token zu erstellen.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revokedCount">
+      <segment>
+        <source>{count, plural, one {Successfully revoked # token} other {Successfully revoked # tokens}}</source>
+        <target>{count, plural, one {# Token erfolgreich widerrufen} other {# Token erfolgreich widerrufen}}</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revokedSuccess">
+      <segment>
+        <source>Token revoked successfully</source>
+        <target>Token erfolgreich widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.notFoundOrDenied">
+      <segment>
+        <source>Token not found or access denied</source>
+        <target>Token nicht gefunden oder Zugriff verweigert</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revokeError">
+      <segment>
+        <source>Unable to revoke the token right now.</source>
+        <target>Token kann derzeit nicht widerrufen werden.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.noTokensToRevoke">
+      <segment>
+        <source>No tokens found to revoke</source>
+        <target>Keine Token zum Widerrufen gefunden</target>
+      </segment>
+    </unit>
+    <unit id="tokens.revokeAllError">
+      <segment>
+        <source>Unable to revoke tokens right now.</source>
+        <target>Token können derzeit nicht widerrufen werden.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.loadError">
+      <segment>
+        <source>Unable to load tokens right now.</source>
+        <target>Token können derzeit nicht geladen werden.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.neverUsed">
+      <segment>
+        <source>Never</source>
+        <target>Nie</target>
+      </segment>
+    </unit>
+    <unit id="tokens.invalidId">
+      <segment>
+        <source>Invalid token ID</source>
+        <target>Ungültige Token-ID</target>
+      </segment>
+    </unit>
+    <unit id="tokens.invalidClientType">
+      <segment>
+        <source>Invalid client type</source>
+        <target>Ungültiger Client-Typ</target>
+      </segment>
+    </unit>
+    <unit id="tokens.alreadyExists">
+      <segment>
+        <source>You already have a {clientType}. Please revoke it first if you want to create a new one.</source>
+        <target>Sie haben bereits einen {clientType}. Widerrufen Sie ihn zuerst, wenn Sie einen neuen erstellen möchten.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.createdSuccessfully">
+      <segment>
+        <source>{clientType} created successfully</source>
+        <target>{clientType} erfolgreich erstellt</target>
+      </segment>
+    </unit>
+    <unit id="tokens.createError">
+      <segment>
+        <source>Unable to create a token right now.</source>
+        <target>Token kann derzeit nicht erstellt werden.</target>
+      </segment>
+    </unit>
+    <unit id="csrfFailed">
+      <segment>
+        <source>CSRF validation failed</source>
+        <target>CSRF-Validierung fehlgeschlagen</target>
+      </segment>
+    </unit>
+    <unit id="tokens.secureHashDescription">
+      <segment>
+        <source>Existing tokens are stored as secure hashes and cannot be shown again after creation.</source>
+        <target>Vorhandene Token werden als sichere Hashes gespeichert und können nach der Erstellung nicht mehr angezeigt werden.</target>
+      </segment>
+    </unit>
+    <unit id="tokens.loading">
+      <segment>
+        <source>Loading...</source>
+        <target>Laden...</target>
+      </segment>
+    </unit>
+    <unit id="tokens.processing">
+      <segment>
+        <source>Processing request...</source>
+        <target>Anfrage wird verarbeitet...</target>
+      </segment>
+    </unit>
+    <unit id="accessDenied">
+      <segment>
+        <source>Access denied</source>
+        <target>Zugriff verweigert</target>
+      </segment>
+    </unit>
+    <unit id="js.copyFailed">
+      <segment>
+        <source>Copy failed</source>
+        <target>Kopieren fehlgeschlagen</target>
+      </segment>
+    </unit>
+    <unit id="js.copyFailedMessage">
+      <segment>
+        <source>Please select the text manually and copy with Ctrl+C (Cmd+C on Mac).</source>
+        <target>Bitte wählen Sie den Text manuell aus und kopieren Sie mit Strg+C (Cmd+C auf Mac).</target>
+      </segment>
+    </unit>
+    <unit id="js.copied">
+      <segment>
+        <source>Copied!</source>
+        <target>Kopiert!</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeToken">
+      <segment>
+        <source>Revoke Token</source>
+        <target>Token widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeTokenConfirm">
+      <segment>
+        <source>Are you sure you want to revoke this token? The associated MCP client will lose access immediately.</source>
+        <target>Möchten Sie diesen Token wirklich widerrufen? Der zugehörige MCP-Client verliert sofort den Zugriff.</target>
+      </segment>
+    </unit>
+    <unit id="js.cancel">
+      <segment>
+        <source>Cancel</source>
+        <target>Abbrechen</target>
+      </segment>
+    </unit>
+    <unit id="js.revoke">
+      <segment>
+        <source>Revoke</source>
+        <target>Widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeAllTokens">
+      <segment>
+        <source>Revoke All Tokens</source>
+        <target>Alle Token widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeAllConfirm">
+      <segment>
+        <source>Are you sure you want to revoke ALL tokens? This will disconnect all MCP clients and require re-authentication.</source>
+        <target>Möchten Sie wirklich ALLE Token widerrufen? Dadurch werden alle MCP-Clients getrennt und eine erneute Authentifizierung ist erforderlich.</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeAll">
+      <segment>
+        <source>Revoke All</source>
+        <target>Alle widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenRevoked">
+      <segment>
+        <source>Token revoked</source>
+        <target>Token widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.refreshFailed">
+      <segment>
+        <source>Refresh failed</source>
+        <target>Aktualisierung fehlgeschlagen</target>
+      </segment>
+    </unit>
+    <unit id="js.refreshFailedMessage">
+      <segment>
+        <source>Failed to refresh tokens: {message}</source>
+        <target>Token konnten nicht aktualisiert werden: {message}</target>
+      </segment>
+    </unit>
+    <unit id="js.networkError">
+      <segment>
+        <source>Network error</source>
+        <target>Netzwerkfehler</target>
+      </segment>
+    </unit>
+    <unit id="js.invalidToken">
+      <segment>
+        <source>Invalid token</source>
+        <target>Ungültiger Token</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeFailed">
+      <segment>
+        <source>Revoke failed</source>
+        <target>Widerruf fehlgeschlagen</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeFailedMessage">
+      <segment>
+        <source>Failed to revoke token: {message}</source>
+        <target>Token konnte nicht widerrufen werden: {message}</target>
+      </segment>
+    </unit>
+    <unit id="js.tokensRevoked">
+      <segment>
+        <source>Tokens revoked</source>
+        <target>Token widerrufen</target>
+      </segment>
+    </unit>
+    <unit id="js.revokeAllFailed">
+      <segment>
+        <source>Failed to revoke all tokens: {message}</source>
+        <target>Alle Token konnten nicht widerrufen werden: {message}</target>
+      </segment>
+    </unit>
+    <unit id="js.createToken">
+      <segment>
+        <source>Create Token</source>
+        <target>Token erstellen</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenName">
+      <segment>
+        <source>Token name</source>
+        <target>Token-Name</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenNamePlaceholder">
+      <segment>
+        <source>e.g. n8n, manus, my-app</source>
+        <target>z. B. cursor, claude, codex</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenNameHint">
+      <segment>
+        <source>Choose a name to identify this token later. It will appear in the token list.</source>
+        <target>Wählen Sie einen Namen, um diesen Token später zu identifizieren. Er wird in der Token-Liste angezeigt.</target>
+      </segment>
+    </unit>
+    <unit id="js.nameRequired">
+      <segment>
+        <source>Name required</source>
+        <target>Name erforderlich</target>
+      </segment>
+    </unit>
+    <unit id="js.nameRequiredMessage">
+      <segment>
+        <source>Please enter a name for the token.</source>
+        <target>Bitte geben Sie einen Namen für den Token ein.</target>
+      </segment>
+    </unit>
+    <unit id="js.create">
+      <segment>
+        <source>Create</source>
+        <target>Erstellen</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenCreated">
+      <segment>
+        <source>Token Created</source>
+        <target>Token erstellt</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenShownOnce">
+      <segment>
+        <source>This token will only be shown once.</source>
+        <target>Dieser Token wird nur einmal angezeigt.</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenCopyWarning">
+      <segment>
+        <source>Copy it now and store it securely. You will not be able to see it again.</source>
+        <target>Kopieren Sie ihn jetzt und speichern Sie ihn sicher. Sie können ihn nicht erneut anzeigen.</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenNameLabel">
+      <segment>
+        <source>Token name:</source>
+        <target>Token-Name:</target>
+      </segment>
+    </unit>
+    <unit id="js.copy">
+      <segment>
+        <source>Copy</source>
+        <target>Kopieren</target>
+      </segment>
+    </unit>
+    <unit id="js.iHaveCopiedToken">
+      <segment>
+        <source>I have copied the token</source>
+        <target>Ich habe den Token kopiert</target>
+      </segment>
+    </unit>
+    <unit id="js.tokenCreationFailed">
+      <segment>
+        <source>Token creation failed</source>
+        <target>Token-Erstellung fehlgeschlagen</target>
+      </segment>
+    </unit>
+    <unit id="js.noActiveTokens">
+      <segment>
+        <source>No active tokens found.</source>
+        <target>Keine aktiven Token gefunden.</target>
+      </segment>
+    </unit>
+    <unit id="js.noActiveTokensHint">
+      <segment>
+        <source>Click Create Token above to create your first token.</source>
+        <target>Klicken Sie oben auf „Token erstellen&quot;, um Ihren ersten Token zu erstellen.</target>
+      </segment>
+    </unit>
+    <unit id="js.selectAndCopy">
+      <segment>
+        <source>Select &amp; copy with Ctrl+C</source>
+        <target>Auswählen &amp; mit Strg+C kopieren</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointWorking">
+      <segment>
+        <source>Endpoint is working correctly</source>
+        <target>Endpunkt funktioniert korrekt</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointReachable">
+      <segment>
+        <source>Endpoint is reachable</source>
+        <target>Endpunkt ist erreichbar</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointNoMcp">
+      <segment>
+        <source>Endpoint is reachable but does not mention MCP endpoint</source>
+        <target>Endpunkt ist erreichbar, erwähnt aber keinen MCP-Endpunkt</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointAuthOk">
+      <segment>
+        <source>MCP endpoint is accessible and can receive Authorization headers</source>
+        <target>MCP-Endpunkt ist erreichbar und kann Authorization-Header empfangen</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointAuthFail">
+      <segment>
+        <source>MCP endpoint cannot receive Authorization headers - see warning below</source>
+        <target>MCP-Endpunkt kann keine Authorization-Header empfangen – siehe Warnung unten</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointCorsBlocked">
+      <segment>
+        <source>Endpoint may be blocked by CORS policy or security settings</source>
+        <target>Endpunkt wird möglicherweise durch CORS-Richtlinie oder Sicherheitseinstellungen blockiert</target>
+      </segment>
+    </unit>
+    <unit id="js.endpointHttpBasicAuth">
+      <segment>
+        <source>MCP endpoint returned 401 - if behind HTTP basic auth, the Authorization header may be blocked</source>
+        <target>MCP-Endpunkt hat 401 zurückgegeben – bei HTTP-Basic-Auth wird der Authorization-Header möglicherweise blockiert</target>
+      </segment>
+    </unit>
+    <unit id="endpoint_url">
+      <segment>
+        <source>MCP Endpoint URL</source>
+        <target>MCP-Endpunkt-URL</target>
+      </segment>
+    </unit>
+    <unit id="token_status">
+      <segment>
+        <source>Token Status</source>
+        <target>Token-Status</target>
+      </segment>
+    </unit>
+    <unit id="token_valid">
+      <segment>
+        <source>Valid until {message}</source>
+        <target>Gültig bis {date}</target>
+      </segment>
+    </unit>
+    <unit id="token_expired">
+      <segment>
+        <source>Token expired</source>
+        <target>Token abgelaufen</target>
+      </segment>
+    </unit>
+    <unit id="no_token">
+      <segment>
+        <source>No token generated</source>
+        <target>Kein Token erzeugt</target>
+      </segment>
+    </unit>
+    <unit id="generate_token">
+      <segment>
+        <source>Generate New Token</source>
+        <target>Neuen Token erzeugen</target>
+      </segment>
+    </unit>
+    <unit id="generate_token_hint">
+      <segment>
+        <source>Create an access token to connect external MCP clients (valid for 30 days)</source>
+        <target>Zugangs-Token für externe MCP-Clients erstellen (30 Tage gültig)</target>
+      </segment>
+    </unit>
+    <unit id="refresh_token">
+      <segment>
+        <source>Refresh Token</source>
+        <target>Token erneuern</target>
+      </segment>
+    </unit>
+    <unit id="refresh_token_hint">
+      <segment>
+        <source>Generate a new token with extended expiration (old token will be invalidated)</source>
+        <target>Neuen Token mit verlängerter Gültigkeit erzeugen (alter Token wird ungültig)</target>
+      </segment>
+    </unit>
+    <unit id="copy_url">
+      <segment>
+        <source>Copy URL</source>
+        <target>URL kopieren</target>
+      </segment>
+    </unit>
+    <unit id="client_config">
+      <segment>
+        <source>Client Configuration</source>
+        <target>Client-Konfiguration</target>
+      </segment>
+    </unit>
+    <unit id="client_config_description">
+      <segment>
+        <source>For clients that don&apos;t support HTTP MCP servers yet, use the mcp-remote bridge:</source>
+        <target>Für Clients ohne natives HTTP-MCP: mcp-remote als Brücke verwenden:</target>
+      </segment>
+    </unit>
+    <unit id="available_tools">
+      <segment>
+        <source>Available Tools</source>
+        <target>Verfügbare Tools</target>
+      </segment>
+    </unit>
+    <unit id="tools_description">
+      <segment>
+        <source>Your MCP server provides access to these TYPO3 tools:</source>
+        <target>Ihr MCP-Server stellt diese TYPO3-Tools bereit:</target>
+      </segment>
+    </unit>
+    <unit id="cli_alternative_note">
+      <segment>
+        <source>Admin Alternative</source>
+        <target>Admin-Alternative</target>
+      </segment>
+    </unit>
+    <unit id="cli_alternative_text">
+      <segment>
+        <source>You can also use `vendor/bin/typo3 mcp:serve` for direct CLI access (bypasses all permissions and authentication).</source>
+        <target>Alternativ `vendor/bin/typo3 mcp:serve` für direkten CLI-Zugriff (umgeht Berechtigungen und Authentifizierung).</target>
+      </segment>
+    </unit>
+    <unit id="http_only_note">
+      <segment>
+        <source>This is an HTTP-only MCP server. Most current implementations only support SSE at the moment - see the Client Configuration section below for a current workaround.</source>
+        <target>Dies ist ein reiner HTTP-MCP-Server. Viele Implementierungen unterstützen derzeit nur SSE — siehe Client-Konfiguration unten.</target>
+      </segment>
+    </unit>
+  </file>
 </xliff>

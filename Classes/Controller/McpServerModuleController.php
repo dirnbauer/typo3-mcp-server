@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Controller;
 
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\McpConnectionDiagnosticService;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Psr\Http\Message\ResponseInterface;
@@ -35,6 +36,7 @@ final readonly class McpServerModuleController
         private UriBuilder $uriBuilder,
         private ConnectionPool $connectionPool,
         private FormProtectionFactory $formProtectionFactory,
+        private McpConnectionDiagnosticService $connectionDiagnosticService,
     ) {}
 
     public function mainAction(ServerRequestInterface $request): ResponseInterface
@@ -55,7 +57,6 @@ final readonly class McpServerModuleController
         $endpointUrl = $baseUrl . '/mcp';
         $siteName = $this->getSiteName();
         $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
-        $localStdioConfig = $this->buildLocalStdioConfig();
 
         $tools = [];
         foreach ($this->toolRegistry->getTools() as $tool) {
@@ -66,10 +67,16 @@ final readonly class McpServerModuleController
             ];
         }
 
-        $mcpRemoteUrl = $this->generateMcpRemoteUrl($baseUrl, $tokens);
-        $n8nTokenInfo = $this->getClientTokenInfo($tokens, 'n8n token');
-        $manusTokenInfo = $this->getClientTokenInfo($tokens, 'manus token');
         $hasWorkspace = $this->hasAnyWorkspace();
+        $localStdioConfig = $this->buildLocalStdioConfig();
+        $diagnostics = $this->translateDiagnostics($this->connectionDiagnosticService->runChecks(
+            $baseUrl,
+            $hasWorkspace,
+            count($tools),
+            count($tokens),
+            $this->isLocalhostUrl($baseUrl),
+            $localStdioConfig,
+        ));
         $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
         $isLocalhost = $this->isLocalhostUrl($baseUrl);
 
@@ -88,10 +95,11 @@ final readonly class McpServerModuleController
             'tools' => $tools,
             'username' => is_string($backendUser->user['username'] ?? null) ? $backendUser->user['username'] : 'unknown',
             'userId' => $userId,
-            'mcpRemoteUrl' => $mcpRemoteUrl,
-            'n8nTokenInfo' => $n8nTokenInfo,
-            'manusTokenInfo' => $manusTokenInfo,
             'siteName' => $siteName,
+            'codexConfigToml' => $this->buildCodexTomlConfig($siteName, $localStdioConfig),
+            'diagnostics' => $diagnostics,
+            'mcpEndpointUrl' => $endpointUrl,
+            'oauthDiscoveryUrl' => $baseUrl . '/.well-known/oauth-authorization-server',
             'hasWorkspace' => $hasWorkspace,
             'isLocalhost' => $isLocalhost,
             'createWorkspaceUrl' => $createWorkspaceUrl,
@@ -223,7 +231,7 @@ final readonly class McpServerModuleController
             : null;
         $baseUrl = is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
 
-        if (empty($baseUrl)) {
+        if ($baseUrl === '') {
             $scheme = $request->getUri()->getScheme();
             $host = $request->getUri()->getHost();
             $port = $request->getUri()->getPort();
@@ -328,6 +336,13 @@ final readonly class McpServerModuleController
         return $backendUser instanceof BackendUserAuthentication ? $backendUser : null;
     }
 
+    private function resolveBackendUserId(BackendUserAuthentication $backendUser): int
+    {
+        $uid = $backendUser->user['uid'] ?? 0;
+
+        return is_numeric($uid) ? (int)$uid : 0;
+    }
+
     private function getLanguageService(): LanguageService
     {
         /** @var LanguageService $languageService */
@@ -341,6 +356,44 @@ final readonly class McpServerModuleController
     private function translate(string $id, array $arguments = [], string $fallback = ''): string
     {
         return (string)($this->getLanguageService()->translate($id, 'mcp_server.mod', $arguments) ?? $fallback);
+    }
+
+    /**
+     * Re-run connection diagnostics (server-side checks, no browser CORS).
+     */
+    public function runDiagnosticsAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $backendUser = $this->getBackendUser();
+        if ($backendUser === null) {
+            return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
+        }
+
+        try {
+            $userId = $this->resolveBackendUserId($backendUser);
+            $tokens = $this->oauthService->getUserTokens($userId);
+            $baseUrl = $this->getBaseUrl($request);
+            $localStdioConfig = $this->buildLocalStdioConfig();
+            $toolCount = count($this->toolRegistry->getTools());
+
+            $raw = $this->connectionDiagnosticService->runChecks(
+                $baseUrl,
+                $this->hasAnyWorkspace(),
+                $toolCount,
+                count($tokens),
+                $this->isLocalhostUrl($baseUrl),
+                $localStdioConfig,
+            );
+
+            return new JsonResponse([
+                'success' => true,
+                'diagnostics' => $this->translateDiagnostics($raw),
+            ]);
+        } catch (\Throwable) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => $this->translate('diagnostic.runError', fallback: 'Could not run connection checks.'),
+            ], 500);
+        }
     }
 
     /**
@@ -373,40 +426,107 @@ final readonly class McpServerModuleController
     }
 
     /**
-     * @param list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens
-     * @return array{baseUrl: string, hasTokens: bool, tokenUrl: string|null, description: string}
+     * @param array{
+     *   overallStatus: string,
+     *   checks: list<array{
+     *     id: string,
+     *     status: string,
+     *     labelKey: string,
+     *     messageKey: string,
+     *     howToCheckKey: string,
+     *     fixHintKey: string,
+     *     messageArguments: array<string, string|int>,
+     *     fixHintArguments: array<string, string|int>
+     *   }>
+     * } $raw
+     * @return array{
+     *   overallStatus: string,
+     *   checks: list<array{
+     *     id: string,
+     *     status: string,
+     *     label: string,
+     *     message: string,
+     *     howToCheck: string,
+     *     fixHint: string
+     *   }>
+     * }
      */
-    private function generateMcpRemoteUrl(string $baseUrl, array $tokens): array
+    private function translateDiagnostics(array $raw): array
     {
-        $endpointUrl = $baseUrl . '/mcp';
-        $mcpRemoteTokens = array_filter($tokens, fn(array $token): bool => $token['client_name'] === 'mcp-remote token');
+        $checks = [];
+        foreach ($raw['checks'] as $check) {
+            /** @var array<string, string|int> $messageArguments */
+            $messageArguments = is_array($check['messageArguments'] ?? null) ? $check['messageArguments'] : [];
+            /** @var array<string, string|int> $fixHintArguments */
+            $fixHintArguments = is_array($check['fixHintArguments'] ?? null) ? $check['fixHintArguments'] : $messageArguments;
+            $messageArgs = $this->stringifyTranslationArguments($messageArguments);
+            $fixArgs = $this->stringifyTranslationArguments($fixHintArguments);
+
+            $checks[] = [
+                'id' => $check['id'],
+                'status' => $check['status'],
+                'label' => $this->translate($check['labelKey'], $messageArgs),
+                'message' => $this->translate($check['messageKey'], $messageArgs),
+                'howToCheck' => $this->translate($check['howToCheckKey'], $messageArgs),
+                'fixHint' => $this->translate($check['fixHintKey'], $fixArgs),
+            ];
+        }
 
         return [
-            'baseUrl' => $endpointUrl,
-            'hasTokens' => !empty($mcpRemoteTokens),
-            'tokenUrl' => null,
-            'description' => $this->translate('tokens.secureHashDescription'),
+            'overallStatus' => (string)($raw['overallStatus'] ?? 'ok'),
+            'checks' => $checks,
         ];
     }
 
     /**
-     * @param list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens
-     * @return array{hasToken: bool, token: string|null, expires: int|null, clientName: string}
+     * @param array<string, string|int> $arguments
+     * @return array<string, string|int>
      */
-    private function getClientTokenInfo(array $tokens, string $clientName): array
+    private function stringifyTranslationArguments(array $arguments): array
     {
-        $clientTokens = array_filter($tokens, fn(array $token): bool => $token['client_name'] === $clientName);
+        $normalized = [];
+        foreach ($arguments as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+            if (is_string($value) || is_int($value)) {
+                $normalized[$key] = $value;
+            }
+        }
 
-        $hasToken = !empty($clientTokens);
-        $tokenValues = array_values($clientTokens);
-        $token = $hasToken && isset($tokenValues[0]) ? $tokenValues[0] : null;
+        return $normalized;
+    }
 
-        return [
-            'hasToken' => $hasToken,
-            'token' => null,
-            'expires' => $token['expires'] ?? null,
-            'clientName' => $clientName,
+    /**
+     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
+     */
+    private function buildCodexTomlConfig(string $serverName, array $serverConfig): string
+    {
+        $slug = preg_replace('/[^a-zA-Z0-9_]+/', '_', strtolower($serverName)) ?? 'typo3';
+        $slug = trim($slug, '_');
+        if ($slug === '') {
+            $slug = 'typo3';
+        }
+
+        $lines = [
+            '# Add to ~/.codex/config.toml',
+            '[mcp_servers.' . $slug . ']',
+            'command = "' . $this->escapeTomlString($serverConfig['command']) . '"',
         ];
+
+        $args = array_map(fn(string $arg): string => '"' . $this->escapeTomlString($arg) . '"', $serverConfig['args']);
+        $lines[] = 'args = [' . implode(', ', $args) . ']';
+
+        if (isset($serverConfig['cwd']) && $serverConfig['cwd'] !== '') {
+            $lines[] = 'cwd = "' . $this->escapeTomlString($serverConfig['cwd']) . '"';
+        }
+
+        return implode("\n", $lines) . "\n";
+    }
+
+    private function escapeTomlString(string $value): string
+    {
+        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 
     /**
@@ -545,7 +665,7 @@ final readonly class McpServerModuleController
             $request->getBody()->rewind();
             $parsedBody = $request->getParsedBody();
 
-            if ($parsedBody === null && !empty($rawBody)) {
+            if ($parsedBody === null && $rawBody !== '') {
                 $jsonData = json_decode($rawBody, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
                     $parsedBody = $jsonData;
@@ -562,7 +682,7 @@ final readonly class McpServerModuleController
             $clientType = $requestData['clientType'] ?? 'mcp-remote token';
 
             if ($clientName === '') {
-                $allowedClientTypes = ['mcp-remote token', 'n8n token', 'manus token'];
+                $allowedClientTypes = ['mcp-remote token'];
                 if (!in_array($clientType, $allowedClientTypes, true)) {
                     return new JsonResponse([
                         'success' => false,
