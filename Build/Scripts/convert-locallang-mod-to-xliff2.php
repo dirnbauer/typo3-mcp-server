@@ -8,7 +8,6 @@ declare(strict_types=1);
  *
  * Usage: php Build/Scripts/convert-locallang-mod-to-xliff2.php
  */
-
 $projectRoot = dirname(__DIR__, 2);
 $languageDir = $projectRoot . '/Resources/Private/Language/';
 $enFile = $languageDir . 'locallang_mod.xlf';

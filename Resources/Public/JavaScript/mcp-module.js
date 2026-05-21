@@ -357,6 +357,7 @@ class McpModule {
         const input = document.createElement('input');
         input.type = 'text';
         input.className = 'form-control font-monospace';
+        input.id = 'modal-token-value';
         input.value = plainToken;
         input.readOnly = true;
         inputGroup.appendChild(input);

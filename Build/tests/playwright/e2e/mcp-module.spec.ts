@@ -31,6 +31,7 @@ test.describe('MCP Server Backend Module', () => {
   });
 
   test('create token via central button shows name modal then token modal', async ({ page }) => {
+    const tokenName = `test-token-${Date.now()}`;
     const createBtn = frame.locator('#create-token-btn');
     await expect(createBtn).toBeVisible();
     await createBtn.click();
@@ -42,7 +43,7 @@ test.describe('MCP Server Backend Module', () => {
 
     const nameInput = nameModal.locator('#modal-token-name-input');
     await expect(nameInput).toBeVisible();
-    await nameInput.fill('test-token');
+    await nameInput.fill(tokenName);
     await nameModal.getByRole('button', { name: 'Create', exact: true }).click();
 
     // Token "show once" modal appears (may coexist briefly with the name modal)
@@ -61,7 +62,7 @@ test.describe('MCP Server Backend Module', () => {
     // Verify token appears in the table
     const tokensContainer = frame.locator('#tokens-container');
     await expect(tokensContainer.locator('table')).toBeVisible({ timeout: 10000 });
-    await expect(tokensContainer.locator('td', { hasText: 'test-token' })).toBeVisible();
+    await expect(tokensContainer.locator('td', { hasText: tokenName })).toBeVisible();
   });
 
   test('revoke token shows confirmation modal', async ({ page }) => {
