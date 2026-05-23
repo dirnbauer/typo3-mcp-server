@@ -122,8 +122,8 @@ Subsystem catalog
    * - Subsystem
      - Meaning
    * - ``database:read``
-     - Reads from any workspace-capable TCA table, plus extras listed in
-       ``additionalReadOnlyTables``.
+     - Reads from workspace-capable TCA tables, plus configured read-only or
+       standalone extras such as ``sys_file`` and ``sys_file_metadata``.
    * - ``database:write``
      - DataHandler writes against TCA tables. Workspace-staged unless
        ``localUnsafeMode`` lifts that, and gated by TYPO3 user permissions.
@@ -139,12 +139,15 @@ Subsystem catalog
      - Uploads, writes, or imports files.
    * - ``cli:safe``
      - Runs an allowlisted set of TYPO3 CLI commands (``cache:flush``,
-       ``install:fixfolderstructure``, …). Not a shell.
+       ``cache:warmup``, ``referenceindex:update``, ``extension:list``,
+       ``site:list``, ``site:show``). Not a shell.
    * - ``extension:install``
      - ``InstallExtensionTool`` (admin-only). Disabled by removing this
        entry from the manifest.
    * - ``site:write``
-     - ``CreateSite``, ``SiteSet``, ``ManageRedirects``. Admin-only.
+     - Site configuration, Site Sets, site settings, and redirect write
+       operations. Admin-only where the concrete tool declares
+       ``#[AdminOnly]``.
    * - ``render:frontend``
      - Outbound HTTP to a TYPO3 site base for rendered HTML
        (``RenderRecord``). Network policy still applies.
@@ -152,6 +155,9 @@ Subsystem catalog
      - ``GetSystemLog``.
    * - ``x402:payments``
      - Optional paid-content / payment-stats tools.
+   * - ``project:write``
+     - Local project file mutations such as applying shadcn presets or writing
+       XLF language files. Dev-site/admin gates apply on the concrete tools.
 
 Enforcement points
 ==================
@@ -228,8 +234,9 @@ Inspecting the active manifest
 
 The output includes ``manifest`` (full YAML decoded), ``enforced``
 (true/false), and ``localMode`` (DDEV / Development context detection
-results, plus the resolved ``allows_live_writes`` /
-``allows_unrestricted_files`` flags).
+results, plus the resolved ``allows_live_writes``,
+``allows_unrestricted_files``, ``allows_unrestricted_outbound``, and
+``allows_dev_tools`` flags).
 
 Differences from the original blog proposal
 ===========================================

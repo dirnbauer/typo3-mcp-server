@@ -9,13 +9,14 @@ Overview
 
 This document describes how the MCP server hides TYPO3 workspace complexity
 from MCP clients. The goal is to expose a simplified content model while still
-keeping all writes safely inside TYPO3 workspaces.
+keeping production writes safely inside TYPO3 workspaces. Trusted local mode
+can explicitly permit live writes with ``workspace_id: 0``.
 
 Background
 ==========
 
 TYPO3 workspaces provide isolated editing areas before content is published to
- live. The system uses:
+live. The system uses:
 
 - Live records with ``t3ver_wsid = 0``
 - Workspace versions of live records
@@ -34,7 +35,7 @@ The MCP server needs:
 
 - Transparent operations without exposing workspace mechanics
 - Stable record identities for the same logical record
-- Automatic workspace handling in every tool
+- Automatic workspace handling in record-backed tools
 - Deleted records to disappear from results immediately
 
 Implementation

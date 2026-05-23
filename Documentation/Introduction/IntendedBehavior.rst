@@ -97,9 +97,9 @@ Optional capability families
 Some tools are intentionally optional because they depend on TYPO3 packages or
 instance configuration that may not exist everywhere:
 
-- ``ManageRedirects`` requires the ``sys_redirect`` table to be available; when
-  it is available, list access works, but redirect writes stay blocked because
-  TYPO3 does not workspace-version ``sys_redirect``
+- ``ManageRedirects`` requires the ``sys_redirect`` table to be available; list
+  access works when it is available, while create/delete only run on instances
+  where ``sys_redirect`` is workspace-capable
 - ``ListPaidContent``, ``GetPaidContent``, and ``GetPaymentStats`` require the
   optional x402 paywall extension surface; when that surface is missing they
   should return configuration guidance instead of raw SQL errors

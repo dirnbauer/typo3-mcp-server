@@ -59,7 +59,9 @@ Explicit behavior:
 
 .. important::
 
-   Live records are not directly edited through the record tools.
+   In strict/production mode, live records are not directly edited through the
+   record tools. ``workspace_id: 0`` is accepted only when local mode explicitly
+   allows live writes.
 
 File sandbox configuration
 ==========================
@@ -81,6 +83,27 @@ This usually maps to:
 
 Extension configuration values
 ==============================
+
+.. confval:: additionalReadOnlyTables
+   :name: ext-mcp-server-additionalReadOnlyTables
+   :type: string
+   :default: 'sys_file'
+   :required: false
+
+   Comma-separated list of non-workspace-capable TCA tables that MCP may expose
+   for reads only. The default exposes ``sys_file`` so agents can inspect file
+   records without allowing direct writes to the physical file table.
+
+.. confval:: additionalStandaloneTables
+   :name: ext-mcp-server-additionalStandaloneTables
+   :type: string
+   :default: 'sys_file_metadata'
+   :required: false
+
+   Comma-separated list of hidden TCA tables that should be exposed as
+   standalone read targets instead of being treated only as embedded child
+   tables. The default exposes ``sys_file_metadata`` so file metadata can be
+   read intentionally through MCP.
 
 .. confval:: fileSandboxRoot
    :name: ext-mcp-server-fileSandboxRoot
@@ -128,16 +151,16 @@ Extension configuration values
 .. confval:: enableMcpAuthHeaderDiagnostic
    :name: ext-mcp-server-enableMcpAuthHeaderDiagnostic
    :type: boolean
-   :default: true
+   :default: false
    :required: false
 
    Controls the lightweight ``?test=auth`` diagnostic used by the backend
    module to verify whether a reverse proxy strips the ``Authorization``
    header.
 
-   Disable this on hardened environments that should not expose any
-   diagnostic probe to the outside world. The backend module falls back to
-   hiding the associated health-check indicator when disabled.
+   This is disabled by default. Enable it only while diagnosing proxy/header
+   handling. When disabled, the endpoint returns a minimal forbidden response
+   and the backend module treats the probe as intentionally unavailable.
 
 .. confval:: localUnsafeMode
    :name: ext-mcp-server-localUnsafeMode

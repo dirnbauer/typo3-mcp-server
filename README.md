@@ -40,7 +40,7 @@ An MCP client (Cursor, Claude Desktop, n8n, Manus, MCP Inspector) connects
 over OAuth to `https://your-site/mcp` and can:
 
 - Browse the page tree and read records with TCA context.
-- **Safely** edit content — every write lands in a TYPO3 workspace first.
+- **Safely** edit content — writes land in a TYPO3 workspace by default.
 - Attach images, translate records, copy content, publish, or roll back.
 - Render a workspace preview URL or fetch the rendered HTML to verify a
   change without leaving the chat.
@@ -62,6 +62,7 @@ relying on this in production.
 ## Table of contents
 
 - [Quick start](#quick-start)
+- [What changed in this fork](#what-changed-in-this-fork)
 - [Example session](#example-session)
 - [Capabilities at a glance](#capabilities-at-a-glance)
 - [CLI: every tool, every shell](#cli-every-tool-every-shell)
@@ -118,6 +119,54 @@ In the TYPO3 backend, go to **User → MCP Server**. The module shows:
 The first remote request triggers the OAuth flow: TYPO3 logs you in with
 your existing backend credentials and authorizes the client.
 
+## What changed in this fork
+
+This repository is the TYPO3 v14-focused maintained line of the original
+hauptsacheNet MCP server. Compared with `upstream/main`, the current branch
+adds and hardens these areas:
+
+- **TYPO3 v14 foundation** — Composer constraints, services, TCA schema usage,
+  workspaces, DataHandler calls, and tests are aligned with TYPO3 v14 only.
+  There are no v12/v13 compatibility paths documented for this fork.
+- **Workspace-safe editorial tool surface** — record writes use TYPO3
+  workspaces, keep live-facing UIDs stable, auto-select or create a writable
+  workspace, and hide internal version rows from MCP clients.
+- **Remote and local transports** — `/mcp` supports OAuth 2.1 + PKCE, protected
+  resource metadata, dynamic client registration, streamable HTTP sessions, and
+  a local stdio server for trusted development clients.
+- **Backend module** — **User -> MCP Server** now provides endpoint discovery,
+  client setup snippets, token management, health checks, and workspace/context
+  warnings using XLIFF 2 labels in English and German.
+- **Capability manifest** — `Configuration/Capabilities.yaml` declares every
+  tool's required subsystem and outbound HTTP policy. `AbstractTool` enforces
+  it at call time; `UploadFileFromUrl` and `RenderRecord` also enforce the
+  network allowlist outside local mode.
+- **DDEV/local mode** — `LocalModeService` detects DDEV or TYPO3 Development
+  context and can relax workspace-only writes, non-workspace-table writes, FAL
+  sandbox limits, and outbound-network gates for local work. Production stays
+  strict by default.
+- **CLI mirror** — every bundled MCP tool has a Symfony console command, plus
+  `mcp:tool <Name>` and `mcp:tool:list` for generic automation. CLI output can
+  be pretty, plain text, or JSON.
+- **Expanded tools** — the fork adds file sandbox tools, FAL search/browse
+  tools, workspace review/publish/rollback, import/audit helpers, preview and
+  render verification, site configuration helpers, safe CLI execution, optional
+  x402 tools, and dev-site tools for Site Sets, ViewHelpers, TCA resources, and
+  XLF authoring.
+- **Security hardening** — tokens are hashed, query-string bearer tokens stay
+  disabled by default, the auth-header diagnostic is off by default, sensitive
+  HTTP logs are redacted, PKCE requires `S256`, browser-defense headers are set,
+  unsafe system columns are rejected, SVG text writes are not allowed by
+  default, and outbound HTTP has SSRF checks outside local mode.
+- **Quality gates** — PHPUnit unit/functional suites, PHPStan, PHP CS Fixer,
+  Rector, Fractor, Playwright E2E tests, architecture tests, and real LLM
+  workflow tests are wired into the development and CI flow.
+
+The detailed manual page is
+[`Documentation/Introduction/ForkChanges.rst`](Documentation/Introduction/ForkChanges.rst).
+It intentionally describes the current live implementation only, not obsolete
+experiments or generated build output.
+
 ## Example session
 
 What an "add a news article on page 42" conversation looks like at the
@@ -162,10 +211,10 @@ see the internal workspace version ID.
 
 ## Capabilities at a glance
 
-The extension ships **~40 MCP tools** across these groups. For the
+The extension ships **44 bundled MCP tools** across these groups. For the
 authoritative list with parameters, see
 [`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst). The same
-list is also returned by the `GetCapabilities` tool, gated by
+tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
 [`Configuration/Capabilities.yaml`](Configuration/Capabilities.yaml).
 
 - **Discovery & schema** — `GetCapabilities`, `ListTables`, `GetTableSchema`,
@@ -175,7 +224,7 @@ list is also returned by the `GetCapabilities` tool, gated by
 - **Read & write records** — `ReadTable` (structured `filters` with
   `sys_language_uid` ISO codes and boolean `hidden`), `WriteTable`,
   `BulkWrite`, `CopyContent`, `AttachImage`
-- **Verification (new)** — `GetPreviewUrl` (signed workspace preview link),
+- **Verification** — `GetPreviewUrl` (signed workspace preview link),
   `RenderRecord` (fetches the FE HTML so the LLM can see the result)
 - **Content import** — `ImportContent`, `ImportFromUrl`
 - **Workspace workflow** — `ListWorkspaces`, `WorkspaceReview`,
@@ -290,9 +339,10 @@ WriteTable {
 
 ### Core guarantees
 
-- **Workspace transparency** — every record-backed write stages in a TYPO3
-  workspace. MCP clients see stable live UIDs; the workspace context is
-  selected or created automatically.
+- **Workspace transparency** — record-backed writes stage in a TYPO3 workspace
+  by default. MCP clients see stable live UIDs; the workspace context is
+  selected or created automatically. Live writes require explicit
+  `workspace_id: 0` and local mode.
 - **TCA-first** — tool schemas come from TCA, not from handwritten adapters.
   Field labels, permissions, palettes, FlexForms, and third-party
   extensions like `georgringer/news` work out of the box.
@@ -473,11 +523,12 @@ All settings live in **Extension Configuration → `mcp_server`**.
 | Key                            | Default | Purpose                                                                            |
 |--------------------------------|---------|------------------------------------------------------------------------------------|
 | `additionalReadOnlyTables`     | `sys_file` | Comma-separated non-workspace tables exposed for reads only                     |
+| `additionalStandaloneTables`   | `sys_file_metadata` | Hidden TCA tables exposed as standalone read targets instead of embedded child-only tables |
 | `fileSandboxRoot`              | `1:/mcp/` | FAL folder root where file tools operate                                         |
 | `workspaceUploadSubfolders`    | `1`     | Route uploads into workspace-specific folders                                      |
 | `allowMcpTokenInQueryString`   | `0`     | Allow `?token=…` on `/mcp` (legacy clients only, logging risk)                     |
 | `enableMcpAuthHeaderDiagnostic`| `0`     | Enable minimal `?test=auth` diagnostic on `/mcp` (off-by-default since 2026-05)    |
-| `localUnsafeMode`              | `auto`  | DDEV/Development → live writes + unrestricted file access. `on`/`off`/`auto`; can be overridden by User TSconfig. |
+| `localUnsafeMode`              | `auto`  | DDEV/Development -> live writes, unrestricted file/outbound access, and dev-site tools. `on`/`off`/`auto`; can be overridden by User TSconfig. |
 | `enforceCapabilityManifest`    | `1`     | Reject tools whose required subsystems aren't declared in `Capabilities.yaml`      |
 
 See [`Documentation/Configuration/Index.rst`](Documentation/Configuration/Index.rst)
@@ -548,6 +599,7 @@ reading order:
 | Topic | Entry point |
 |---|---|
 | Overview & safety model | [`Introduction/Index.rst`](Documentation/Introduction/Index.rst) |
+| Detailed fork changes | [`Introduction/ForkChanges.rst`](Documentation/Introduction/ForkChanges.rst) |
 | What the tools promise | [`Introduction/IntendedBehavior.rst`](Documentation/Introduction/IntendedBehavior.rst) |
 | Install & activate | [`Installation/Index.rst`](Documentation/Installation/Index.rst) |
 | Module, OAuth, sandbox, manifest, local mode | [`Configuration/Index.rst`](Documentation/Configuration/Index.rst) |

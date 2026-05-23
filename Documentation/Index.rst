@@ -54,6 +54,8 @@ Highlights
 - Support translations and language-aware content access
 - Inspect table schemas and FlexForms before writing
 - Browse, upload, and manage files inside a dedicated MCP file sandbox
+- Harden tool execution with a capability manifest and outbound host policy
+- Mirror the MCP tool surface through TYPO3 CLI commands
 - Connect remote MCP clients using OAuth 2.1 with PKCE
 
 The public tool surface adapts to the current TYPO3 instance. For example,
@@ -74,6 +76,7 @@ Documentation map
 Start here depending on your role:
 
 - :doc:`Introduction/Index` for the product overview and safety model
+- :doc:`Introduction/ForkChanges` for the maintained fork changes
 - :doc:`Introduction/IntendedBehavior` for the explicit intended-behavior spec
 - :doc:`Installation/Index` for Composer installation and first setup
 - :doc:`Configuration/Index` for module, OAuth, workspace, and file sandbox

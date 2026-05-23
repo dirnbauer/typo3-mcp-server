@@ -168,9 +168,9 @@ excerpts and always attach source + copyright metadata to the images.
 ## Phase 8 — Redirects, site administration, extras
 
 1. Call `ManageRedirects` with `action: "list"` and verify the
-  tool is available (it will return empty on a clean install). Note:
-    create/delete of redirects is intentionally disabled via MCP; the
-    tool is read-only here.
+  tool is available (it will return empty on a clean install). On standard
+  TYPO3 installs, create/delete returns the documented workspace-safety error
+  because `sys_redirect` is not workspace-capable.
 2. Call `InstallExtension` to install a small, well-known extension
   (e.g. `georgringer/news` on a staging system) — but only if that is
     desired for this run. This exercises the admin-gated tool. Skip on
@@ -272,8 +272,8 @@ excerpts and always attach source + copyright metadata to the images.
 ## Success criteria
 
 - No MCP call returns `isError: true` except for intentional
-negative-path checks (x402 on stock installs, redirect
-create/delete).
+negative-path checks (x402 on stock installs, and redirect create/delete on
+standard non-workspace-capable `sys_redirect` tables).
 - The published page tree shows 4 translations per page and all images
 carry copyright metadata (`ReadFileMetadata` confirms it).
 - `WorkspaceReview` before `PublishWorkspace` lists all staged changes;

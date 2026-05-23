@@ -39,13 +39,36 @@ SemVer once it leaves the experimental surface.
   `DDEV_HOSTNAME`, `DDEV_TLD`, and the TYPO3 application context.
   Surfaced via the `localUnsafeMode` extension setting (`auto`/`on`/`off`,
   default `auto`).
+- **Workspace and review tools** — `ListWorkspaces`, `WorkspaceReview`,
+  `PublishWorkspace`, and `RollbackWorkspace` support the draft-review-publish
+  loop. Publish and rollback remain dry-run by default.
+- **Record workflow tools** — `BulkWrite`, `CopyContent`, `AttachImage`,
+  `ImportContent`, `ImportFromUrl`, `ContentAudit`, `ManageRedirects`,
+  `CreateSite`, and `SiteSet` extend the editor-facing surface while retaining
+  DataHandler/TCA/workspace behavior where TYPO3 supports it.
+- **File and media tools** — sandbox-scoped `BrowseFiles`, `ReadFileMetadata`,
+  `WriteFile`, `UploadFile`, and `UploadFileFromUrl`; FAL-wide read tools
+  `ListStorages`, `BrowseFolder`, `SearchFile`, and `SearchMedia`.
+- **Admin, optional, and dev-site tools** — `InstallExtension`, `SafeCli`,
+  `ApplyShadcnPreset`, optional x402 payment tools, and dev-site-only
+  `SiteSettings`, `ListViewHelpers`, `GetViewHelperDocumentation`, and
+  `CreateLocallang`.
+- **MCP TCA resources** — dev-site-only resources `typo3-mcp://tca` and
+  `typo3-mcp://tca/{tableName}` expose permission-filtered TCA context to
+  clients that support MCP resources.
+- **Editor workflow skills installer** — `mcp:install-editor-skills` installs
+  the bundled `typo3-content-edit` and `typo3-translate-page` skills into
+  `.claude/skills/`.
 - **CLI mirror** — every MCP tool is now also a Symfony console command
   (`vendor/bin/typo3 mcp:<tool>`) with `--json` / `--plain` /
   `--no-ansi` output modes, file params via `--param key=@file.json`
   (constrained to project root), and a generic `mcp:tool <Name>` runner.
   `mcp:tool:list` discovers what's registered.
-- **`typo3-mcp-cli` claude-code skill** — recipe for adding a new
-  per-tool CLI shortcut in 30 seconds.
+- **Backend module UI** — expanded client setup, token management, endpoint
+  diagnostics, and XLIFF 2 ICU labels with German translations.
+- **Documentation/manual** — README, technical overview, TYPO3 RST manual,
+  troubleshooting, E2E documentation, Cursor testing guide, and full-feature
+  chatbot test script.
 - **`Documentation/Testing/CursorTesting.md`** — manual end-to-end test
   guide for the Cursor MCP client.
 
@@ -59,6 +82,16 @@ SemVer once it leaves the experimental surface.
   when `LocalModeService::allowsUnrestrictedFileAccess()` returns true.
   Path-traversal sanitization still applies; only the
   `1:/mcp/`-jail check relaxes.
+- **Table access** now supports configured read-only non-workspace tables
+  (`additionalReadOnlyTables`) and configured hidden standalone tables
+  (`additionalStandaloneTables`) while continuing to apply backend user
+  permissions, TSconfig field restrictions, and workspace capability checks.
+- **Language parameters** are exposed only when meaningful site language
+  support exists. Tools accept ISO codes where possible; numeric
+  `languageId` remains only as documented compatibility input on `GetPage`.
+- **Tool descriptions and errors** were reshaped for MCP ergonomics:
+  actionable tool errors, pagination hints, schema descriptions, and
+  `tools/list` guidance for unknown tool names.
 
 ### Security
 
@@ -73,3 +106,14 @@ SemVer once it leaves the experimental surface.
   IP would have bypassed the host check).
 - `RenderRecord` enforces TLS verification outside local mode.
 - CLI `--param key=@file.json` is constrained to the TYPO3 project root.
+- `enableMcpAuthHeaderDiagnostic` now defaults to `0`; the unauthenticated
+  diagnostic is opt-in.
+- `allowMcpTokenInQueryString` stays disabled by default.
+- MCP request logging redacts authorization headers, cookies, and token query
+  parameters.
+- OAuth tokens are hashed before storage, and plaintext-token fallback was
+  removed.
+- Browser-defense headers are added to MCP and OAuth responses.
+- `WriteTable` and `BulkWrite` reject system fields such as `t3ver_*`,
+  timestamps, permission fields, `deleted`, and `uid`.
+- `WriteFile` excludes SVG from the default text-file allowlist.

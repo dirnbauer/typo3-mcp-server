@@ -251,12 +251,17 @@ workspace-aware execution:
 - ``ReadTable``
 - ``GetTableSchema``
 - ``GetFlexFormSchema``
+- ``ListStorages``
+- ``BrowseFolder``
+- ``SearchFile``
 - ``WriteTable``
 - ``AttachImage``
 - ``ContentAudit``
 - ``GetSystemLog``
 - ``WorkspaceReview``
 - ``CopyContent``
+- ``GetPreviewUrl``
+- ``RenderRecord``
 - ``PublishWorkspace``
 - ``BulkWrite``
 - ``ImportContent``
@@ -265,6 +270,7 @@ workspace-aware execution:
 - ``ImportFromUrl``
 - ``CreateSite``
 - ``SiteSet``
+- ``SiteSettings`` (dev-site only)
 
 Navigation and discovery
 ========================
@@ -540,8 +546,8 @@ File tools
 The extension exposes two tiers of file tools:
 
 - **FAL-wide, read-only** — ``ListStorages``, ``BrowseFolder``,
-  ``SearchFile``. These inspect any TYPO3 file storage the backend user can
-  access.
+  ``SearchFile``, ``SearchMedia``. These inspect any TYPO3 file storage the
+  backend user can access.
 - **Sandbox-scoped, read/write** — ``BrowseFiles``, ``ReadFileMetadata``,
   ``WriteFile``, ``UploadFile``, ``UploadFileFromUrl``. These are restricted
   to the configured MCP file sandbox (default ``1:/mcp/``).
@@ -1013,10 +1019,11 @@ Inspect TYPO3 URL redirects (``sys_redirect``).
 If the redirects surface is not available on the current TYPO3 instance, the
 tool returns configuration guidance instead of a raw table-access failure.
 
-If the redirects extension is available, ``list`` works normally. TYPO3 core
-keeps ``sys_redirect`` outside workspaces, so ``create`` and ``delete`` return
-an explicit workspace-safety error instead of editing live redirect rows
-through MCP.
+If the redirects extension is available, ``list`` works normally. On standard
+TYPO3 installs ``sys_redirect`` is not workspace-capable, so ``create`` and
+``delete`` return an explicit workspace-safety error instead of editing live
+redirect rows. If an instance provides workspace-capable redirects, the same
+tool can create and delete through the workspace-safe path.
 
 Content import from URL
 =======================

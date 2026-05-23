@@ -21,8 +21,10 @@ Design decisions
 ================
 
 Workspace-first
-   Every write operation goes through a TYPO3 workspace. Live data is never
-   directly modified. This gives editors full control over what gets published.
+   Write operations go through a TYPO3 workspace by default. Live writes are
+   accepted only when a trusted local environment explicitly passes
+   ``workspace_id: 0``. This gives editors full control over what gets
+   published on production endpoints.
 
 Transparent workspaces
    The workspace concept is invisible to the MCP client. Tools automatically

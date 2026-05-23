@@ -36,6 +36,9 @@ Operator setup (endpoint URL, OAuth clients, tokens) is documented under
 For the explicit product-level specification of how the maintained line is
 intended to behave, see :doc:`IntendedBehavior`.
 
+For a detailed explanation of what this fork adds compared with the original
+upstream line, see :doc:`ForkChanges`.
+
 Why TYPO3 needs MCP
 ===================
 
@@ -75,7 +78,8 @@ Workspace-first writes
 ----------------------
 
 Record changes are staged in TYPO3 workspaces. Live content is not directly
-edited through MCP.
+edited through MCP in strict/production mode. Local mode can permit
+``workspace_id: 0`` for trusted DDEV or Development contexts.
 
 TCA-first modeling
 ------------------
@@ -113,9 +117,10 @@ required subsystems aren't declared, and outbound HTTP for
 ``network.outbound`` (default: ``self`` only).
 
 Hardening means deleting lines from the manifest. Removing
-``database:write`` makes the MCP read-only; replacing
-``network.outbound: [self, '*']`` with ``[self, 'images.unsplash.com']``
-locks outbound HTTP to a single domain.
+``database:write`` makes the MCP read-only; keeping the default
+``network.outbound: [self]`` or replacing an opened policy with
+``[self, 'images.unsplash.com']`` locks outbound HTTP to intentional
+targets.
 
 DDEV / local-development mode
 -----------------------------
@@ -168,4 +173,5 @@ versions and validate upgrades in a non-production environment first.
    :maxdepth: 1
    :hidden:
 
+   ForkChanges
    IntendedBehavior

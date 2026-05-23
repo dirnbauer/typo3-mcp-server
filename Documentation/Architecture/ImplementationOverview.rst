@@ -12,6 +12,9 @@ tool classes. The important design goal is that MCP clients see stable,
 editor-friendly behavior while TYPO3 keeps control over permissions,
 workspaces, TCA, language overlays, and file access.
 
+For a product-level summary of what this maintained fork adds compared with
+the original upstream line, see :doc:`../Introduction/ForkChanges`.
+
 Request flow
 ============
 
@@ -106,11 +109,13 @@ Tool layer
 
 The public MCP surface lives in ``Classes/MCP/Tool/``:
 
-- page navigation and page context tools
-- cross-table search
-- workspace discovery
-- file sandbox tools
-- maintenance and extension-management tools
+- page navigation, page context, and cross-table search tools
+- workspace discovery, review, publish, and rollback tools
+- FAL-wide read tools and sandbox-scoped write tools
+- preview/render verification tools
+- import, content-audit, copy, and image-attachment helpers
+- site configuration, Site Set, extension-management, and safe CLI tools
+- dev-site tools for site settings, ViewHelpers, XLF files, and TCA resources
 - optional x402 monetization helpers
 
 ``Classes/MCP/Tool/Record/`` contains the TCA-driven record tools:
@@ -125,6 +130,7 @@ The public MCP surface lives in ``Classes/MCP/Tool/``:
 - ``PublishWorkspace`` / ``RollbackWorkspace`` / ``WorkspaceReview``
 - ``ImportContent`` / ``ImportFromUrl`` / ``ContentAudit``
 - ``CopyContent`` / ``CreateSite`` / ``ManageRedirects``
+- ``GetPreviewUrl`` / ``RenderRecord`` / ``SiteSet`` / ``SiteSettings``
 
 These tools are deliberately generic. They are not built around one specific
 extension. Instead they derive their behavior from TYPO3 TCA and the current
@@ -158,6 +164,22 @@ Shared services
 ``OAuthService``
    Stores authorization codes, access tokens, and refresh tokens; hashes tokens
    before database storage; validates PKCE; and tracks token usage metadata.
+
+``CapabilityManifestService``
+   Loads ``Configuration/Capabilities.yaml``, checks subsystem prerequisites,
+   enforces per-tool requirements, and gates outbound HTTP hosts.
+
+``LocalModeService``
+   Detects DDEV / TYPO3 Development context and resolves the
+   ``localUnsafeMode`` and ``mcpServer.strictSandbox`` policy used by
+   workspace, file, network, and dev-site gates.
+
+``DevSiteToolService``
+   Provides the shared gate for dev-site-only tools and MCP resources.
+
+``FileReferenceAttachmentService``
+   Handles FAL reference creation for image and file fields while preserving
+   DataHandler/workspace behavior.
 
 TYPO3 core integration
 ======================

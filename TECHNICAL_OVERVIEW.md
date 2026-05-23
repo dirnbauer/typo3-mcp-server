@@ -11,6 +11,7 @@ tool reference (see
 ## Table of contents
 
 - [Project lineage](#project-lineage)
+- [Current fork changes](#current-fork-changes)
 - [What problem this solves](#what-problem-this-solves)
 - [Design principles](#design-principles)
 - [MCP ergonomics (mcp-builder alignment)](#mcp-ergonomics-mcp-builder-alignment)
@@ -28,6 +29,36 @@ foundation was strong in exactly the right places: TYPO3-native,
 editor-first, workspace-safe, practical. The current v14-focused line keeps
 that direction while tightening security, clarifying MCP ergonomics, and
 expanding the tool surface.
+
+## Current fork changes
+
+Compared with `upstream/main`, this fork is now a TYPO3 v14-only maintained
+line with a much larger live surface. The source-of-truth manual page is
+[`Documentation/Introduction/ForkChanges.rst`](Documentation/Introduction/ForkChanges.rst).
+In short, the changes are:
+
+- **Runtime and transport:** OAuth 2.1 + PKCE HTTP endpoint, protected
+  resource metadata, local stdio, backend-user context setup, MCP SDK HTTP
+  sessions, and a backend setup module.
+- **Tool architecture:** tagged Symfony tools, third-party compatibility
+  adapter, centralized tool errors, JSON Schema normalization, MCP annotations,
+  admin-only and dev-site-only attributes.
+- **Editorial tools:** 44 bundled MCP tools for navigation, TCA/FlexForm
+  schema inspection, workspace-safe record writes, file handling, imports,
+  content audit, preview/render verification, site setup, x402, and dev-site
+  authoring.
+- **Security:** hashed tokens, mandatory PKCE `S256`, query-token auth off by
+  default, auth diagnostic off by default, redacted logs, browser-defense
+  headers, capability-manifest enforcement, outbound host policy, SSRF checks,
+  and SafeCli allowlisting.
+- **Development ergonomics:** DDEV/local-mode relaxations, CLI mirror for every
+  bundled tool, MCP TCA resources, editor workflow skills, Playwright E2E,
+  deterministic functional tests, LLM workflow tests, PHPStan, CS Fixer,
+  Rector, Fractor, and docs render checks.
+
+This overview intentionally describes only current code paths. Obsolete
+experiments and generated documentation output are not part of the public
+contract.
 
 ## What problem this solves
 
@@ -59,10 +90,11 @@ machine-readable responses. This extension provides that layer while:
 
 ### 1. Workspace transparency
 
-Every record-backed write stages in a TYPO3 workspace. Clients see stable
+Record-backed writes stage in a TYPO3 workspace by default. Clients see stable
 live-facing UIDs; internal version rows never leak into tool output. If the
 user has no active workspace, the extension picks a writable one or creates
-an "MCP" workspace automatically.
+an "MCP" workspace automatically. Live writes require explicit
+`workspace_id: 0` and local mode.
 
 ### 2. TCA-first
 
@@ -85,7 +117,8 @@ workspace. The AI can only do what the user could do through the backend.
 ### 5. Safety by default
 
 Writes go through DataHandler. Publishes and rollbacks default to dry-run.
-File tools are sandboxed. Admin-only tools (`CreateSite`, `InstallExtension`)
+File tools are sandboxed. Admin-only tools (`CreateSite`, `SiteSet`,
+`InstallExtension`, `ApplyShadcnPreset`, `SiteSettings`, `CreateLocallang`)
 are clearly gated.
 
 A **capability manifest** (`Configuration/Capabilities.yaml`) declares
@@ -319,7 +352,7 @@ The runtime is intentionally thin; TYPO3 does most of the work.
 | `FileReferenceAttachmentService` | Workspace-safe `sys_file_reference` creation via DataHandler |
 | `OAuthService` | Auth codes, PKCE, SHA-256 token hashing, revocation |
 | `SelectItemResolver` | FormEngine-style select resolution (itemsProcFunc, TSconfig) |
-| `LocalModeService` | Detect DDEV / Development context; gate live writes + unrestricted file access |
+| `LocalModeService` | Detect DDEV / Development context; gate live writes, unrestricted files/outbound HTTP, and dev-site tools |
 | `CapabilityManifestService` | Read `Capabilities.yaml`; refuse undeclared tools and out-of-policy outbound HTTP |
 
 ### HTTP transport hardening
@@ -353,8 +386,9 @@ for the full audit snapshot.
   review before executing.
 - **`BulkWrite` is capped at 50 operations** per call. Split larger batches
   into multiple calls.
-- **Redirects (`sys_redirect`) are outside TYPO3 workspaces.** MCP lists
-  them read-only; create/delete through MCP is intentionally disabled.
+- **Redirects (`sys_redirect`) are usually outside TYPO3 workspaces.**
+  `ManageRedirects` lists them and explains the limitation. Create/delete
+  only runs on instances where `sys_redirect` is workspace-capable.
 - **Context-window limits.** Operations like "translate the entire page"
   may hit client model limits; process in chunks for very large pages.
 
