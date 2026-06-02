@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Unit\Service;
 
 use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpConnectionDiagnosticService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -25,6 +26,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
             $requestFactory,
             $this->createMock(ExtensionConfiguration::class),
             $this->createLocalModeService(),
+            new SiteBaseUrlResolver(),
         );
 
         $result = $service->runChecks(
@@ -69,6 +71,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
             $requestFactory,
             $extensionConfiguration,
             $this->createLocalModeService(),
+            new SiteBaseUrlResolver(),
         );
 
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] = 'https://example.com';

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Controller;
 
+use Hn\McpServer\Http\AjaxRequestBodyParser;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\McpConnectionDiagnosticService;
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -37,6 +39,8 @@ final readonly class McpServerModuleController
         private ConnectionPool $connectionPool,
         private FormProtectionFactory $formProtectionFactory,
         private McpConnectionDiagnosticService $connectionDiagnosticService,
+        private SiteBaseUrlResolver $baseUrlResolver,
+        private AjaxRequestBodyParser $ajaxRequestBodyParser,
     ) {}
 
     public function mainAction(ServerRequestInterface $request): ResponseInterface
@@ -53,7 +57,7 @@ final readonly class McpServerModuleController
         $tokens = $this->oauthService->getUserTokens($userId);
         $neverUsed = $this->translate('tokens.neverUsed', fallback: 'Never');
 
-        $baseUrl = $this->getBaseUrl($request);
+        $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
         $endpointUrl = $baseUrl . '/mcp';
         $siteName = $this->getSiteName();
         $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
@@ -129,17 +133,7 @@ final readonly class McpServerModuleController
             return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
 
-        $rawBody = $request->getBody()->getContents();
-        $request->getBody()->rewind();
-
-        $parsedBody = $this->getRequestData($request->getParsedBody());
-
-        if ($parsedBody === [] && $rawBody !== '') {
-            $jsonData = json_decode($rawBody, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
-                $parsedBody = $jsonData;
-            }
-        }
+        $parsedBody = $this->ajaxRequestBodyParser->parseStringFields($request);
 
         if (!$this->validateCsrfToken($parsedBody)) {
             return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
@@ -185,15 +179,7 @@ final readonly class McpServerModuleController
             return new JsonResponse(['success' => false, 'message' => $this->translate('accessDenied')], 403);
         }
 
-        $rawBody = $request->getBody()->getContents();
-        $request->getBody()->rewind();
-        $parsedBody = $this->getRequestData($request->getParsedBody());
-        if ($parsedBody === [] && $rawBody !== '') {
-            $jsonData = json_decode($rawBody, true);
-            if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
-                $parsedBody = $jsonData;
-            }
-        }
+        $parsedBody = $this->ajaxRequestBodyParser->parseStringFields($request);
         if (!$this->validateCsrfToken($parsedBody)) {
             return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
         }
@@ -220,29 +206,6 @@ final readonly class McpServerModuleController
                 'message' => $this->translate('tokens.revokeAllError'),
             ], 500);
         }
-    }
-
-    private function getBaseUrl(ServerRequestInterface $request): string
-    {
-        /** @var mixed $confVars */
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
-            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
-            : null;
-        $baseUrl = is_string($configuredBaseUrl) ? $configuredBaseUrl : '';
-
-        if ($baseUrl === '') {
-            $scheme = $request->getUri()->getScheme();
-            $host = $request->getUri()->getHost();
-            $port = $request->getUri()->getPort();
-
-            $baseUrl = $scheme . '://' . $host;
-            if ($port && !in_array($port, [80, 443])) {
-                $baseUrl .= ':' . $port;
-            }
-        }
-
-        return rtrim($baseUrl, '/');
     }
 
     /**
@@ -371,7 +334,7 @@ final readonly class McpServerModuleController
         try {
             $userId = $this->resolveBackendUserId($backendUser);
             $tokens = $this->oauthService->getUserTokens($userId);
-            $baseUrl = $this->getBaseUrl($request);
+            $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
             $localStdioConfig = $this->buildLocalStdioConfig();
             $toolCount = count($this->toolRegistry->getTools());
 
@@ -660,19 +623,7 @@ final readonly class McpServerModuleController
 
         try {
             $userId = (int)($backendUser->user['uid'] ?? 0);
-
-            $rawBody = $request->getBody()->getContents();
-            $request->getBody()->rewind();
-            $parsedBody = $request->getParsedBody();
-
-            if ($parsedBody === null && $rawBody !== '') {
-                $jsonData = json_decode($rawBody, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($jsonData)) {
-                    $parsedBody = $jsonData;
-                }
-            }
-
-            $requestData = $this->getRequestData($parsedBody);
+            $requestData = $this->ajaxRequestBodyParser->parseStringFields($request);
 
             if (!$this->validateCsrfToken($requestData)) {
                 return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
@@ -718,28 +669,7 @@ final readonly class McpServerModuleController
     }
 
     /**
-     * @param mixed $source
-     * @return array<string, string>
-     */
-    private function getRequestData(mixed $source): array
-    {
-        if (!is_array($source)) {
-            return [];
-        }
-
-        $result = [];
-        foreach ($source as $key => $value) {
-            if (!is_string($key) || !is_string($value)) {
-                continue;
-            }
-            $result[$key] = $value;
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array<string, mixed> $requestData
+     * @param array<string, string> $requestData
      */
     private function validateCsrfToken(array $requestData): bool
     {

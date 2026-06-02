@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\Response;
@@ -17,6 +18,10 @@ final class OAuthResourceMetadataEndpoint
 {
     use CorsHeadersTrait;
 
+    public function __construct(
+        private SiteBaseUrlResolver $baseUrlResolver,
+    ) {}
+
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
         // Handle preflight OPTIONS request
@@ -25,7 +30,7 @@ final class OAuthResourceMetadataEndpoint
         }
 
         // Get base URL from request
-        $baseUrl = $this->getBaseUrl($request);
+        $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
 
         $metadata = [
             'resource' => $baseUrl . '/mcp',
@@ -57,19 +62,5 @@ final class OAuthResourceMetadataEndpoint
         );
 
         return $this->addCorsHeaders($response);
-    }
-
-    private function getBaseUrl(ServerRequestInterface $request): string
-    {
-        $scheme = $request->getUri()->getScheme();
-        $host = $request->getUri()->getHost();
-        $port = $request->getUri()->getPort();
-
-        $baseUrl = $scheme . '://' . $host;
-        if ($port && !in_array($port, [80, 443])) {
-            $baseUrl .= ':' . $port;
-        }
-
-        return $baseUrl;
     }
 }

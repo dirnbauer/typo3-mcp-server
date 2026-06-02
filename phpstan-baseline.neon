@@ -67,12 +67,6 @@ parameters:
 			path: Classes/Command/OAuthManageCommand.php
 
 		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: Classes/Controller/McpServerModuleController.php
-
-		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 5
@@ -91,21 +85,9 @@ parameters:
 			path: Classes/Controller/McpServerModuleController.php
 
 		-
-			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: Classes/Controller/McpServerModuleController.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 5
-			path: Classes/Controller/McpServerModuleController.php
-
-		-
-			message: '#^Parameter \#1 \$requestData of method Hn\\McpServer\\Controller\\McpServerModuleController\:\:validateCsrfToken\(\) expects array\<string, mixed\>, array\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 2
 			path: Classes/Controller/McpServerModuleController.php
 
 		-
@@ -271,24 +253,6 @@ parameters:
 			path: Classes/Http/McpEndpoint.php
 
 		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 1
@@ -313,18 +277,6 @@ parameters:
 			path: Classes/Http/OAuthAuthorizeEndpoint.php
 
 		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: Classes/Http/OAuthMetadataEndpoint.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: Classes/Http/OAuthMetadataEndpoint.php
-
-		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
 			identifier: ternary.shortNotAllowed
 			count: 1
@@ -341,18 +293,6 @@ parameters:
 			identifier: ternary.shortNotAllowed
 			count: 1
 			path: Classes/Http/OAuthRegisterEndpoint.php
-
-		-
-			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
-			identifier: function.strict
-			count: 1
-			path: Classes/Http/OAuthResourceMetadataEndpoint.php
-
-		-
-			message: '#^Only booleans are allowed in &&, int\|null given on the left side\.$#'
-			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: Classes/Http/OAuthResourceMetadataEndpoint.php
 
 		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Http;
 
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Http\Response;
@@ -19,6 +20,7 @@ final readonly class OAuthMetadataEndpoint
 
     public function __construct(
         private OAuthService $oauthService,
+        private SiteBaseUrlResolver $baseUrlResolver,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -29,22 +31,7 @@ final readonly class OAuthMetadataEndpoint
         }
 
         try {
-            // Get base URL from request
-            $uri = $request->getUri();
-            $baseUrl = $uri->getScheme() . '://' . $uri->getHost();
-            if ($uri->getPort() && !in_array($uri->getPort(), [80, 443])) {
-                $baseUrl .= ':' . $uri->getPort();
-            }
-
-            // Override base URL for development if needed
-            /** @var mixed $confVars */
-            $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-            $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
-                ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
-                : null;
-            if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
-                $baseUrl = rtrim($configuredBaseUrl, '/');
-            }
+            $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
 
             $metadata = $this->oauthService->getMetadata($baseUrl);
 
