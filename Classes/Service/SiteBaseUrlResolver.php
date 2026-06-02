@@ -33,6 +33,11 @@ final readonly class SiteBaseUrlResolver
         return $this->getConfiguredBaseUrl() !== null;
     }
 
+    public function resolveConfiguredOrPlaceholder(string $placeholder = 'https://your-domain.com'): string
+    {
+        return $this->getConfiguredBaseUrl() ?? $placeholder;
+    }
+
     public function getConfiguredBaseUrl(): ?string
     {
         /** @var mixed $confVars */

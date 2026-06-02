@@ -39,4 +39,14 @@ final class SiteBaseUrlResolverTest extends TestCase
         self::assertSame('https://example.com:8443', $resolver->resolveFromRequest($request));
         self::assertFalse($resolver->hasConfiguredBaseUrl());
     }
+
+    #[Test]
+    public function resolveConfiguredOrPlaceholderUsesPlaceholderWhenUnset(): void
+    {
+        unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl']);
+
+        $resolver = new SiteBaseUrlResolver();
+
+        self::assertSame('https://your-domain.com', $resolver->resolveConfiguredOrPlaceholder());
+    }
 }

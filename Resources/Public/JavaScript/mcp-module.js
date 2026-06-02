@@ -405,8 +405,11 @@ class McpModule {
             .post({})
             .then(async (response) => {
                 const data = await response.resolve();
-                if (data.success && data.diagnostics) {
-                    this.updateDiagnosticsTable(data.diagnostics);
+                if (data.success && data.diagnosticsHtml) {
+                    const container = document.getElementById('diagnostics-panel-content');
+                    if (container) {
+                        container.innerHTML = data.diagnosticsHtml;
+                    }
                     Notification.success('', TYPO3.lang['diagnostic.refreshed'] ?? '');
                 } else {
                     Notification.error(TYPO3.lang['diagnostic.refreshFailed'] ?? '', data.message || '');
@@ -419,55 +422,6 @@ class McpModule {
                 button.disabled = false;
                 button.textContent = originalText;
             });
-    }
-
-    updateDiagnosticsTable(diagnostics) {
-        const summary = document.getElementById('diagnostic-summary');
-        const tbody = document.getElementById('diagnostics-table-body');
-        if (!tbody) {
-            return;
-        }
-
-        if (summary) {
-            summary.className = 'callout mb-3 callout-' + this.summaryCalloutClass(diagnostics.overallStatus);
-            summary.textContent = this.summaryMessage(diagnostics.overallStatus);
-        }
-
-        const esc = (value) => this.escapeHtml(String(value ?? ''));
-        tbody.innerHTML = (diagnostics.checks || []).map((check) => `
-            <tr data-check-id="${esc(check.id)}">
-                <td><span class="badge mcp-diagnostic-badge mcp-diagnostic-badge-${esc(check.status)}">${esc(this.statusLabel(check.status))}</span></td>
-                <td><strong>${esc(check.label)}</strong></td>
-                <td>${esc(check.message)}</td>
-                <td class="text-muted">${esc(check.howToCheck)}</td>
-                <td>${esc(check.fixHint)}</td>
-            </tr>
-        `).join('');
-    }
-
-    summaryCalloutClass(status) {
-        if (status === 'error') {
-            return 'danger';
-        }
-        if (status === 'warning') {
-            return 'warning';
-        }
-        return 'success';
-    }
-
-    summaryMessage(status) {
-        if (status === 'error') {
-            return TYPO3.lang['diagnostic.summaryError'] ?? '';
-        }
-        if (status === 'warning') {
-            return TYPO3.lang['diagnostic.summaryWarning'] ?? '';
-        }
-        return TYPO3.lang['diagnostic.summaryOk'] ?? '';
-    }
-
-    statusLabel(status) {
-        const key = 'diagnostic.status.' + status;
-        return TYPO3.lang[key] ?? status;
     }
 
     escapeHtml(str) {

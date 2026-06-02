@@ -31,6 +31,8 @@
 
 # other
 *.local
+*.xlf.*.bak
+Resources/Private/Language/*.bak
 .DS_Store
 .php-cs-fixer.cache
 Documentation-GENERATED-temp

@@ -6,7 +6,9 @@ namespace Hn\McpServer\Controller;
 
 use Hn\McpServer\Http\AjaxRequestBodyParser;
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\McpClientConfigBuilder;
 use Hn\McpServer\Service\McpConnectionDiagnosticService;
+use Hn\McpServer\Service\McpDiagnosticsPanelRenderer;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -15,7 +17,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
@@ -41,6 +42,8 @@ final readonly class McpServerModuleController
         private McpConnectionDiagnosticService $connectionDiagnosticService,
         private SiteBaseUrlResolver $baseUrlResolver,
         private AjaxRequestBodyParser $ajaxRequestBodyParser,
+        private McpClientConfigBuilder $clientConfigBuilder,
+        private McpDiagnosticsPanelRenderer $diagnosticsPanelRenderer,
     ) {}
 
     public function mainAction(ServerRequestInterface $request): ResponseInterface
@@ -59,7 +62,7 @@ final readonly class McpServerModuleController
 
         $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
         $endpointUrl = $baseUrl . '/mcp';
-        $siteName = $this->getSiteName();
+        $siteName = $this->clientConfigBuilder->getSiteName();
         $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
 
         $tools = [];
@@ -72,35 +75,25 @@ final readonly class McpServerModuleController
         }
 
         $hasWorkspace = $this->hasAnyWorkspace();
-        $localStdioConfig = $this->buildLocalStdioConfig();
-        $diagnostics = $this->translateDiagnostics($this->connectionDiagnosticService->runChecks(
-            $baseUrl,
-            $hasWorkspace,
-            count($tools),
-            count($tokens),
-            $this->isLocalhostUrl($baseUrl),
-            $localStdioConfig,
-        ));
-        $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
+        $localStdioConfig = $this->clientConfigBuilder->buildLocalStdioConfig();
         $isLocalhost = $this->isLocalhostUrl($baseUrl);
+        $diagnostics = $this->collectTranslatedDiagnostics($request, count($tokens));
+        $workspaceInfo = $this->workspaceContextService->getWorkspaceInfo();
 
-        $createWorkspaceUrl = (string)$this->uriBuilder->buildUriFromRoute('record_edit', [
-            'edit' => ['sys_workspace' => [0 => 'new']],
-            'returnUrl' => (string)$request->getUri(),
-        ]);
+        $createWorkspaceUrl = $this->buildCreateWorkspaceUrl($request);
 
         $templateVariables = [
             'tokens' => $this->formatTokensForView($tokens, $neverUsed),
             'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
             'endpointUrl' => $endpointUrl,
-            'cursorInstallUrl' => $this->buildCursorInstallUrl($siteName, $localStdioConfig),
-            'localStdioConfigJson' => $this->buildMcpServersConfigJson($siteName, $localStdioConfig),
+            'cursorInstallUrl' => $this->clientConfigBuilder->buildCursorInstallUrl($siteName, $localStdioConfig),
+            'localStdioConfigJson' => $this->clientConfigBuilder->buildMcpServersConfigJson($siteName, $localStdioConfig),
             'tools' => $tools,
             'username' => is_string($backendUser->user['username'] ?? null) ? $backendUser->user['username'] : 'unknown',
             'userId' => $userId,
             'siteName' => $siteName,
-            'codexConfigToml' => $this->buildCodexTomlConfig($siteName, $localStdioConfig),
+            'codexConfigToml' => $this->clientConfigBuilder->buildCodexTomlConfig($siteName, $localStdioConfig),
             'diagnostics' => $diagnostics,
             'mcpEndpointUrl' => $endpointUrl,
             'oauthDiscoveryUrl' => $baseUrl . '/.well-known/oauth-authorization-server',
@@ -209,88 +202,38 @@ final readonly class McpServerModuleController
     }
 
     /**
-     * @return array{command: string, args: list<string>, cwd?: string}
+     * @return array{
+     *   overallStatus: string,
+     *   checks: list<array{
+     *     id: string,
+     *     status: string,
+     *     label: string,
+     *     message: string,
+     *     howToCheck: string,
+     *     fixHint: string
+     *   }>
+     * }
      */
-    private function buildLocalStdioConfig(): array
+    private function collectTranslatedDiagnostics(ServerRequestInterface $request, int $userTokenCount): array
     {
-        $ddevProject = getenv('DDEV_PROJECT');
-        if ($this->isTruthyEnvironmentValue(getenv('IS_DDEV_PROJECT')) && is_string($ddevProject) && $ddevProject !== '') {
-            return [
-                'command' => 'ddev',
-                'args' => [
-                    'exec',
-                    '-p',
-                    $ddevProject,
-                    '--',
-                    'php',
-                    'vendor/bin/typo3',
-                    'mcp:server',
-                ],
-            ];
-        }
+        $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
 
-        return [
-            'command' => 'php',
-            'args' => [
-                Environment::getProjectPath() . '/vendor/bin/typo3',
-                'mcp:server',
-            ],
-            'cwd' => Environment::getProjectPath(),
-        ];
+        return $this->translateDiagnostics($this->connectionDiagnosticService->runChecks(
+            $baseUrl,
+            $this->hasAnyWorkspace(),
+            count($this->toolRegistry->getTools()),
+            $userTokenCount,
+            $this->isLocalhostUrl($baseUrl),
+            $this->clientConfigBuilder->buildLocalStdioConfig(),
+        ));
     }
 
-    private function isTruthyEnvironmentValue(mixed $value): bool
+    private function buildCreateWorkspaceUrl(ServerRequestInterface $request): string
     {
-        return is_string($value)
-            && $value !== ''
-            && strtolower($value) !== 'false'
-            && $value !== '0';
-    }
-
-    /**
-     * Cursor "Install in Cursor" deeplink (Cursor v3+ format).
-     *
-     * - Config is the single-server object that becomes one entry in mcp.json.
-     * - Cursor expects standard base64 (not URL-safe) with literal `=` padding.
-     * - The `+`, `/`, `=` characters are valid in a URL query value and must not be percent-encoded.
-     *
-     * @see https://cursor.com/docs/context/mcp/install-links
-     *
-     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
-     */
-    private function buildMcpServersConfigJson(string $serverName, array $serverConfig): string
-    {
-        $json = json_encode(
-            ['mcpServers' => [$serverName => $serverConfig]],
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES,
-        );
-
-        return is_string($json) ? $json : '{}';
-    }
-
-    /**
-     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
-     */
-    private function buildCursorInstallUrl(string $serverName, array $serverConfig): string
-    {
-        $json = json_encode($serverConfig, JSON_UNESCAPED_SLASHES);
-        $json = is_string($json) ? $json : '{}';
-        $configParam = base64_encode($json);
-
-        return 'cursor://anysphere.cursor-deeplink/mcp/install?name='
-            . rawurlencode($serverName)
-            . '&config='
-            . $configParam;
-    }
-
-    private function getSiteName(): string
-    {
-        /** @var mixed $confVars */
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $siteName = is_array($confVars) && is_array($confVars['SYS'] ?? null)
-            ? ($confVars['SYS']['sitename'] ?? null)
-            : null;
-        return is_string($siteName) && $siteName !== '' ? $siteName : 'TYPO3 MCP Server';
+        return (string)$this->uriBuilder->buildUriFromRoute('record_edit', [
+            'edit' => ['sys_workspace' => [0 => 'new']],
+            'returnUrl' => (string)$request->getUri(),
+        ]);
     }
 
     private function getBackendUser(): ?BackendUserAuthentication
@@ -334,22 +277,15 @@ final readonly class McpServerModuleController
         try {
             $userId = $this->resolveBackendUserId($backendUser);
             $tokens = $this->oauthService->getUserTokens($userId);
-            $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
-            $localStdioConfig = $this->buildLocalStdioConfig();
-            $toolCount = count($this->toolRegistry->getTools());
-
-            $raw = $this->connectionDiagnosticService->runChecks(
-                $baseUrl,
-                $this->hasAnyWorkspace(),
-                $toolCount,
-                count($tokens),
-                $this->isLocalhostUrl($baseUrl),
-                $localStdioConfig,
-            );
+            $diagnostics = $this->collectTranslatedDiagnostics($request, count($tokens));
 
             return new JsonResponse([
                 'success' => true,
-                'diagnostics' => $this->translateDiagnostics($raw),
+                'diagnosticsHtml' => $this->diagnosticsPanelRenderer->render(
+                    $diagnostics,
+                    $this->buildCreateWorkspaceUrl($request),
+                    $request,
+                ),
             ]);
         } catch (\Throwable) {
             return new JsonResponse([
@@ -458,38 +394,6 @@ final readonly class McpServerModuleController
         }
 
         return $normalized;
-    }
-
-    /**
-     * @param array{command: string, args: list<string>, cwd?: string} $serverConfig
-     */
-    private function buildCodexTomlConfig(string $serverName, array $serverConfig): string
-    {
-        $slug = preg_replace('/[^a-zA-Z0-9_]+/', '_', strtolower($serverName)) ?? 'typo3';
-        $slug = trim($slug, '_');
-        if ($slug === '') {
-            $slug = 'typo3';
-        }
-
-        $lines = [
-            '# Add to ~/.codex/config.toml',
-            '[mcp_servers.' . $slug . ']',
-            'command = "' . $this->escapeTomlString($serverConfig['command']) . '"',
-        ];
-
-        $args = array_map(fn(string $arg): string => '"' . $this->escapeTomlString($arg) . '"', $serverConfig['args']);
-        $lines[] = 'args = [' . implode(', ', $args) . ']';
-
-        if (isset($serverConfig['cwd']) && $serverConfig['cwd'] !== '') {
-            $lines[] = 'cwd = "' . $this->escapeTomlString($serverConfig['cwd']) . '"';
-        }
-
-        return implode("\n", $lines) . "\n";
-    }
-
-    private function escapeTomlString(string $value): string
-    {
-        return str_replace(['\\', '"'], ['\\\\', '\\"'], $value);
     }
 
     /**

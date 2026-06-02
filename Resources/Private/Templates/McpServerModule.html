@@ -128,59 +128,9 @@
                                 </button>
                             </div>
 
-                            <f:switch expression="{diagnostics.overallStatus}">
-                                <f:case value="error">
-                                    <div class="callout callout-danger mb-3" id="diagnostic-summary">
-                                        <f:translate id="diagnostic.summaryError" domain="mcp_server.mod" />
-                                    </div>
-                                </f:case>
-                                <f:case value="warning">
-                                    <div class="callout callout-warning mb-3" id="diagnostic-summary">
-                                        <f:translate id="diagnostic.summaryWarning" domain="mcp_server.mod" />
-                                    </div>
-                                </f:case>
-                                <f:defaultCase>
-                                    <div class="callout callout-success mb-3" id="diagnostic-summary">
-                                        <f:translate id="diagnostic.summaryOk" domain="mcp_server.mod" />
-                                    </div>
-                                </f:defaultCase>
-                            </f:switch>
-
-                            <div class="table-responsive" id="diagnostics-table-wrapper">
-                                <table class="table table-striped table-sm mcp-diagnostic-table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" class="mcp-diagnostic-col-status"><f:translate id="diagnostic.colStatus" domain="mcp_server.mod" /></th>
-                                            <th scope="col"><f:translate id="diagnostic.colCheck" domain="mcp_server.mod" /></th>
-                                            <th scope="col"><f:translate id="diagnostic.colResult" domain="mcp_server.mod" /></th>
-                                            <th scope="col"><f:translate id="diagnostic.colHowToCheck" domain="mcp_server.mod" /></th>
-                                            <th scope="col"><f:translate id="diagnostic.colFix" domain="mcp_server.mod" /></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="diagnostics-table-body">
-                                        <f:for each="{diagnostics.checks}" as="check">
-                                            <tr data-check-id="{check.id}">
-                                                <td>
-                                                    <span class="badge mcp-diagnostic-badge mcp-diagnostic-badge-{check.status}">
-                                                        <f:translate id="diagnostic.status.{check.status}" domain="mcp_server.mod" />
-                                                    </span>
-                                                </td>
-                                                <td><strong>{check.label}</strong></td>
-                                                <td>{check.message}</td>
-                                                <td class="text-muted">{check.howToCheck}</td>
-                                                <td>{check.fixHint}</td>
-                                            </tr>
-                                        </f:for>
-                                    </tbody>
-                                </table>
+                            <div id="diagnostics-panel-content">
+                                <f:render partial="McpServerModule/DiagnosticsPanelContent" arguments="{diagnostics: diagnostics, createWorkspaceUrl: createWorkspaceUrl}" />
                             </div>
-
-                            <f:if condition="{createWorkspaceUrl}">
-                                <p class="small text-muted mb-0">
-                                    <f:translate id="diagnostic.workspaceLinkPrefix" domain="mcp_server.mod" />
-                                    <a href="{createWorkspaceUrl}"><f:translate id="warning.noWorkspace.createLink" domain="mcp_server.mod" /></a>
-                                </p>
-                            </f:if>
                         </div>
                     </div>
                 </div>
