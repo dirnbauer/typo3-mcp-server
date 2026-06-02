@@ -15,6 +15,17 @@ final class DevSiteOnlyTestDummy {}
 
 final class DevSiteToolServiceTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        unset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']);
+        unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox']);
+        putenv('IS_DDEV_PROJECT');
+        putenv('DDEV_PROJECT');
+        putenv('DDEV_HOSTNAME');
+        putenv('DDEV_TLD');
+        parent::tearDown();
+    }
+
     public function testDetectsDevSiteOnlyAttribute(): void
     {
         self::assertTrue(DevSiteToolService::hasDevSiteOnlyAttribute(new DevSiteOnlyTestDummy()));
@@ -22,23 +33,21 @@ final class DevSiteToolServiceTest extends TestCase
 
     public function testIsUnavailableWhenLocalModeIsOff(): void
     {
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
-        putenv('IS_DDEV_PROJECT');
+        putenv('IS_DDEV_PROJECT=true');
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = ['localUnsafeMode' => 'off'];
 
-        $service = new DevSiteToolService(new LocalModeService(
-            $this->createMock(ExtensionConfiguration::class),
-        ));
+        $service = new DevSiteToolService(new LocalModeService(new ExtensionConfiguration()));
 
         self::assertFalse($service->isAvailable());
     }
 
     public function testIsAvailableWhenLocalModeIsOn(): void
     {
-        $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
-        $extensionConfiguration->method('get')->with('mcp_server')->willReturn(['localUnsafeMode' => 'on']);
+        putenv('IS_DDEV_PROJECT');
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = ['localUnsafeMode' => 'on'];
         unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox']);
 
-        $service = new DevSiteToolService(new LocalModeService($extensionConfiguration));
+        $service = new DevSiteToolService(new LocalModeService(new ExtensionConfiguration()));
 
         self::assertTrue($service->isAvailable());
     }
