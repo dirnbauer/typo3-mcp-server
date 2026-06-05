@@ -476,6 +476,51 @@
         <source>Set $GLOBALS[&apos;TYPO3_CONF_VARS&apos;][&apos;SYS&apos;][&apos;reverseProxyBaseUrl&apos;] to the URL clients use (e.g. https://www.example.com).</source>
       </segment>
     </unit>
+    <unit id="diagnostic.fixOk">
+      <segment>
+        <source>No action needed.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.http.unreachable">
+      <segment>
+        <source>Could not reach {url} from TYPO3.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.http.badStatus">
+      <segment>
+        <source>{url} returned HTTP {status}.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.http.fixUnreachable">
+      <segment>
+        <source>Ensure the web server routes /mcp to TYPO3, the site is online, and no firewall blocks loopback requests.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.http.fixBadStatus">
+      <segment>
+        <source>Check TYPO3 error logs, extension activation, and web server rewrite rules for the /mcp route.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthMetadata.ok">
+      <segment>
+        <source>{url} is available and references MCP.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthMetadata.fail">
+      <segment>
+        <source>{url} is not reachable (HTTP {status}).</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthMetadata.noMcpReference">
+      <segment>
+        <source>{url} responds but does not reference the MCP resource.</source>
+      </segment>
+    </unit>
+    <unit id="diagnostic.oauthMetadata.howToCheck">
+      <segment>
+        <source>curl {url} and confirm JSON metadata is returned.</source>
+      </segment>
+    </unit>
     <unit id="diagnostic.mcpEndpoint.label">
       <segment>
         <source>MCP HTTP endpoint</source>
@@ -491,64 +536,14 @@
         <source>{url} is reachable (HTTP {status}).</source>
       </segment>
     </unit>
-    <unit id="diagnostic.mcpEndpoint.unreachable">
-      <segment>
-        <source>Could not reach {url} from TYPO3.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.mcpEndpoint.badStatus">
-      <segment>
-        <source>{url} returned HTTP {status}.</source>
-      </segment>
-    </unit>
     <unit id="diagnostic.mcpEndpoint.howToCheck">
       <segment>
         <source>Open {url} in a browser or run: curl -I {url}</source>
       </segment>
     </unit>
-    <unit id="diagnostic.mcpEndpoint.fixOk">
-      <segment>
-        <source>No action needed.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.mcpEndpoint.fixUnreachable">
-      <segment>
-        <source>Ensure the web server routes /mcp to TYPO3, the site is online, and no firewall blocks loopback requests.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.mcpEndpoint.fixBadStatus">
-      <segment>
-        <source>Check TYPO3 error logs, extension activation, and web server rewrite rules for the /mcp route.</source>
-      </segment>
-    </unit>
     <unit id="diagnostic.oauthAuthorization.label">
       <segment>
         <source>OAuth authorization metadata</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthAuthorization.ok">
-      <segment>
-        <source>{url} is available and references MCP.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthAuthorization.fail">
-      <segment>
-        <source>{url} is not reachable (HTTP {status}).</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthAuthorization.noMcpReference">
-      <segment>
-        <source>{url} responds but does not reference the MCP resource.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthAuthorization.howToCheck">
-      <segment>
-        <source>curl {url} and confirm JSON metadata is returned.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthAuthorization.fixOk">
-      <segment>
-        <source>No action needed.</source>
       </segment>
     </unit>
     <unit id="diagnostic.oauthAuthorization.fixHint">
@@ -559,31 +554,6 @@
     <unit id="diagnostic.oauthProtectedResource.label">
       <segment>
         <source>OAuth protected-resource metadata</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthProtectedResource.ok">
-      <segment>
-        <source>{url} is available and references MCP.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthProtectedResource.fail">
-      <segment>
-        <source>{url} is not reachable (HTTP {status}).</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthProtectedResource.noMcpReference">
-      <segment>
-        <source>{url} responds but does not reference the MCP resource.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthProtectedResource.howToCheck">
-      <segment>
-        <source>curl {url} and confirm JSON metadata is returned.</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.oauthProtectedResource.fixOk">
-      <segment>
-        <source>No action needed.</source>
       </segment>
     </unit>
     <unit id="diagnostic.oauthProtectedResource.fixHint">
@@ -611,19 +581,9 @@
         <source>Auth header test is disabled in extension settings (enableMcpAuthHeaderDiagnostic).</source>
       </segment>
     </unit>
-    <unit id="diagnostic.authHeader.unreachable">
-      <segment>
-        <source>Could not call {url}.</source>
-      </segment>
-    </unit>
     <unit id="diagnostic.authHeader.howToCheck">
       <segment>
         <source>Enable enableMcpAuthHeaderDiagnostic, then curl -H &quot;Authorization: Bearer test&quot; &quot;{url}&quot;</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.authHeader.fixOk">
-      <segment>
-        <source>No action needed.</source>
       </segment>
     </unit>
     <unit id="diagnostic.authHeader.fixHint">
@@ -634,11 +594,6 @@
     <unit id="diagnostic.authHeader.fixDisabled">
       <segment>
         <source>Enable enableMcpAuthHeaderDiagnostic in extension configuration if you need this check (off by default on hardened sites).</source>
-      </segment>
-    </unit>
-    <unit id="diagnostic.authHeader.fixUnreachable">
-      <segment>
-        <source>Fix MCP endpoint reachability first.</source>
       </segment>
     </unit>
     <unit id="diagnostic.workspace.label">

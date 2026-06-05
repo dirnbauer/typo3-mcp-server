@@ -4,27 +4,29 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Unit\Service;
 
-use Hn\McpServer\Service\LocalModeService;
+use Hn\McpServer\Service\DiagnosticHttpClient;
 use Hn\McpServer\Service\McpConnectionDiagnosticService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Http\RequestFactory;
 
 final class McpConnectionDiagnosticServiceTest extends TestCase
 {
     #[Test]
     public function runChecksReportsErrorWhenMcpEndpointIsUnreachable(): void
     {
-        $requestFactory = $this->createMock(RequestFactory::class);
-        $requestFactory->method('request')->willThrowException(new \RuntimeException('connection refused'));
+        $httpClient = $this->createMock(DiagnosticHttpClient::class);
+        $httpClient->method('requestMany')->willReturn([
+            'mcp_endpoint' => null,
+            'oauth_authorization' => null,
+            'oauth_protected_resource' => null,
+        ]);
 
         $service = new McpConnectionDiagnosticService(
-            $requestFactory,
             $this->createMock(ExtensionConfiguration::class),
-            $this->createLocalModeService(),
+            new SiteBaseUrlResolver(),
+            $httpClient,
         );
 
         $result = $service->runChecks(
@@ -43,32 +45,35 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
         self::assertSame('error', $result['overallStatus']);
         $ids = array_column($result['checks'], 'id');
         self::assertContains('mcp_endpoint', $ids);
+        $mcpCheck = $this->findCheck($result['checks'], 'mcp_endpoint');
+        self::assertSame('diagnostic.http.unreachable', $mcpCheck['messageKey']);
     }
 
     #[Test]
     public function runChecksReportsOkWhenMcpEndpointReturns401(): void
     {
-        $requestFactory = $this->createMock(RequestFactory::class);
-        $requestFactory->method('request')->willReturnCallback(function (string $url): ResponseInterface {
-            $status = str_contains($url, '/mcp') ? 401 : 200;
-            $body = str_contains($url, '.well-known') ? '{"resource":"/mcp"}' : '{"error":"Unauthorized"}';
+        $httpClient = $this->createMock(DiagnosticHttpClient::class);
+        $httpClient->method('requestMany')->willReturnCallback(function (array $requests): array {
+            $results = [];
+            foreach ($requests as $id => $spec) {
+                $url = $spec['url'];
+                if (str_contains($url, '/mcp')) {
+                    $results[$id] = ['status' => 401, 'body' => '{"error":"Unauthorized"}'];
+                    continue;
+                }
+                $results[$id] = ['status' => 200, 'body' => '{"resource":"/mcp"}'];
+            }
 
-            $response = $this->createMock(ResponseInterface::class);
-            $response->method('getStatusCode')->willReturn($status);
-            $stream = $this->createMock(StreamInterface::class);
-            $stream->method('__toString')->willReturn($body);
-            $response->method('getBody')->willReturn($stream);
-
-            return $response;
+            return $results;
         });
 
         $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
         $extensionConfiguration->method('get')->willReturn(['enableMcpAuthHeaderDiagnostic' => '0']);
 
         $service = new McpConnectionDiagnosticService(
-            $requestFactory,
             $extensionConfiguration,
-            $this->createLocalModeService(),
+            new SiteBaseUrlResolver(),
+            $httpClient,
         );
 
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl'] = 'https://example.com';
@@ -90,6 +95,8 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
         self::assertContains($result['overallStatus'], ['ok', 'warning', 'info']);
         $mcpCheck = $this->findCheck($result['checks'], 'mcp_endpoint');
         self::assertSame('ok', $mcpCheck['status']);
+        $oauthCheck = $this->findCheck($result['checks'], 'oauth_authorization');
+        self::assertSame('diagnostic.oauthMetadata.ok', $oauthCheck['messageKey']);
     }
 
     /**
@@ -107,13 +114,4 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
         self::fail('Check not found: ' . $id);
     }
 
-    private function createLocalModeService(): LocalModeService
-    {
-        $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
-        $extensionConfiguration->method('get')->willReturn([
-            'localUnsafeMode' => 'off',
-        ]);
-
-        return new LocalModeService($extensionConfiguration);
-    }
 }

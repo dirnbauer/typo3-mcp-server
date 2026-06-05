@@ -11,6 +11,9 @@ use Hn\McpServer\Event\BeforeRecordReadEvent;
 use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\Record\RecordFieldReadConverter;
+use Hn\McpServer\Service\Record\RecordReadQueryService;
+use Hn\McpServer\Service\Record\RecordRelationReadService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -44,6 +47,9 @@ final class ReadTableTool extends AbstractRecordTool
         WorkspaceContextService $workspaceContextService,
         protected readonly LanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
+        private readonly RecordReadQueryService $readQueryService,
+        private readonly RecordRelationReadService $relationReadService,
+        private readonly RecordFieldReadConverter $fieldReadConverter,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -257,12 +263,12 @@ final class ReadTableTool extends AbstractRecordTool
         $offset = isset($params['offset']) ? (int)$params['offset'] : 0;
         $language = $params['language'] ?? null;
         $includeTranslationSource = $params['includeTranslationSource'] ?? false;
-        $requestedFields = $this->normalizeFieldNames($tableName, $params['fields'] ?? []);
+        $requestedFields = $this->readQueryService->normalizeFieldNames($tableName, $params['fields'] ?? []);
 
         // Normalize system field filters so callers can use friendly values:
         //   - sys_language_uid accepts ISO codes ("de") in addition to UIDs
         //   - hidden accepts booleans
-        $filters = $this->normalizeSystemFieldFilters($tableName, $filtersParam, $pid);
+        $filters = $this->readQueryService->normalizeSystemFieldFilters($tableName, $filtersParam, $pid);
 
         // Ensure translation parent field is included when translation source is requested
         if ($includeTranslationSource && !empty($requestedFields)) {
@@ -298,7 +304,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Get records from the table
-        $result = $this->getRecords(
+        $result = $this->readQueryService->getRecords(
             $table,
             $pid,
             $uid,
@@ -321,7 +327,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Include related records
-        $result = $this->includeRelations($result, $table, $requestedFields);
+        $result = $this->relationReadService->includeRelations($result, $table, $requestedFields);
 
         // Include translation metadata if requested
         if ($includeTranslationSource && $languageUid !== null && $languageUid > 0) {
@@ -1481,7 +1487,7 @@ final class ReadTableTool extends AbstractRecordTool
                     // Collect inherited field values
                     foreach ($excludedFields as $field) {
                         if (isset($parentRecord[$field])) {
-                            $inheritedValues[$field] = $this->convertFieldValue($table, $field, $parentRecord[$field]);
+                            $inheritedValues[$field] = $this->fieldReadConverter->convertFieldValue($table, $field, $parentRecord[$field]);
                         }
                     }
 
@@ -1574,12 +1580,12 @@ final class ReadTableTool extends AbstractRecordTool
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $records = $this->applyWorkspaceOverlay($table, $records);
+        $records = $this->readQueryService->applyWorkspaceOverlay($table, $records);
 
         // Process and index by UID
         $indexedRecords = [];
         foreach ($records as $record) {
-            $processedRecord = $this->processRecord($record, $table);
+            $processedRecord = $this->fieldReadConverter->processRecord($record, $table);
             $indexedRecords[$processedRecord['uid']] = $processedRecord;
         }
 

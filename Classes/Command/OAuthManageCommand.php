@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Command;
 
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,7 @@ final class OAuthManageCommand extends Command
     public function __construct(
         private readonly OAuthService $oauthService,
         private readonly ConnectionPool $connectionPool,
+        private readonly SiteBaseUrlResolver $baseUrlResolver,
     ) {
         parent::__construct();
     }
@@ -77,7 +79,7 @@ final class OAuthManageCommand extends Command
 
         $clientNameOption = $input->getOption('client-name');
         $clientName = is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
-        $baseUrl = $this->getConfiguredBaseUrl();
+        $baseUrl = $this->baseUrlResolver->resolveConfiguredOrPlaceholder();
 
         $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, $clientName);
 
@@ -208,19 +210,5 @@ final class OAuthManageCommand extends Command
             'uid' => is_int($uid) ? $uid : (is_numeric($uid) ? (int)$uid : 0),
             'username' => is_string($resolvedUsername) ? $resolvedUsername : '',
         ];
-    }
-
-    private function getConfiguredBaseUrl(): string
-    {
-        /** @var mixed $confVars */
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $configuredBaseUrl = is_array($confVars) && is_array($confVars['SYS'] ?? null)
-            ? ($confVars['SYS']['reverseProxyBaseUrl'] ?? null)
-            : null;
-        if (is_string($configuredBaseUrl) && $configuredBaseUrl !== '') {
-            return $configuredBaseUrl;
-        }
-
-        return 'https://your-domain.com';
     }
 }
