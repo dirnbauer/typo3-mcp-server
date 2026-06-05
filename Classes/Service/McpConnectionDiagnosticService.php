@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Http\RequestFactory;
 
 /**
  * Server-side MCP connection diagnostics for the backend user module.
@@ -14,13 +13,13 @@ use TYPO3\CMS\Core\Http\RequestFactory;
  */
 final readonly class McpConnectionDiagnosticService
 {
-    private const REQUEST_TIMEOUT = 8;
+    private const SHARED_FIX_OK = 'diagnostic.fixOk';
+    private const OAUTH_METADATA_PREFIX = 'diagnostic.oauthMetadata';
 
     public function __construct(
-        private RequestFactory $requestFactory,
         private ExtensionConfiguration $extensionConfiguration,
-        private LocalModeService $localModeService,
         private SiteBaseUrlResolver $baseUrlResolver,
+        private DiagnosticHttpClient $httpClient,
     ) {}
 
     /**
@@ -73,12 +72,45 @@ final readonly class McpConnectionDiagnosticService
         bool $isLocalhost,
         array $localStdioConfig,
     ): array {
+        $httpRequests = [
+            'mcp_endpoint' => $this->httpSpec($baseUrl, '/mcp'),
+            'oauth_authorization' => $this->httpSpec($baseUrl, '/.well-known/oauth-authorization-server'),
+            'oauth_protected_resource' => $this->httpSpec($baseUrl, '/.well-known/oauth-protected-resource'),
+        ];
+
+        if ($this->isAuthHeaderDiagnosticEnabled()) {
+            $httpRequests['auth_header'] = [
+                'method' => 'GET',
+                'url' => rtrim($baseUrl, '/') . '/mcp?test=auth',
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'Bearer mcp-backend-diagnostic-check',
+                ],
+            ];
+        }
+
+        $httpResponses = $this->httpClient->requestMany($httpRequests);
+
         return [
             $this->checkBaseUrl($baseUrl),
-            $this->checkMcpEndpoint($baseUrl),
-            $this->checkWellKnownEndpoint($baseUrl, 'oauth_authorization', '/.well-known/oauth-authorization-server', 'diagnostic.oauthAuthorization'),
-            $this->checkWellKnownEndpoint($baseUrl, 'oauth_protected_resource', '/.well-known/oauth-protected-resource', 'diagnostic.oauthProtectedResource'),
-            $this->checkAuthHeaderDiagnostic($baseUrl),
+            $this->evaluateMcpEndpoint($baseUrl, $httpResponses['mcp_endpoint'] ?? null),
+            $this->evaluateWellKnownEndpoint(
+                'oauth_authorization',
+                'diagnostic.oauthAuthorization.label',
+                'diagnostic.oauthAuthorization.fixHint',
+                '/.well-known/oauth-authorization-server',
+                $baseUrl,
+                $httpResponses['oauth_authorization'] ?? null,
+            ),
+            $this->evaluateWellKnownEndpoint(
+                'oauth_protected_resource',
+                'diagnostic.oauthProtectedResource.label',
+                'diagnostic.oauthProtectedResource.fixHint',
+                '/.well-known/oauth-protected-resource',
+                $baseUrl,
+                $httpResponses['oauth_protected_resource'] ?? null,
+            ),
+            $this->evaluateAuthHeaderDiagnostic($baseUrl, $httpResponses['auth_header'] ?? null),
             $this->checkBoolean(
                 'workspace',
                 $hasWorkspace,
@@ -118,6 +150,18 @@ final readonly class McpConnectionDiagnosticService
     }
 
     /**
+     * @return array{method: string, url: string, headers: array<string, string>}
+     */
+    private function httpSpec(string $baseUrl, string $path): array
+    {
+        return [
+            'method' => 'GET',
+            'url' => rtrim($baseUrl, '/') . $path,
+            'headers' => ['Accept' => 'application/json'],
+        ];
+    }
+
+    /**
      * @param list<array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}> $checks
      * @param array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>} $check
      */
@@ -149,22 +193,22 @@ final readonly class McpConnectionDiagnosticService
     }
 
     /**
+     * @param array{status: int, body: string}|null $response
      * @return array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}
      */
-    private function checkMcpEndpoint(string $baseUrl): array
+    private function evaluateMcpEndpoint(string $baseUrl, ?array $response): array
     {
         $prefix = 'diagnostic.mcpEndpoint';
         $url = rtrim($baseUrl, '/') . '/mcp';
-        $response = $this->request('GET', $url, ['Accept' => 'application/json']);
 
         if ($response === null) {
             return $this->result(
                 'mcp_endpoint',
                 DiagnosticStatus::Error,
                 $prefix,
-                'unreachable',
+                'diagnostic.http.unreachable',
                 ['url' => $url],
-                'fixUnreachable',
+                'diagnostic.http.fixUnreachable',
             );
         }
 
@@ -183,41 +227,67 @@ final readonly class McpConnectionDiagnosticService
             'mcp_endpoint',
             DiagnosticStatus::Error,
             $prefix,
-            'badStatus',
+            'diagnostic.http.badStatus',
             $args,
-            'fixBadStatus',
+            'diagnostic.http.fixBadStatus',
         );
     }
 
     /**
+     * @param array{status: int, body: string}|null $response
      * @return array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}
      */
-    private function checkWellKnownEndpoint(string $baseUrl, string $id, string $path, string $prefix): array
-    {
+    private function evaluateWellKnownEndpoint(
+        string $id,
+        string $labelKey,
+        string $fixHintKey,
+        string $path,
+        string $baseUrl,
+        ?array $response,
+    ): array {
         $url = rtrim($baseUrl, '/') . $path;
-        $response = $this->request('GET', $url, ['Accept' => 'application/json']);
+        $args = ['url' => $url];
 
         if ($response === null || $response['status'] < 200 || $response['status'] >= 300) {
-            return $this->result(
+            return $this->sharedResult(
                 $id,
                 DiagnosticStatus::Error,
-                $prefix,
-                'fail',
+                $labelKey,
+                self::OAUTH_METADATA_PREFIX . '.fail',
+                self::OAUTH_METADATA_PREFIX . '.howToCheck',
+                $fixHintKey,
                 ['url' => $url, 'status' => $response['status'] ?? 0],
             );
         }
 
         if (!str_contains($response['body'], '/mcp')) {
-            return $this->result($id, DiagnosticStatus::Warning, $prefix, 'noMcpReference', ['url' => $url]);
+            return $this->sharedResult(
+                $id,
+                DiagnosticStatus::Warning,
+                $labelKey,
+                self::OAUTH_METADATA_PREFIX . '.noMcpReference',
+                self::OAUTH_METADATA_PREFIX . '.howToCheck',
+                $fixHintKey,
+                $args,
+            );
         }
 
-        return $this->result($id, DiagnosticStatus::Ok, $prefix, 'ok', ['url' => $url]);
+        return $this->sharedResult(
+            $id,
+            DiagnosticStatus::Ok,
+            $labelKey,
+            self::OAUTH_METADATA_PREFIX . '.ok',
+            self::OAUTH_METADATA_PREFIX . '.howToCheck',
+            self::SHARED_FIX_OK,
+            $args,
+        );
     }
 
     /**
+     * @param array{status: int, body: string}|null $response
      * @return array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}
      */
-    private function checkAuthHeaderDiagnostic(string $baseUrl): array
+    private function evaluateAuthHeaderDiagnostic(string $baseUrl, ?array $response): array
     {
         $prefix = 'diagnostic.authHeader';
 
@@ -226,19 +296,15 @@ final readonly class McpConnectionDiagnosticService
         }
 
         $url = rtrim($baseUrl, '/') . '/mcp?test=auth';
-        $response = $this->request('GET', $url, [
-            'Accept' => 'application/json',
-            'Authorization' => 'Bearer mcp-backend-diagnostic-check',
-        ]);
 
         if ($response === null) {
             return $this->result(
                 'auth_header',
                 DiagnosticStatus::Error,
                 $prefix,
-                'unreachable',
+                'diagnostic.http.unreachable',
                 ['url' => $url],
-                'fixUnreachable',
+                'diagnostic.http.fixUnreachable',
             );
         }
 
@@ -327,35 +393,6 @@ final readonly class McpConnectionDiagnosticService
         return $this->result('local_cli', DiagnosticStatus::Ok, $prefix, 'ok', ['path' => $binaryPath]);
     }
 
-    /**
-     * @param array<string, string> $headers
-     * @return array{status: int, body: string}|null
-     */
-    private function request(string $method, string $url, array $headers = []): ?array
-    {
-        try {
-            $options = [
-                'timeout' => self::REQUEST_TIMEOUT,
-                'allow_redirects' => true,
-                'headers' => $headers,
-            ];
-
-            if ($this->localModeService->isLocalMode() && str_starts_with($url, 'https://')) {
-                $options['verify'] = false;
-            }
-
-            $response = $this->requestFactory->request($url, $method, $options);
-            $body = (string)$response->getBody();
-
-            return [
-                'status' => $response->getStatusCode(),
-                'body' => $body,
-            ];
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
     private function isAuthHeaderDiagnosticEnabled(): bool
     {
         try {
@@ -389,8 +426,6 @@ final readonly class McpConnectionDiagnosticService
     }
 
     /**
-     * Builds a diagnostic result using the shared key naming convention.
-     *
      * @param array<string, string|int> $messageArguments
      * @return array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}
      */
@@ -398,21 +433,50 @@ final readonly class McpConnectionDiagnosticService
         string $id,
         DiagnosticStatus $status,
         string $prefix,
-        string $outcome,
+        string $messageKeyOrOutcome,
         array $messageArguments,
-        ?string $fixOutcome = null,
+        ?string $fixHintKey = null,
     ): array {
-        if ($fixOutcome === null) {
-            $fixOutcome = $status === DiagnosticStatus::Ok ? 'fixOk' : 'fixHint';
+        $messageKey = str_contains($messageKeyOrOutcome, '.')
+            ? $messageKeyOrOutcome
+            : $prefix . '.' . $messageKeyOrOutcome;
+
+        if ($fixHintKey === null) {
+            $fixHintKey = $status === DiagnosticStatus::Ok ? self::SHARED_FIX_OK : $prefix . '.fixHint';
         }
 
         return [
             'id' => $id,
             'status' => $status->value,
             'labelKey' => $prefix . '.label',
-            'messageKey' => $prefix . '.' . $outcome,
+            'messageKey' => $messageKey,
             'howToCheckKey' => $prefix . '.howToCheck',
-            'fixHintKey' => $prefix . '.' . $fixOutcome,
+            'fixHintKey' => $fixHintKey,
+            'messageArguments' => $messageArguments,
+            'fixHintArguments' => $messageArguments,
+        ];
+    }
+
+    /**
+     * @param array<string, string|int> $messageArguments
+     * @return array{id: string, status: string, labelKey: string, messageKey: string, howToCheckKey: string, fixHintKey: string, messageArguments: array<string, string|int>, fixHintArguments: array<string, string|int>}
+     */
+    private function sharedResult(
+        string $id,
+        DiagnosticStatus $status,
+        string $labelKey,
+        string $messageKey,
+        string $howToCheckKey,
+        string $fixHintKey,
+        array $messageArguments,
+    ): array {
+        return [
+            'id' => $id,
+            'status' => $status->value,
+            'labelKey' => $labelKey,
+            'messageKey' => $messageKey,
+            'howToCheckKey' => $howToCheckKey,
+            'fixHintKey' => $fixHintKey,
             'messageArguments' => $messageArguments,
             'fixHintArguments' => $messageArguments,
         ];

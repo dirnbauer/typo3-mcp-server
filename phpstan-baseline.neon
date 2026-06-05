@@ -2661,7 +2661,7 @@ parameters:
 		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 4
+			count: 3
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -2779,27 +2779,15 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Cannot access offset ''replace'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Cannot access offset ''replaceAll'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Cannot access offset ''search'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
 
 		-
 			message: '#^Cannot access offset ''type'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 6
+			count: 4
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -2877,13 +2865,13 @@ parameters:
 		-
 			message: '#^Cannot cast mixed to string\.$#'
 			identifier: cast.string
-			count: 19
+			count: 15
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 44
+			count: 42
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -2977,18 +2965,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:formatDataHandlerErrors\(\) has parameter \$errorLog with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -3015,24 +2991,6 @@ parameters:
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:getTableCtrlArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:isSearchReplaceArray\(\) has parameter \$value with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) has parameter \$searchReplace with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
@@ -3093,7 +3051,7 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in &&, array\<string, mixed\>\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3135,13 +3093,13 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
-			count: 3
+			count: 2
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
-			count: 5
+			count: 4
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
@@ -3247,12 +3205,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$search of function str_replace expects array\<string\>\|string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertDataForStorage\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 2
@@ -3295,25 +3247,13 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#2 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:extractSearchReplaceFromData\(\) expects array, mixed given\.$#'
+			message: '#^Parameter \#2 \$data of method Hn\\McpServer\\Service\\Record\\RecordSearchReplaceService\:\:extractFromData\(\) expects array\<string, mixed\>, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
 			message: '#^Parameter \#2 \$pid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:createRecord\(\) expects int, int\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$replace of function str_replace expects array\<string\>\|string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$replace of function substr_replace expects array\|string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -3337,7 +3277,7 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:resolveSearchReplace\(\) expects int, int\|null given\.$#'
+			message: '#^Parameter \#2 \$uid of method Hn\\McpServer\\Service\\Record\\RecordSearchReplaceService\:\:resolve\(\) expects int, int\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
@@ -3373,12 +3313,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#3 \$offset of function substr_replace expects array\|int, int\<0, max\>\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Parameter \#3 \$position of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:moveRecord\(\) expects string, string\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -3409,22 +3343,10 @@ parameters:
 			path: Classes/MCP/Tool/Record/WriteTableTool.php
 
 		-
-			message: '#^Parameter \#5 \$data of method Hn\\McpServer\\MCP\\Tool\\Record\\WriteTableTool\:\:convertSysLanguageUidFromIsoIfNeeded\(\) expects array\<string, mixed\>, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
 			message: '#^Part \$fieldType \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
-
-		-
-			message: '#^Part \$index \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 2
-			path: Classes/MCP/Tool/Record/WriteTableTool.php
+			path: Classes/Service/Record/RecordSearchReplaceService.php
 
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
@@ -4439,10 +4361,10 @@ parameters:
 			path: Classes/Service/TableAccessService.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getAllTcaTables\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			message: '#^Method Hn\\McpServer\\Service\\TableTcaResolver\:\:getAllTables\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
 			identifier: return.type
 			count: 1
-			path: Classes/Service/TableAccessService.php
+			path: Classes/Service/TableTcaResolver.php
 
 		-
 			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getAvailableFields\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\>\.$#'
@@ -4475,22 +4397,22 @@ parameters:
 			path: Classes/Service/TableAccessService.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableColumns\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			message: '#^Method Hn\\McpServer\\Service\\TableTcaResolver\:\:getColumns\(\) should return array\<string, array\<string, mixed\>\> but returns array\<string, array\<mixed\>\>\.$#'
 			identifier: return.type
 			count: 1
-			path: Classes/Service/TableAccessService.php
+			path: Classes/Service/TableTcaResolver.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			message: '#^Method Hn\\McpServer\\Service\\TableTcaResolver\:\:getCtrl\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
 			count: 1
-			path: Classes/Service/TableAccessService.php
+			path: Classes/Service/TableTcaResolver.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTableTypeConfig\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
+			message: '#^Method Hn\\McpServer\\Service\\TableTcaResolver\:\:getTypeConfig\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
 			count: 1
-			path: Classes/Service/TableAccessService.php
+			path: Classes/Service/TableTcaResolver.php
 
 		-
 			message: '#^Method Hn\\McpServer\\Service\\TableAccessService\:\:getTsConfigFieldSetting\(\) is unused\.$#'
@@ -4713,3 +4635,51 @@ parameters:
 			identifier: booleanAnd.rightNotBoolean
 			count: 1
 			path: Classes/Utility/TcaFormattingUtility.php
+
+		-
+			message: '#^Cannot access offset ''type'' on mixed\.$#'
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Only booleans are allowed in &&, array\<string, mixed\>\|null given on the left side\.$#'
+			identifier: booleanAnd.leftNotBoolean
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Parameter \#1 \$value of method Hn\\McpServer\\Service\\Record\\RecordSearchReplaceService\:\:isSearchReplaceArray\(\) expects list\<array\{search\: string, replace\: string, replaceAll\?\: bool\}\>, array\<mixed, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Method Hn\\McpServer\\Service\\Record\\RecordSearchReplaceService\:\:extractFromData\(\) should return array\<string, list\<array\{search\: string, replace\: string, replaceAll\?\: bool\}\>\> but returns array\<string, array\<mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\<string, mixed\>\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Only booleans are allowed in a negated boolean, array\|null given\.$#'
+			identifier: booleanNot.exprNotBoolean
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php
+
+		-
+			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
+			identifier: empty.notAllowed
+			count: 1
+			path: Classes/Service/Record/RecordSearchReplaceService.php

@@ -10,6 +10,7 @@ use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\Record\RecordSearchReplaceService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -44,6 +45,7 @@ final class WriteTableTool extends AbstractRecordTool
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SiteFinder $siteFinder,
         private readonly FileMetadataIndexService $fileMetadataIndexService,
+        private readonly RecordSearchReplaceService $searchReplaceService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -216,7 +218,7 @@ final class WriteTableTool extends AbstractRecordTool
 
         // Extract search/replace operations from data (arrays of {search, replace} objects
         // on non-inline fields are treated as search-and-replace operations)
-        $searchReplace = $this->extractSearchReplaceFromData($table, $data, $action);
+        $searchReplace = $this->searchReplaceService->extractFromData($table, $data, $action);
 
         /**
          * IMPORTANT FEATURE: ISO Code Support for sys_language_uid
@@ -322,7 +324,7 @@ final class WriteTableTool extends AbstractRecordTool
             case 'update':
                 // Resolve search_replace into concrete field values and merge into data
                 if (!empty($searchReplace)) {
-                    $resolvedFields = $this->resolveSearchReplace($table, $uid, $searchReplace);
+                    $resolvedFields = $this->searchReplaceService->resolve($table, $uid, $searchReplace);
                     $data = array_merge($data, $resolvedFields);
                 }
                 $updateResult = null;
@@ -1827,172 +1829,6 @@ final class WriteTableTool extends AbstractRecordTool
     protected function isFlexFormField(string $table, string $fieldName): bool
     {
         return $this->tableAccessService->isFlexFormField($table, $fieldName);
-    }
-
-    /**
-     * Extract search-and-replace operations from the data array.
-     *
-     * When a non-inline field value is an array of objects with 'search' and 'replace' keys,
-     * it's treated as search-and-replace operations instead of a direct value assignment.
-     * These are extracted from the data array and returned separately.
-     *
-     * @param string $table Table name
-     * @param array &$data Data array (modified in place to remove search/replace entries)
-     * @param string $action Current action (search/replace only valid for 'update')
-     * @return array Map of field name => array of search/replace operations
-     * @throws ValidationException If search/replace used in non-update action or operations are invalid
-     */
-    protected function extractSearchReplaceFromData(string $table, array &$data, string $action): array
-    {
-        $searchReplace = [];
-
-        foreach ($data as $fieldName => $value) {
-            if (!is_array($value)) {
-                continue;
-            }
-
-            // Check if this is an inline/file relation field — those genuinely use arrays
-            $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if ($fieldConfig && in_array($fieldConfig['config']['type'] ?? '', ['inline', 'file'], true)) {
-                continue;
-            }
-
-            // Check if this looks like search/replace operations:
-            // sequential array of objects with 'search' and 'replace' keys
-            if (!$this->isSearchReplaceArray($value)) {
-                continue;
-            }
-
-            // Validate action — search/replace only works for update
-            if ($action !== 'update') {
-                throw new ValidationException(["Search-and-replace operations in data are only supported for the \"update\" action (field '{$fieldName}')"]);
-            }
-
-            // Validate each operation
-            foreach ($value as $index => $operation) {
-                if ($operation['search'] === '') {
-                    throw new ValidationException(["Field '{$fieldName}' search-and-replace operation at index {$index} has an empty search string"]);
-                }
-            }
-
-            $searchReplace[$fieldName] = $value;
-            unset($data[$fieldName]);
-        }
-
-        return $searchReplace;
-    }
-
-    /**
-     * Check if a value looks like an array of search/replace operations.
-     *
-     * Returns true if the value is a non-empty sequential array where every item
-     * is an associative array with at least 'search' (string) and 'replace' (string) keys.
-     */
-    protected function isSearchReplaceArray(array $value): bool
-    {
-        if (empty($value)) {
-            return false;
-        }
-
-        // Must be a sequential (non-associative) array
-        if (array_keys($value) !== range(0, count($value) - 1)) {
-            return false;
-        }
-
-        foreach ($value as $item) {
-            if (!is_array($item)) {
-                return false;
-            }
-            if (!isset($item['search']) || !is_string($item['search'])) {
-                return false;
-            }
-            if (!array_key_exists('replace', $item) || !is_string($item['replace'])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Resolve search_replace operations into concrete field values.
-     *
-     * Fetches the current record (workspace-aware), validates field types,
-     * applies search-and-replace operations sequentially, and returns
-     * the resolved field values ready to merge into the data array.
-     *
-     * @param string $table Table name
-     * @param int $uid Live record UID
-     * @param array $searchReplace Map of field name => array of operations
-     * @return array Resolved field values (field name => new value)
-     * @throws ValidationException If a field is not a string type or search string is not found/ambiguous
-     */
-    protected function resolveSearchReplace(string $table, int $uid, array $searchReplace): array
-    {
-        // String-storable TCA field types that support search_replace
-        $stringFieldTypes = ['input', 'text', 'email', 'link', 'slug', 'color'];
-
-        // Collect all field names we need to fetch
-        $fieldNames = array_keys($searchReplace);
-
-        // Validate all fields exist, are accessible, and are string-type before fetching the record.
-        // Field access MUST be checked before any DB read to prevent information disclosure
-        // via search/replace error messages ("not found" / "found N times").
-        foreach ($fieldNames as $fieldName) {
-            $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-            if (!$fieldConfig) {
-                throw new ValidationException(["search_replace field '{$fieldName}' does not exist in table '{$table}'"]);
-            }
-            if (!$this->tableAccessService->canAccessField($table, $fieldName)) {
-                throw new ValidationException(["Field '{$fieldName}' is not accessible"]);
-            }
-            $fieldType = $fieldConfig['config']['type'] ?? '';
-            if (!in_array($fieldType, $stringFieldTypes, true)) {
-                throw new ValidationException(["search_replace is not supported for field '{$fieldName}' (type: {$fieldType}). Only string fields (text, input, etc.) are supported."]);
-            }
-        }
-
-        // Fetch full record with workspace overlay to get the current workspace version data,
-        // which is what the LLM sees from ReadTable output.
-        // We fetch all fields because workspaceOL needs uid and workspace metadata fields.
-        $record = BackendUtility::getRecord($table, $uid);
-        if (!$record) {
-            throw new ValidationException(["Record {$uid} not found in table '{$table}'"]);
-        }
-        BackendUtility::workspaceOL($table, $record);
-
-        $resolved = [];
-        foreach ($searchReplace as $fieldName => $operations) {
-            $currentValue = (string)($record[$fieldName] ?? '');
-
-            foreach ($operations as $index => $operation) {
-                $search = $operation['search'];
-                $replaceAll = !empty($operation['replaceAll']);
-                $replace = $operation['replace'];
-
-                $count = substr_count($currentValue, (string)$search);
-
-                if ($count === 0) {
-                    throw new ValidationException(["search_replace field '{$fieldName}' operation {$index}: Search string not found in current field value"]);
-                }
-
-                if ($count > 1 && !$replaceAll) {
-                    throw new ValidationException(["search_replace field '{$fieldName}' operation {$index}: Search string found {$count} times, must be unique. Set replaceAll to true to replace all occurrences."]);
-                }
-
-                if ($replaceAll) {
-                    $currentValue = str_replace($search, $replace, $currentValue);
-                } else {
-                    // Replace only the first (and only) occurrence
-                    $pos = strpos($currentValue, (string)$search);
-                    $currentValue = substr_replace($currentValue, $replace, $pos, strlen((string)$search));
-                }
-            }
-
-            $resolved[$fieldName] = $currentValue;
-        }
-
-        return $resolved;
     }
 
     /**

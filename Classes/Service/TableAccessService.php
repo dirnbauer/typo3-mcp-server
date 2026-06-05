@@ -61,6 +61,7 @@ final class TableAccessService
         private readonly PageDoktypeRegistry $pageDoktypeRegistry,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly LocalModeService $localMode,
+        private readonly TableTcaResolver $tcaResolver,
     ) {}
 
     /**
@@ -105,91 +106,12 @@ final class TableAccessService
 
     public function isEmbeddedChildTable(string $table): bool
     {
-        $hideTable = ($this->getTableCtrl($table)['hideTable'] ?? false) === true;
+        $hideTable = ($this->tcaResolver->getCtrl($table)['hideTable'] ?? false) === true;
         if (!$hideTable) {
             return false;
         }
 
         return !in_array($table, $this->getAdditionalStandaloneTables(), true);
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function getAllTcaTables(): array
-    {
-        $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
-            return [];
-        }
-
-        $tables = [];
-        foreach ($globalTca as $table => $tableConfig) {
-            if (is_string($table) && is_array($tableConfig)) {
-                $tables[$table] = $tableConfig;
-            }
-        }
-
-        return $tables;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getTableTca(string $table): array
-    {
-        return $this->getAllTcaTables()[$table] ?? [];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getTableCtrl(string $table): array
-    {
-        $ctrl = $this->getTableTca($table)['ctrl'] ?? [];
-        return is_array($ctrl) ? $ctrl : [];
-    }
-
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    private function getTableColumns(string $table): array
-    {
-        $columns = $this->getTableTca($table)['columns'] ?? [];
-        if (!is_array($columns)) {
-            return [];
-        }
-
-        $normalizedColumns = [];
-        foreach ($columns as $fieldName => $fieldConfig) {
-            if (is_string($fieldName) && is_array($fieldConfig)) {
-                $normalizedColumns[$fieldName] = $fieldConfig;
-            }
-        }
-
-        return $normalizedColumns;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getFieldTca(string $table, string $fieldName): array
-    {
-        return $this->getTableColumns($table)[$fieldName] ?? [];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getTableTypeConfig(string $table, string $type): array
-    {
-        $types = $this->getTableTca($table)['types'] ?? [];
-        if (!is_array($types)) {
-            return [];
-        }
-
-        $typeConfig = $types[$type] ?? [];
-        return is_array($typeConfig) ? $typeConfig : [];
     }
 
     /**
@@ -231,7 +153,7 @@ final class TableAccessService
     {
         $accessibleTables = [];
 
-        foreach (array_keys($this->getAllTcaTables()) as $table) {
+        foreach (array_keys($this->tcaResolver->getAllTables()) as $table) {
             $accessInfo = $this->getTableAccessInfo($table);
 
             if ($accessInfo['accessible']) {
@@ -256,7 +178,7 @@ final class TableAccessService
     {
         $readableTables = [];
 
-        foreach (array_keys($this->getAllTcaTables()) as $table) {
+        foreach (array_keys($this->tcaResolver->getAllTables()) as $table) {
             $accessInfo = $this->getTableAccessInfo($table, false); // Don't require workspace capability
 
             if ($accessInfo['accessible']) {
@@ -315,7 +237,7 @@ final class TableAccessService
         ];
 
         // Check if table exists in TCA
-        if ($this->getTableTca($table) === []) {
+        if ($this->tcaResolver->getTable($table) === []) {
             $info['reasons'][] = 'Table does not exist in TCA';
             return $info;
         }
@@ -328,7 +250,7 @@ final class TableAccessService
 
         // Workspace is required for the default (write) path; allow configured read-only
         // non-workspace tables (e.g. sys_file) as read-only in that path.
-        $workspaceCapability = $this->getTableCtrl($table)['versioningWS'] ?? false;
+        $workspaceCapability = $this->tcaResolver->getCtrl($table)['versioningWS'] ?? false;
         $info['workspace_capable'] = $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
         $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
         $requiresWorkspaceForWrite = $requireWorkspaceCapability && !$this->localMode->allowsLiveWrites();
@@ -459,7 +381,7 @@ final class TableAccessService
         $this->validateTableAccess($table);
 
         // Check if schema exists for this table
-        if (!$this->tcaSchemaFactory->has($table)) {
+        if (!$this->tcaResolver->hasTable($table)) {
             return [];
         }
 
@@ -481,7 +403,7 @@ final class TableAccessService
         //    the schema to advertise every column they can filter on (mime_type, sha1,
         //    size, identifier, ...). sys_file's TCA only defines a showitem for type
         //    "1" listing 3 fields, so a sub-schema view drops the rest.
-        $rawTypeField = $this->getTableCtrl($table)['type'] ?? null;
+        $rawTypeField = $this->tcaResolver->getCtrl($table)['type'] ?? null;
         $usesForeignTypeNotation = is_string($rawTypeField) && str_contains($rawTypeField, ':');
         $isReadOnly = $this->isTableReadOnly($table);
         if ($usesForeignTypeNotation || $isReadOnly) {
@@ -494,7 +416,7 @@ final class TableAccessService
             // TYPO3 v14 no longer exposes subtype handling via TcaSchema.
             // Prefer CType-driven schema handling and only fall back to raw TCA when
             // older subtype-based configurations are still present.
-            $typeConfig = $this->getTableTypeConfig($table, $type);
+            $typeConfig = $this->tcaResolver->getTypeConfig($table, $type);
             $subtypeFieldName = isset($typeConfig['subtype_value_field']) && is_string($typeConfig['subtype_value_field'])
                 ? $typeConfig['subtype_value_field']
                 : null;
@@ -509,7 +431,7 @@ final class TableAccessService
             // Try to fall back to a reasonable default type
             if (empty($type) && $schema->supportsSubSchema()) {
                 // Get the default type from TCA configuration
-                $typeFieldConfig = $this->getFieldTca($table, $schema->getSubSchemaTypeInformation()->getFieldName());
+                $typeFieldConfig = $this->tcaResolver->getField($table, $schema->getSubSchemaTypeInformation()->getFieldName());
                 $typeFieldOptions = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
                 $defaultType = isset($typeFieldOptions['default']) && is_string($typeFieldOptions['default']) ? $typeFieldOptions['default'] : '';
 
@@ -575,8 +497,8 @@ final class TableAccessService
      */
     private function addSubtypeFields(string $table, string $type, string $subtypeField, array &$fields): void
     {
-        $columns = $this->getTableColumns($table);
-        $typeConfig = $this->getTableTypeConfig($table, $type);
+        $columns = $this->tcaResolver->getColumns($table);
+        $typeConfig = $this->tcaResolver->getTypeConfig($table, $type);
 
         // Check if there are FlexForm fields configured
         $flexFormFields = [];
@@ -756,7 +678,7 @@ final class TableAccessService
         }
 
         // Admin-only tables (only restrict if user is not admin)
-        $ctrl = $this->getTableCtrl($table);
+        $ctrl = $this->tcaResolver->getCtrl($table);
         if (!empty($ctrl['adminOnly']) && !$this->getBackendUser()->isAdmin()) {
             return true;
         }
@@ -831,7 +753,7 @@ final class TableAccessService
         }
 
         // Check TCA configuration
-        $ctrl = $this->getTableCtrl($table);
+        $ctrl = $this->tcaResolver->getCtrl($table);
         if (!empty($ctrl['readOnly'])) {
             return true;
         }
@@ -922,7 +844,7 @@ final class TableAccessService
     private function getFieldRestrictions(string $table): array
     {
         $restrictions = [];
-        $columns = $this->getTableColumns($table);
+        $columns = $this->tcaResolver->getColumns($table);
 
         if ($columns === []) {
             return $restrictions;
@@ -1116,7 +1038,7 @@ final class TableAccessService
      */
     private function getTableControlInfo(string $table): array
     {
-        $ctrl = $this->getTableCtrl($table);
+        $ctrl = $this->tcaResolver->getCtrl($table);
 
         // Extract only relevant control fields
         $relevantFields = [
@@ -1146,7 +1068,7 @@ final class TableAccessService
      */
     public function getTableTitle(string $table): string
     {
-        $title = $this->getTableCtrl($table)['title'] ?? null;
+        $title = $this->tcaResolver->getCtrl($table)['title'] ?? null;
         return is_string($title) && $title !== '' ? $title : $table;
     }
 
@@ -1155,7 +1077,7 @@ final class TableAccessService
      */
     public function getTypeFieldName(string $table): ?string
     {
-        $typeField = $this->getTableCtrl($table)['type'] ?? null;
+        $typeField = $this->tcaResolver->getCtrl($table)['type'] ?? null;
         if (!is_string($typeField) || $typeField === '') {
             return null;
         }
@@ -1175,7 +1097,7 @@ final class TableAccessService
      */
     public function getLabelFieldName(string $table): ?string
     {
-        $labelField = $this->getTableCtrl($table)['label'] ?? null;
+        $labelField = $this->tcaResolver->getCtrl($table)['label'] ?? null;
         return is_string($labelField) && $labelField !== '' ? $labelField : null;
     }
 
@@ -1184,7 +1106,7 @@ final class TableAccessService
      */
     public function getSortingFieldName(string $table): ?string
     {
-        $sortby = $this->getTableCtrl($table)['sortby'] ?? null;
+        $sortby = $this->tcaResolver->getCtrl($table)['sortby'] ?? null;
         return is_string($sortby) && $sortby !== '' ? $sortby : null;
     }
 
@@ -1193,7 +1115,7 @@ final class TableAccessService
      */
     public function getDefaultSorting(string $table): ?string
     {
-        $defaultSorting = $this->getTableCtrl($table)['default_sortby'] ?? null;
+        $defaultSorting = $this->tcaResolver->getCtrl($table)['default_sortby'] ?? null;
         return is_string($defaultSorting) && $defaultSorting !== '' ? $defaultSorting : null;
     }
 
@@ -1202,7 +1124,7 @@ final class TableAccessService
      */
     public function getTimestampFieldName(string $table): ?string
     {
-        $timestampField = $this->getTableCtrl($table)['tstamp'] ?? null;
+        $timestampField = $this->tcaResolver->getCtrl($table)['tstamp'] ?? null;
         return is_string($timestampField) && $timestampField !== '' ? $timestampField : null;
     }
 
@@ -1211,7 +1133,7 @@ final class TableAccessService
      */
     public function getCreationDateFieldName(string $table): ?string
     {
-        $creationDateField = $this->getTableCtrl($table)['crdate'] ?? null;
+        $creationDateField = $this->tcaResolver->getCtrl($table)['crdate'] ?? null;
         return is_string($creationDateField) && $creationDateField !== '' ? $creationDateField : null;
     }
 
@@ -1220,7 +1142,7 @@ final class TableAccessService
      */
     public function getLanguageFieldName(string $table): ?string
     {
-        $languageField = $this->getTableCtrl($table)['languageField'] ?? null;
+        $languageField = $this->tcaResolver->getCtrl($table)['languageField'] ?? null;
         return is_string($languageField) && $languageField !== '' ? $languageField : null;
     }
 
@@ -1229,7 +1151,7 @@ final class TableAccessService
      */
     public function getHiddenFieldName(string $table): ?string
     {
-        $enableColumns = $this->getTableCtrl($table)['enablecolumns'] ?? [];
+        $enableColumns = $this->tcaResolver->getCtrl($table)['enablecolumns'] ?? [];
         if (!is_array($enableColumns)) {
             return null;
         }
@@ -1242,7 +1164,7 @@ final class TableAccessService
      */
     public function getTranslationParentFieldName(string $table): ?string
     {
-        $parentField = $this->getTableCtrl($table)['transOrigPointerField'] ?? null;
+        $parentField = $this->tcaResolver->getCtrl($table)['transOrigPointerField'] ?? null;
         return is_string($parentField) && $parentField !== '' ? $parentField : null;
     }
 
@@ -1251,7 +1173,7 @@ final class TableAccessService
      */
     public function getTranslationSourceFieldName(string $table): ?string
     {
-        $sourceField = $this->getTableCtrl($table)['translationSource'] ?? null;
+        $sourceField = $this->tcaResolver->getCtrl($table)['translationSource'] ?? null;
         return is_string($sourceField) && $sourceField !== '' ? $sourceField : null;
     }
 
@@ -1264,7 +1186,7 @@ final class TableAccessService
     public function getExcludedFieldsInTranslation(string $table): array
     {
         $excludedFields = [];
-        $columns = $this->getTableColumns($table);
+        $columns = $this->tcaResolver->getColumns($table);
 
         foreach ($columns as $fieldName => $fieldConfig) {
             $l10nMode = $fieldConfig['l10n_mode'] ?? '';
@@ -1319,7 +1241,7 @@ final class TableAccessService
         ]);
 
         $translatable = [];
-        foreach ($this->getTableColumns($table) as $fieldName => $fieldConfig) {
+        foreach ($this->tcaResolver->getColumns($table) as $fieldName => $fieldConfig) {
             if (in_array($fieldName, $excluded, true) || in_array($fieldName, $systemFields, true)) {
                 continue;
             }
@@ -1347,14 +1269,14 @@ final class TableAccessService
      */
     public function getSearchFields(string $table): array
     {
-        $searchFields = $this->getTableCtrl($table)['searchFields'] ?? '';
+        $searchFields = $this->tcaResolver->getCtrl($table)['searchFields'] ?? '';
 
         if (is_string($searchFields) && $searchFields !== '') {
             return GeneralUtility::trimExplode(',', $searchFields, true);
         }
 
         $fallbackFields = [];
-        foreach ($this->getTableColumns($table) as $fieldName => $fieldConfig) {
+        foreach ($this->tcaResolver->getColumns($table) as $fieldName => $fieldConfig) {
             $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
             $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
 
@@ -1402,7 +1324,7 @@ final class TableAccessService
     {
         $availableFields = $this->getAvailableFields($table, $recordType);
 
-        $ctrl = $this->getTableCtrl($table);
+        $ctrl = $this->tcaResolver->getCtrl($table);
         $exclude = ['pid'];
 
         foreach (['tstamp', 'crdate', 'languageField', 'transOrigPointerField', 'transOrigDiffSourceField', 'translationSource'] as $ctrlKey) {
@@ -1416,7 +1338,7 @@ final class TableAccessService
             $exclude[] = $foreignField;
         }
 
-        foreach ($this->getTableColumns($table) as $name => $config) {
+        foreach ($this->tcaResolver->getColumns($table) as $name => $config) {
             $fieldConfig = isset($config['config']) && is_array($config['config']) ? $config['config'] : [];
             $type = $fieldConfig['type'] ?? '';
             if (in_array($type, ['passthrough', 'category', 'none'], true)) {
@@ -1501,7 +1423,7 @@ final class TableAccessService
                 $types[(string)$value] = $resolved['labels'][$value] ?? (string)$value;
             }
         } else {
-            $typeFieldConfig = $this->getFieldTca($table, $typeField);
+            $typeFieldConfig = $this->tcaResolver->getField($table, $typeField);
             $typeConfig = isset($typeFieldConfig['config']) && is_array($typeFieldConfig['config']) ? $typeFieldConfig['config'] : [];
             $items = (isset($typeConfig['items']) && is_array($typeConfig['items'])) ? $typeConfig['items'] : [];
             $parsed = $this->parseSelectItems($items);
@@ -1543,7 +1465,7 @@ final class TableAccessService
      */
     public function getFieldConfig(string $table, string $fieldName): ?array
     {
-        $fieldConfig = $this->getFieldTca($table, $fieldName);
+        $fieldConfig = $this->tcaResolver->getField($table, $fieldName);
         return $fieldConfig === [] ? null : $fieldConfig;
     }
 
@@ -1735,7 +1657,7 @@ final class TableAccessService
                 $allowedValues = $parsed['values'];
             }
 
-            $pageTypes = $this->getTableTca('pages')['types'] ?? [];
+            $pageTypes = $this->tcaResolver->getTable('pages')['types'] ?? [];
             if (is_array($pageTypes)) {
                 foreach (array_keys($pageTypes) as $doktype) {
                     $normalizedDoktype = $this->normalizeDoktypeValue($doktype);
