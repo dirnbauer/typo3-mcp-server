@@ -230,18 +230,40 @@ any host (the IP-range SSRF check still rejects private addresses).
 Live writes are rejected even though I expect them to work
 ==========================================================
 
+.. _troubleshooting-live-edits:
+
 Symptom: ``WriteTable`` rejects ``workspace_id: 0`` with
 ``AccessDenied: live workspace (set localUnsafeMode=on or run inside
 DDEV)`` even though you're on a developer machine.
 
 Cause: the server detected a Production-style application context and the
-``localUnsafeMode`` setting is at ``auto`` or ``off``.
+``localUnsafeMode`` setting is at ``auto`` or ``off``, or ``strictSandbox``
+is forcing production behaviour.
 
 Fix: either set ``TYPO3_CONTEXT=Development`` (or one of its derivatives)
 in your environment, set ``IS_DDEV_PROJECT=true``, or pin
-``localUnsafeMode = on`` in extension settings. Verify via
+``localUnsafeMode = on`` in extension settings or User TSconfig. Verify via
 ``vendor/bin/typo3 mcp:get-capabilities --json`` — the ``localMode``
 section reports what's detected.
+
+See :doc:`../Configuration/LiveEditsOnDevelopment` for the full plain-language
+guide to local live editing and per-user opt-out.
+
+Changes appear in a draft workspace on DDEV, not on the page I see
+==================================================================
+
+.. _troubleshooting-ddev-still-draft:
+
+Symptom: On DDEV, AI edits still land in a workspace draft instead of updating
+the local page you see in the browser.
+
+Cause: local mode is off for this backend user or instance — for example
+``localUnsafeMode = off`` globally, ``options.mcpServer.localUnsafeMode = off``
+in User TSconfig, or ``strictSandbox = 1``.
+
+Fix: check ``mcp:get-capabilities --json`` (``allows_live_writes`` should be
+``true`` for live-by-default behaviour). Adjust extension settings or User
+TSconfig as described in :doc:`../Configuration/LiveEditsOnDevelopment`.
 
 The backend module tabs do nothing
 ==================================

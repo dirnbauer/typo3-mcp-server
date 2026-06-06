@@ -75,6 +75,31 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->service->switchToWorkspace($backendUser, 0);
     }
 
+    public function testSwitchToOptimalWorkspaceDefaultsToLiveInLocalMode(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+        $backendUser = $GLOBALS['BE_USER'];
+        $backendUser->workspace = 0;
+
+        $workspaceId = $this->service->switchToOptimalWorkspace($backendUser);
+
+        self::assertSame(0, $workspaceId);
+        self::assertSame(0, $backendUser->workspace);
+    }
+
+    public function testSwitchToOptimalWorkspaceKeepsDraftInLocalMode(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+        $this->importCSVDataSet(__DIR__ . '/../Fixtures/sys_workspace.csv');
+
+        $backendUser = $GLOBALS['BE_USER'];
+        $this->service->switchToWorkspace($backendUser, 1);
+
+        $workspaceId = $this->service->switchToOptimalWorkspace($backendUser);
+
+        self::assertSame(1, $workspaceId);
+    }
+
     public function testGetWorkspaceInfoReturnsArray(): void
     {
         $info = $this->service->getWorkspaceInfo();

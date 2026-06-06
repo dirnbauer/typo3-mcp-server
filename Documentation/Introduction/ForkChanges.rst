@@ -80,7 +80,7 @@ instead of surfacing as generic JSON-RPC internal errors.
 Workspace-safe record editing
 =============================
 
-The fork makes TYPO3 workspaces the normal write path:
+The fork makes TYPO3 workspaces the normal write path on **production**:
 
 - ``WorkspaceContextService`` keeps a current non-live workspace, switches to
   a requested workspace, or selects/creates an MCP workspace for the user.
@@ -97,8 +97,14 @@ The fork makes TYPO3 workspaces the normal write path:
 - ``PublishWorkspace``, ``RollbackWorkspace``, and ``WorkspaceReview`` provide
   dry-run-first review and release workflows.
 
-``workspace_id: 0`` is accepted only when local mode explicitly allows live
-writes. Production endpoints keep record writes staged in a non-live workspace.
+On **production**, record writes stay staged in a non-live workspace unless
+local mode is explicitly enabled (which it should not be).
+
+On **DDEV / local development**, when local mode is active, omitted
+``workspace_id`` now **defaults to live** so local sites behave like direct
+editing. Pass an explicit draft ``workspace_id`` to stage locally. Per-user
+User TSconfig can opt out. Plain-language guide:
+:doc:`../Configuration/LiveEditsOnDevelopment`.
 
 .. _fork-changes-tca:
 

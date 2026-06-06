@@ -33,13 +33,24 @@ final readonly class WorkspaceContextService
 
     /**
      * Switch to the optimal workspace for the current user.
-     * Creates a new workspace if none exists and user can create workspaces.
+     *
+     * In strict/production mode, selects the first writable draft workspace or
+     * creates an MCP workspace when none exist. In local mode
+     * ({@see LocalModeService::allowsLiveWrites()}), defaults to live (0) so
+     * DDEV / Development workflows edit published content unless the client
+     * passes an explicit draft ``workspace_id``.
      */
     public function switchToOptimalWorkspace(BackendUserAuthentication $beUser): int
     {
         $currentWorkspace = $beUser->workspace;
         if ($currentWorkspace > 0) {
             return $currentWorkspace;
+        }
+
+        if ($this->localMode->allowsLiveWrites()) {
+            $this->setWorkspaceContext($beUser, 0);
+
+            return 0;
         }
 
         $workspaceId = $this->getFirstWritableWorkspace($beUser);

@@ -169,6 +169,18 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     }
 
     /**
+     * Replace backend-user TSconfig and reload the user (mirrors LocalModeServiceTest).
+     */
+    protected function setUserTsConfig(string $tsConfig, int $uid = 1): void
+    {
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_users')
+            ->update('be_users', ['TSconfig' => $tsConfig], ['uid' => $uid]);
+
+        $GLOBALS['BE_USER'] = $this->setUpBackendUser($uid);
+    }
+
+    /**
      * Get a database connection for a table
      *
      * @param string $table

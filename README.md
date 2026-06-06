@@ -255,12 +255,12 @@ Dev-site tools use the **same** `localMode` gate as live workspace writes and
 unrestricted file access (see [DDEV / local-development mode](#ddev--local-development-mode)
 below). When `localUnsafeMode` resolves to **on** — via DDEV, TYPO3
 Development context, or explicit `localUnsafeMode=on` — the MCP server also
-exposes tools that stay hidden on production endpoints. `mcpServer.strictSandbox`
+exposes tools that stay hidden on production endpoints. Record tools **default
+to the live workspace** when `workspace_id` is omitted (major local-dev
+change; production unchanged). See
+[`Documentation/Configuration/LiveEditsOnDevelopment.rst`](Documentation/Configuration/LiveEditsOnDevelopment.rst)
+for a plain-language guide and per-user opt-out. `mcpServer.strictSandbox`
 turns all relaxations off, including dev-site tools, even inside DDEV.
-
-Record tools still **default** to workspace staging unless you pass
-`workspace_id: 0`; local mode only *permits* live writes, it does not make them
-the default.
 
 | Tool | Purpose |
 |------|---------|
@@ -447,7 +447,10 @@ When the server detects a DDEV environment (via `IS_DDEV_PROJECT`,
 `DDEV_PROJECT`, `DDEV_HOSTNAME`, or `DDEV_TLD`) **or** when TYPO3 runs in
 the `Development/...` application context, the safety nets relax:
 
-- `WriteTable` accepts `workspace_id: 0` (live writes).
+- Record tools default to the **live workspace** when `workspace_id` is omitted
+  (edit published content directly). Pass an explicit draft `workspace_id` to
+  stage changes locally.
+- `WriteTable` also accepts `workspace_id: 0` explicitly.
 - `BrowseFiles`, `WriteFile`, `UploadFile` accept any storage / path.
 - File-sandbox boundary checks are bypassed (path-traversal protection
   still applies).
@@ -466,15 +469,17 @@ Override via extension setting `localUnsafeMode`:
 | `off`  | always strict — production-safe                                              |
 
 The same mode can be set per backend user or group via User TSconfig, which
-allows TYPO3 conditions:
+allows TYPO3 conditions (recommended for opt-out on DDEV):
 
 ```typoscript
-[applicationContext == "Development/DDEV"]
+[applicationContext == "Development/DDEV" && backend.user.groupList contains "integrators"]
 options.mcpServer.localUnsafeMode = on
 [else]
 options.mcpServer.localUnsafeMode = off
 [end]
 ```
+
+When `localUnsafeMode` resolves to `off`, MCP uses draft workspaces even on DDEV.
 
 To force the production safety nets even in DDEV, set either the TYPO3 feature
 flag `$GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox']`

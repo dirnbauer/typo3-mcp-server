@@ -77,9 +77,13 @@ Core principles
 Workspace-first writes
 ----------------------
 
-Record changes are staged in TYPO3 workspaces. Live content is not directly
-edited through MCP in strict/production mode. Local mode can permit
-``workspace_id: 0`` for trusted DDEV or Development contexts.
+On **production**, record changes are staged in TYPO3 workspaces. Live content
+is not directly edited through MCP until a human publishes.
+
+On **DDEV / local development**, MCP now defaults to editing the live copy of
+your local site (see :doc:`../Configuration/LiveEditsOnDevelopment` for a
+plain-language explanation of this major change and how to turn it off per
+user).
 
 TCA-first modeling
 ------------------

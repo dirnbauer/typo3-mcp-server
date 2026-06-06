@@ -44,11 +44,25 @@ Workspace behavior
 
 All record tools are workspace-aware.
 
-Default behavior:
+.. note::
+
+   **Major change (local development only):** On DDEV and other trusted local
+   setups, MCP now edits the **live copy of your local site by default** when
+   the AI does not specify a workspace. Production behaviour is unchanged.
+   Plain-language guide: :doc:`LiveEditsOnDevelopment`.
+
+Default behavior (strict / production):
 
 - if the user is already in a non-live workspace, that workspace is kept
 - otherwise the first writable workspace is selected
 - if needed, the extension can create an MCP workspace for the user
+
+Default behavior (DDEV / local mode):
+
+- if the user is already in a non-live workspace, that workspace is kept
+- otherwise MCP defaults to the live workspace (``workspace_id: 0``)
+- omit ``workspace_id`` on write tools to edit published content directly
+- pass an explicit draft ``workspace_id`` when you still want staged changes
 
 Explicit behavior:
 
@@ -57,11 +71,32 @@ Explicit behavior:
 - clients only need the public workspace ID, not TYPO3's internal versioning
   details
 
+Per-user opt-in / opt-out (User TSconfig)
+-----------------------------------------
+
+``options.mcpServer.localUnsafeMode`` overrides the extension setting and is
+the recommended way to grant or revoke live writes per backend user or group.
+Use TYPO3 conditions so DDEV developers get live edits while production-like
+MCP users stay workspace-only:
+
+.. code-block:: typoscript
+
+   # Example: live writes for integrators on DDEV, workspace-only for editors
+   [applicationContext == "Development/DDEV" && backend.user.groupList contains "integrators"]
+   options.mcpServer.localUnsafeMode = on
+   [else]
+   options.mcpServer.localUnsafeMode = off
+   [end]
+
+When ``localUnsafeMode`` resolves to ``off`` (extension setting, User TSconfig,
+or ``mcpServer.strictSandbox``), MCP falls back to draft workspace selection
+even inside DDEV.
+
 .. important::
 
    In strict/production mode, live records are not directly edited through the
-   record tools. ``workspace_id: 0`` is accepted only when local mode explicitly
-   allows live writes.
+   record tools. Live writes require local mode (``localUnsafeMode`` resolving
+   to ``on``, including the DDEV / Development ``auto`` default).
 
 File sandbox configuration
 ==========================
@@ -310,4 +345,11 @@ Use this checklist when rolling out the extension:
 - verify workspace access
 - review the configured file sandbox root
 - decide whether workspace upload subfolders should stay enabled
+- on DDEV: read :doc:`LiveEditsOnDevelopment` and decide who may edit live
+  locally (User TSconfig opt-out)
 - test remote OAuth login with your target MCP client
+
+.. toctree::
+   :hidden:
+
+   LiveEditsOnDevelopment

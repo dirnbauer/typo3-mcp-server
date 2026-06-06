@@ -92,9 +92,10 @@ machine-readable responses. This extension provides that layer while:
 
 Record-backed writes stage in a TYPO3 workspace by default. Clients see stable
 live-facing UIDs; internal version rows never leak into tool output. If the
-user has no active workspace, the extension picks a writable one or creates
-an "MCP" workspace automatically. Live writes require explicit
-`workspace_id: 0` and local mode.
+user has no active workspace, the extension picks a writable draft or creates
+an "MCP" workspace automatically. In local mode (DDEV / Development /
+`localUnsafeMode=on`), omitted `workspace_id` defaults to live (`0`); pass an
+explicit draft `workspace_id` to stage changes locally.
 
 ### 2. TCA-first
 

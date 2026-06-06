@@ -9,6 +9,16 @@ SemVer once it leaves the experimental surface.
 
 ## Unreleased
 
+### Changed
+
+- **Local development default workspace (major behaviour change).** On DDEV /
+  trusted local mode, record tools now default to the **live workspace** when
+  `workspace_id` is omitted — AI edits update the published local copy
+  immediately instead of auto-creating a draft workspace. **Production is
+  unchanged** (draft-first). Per-user opt-out via User TSconfig
+  `options.mcpServer.localUnsafeMode = off`. Plain-language manual:
+  `Documentation/Configuration/LiveEditsOnDevelopment.rst`.
+
 ### Added
 
 - **Capability manifest** (`Configuration/Capabilities.yaml`) declares

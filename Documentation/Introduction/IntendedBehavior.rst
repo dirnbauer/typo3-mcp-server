@@ -31,13 +31,20 @@ Record behavior
 Workspace-first writes
 ----------------------
 
-Record-backed modifications are expected to stay behind TYPO3 workspaces:
+Record-backed modifications are expected to stay behind TYPO3 workspaces in
+strict/production mode:
 
-- direct live edits are not the normal MCP write path
+- direct live edits are not the normal MCP write path on production endpoints
 - the optional ``workspace_id`` parameter lets a client choose a specific draft
   workspace explicitly
-- when ``workspace_id`` is omitted, the extension keeps the current non-live
-  workspace if possible, otherwise selects or creates a writable one
+- when ``workspace_id`` is omitted in strict mode, the extension keeps the
+  current non-live workspace if possible, otherwise selects or creates a
+  writable one
+
+In DDEV / local mode (``localUnsafeMode`` resolving to ``on``), omitted
+``workspace_id`` defaults to live (``0``) so local development can edit
+published content directly. Per-user User TSconfig can disable that even on
+DDEV. Pass an explicit draft ``workspace_id`` to stage changes locally.
 - returned record identifiers stay live-facing even when TYPO3 stores an
   internal workspace version row underneath
 

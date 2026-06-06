@@ -81,6 +81,8 @@ Start here depending on your role:
 - :doc:`Installation/Index` for Composer installation and first setup
 - :doc:`Configuration/Index` for module, OAuth, workspace, and file sandbox
   configuration
+- :doc:`Configuration/LiveEditsOnDevelopment` for the local-development live-edit
+  change (plain language)
 - :doc:`Tools/Index` for the complete MCP tool reference
 - :doc:`Testing/Index` for the E2E test suite and CI test workflow
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
