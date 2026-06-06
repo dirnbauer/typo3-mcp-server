@@ -46,10 +46,10 @@ All record tools are workspace-aware.
 
 .. note::
 
-   **Major change (local development only):** On DDEV and other trusted local
-   setups, MCP now edits the **live copy of your local site by default** when
-   the AI does not specify a workspace. Production behaviour is unchanged.
-   Plain-language guide: :doc:`LiveEditsOnDevelopment`.
+   **Live edit policy (DDEV, production, chatbots):** On DDEV, MCP defaults to
+   live local edits when the chatbot omits ``workspace_id``. Production stays
+   draft-first unless you opt in. Plain-language guide (including **production
+   override**): :doc:`LiveEditsOnDevelopment`.
 
 Default behavior (strict / production):
 
@@ -227,6 +227,11 @@ Extension configuration values
       this at ``auto`` (the default) — there should be no DDEV vars and no
       Development context in production, so ``auto`` resolves to ``off``
       automatically.
+
+      To **deliberately** enable DDEV-like live chatbot edits on a non-DDEV
+      server (staging, demo, or production — high risk), see
+      :ref:`configuration-live-edits-production-override` in
+      :doc:`LiveEditsOnDevelopment`.
 
    Authentication (OAuth + backend session), backend-user permissions, and
    per-tool subsystem checks from the capability manifest stay enforced even

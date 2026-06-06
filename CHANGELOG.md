@@ -16,7 +16,8 @@ SemVer once it leaves the experimental surface.
   `workspace_id` is omitted — AI edits update the published local copy
   immediately instead of auto-creating a draft workspace. **Production is
   unchanged** (draft-first). Per-user opt-out via User TSconfig
-  `options.mcpServer.localUnsafeMode = off`. Plain-language manual:
+  `options.mcpServer.localUnsafeMode = off`. Production override (opt-in
+  DDEV-like live chatbot edits): see
   `Documentation/Configuration/LiveEditsOnDevelopment.rst`.
 
 ### Added

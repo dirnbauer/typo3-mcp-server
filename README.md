@@ -259,7 +259,9 @@ exposes tools that stay hidden on production endpoints. Record tools **default
 to the live workspace** when `workspace_id` is omitted (major local-dev
 change; production unchanged). See
 [`Documentation/Configuration/LiveEditsOnDevelopment.rst`](Documentation/Configuration/LiveEditsOnDevelopment.rst)
-for a plain-language guide and per-user opt-out. `mcpServer.strictSandbox`
+for a plain-language guide and per-user opt-out. **Production override**
+(DDEV-like live chatbot edits on a non-DDEV server) is documented in the same
+guide — use with extreme care. `mcpServer.strictSandbox`
 turns all relaxations off, including dev-site tools, even inside DDEV.
 
 | Tool | Purpose |
@@ -480,6 +482,65 @@ options.mcpServer.localUnsafeMode = off
 ```
 
 When `localUnsafeMode` resolves to `off`, MCP uses draft workspaces even on DDEV.
+
+### MCP live vs draft — decision tree
+
+Entry points (HTTP OAuth, Cursor stdio, CLI), hosting context (DDEV, Development, production, staging), and where chatbot edits land:
+
+```mermaid
+flowchart TB
+    subgraph EP["① MCP entry points"]
+        HTTP["Remote HTTP /mcp<br/>OAuth token → real backend user"]
+        STDIO["Local stdio<br/>Cursor Install → ddev exec mcp:server"]
+        CLI["TYPO3 CLI<br/>vendor/bin/typo3 mcp:…"]
+    end
+
+    subgraph ENV["② Hosting context examples"]
+        DDEV["DDEV<br/>IS_DDEV_PROJECT, …"]
+        DEVCTX["Development context<br/>TYPO3_CONTEXT=Development/…"]
+        PROD["Production<br/>Production context, no DDEV vars"]
+        STAGE["Staging / demo<br/>same rules as PROD unless overridden"]
+    end
+
+    EP --> CTX["Backend user + workspace context"]
+    HTTP --> REAL["Token owner: permissions + User TSconfig apply"]
+    STDIO --> SYNTH["Synthetic admin uid 1<br/>extension / auto policy mainly"]
+
+    CTX --> POLICY
+
+    subgraph POLICY["③ LocalModeService — local mode on?"]
+        SB{"strictSandbox = 1?<br/>feature flag or User TSconfig"}
+        SB -- strict --> OFF["local mode OFF<br/>allows_live_writes: false"]
+        SB -- not strict --> CFG{"localUnsafeMode<br/>User TSconfig overrides extension"}
+        CFG -- on --> ON["local mode ON<br/>allows_live_writes: true"]
+        CFG -- off --> OFF
+        CFG -- auto --> AUTO{"DDEV env vars<br/>OR Development context?"}
+        AUTO -- detected --> ON
+        AUTO -- not detected --> OFF
+    end
+
+    POLICY --> WS
+
+    subgraph WS["④ Default workspace when chatbot omits workspace_id"]
+        CUR{"User already in<br/>draft workspace?"}
+        CUR -- yes --> DRAFT["Draft workspace<br/>staged changes"]
+        CUR -- no --> ALLOW{"allows_live_writes?"}
+        ALLOW -- yes --> LIVE["Live workspace 0<br/>published content"]
+        ALLOW -- no --> PICK["Pick or create<br/>MCP draft workspace"]
+    end
+
+    EX["Explicit workspace_id in tool call"] --> EX0{"workspace_id = 0?"}
+    EX0 -- "0 + allowed" --> LIVE
+    EX0 -- "0 + denied" --> DENY["AccessDenied:<br/>live workspace"]
+    EX0 -- "draft id > 0" --> DRAFT
+
+    DDEV -.-> AUTO
+    DEVCTX -.-> AUTO
+    PROD -.-> AUTO
+    STAGE -.-> CFG
+```
+
+Full plain-language guide: [`Documentation/Configuration/LiveEditsOnDevelopment.rst`](Documentation/Configuration/LiveEditsOnDevelopment.rst).
 
 To force the production safety nets even in DDEV, set either the TYPO3 feature
 flag `$GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['mcpServer.strictSandbox']`

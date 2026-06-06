@@ -265,6 +265,27 @@ Fix: check ``mcp:get-capabilities --json`` (``allows_live_writes`` should be
 ``true`` for live-by-default behaviour). Adjust extension settings or User
 TSconfig as described in :doc:`../Configuration/LiveEditsOnDevelopment`.
 
+.. _troubleshooting-production-live-override:
+
+I enabled live MCP writes on production — how do I confirm or revert?
+======================================================================
+
+Symptom: You intentionally enabled production to behave like DDEV (chatbot
+edits the live site immediately).
+
+Verify: ``mcp:get-capabilities --json`` shows ``allows_live_writes: true`` for
+the token owner's backend user.
+
+Revert to draft-first:
+
+- Remove ``options.mcpServer.localUnsafeMode = on`` from User/group TSconfig,
+  or set ``off``
+- Set extension ``localUnsafeMode`` back to ``off`` or ``auto``
+- Or enable ``strictSandbox`` (see :doc:`../Configuration/LiveEditsOnDevelopment`)
+
+Full guide: :ref:`configuration-live-edits-production-override` in
+:doc:`../Configuration/LiveEditsOnDevelopment`.
+
 The backend module tabs do nothing
 ==================================
 
