@@ -1903,139 +1903,13 @@ parameters:
 			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 3
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Binary operation "\." between ''\*,'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Binary operation "\." between mixed and '',list'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
-			count: 6
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''MM'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''columns'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''config'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''ds'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''eval'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_match_fields'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_sortby'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''items'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''maxitems'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''multiple'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''pi_flexform'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''tt_content'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot access offset ''uid'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset ''value'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset 1 on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot access offset mixed on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2043,133 +1917,25 @@ parameters:
 		-
 			message: '#^Cannot access offset non\-falsy\-string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
+			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot access offset string on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 9
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 10
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 4
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Casting to int something that''s already int\.$#'
-			identifier: cast.useless
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Class TYPO3\\CMS\\Core\\Configuration\\FlexForm\\FlexFormTools constructor invoked with 0 parameters, 3 required\.$#'
-			identifier: arguments.count
-			count: 1
+			count: 6
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 42
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:applyFilters\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:applyWorkspaceOverlay\(\) should return list\<array\<string, mixed\>\> but returns list\<array\>\.$#'
-			identifier: return.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:convertFieldValue\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:convertFieldValue\(\) has parameter \$value with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) has parameter \$foreignMatchFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) has parameter \$parentUids with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$filters with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) has parameter \$uid with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getRecords\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTableCtrlArray\(\) should return array\<string, mixed\> but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
+			count: 7
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2180,96 +1946,6 @@ parameters:
 
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getTranslationSourceData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$recordUids with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeMmRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeMmRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRegularRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRegularRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) has parameter \$result with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeRelations\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeStaticItems\(\) has parameter \$fieldConfig with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeStaticItems\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:isIntegerArray\(\) has parameter \$values with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2287,42 +1963,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:normalizeFieldNames\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) has parameter \$record with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) has parameter \$requestedFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:processRecord\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Offset mixed on non\-empty\-array\<non\-empty\-list\> in empty\(\) always exists and is not falsy\.$#'
-			identifier: empty.offset
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Only booleans are allowed in &&, mixed given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
 			count: 2
@@ -2331,31 +1971,7 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in &&, string\|null given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, array\<string, mixed\>\|null given\.$#'
-			identifier: if.condNotBoolean
 			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_column expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -2365,97 +1981,7 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gt\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gte\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:in\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNotNull\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNull\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:like\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lt\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lte\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:neq\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notIn\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notLike\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$haystack of function str_contains expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$mmTable of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2479,121 +2005,7 @@ parameters:
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
-			message: '#^Parameter \#1 \$records of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$records of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:isEmbeddedChildTable\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$array of function array_key_exists expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$foreignField of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#2 \$records of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects array\<int, array\<string, mixed\>\>, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
 			message: '#^Parameter \#2 \$requestedFields of method Hn\\McpServer\\Service\\Record\\RecordReadQueryService\:\:normalizeFieldNames\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeInlineRelations\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#3 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:includeSelectRelations\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#3 \$localUid of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#4 \$foreignSortBy of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#4 \$requestedFields of class Hn\\McpServer\\Event\\AfterRecordReadEvent constructor expects array\<int, string\>, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#5 \$fieldConfig of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getMmRelationValues\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Parameter \#5 \$foreignMatchFields of method Hn\\McpServer\\MCP\\Tool\\Record\\ReadTableTool\:\:getInlineRelatedRecords\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
@@ -2607,37 +2019,13 @@ parameters:
 		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 10
+			count: 1
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
 			message: '#^Property TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication\:\:\$workspace \(int\) on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.property
-			count: 9
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between mixed and 0 will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between mixed~\(0\|0\.0\|''''\|''0''\|array\{\}\|false\|null\) and ''0'' will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: Classes/MCP/Tool/Record/ReadTableTool.php
-
-		-
-			message: '#^Variable method call on TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\.$#'
-			identifier: method.dynamicName
-			count: 1
+			count: 2
 			path: Classes/MCP/Tool/Record/ReadTableTool.php
 
 		-
@@ -3187,373 +2575,33 @@ parameters:
 			path: Classes/MCP/Tool/SafeCliTool.php
 
 		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 4
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Binary operation "\." between ''"'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 3
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Binary operation "\." between ''%%'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Binary operation "\." between ''Query\: "'' and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
 			message: '#^Binary operation "\." between ''Unknown language…'' and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Binary operation "\." between mixed and ''_'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '''
-				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
-				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
-				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
 			message: '#^Call to function in_array\(\) requires parameter \#3 to be set\.$#'
 			identifier: function.strict
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access an offset on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''_inline_matches'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''_inline_metadata'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''_page'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''_parent_key'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''columns'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''config'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''field'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_field'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''foreign_table'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''languageField'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''parent_field'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''parent_table'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''pid'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''record'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''records'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''relation_type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''t3ver_oid'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''t3ver_state'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
 			message: '#^Cannot access offset ''table'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''title'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''type'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset ''uid'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset mixed on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot access property \$workspace on mixed\.$#'
-			identifier: property.nonObject
-			count: 4
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
-			count: 6
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Cannot cast mixed to string\.$#'
-			identifier: cast.string
-			count: 2
+			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 27
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) has parameter \$inlineTableMetadata with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) has parameter \$searchResults with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:attributeInlineResultsToParents\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:enhanceRecordsWithPageInfo\(\) has parameter \$records with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:enhanceRecordsWithPageInfo\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) has parameter \$inlineRecord with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) has parameter \$record with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatSearchResults\(\) has parameter \$searchResults with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatSearchResults\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) has parameter \$tableData with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getInlineRelatedHiddenTables\(\) has parameter \$primaryTables with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getInlineRelatedHiddenTables\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) has parameter \$record with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getPageInfo\(\) has parameter \$pageIds with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getPageInfo\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getSearchableFields\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getTablesToSearch\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
+			count: 5
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
@@ -3564,36 +2612,6 @@ parameters:
 
 		-
 			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:performSearch\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:removedExamples\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:removedExamples\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) has parameter \$searchTerms with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) has parameter \$searchableFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
@@ -3617,36 +2635,6 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateSearchableFields\(\) has parameter \$searchableFields with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateSearchableFields\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$cType of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getContentTypeLabel\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:like\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$inlineRecord of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
 			message: '#^Parameter \#1 \$isoCode of method Hn\\McpServer\\Service\\LanguageService\:\:getUidFromIsoCode\(\) expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
@@ -3665,170 +2653,14 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getSearchableFields\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:searchInTable\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessTable\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$table of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getTableLabel\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
 			message: '#^Parameter \#1 \$terms of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:validateAndNormalizeSearchTerms\(\) expects array, mixed given\.$#'
 			identifier: argument.type
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$value of method TYPO3\\CMS\\Core\\Database\\Query\\QueryBuilder\:\:escapeLikeWildcards\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$workspaceId of class Hn\\McpServer\\Database\\Query\\Restriction\\WorkspaceDeletePlaceholderRestriction constructor expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#1 \$workspaceId of class TYPO3\\CMS\\Core\\Database\\Query\\Restriction\\WorkspaceRestriction constructor expects int, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$query of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:extractSnippet\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$record of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatRecord\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$record of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:getMatchingContentPreview\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$record of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects array\<string, mixed\>, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$record of static method Hn\\McpServer\\Utility\\RecordFormattingUtility\:\:getRecordTitle\(\) expects array\<string, mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#2 \$tableData of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:formatTableResults\(\) expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#3 \$parentTable of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#4 \$foreignField of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#5 \$parentField of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Parameter \#6 \$relationType of method Hn\\McpServer\\MCP\\Tool\\SearchTool\:\:findParentRecordsForInlineRecord\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Part \$cType \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Part \$inlineField \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Part \$pageTitle \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Part \$pageUid \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Part \$uid \(mixed\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
 			message: '#^Possibly invalid array key type mixed\.$#'
 			identifier: offsetAccess.invalidOffset
-			count: 11
-			path: Classes/MCP/Tool/SearchTool.php
-
-		-
-			message: '#^Variable \$fieldConditions in empty\(\) always exists and is not falsy\.$#'
-			identifier: empty.variable
 			count: 1
 			path: Classes/MCP/Tool/SearchTool.php
 
@@ -5501,7 +4333,7 @@ parameters:
 		-
 			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
-			count: 3
+			count: 2
 			path: Classes/Service/Record/RecordSearchResultFormatter.php
 
 		-
@@ -5513,18 +4345,6 @@ parameters:
 		-
 			message: '#^Binary operation "\." between ''Query\: "'' and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
-			count: 1
-			path: Classes/Service/Record/RecordSearchResultFormatter.php
-
-		-
-			message: '#^Call to an undefined method Hn\\McpServer\\Service\\Record\\RecordSearchResultFormatter\:\:getSearchableFields\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: Classes/Service/Record/RecordSearchResultFormatter.php
-
-		-
-			message: '#^Call to an undefined method Hn\\McpServer\\Service\\Record\\RecordSearchResultFormatter\:\:tableHasLanguageSupport\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: Classes/Service/Record/RecordSearchResultFormatter.php
 
@@ -5730,12 +4550,6 @@ parameters:
 			message: '#^Part \$uid \(mixed\) of encapsed string cannot be cast to string\.$#'
 			identifier: encapsedStringPart.nonString
 			count: 1
-			path: Classes/Service/Record/RecordSearchResultFormatter.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: offsetAccess.invalidOffset
-			count: 3
 			path: Classes/Service/Record/RecordSearchResultFormatter.php
 
 		-

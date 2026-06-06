@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service\Record;
 
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Utility\RecordFormattingUtility;
 
 final readonly class RecordSearchResultFormatter
 {
     public function __construct(
         private LanguageService $languageService,
+        private TableAccessService $tableAccessService,
     ) {}
     public function formatSearchResults(array $searchResults, array $searchTerms, string $termLogic, ?int $languageId = null): string
     {
@@ -155,7 +157,7 @@ final readonly class RecordSearchResultFormatter
 
     public function getMatchingContentPreview(string $table, array $record, array $searchTerms): string
     {
-        $searchableFields = $this->getSearchableFields($table);
+        $searchableFields = $this->tableAccessService->getSearchFields($table);
         $previews = [];
 
         foreach ($searchableFields as $field) {
@@ -186,6 +188,11 @@ final readonly class RecordSearchResultFormatter
         }
 
         return implode(' ... ', array_slice($previews, 0, 2)); // Limit to 2 snippets
+    }
+
+    private function tableHasLanguageSupport(string $table): bool
+    {
+        return $this->tableAccessService->getLanguageFieldName($table) !== null;
     }
 
 }
