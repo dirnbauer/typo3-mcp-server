@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service\Record;
 
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Event\AfterRecordReadEvent;
@@ -226,14 +227,14 @@ final readonly class RecordReadQueryService
 
         try {
             $totalCount = $countQueryBuilder->executeQuery()->fetchOne();
-        } catch (\Doctrine\DBAL\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException('count', $table, $e);
         }
 
         // Execute the query
         try {
             $records = $queryBuilder->executeQuery()->fetchAllAssociative();
-        } catch (\Doctrine\DBAL\Exception $e) {
+        } catch (Exception $e) {
             throw new DatabaseException('select', $table, $e);
         }
 

@@ -182,7 +182,7 @@ final readonly class RecordFieldReadConverter
                 }
 
                 return $result;
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // Log the error but continue with empty result
                 // flexform parse failed
                 return [];
