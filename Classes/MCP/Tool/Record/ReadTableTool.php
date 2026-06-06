@@ -106,7 +106,6 @@ final class ReadTableTool extends AbstractRecordTool
         ));
     }
 
-
     /**
      * @return array<string, mixed>
      */
@@ -317,19 +316,6 @@ final class ReadTableTool extends AbstractRecordTool
         return $this->createJsonResult($result);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * Get translation source data for records
      */
@@ -389,7 +375,6 @@ final class ReadTableTool extends AbstractRecordTool
 
         return $translationData;
     }
-
 
     /**
      * Load parent records for translations

@@ -25,7 +25,7 @@ final readonly class RecordInlineRelationWriteService
         private FileMetadataIndexService $fileMetadataIndexService,
         private RecordDataWriteConverter $dataWriteConverter,
     ) {}
-public function extractFromData(string $table, array &$data): array
+    public function extractFromData(string $table, array &$data): array
     {
         $inlineRelations = [];
 
@@ -58,8 +58,7 @@ public function extractFromData(string $table, array &$data): array
         return $inlineRelations;
     }
 
-
-public function buildDataMap(
+    public function buildDataMap(
         array &$dataMap,
         string $parentTable,
         $parentId,
@@ -218,8 +217,7 @@ public function buildDataMap(
         }
     }
 
-
-public function syncRelations(
+    public function syncRelations(
         array &$dataMap,
         array &$cmdMap,
         string $parentTable,
@@ -337,8 +335,7 @@ public function syncRelations(
         }
     }
 
-
-public function validateField(array $fieldConfig, $value): ?string
+    public function validateField(array $fieldConfig, $value): ?string
     {
         // Check if value is an array
         if (!is_array($value)) {

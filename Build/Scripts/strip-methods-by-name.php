@@ -9,14 +9,14 @@ function tokenByteOffset(array $tokens, int $index): int
 {
     $token = $tokens[$index];
     if (is_array($token) && isset($token[3])) {
-        return (int) $token[3];
+        return (int)$token[3];
     }
 
     $offset = 0;
     for ($i = 0; $i < $index; $i++) {
         $t = $tokens[$i];
         if (is_array($t)) {
-            $offset = isset($t[3]) ? (int) $t[3] + strlen($t[1]) : $offset + strlen($t[1]);
+            $offset = isset($t[3]) ? (int)$t[3] + strlen($t[1]) : $offset + strlen($t[1]);
         } else {
             $offset += strlen($t);
         }

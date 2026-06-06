@@ -13,7 +13,6 @@ use Hn\McpServer\Service\Record\RecordSearchResultFormatter;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * Tool for searching records across TYPO3 tables using TCA-based searchable fields
@@ -96,8 +95,6 @@ final class SearchTool extends AbstractRecordTool
 
         return $schema;
     }
-
-
 
     /**
      * Execute the tool logic

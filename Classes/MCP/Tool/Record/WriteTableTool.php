@@ -1074,9 +1074,6 @@ final class WriteTableTool extends AbstractRecordTool
         return is_string($fieldName) && $fieldName !== '' ? $fieldName : null;
     }
 
-
-
-
     /**
      * Temporarily blank inline child references on the parent row so DataHandler localize
      * does not clone child records. Returns the original values so they can be restored.
@@ -1388,10 +1385,6 @@ final class WriteTableTool extends AbstractRecordTool
         return true;
     }
 
-
-
-
-
     /**
      * Check if a field is a FlexForm field
      */
@@ -1399,7 +1392,6 @@ final class WriteTableTool extends AbstractRecordTool
     {
         return $this->tableAccessService->isFlexFormField($table, $fieldName);
     }
-
 
     /**
      * For translation records, set l10n_state to "custom" for fields that

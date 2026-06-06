@@ -37,7 +37,6 @@ final readonly class RecordReadQueryService
         private TableAccessService $tableAccessService,
         private TableTcaResolver $tcaResolver,
         private RecordFieldReadConverter $fieldReadConverter,
-        private EventDispatcherInterface $eventDispatcher,
         private LanguageService $languageService,
     ) {}
 
@@ -221,7 +220,7 @@ final readonly class RecordReadQueryService
         }
 
         // Allow listeners to add restrictions (e.g. file mounts, tenant scopes)
-        $eventDispatcher = $this->eventDispatcher;
+        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $countQueryBuilder, 'count', BeforeRecordReadEvent::SOURCE_READ));
         $eventDispatcher->dispatch(new BeforeRecordReadEvent($table, $queryBuilder, 'select', BeforeRecordReadEvent::SOURCE_READ));
 
@@ -350,7 +349,6 @@ final readonly class RecordReadQueryService
      * requested name to the actual TCA column name or essential field name.
      * Unrecognized names are kept as-is (they simply won't match anything).
      */
-
     public function normalizeFieldNames(string $table, array $requestedFields): array
     {
         if (empty($requestedFields)) {
@@ -383,7 +381,6 @@ final readonly class RecordReadQueryService
      * @param string $table Table name for field validation
      * @throws ValidationException
      */
-
     public function applyFilters(QueryBuilder $queryBuilder, array $filters, string $table): void
     {
         // Build set of valid field names for this table (TCA columns + essential fields)
@@ -497,7 +494,6 @@ final readonly class RecordReadQueryService
         }
     }
 
-
     public function isIntegerArray(array $values): bool
     {
         return !empty($values) && array_reduce($values, static fn(bool $carry, $v): bool => $carry && is_int($v), true);
@@ -506,7 +502,6 @@ final readonly class RecordReadQueryService
     /**
      * Apply default sorting from TCA
      */
-
     public function applyDefaultSorting(QueryBuilder $queryBuilder, string $table): void
     {
         // Check for sortby field

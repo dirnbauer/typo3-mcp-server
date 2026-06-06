@@ -58,8 +58,7 @@ readonly class DiagnosticHttpClient
                     'body' => (string)$response->getBody(),
                 ];
             },
-            'rejected' => static function (): void {
-            },
+            'rejected' => static function (): void {},
         ]);
 
         $pool->promise()->wait();

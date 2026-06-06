@@ -17,7 +17,6 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final readonly class RecordSearchExecutor
 {
@@ -273,7 +272,7 @@ final readonly class RecordSearchExecutor
     /**
      * Get page information for multiple page IDs
      */
-    protected function getPageInfo(array $pageIds): array
+    private function getPageInfo(array $pageIds): array
     {
         if (empty($pageIds)) {
             return [];
