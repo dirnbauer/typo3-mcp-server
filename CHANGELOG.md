@@ -7,10 +7,21 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
-## Unreleased
+## 0.3.0 - 2026-06-08
 
 ### Changed
 
+- **Lean `tools/list` by default (context-window optimization).** The tool
+  catalog is injected into the model's context on every MCP session, so long
+  tool/field descriptions were a fixed token cost paid per conversation
+  (~17k tokens for the 44 bundled tools). A new `ToolSchemaOptimizer` now
+  condenses verbose descriptions down to their leading sentences while
+  preserving critical gotchas (`REQUIRED`, `MUST`, `REPLACES`, …), trimming the
+  `tools/list` payload by roughly a third. Structural JSON Schema keywords
+  (types, enums, `required`, …) are never touched. Controlled by the new
+  `schemaDetail` extension setting (`concise` default, `full` restores the old
+  verbatim output). The complete, untrimmed schema of any tool stays available
+  on demand — see below.
 - **Local development default workspace (major behaviour change).** On DDEV /
   trusted local mode, record tools now default to the **live workspace** when
   `workspace_id` is omitted — AI edits update the published local copy
@@ -22,6 +33,12 @@ SemVer once it leaves the experimental surface.
 
 ### Added
 
+- **`GetCapabilities` full-schema lookup** — pass `{"tool": "WriteTable"}` to
+  retrieve a single tool's full, untrimmed schema/description on demand. This
+  is the recovery path for the concise `tools/list` default: nothing is lost,
+  detail is just fetched only when the model actually needs it.
+- **`schemaDetail` extension setting** (`concise` default | `full`) controls
+  `tools/list` verbosity for context-window budgeting.
 - **Capability manifest** (`Configuration/Capabilities.yaml`) declares
   every MCP tool's required subsystems and an outbound-network policy.
   Enforced at runtime via `CapabilityManifestService` inside

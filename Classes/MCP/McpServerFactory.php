@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
+use Hn\McpServer\Service\ToolSchemaOptimizer;
 use Mcp\Server\InitializationOptions;
 use Mcp\Server\NotificationOptions;
 use Mcp\Server\Server;
@@ -27,6 +28,7 @@ final readonly class McpServerFactory
     public function __construct(
         private ToolRegistry $toolRegistry,
         private ?ResourceRegistry $resourceRegistry = null,
+        private ?ToolSchemaOptimizer $schemaOptimizer = null,
     ) {}
 
     /**
@@ -96,15 +98,28 @@ final readonly class McpServerFactory
     private function registerHandlers(Server $server, ?callable $debugLogger): void
     {
         $toolRegistry = $this->toolRegistry;
+        $schemaOptimizer = $this->resolveSchemaOptimizer();
         $debug = $debugLogger ?? static fn($msg) => null;
 
         // Register tool/list handler
-        $server->registerHandler('tools/list', static function () use ($toolRegistry, $debug) {
+        $server->registerHandler('tools/list', static function () use ($toolRegistry, $schemaOptimizer, $debug) {
             $debug('Handling tools/list request');
             $tools = [];
 
             foreach ($toolRegistry->getTools() as $tool) {
                 $schema = $tool->getSchema();
+
+                // Condense verbose descriptions to save context-window tokens
+                // (default; reversible via the schemaDetail setting). Full text
+                // stays available through the GetCapabilities tool.
+                if ($schemaOptimizer !== null) {
+                    try {
+                        $schema = $schemaOptimizer->optimize($schema);
+                    } catch (\Throwable) {
+                        // Never let optimisation break the catalog — fall back to raw.
+                    }
+                }
+
                 $rawInputSchema = $schema['inputSchema'] ?? [];
                 $schema['inputSchema'] = self::normaliseInputSchema(is_array($rawInputSchema) ? $rawInputSchema : []);
 
@@ -151,6 +166,23 @@ final readonly class McpServerFactory
         });
 
         $this->registerResourceHandlers($server, $debug);
+    }
+
+    /**
+     * Use the injected optimiser when available; otherwise build one lazily so
+     * the optimisation also applies on code paths that construct the factory
+     * directly. Returns null only when no instance can be created at all.
+     */
+    private function resolveSchemaOptimizer(): ?ToolSchemaOptimizer
+    {
+        if ($this->schemaOptimizer !== null) {
+            return $this->schemaOptimizer;
+        }
+        try {
+            return GeneralUtility::makeInstance(ToolSchemaOptimizer::class);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function registerResourceHandlers(Server $server, callable $debug): void

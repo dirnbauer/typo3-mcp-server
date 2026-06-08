@@ -21,3 +21,6 @@ localUnsafeMode = auto
 
 # cat=security//d; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enforceCapabilityManifest
 enforceCapabilityManifest = 1
+
+# cat=mcp//z; type=options[Concise (lean tools/list, saves context-window tokens)=concise, Full (verbose descriptions)=full]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.schemaDetail
+schemaDetail = concise

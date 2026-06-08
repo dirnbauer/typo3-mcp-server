@@ -56,6 +56,11 @@
         <source>Enforce the capability manifest (Configuration/Capabilities.yaml). Tools whose required capabilities are not declared/granted are rejected at call time. Disable only for debugging.</source>
       </segment>
     </unit>
+    <unit id="extconf.schemaDetail">
+      <segment>
+        <source>Tool schema verbosity for tools/list. &quot;Concise&quot; (default) condenses long tool and field descriptions so the MCP client spends far fewer context-window tokens per session; the full text of any tool stays available on demand via the GetCapabilities tool. &quot;Full&quot; sends every description verbatim.</source>
+      </segment>
+    </unit>
     <unit id="connectionSetup.title">
       <segment>
         <source>MCP Connection Setup</source>
