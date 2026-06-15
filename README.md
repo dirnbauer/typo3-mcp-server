@@ -153,6 +153,11 @@ adds and hardens these areas:
   render verification, site configuration helpers, safe CLI execution, optional
   x402 tools, and dev-site tools for Site Sets, ViewHelpers, TCA resources, and
   XLF authoring.
+- **Editor access on site creation** — `CreateSite` provisions a dedicated
+  per-site backend editor group (mounted at the root, with content-editing
+  permissions and page ownership) instead of granting the new site to every
+  existing editor, optionally seeded with named `editors`, and extends
+  page-tree–restricted workspaces to cover the new root for staging.
 - **Security hardening** — tokens are hashed, query-string bearer tokens stay
   disabled by default, the auth-header diagnostic is off by default, sensitive
   HTTP logs are redacted, PKCE requires `S256`, browser-defense headers are set,
@@ -310,7 +315,8 @@ CreateSite {
   "rootPageId": 474,
   "base": "https://example.com/",
   "dependencies": ["webconsulting/desiderio-preset-corporate"],
-  "settings": { "theme": { "accent": "violet" } }
+  "settings": { "theme": { "accent": "violet" } },
+  "editors": ["alice", "bob"]   // optional: add them to the new editor group
 }
 ```
 
@@ -321,6 +327,28 @@ If no Site Set/theme/site package is available and there is no root
 `sys_template`, `CreateSite` creates a minimal site-level `setup.typoscript`
 fallback in TYPO3's active site configuration path, so a newly added website
 can still render content immediately.
+
+**Editor access is wired up automatically.** On `create`, `CreateSite` also
+makes the new website editable by non-admins **without** opening it up to every
+existing editor team:
+
+- A **dedicated backend group** `Editors: <root page title>` is provisioned
+  (or reused) — mounted at the new root page, with content-editing rights for
+  `pages`/`tt_content`, the editor page types, the Page + List modules, and an
+  allow-list of every registered content type (so editors can actually add
+  content). Pass `editors` (existing non-admin usernames) to add members now;
+  admins manage membership later. Access is granted purely by group membership —
+  no other team is touched.
+- The editor group is made the **owner-group of the root page** so its members
+  may edit there (non-destructive: an existing owner on a pre-existing root page
+  is kept).
+- Workspaces **restricted** to specific page trees are **extended** to cover the
+  new root so the site can be staged there; unrestricted workspaces already
+  reach it and are left alone.
+
+The response reports all of this under `access` (`editorGroup`,
+`pagePermissions`, `editors`, `workspaces`). The `mcp:create-site` CLI command
+shares the exact same behavior.
 
 ### Translating a page in one call
 

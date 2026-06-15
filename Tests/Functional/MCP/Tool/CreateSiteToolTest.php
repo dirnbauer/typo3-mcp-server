@@ -453,6 +453,224 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
         self::assertSame([['errorCode' => 404]], $after['errorHandling']);
     }
 
+    public function testCreateAddsRootPageToRestrictedWorkspaceMountpoints(): void
+    {
+        // Workspace restricted to the "About" subtree (page 2), not the new site root.
+        $workspaceId = $this->createWorkspaceRecord('2');
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'mounted-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://mounted.example.com/',
+            'dependencies' => ['vendor/theme'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+        self::assertArrayHasKey('access', $data);
+
+        $updatedIds = array_column($data['access']['workspaces']['updated'], 'id');
+        self::assertContains($workspaceId, $updatedIds, 'Restricted workspace should be reported as updated');
+
+        $mounts = $this->readCsvColumn('sys_workspace', $workspaceId);
+        self::assertContains($this->getRootPageUid(), $mounts, 'New site root page should be added as a starting point');
+        self::assertContains(2, $mounts, 'Existing mountpoint must be preserved');
+    }
+
+    public function testCreateLeavesUnrestrictedWorkspaceMountpointsUntouched(): void
+    {
+        $emptyWorkspaceId = $this->createWorkspaceRecord('');
+        $rootMountedWorkspaceId = $this->createWorkspaceRecord('0');
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'unrestricted-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://unrestricted.example.com/',
+            'dependencies' => ['vendor/theme'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+
+        // Unrestricted workspaces must not gain the new root page (empty/0 already reaches it).
+        self::assertSame([], $this->readCsvColumn('sys_workspace', $emptyWorkspaceId));
+        self::assertSame([0], $this->readCsvColumn('sys_workspace', $rootMountedWorkspaceId));
+
+        // Both unrestricted workspaces are reported as skipped for that reason.
+        self::assertGreaterThanOrEqual(2, $data['access']['workspaces']['skipped']['unrestricted'] ?? 0);
+    }
+
+    public function testCreateDoesNotDuplicateAlreadyMountedRootPage(): void
+    {
+        $workspaceId = $this->createWorkspaceRecord((string)$this->getRootPageUid());
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'already-mounted-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://already-mounted.example.com/',
+            'dependencies' => ['vendor/theme'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+
+        self::assertSame([$this->getRootPageUid()], $this->readCsvColumn('sys_workspace', $workspaceId), 'Root page must not be duplicated');
+        self::assertGreaterThanOrEqual(1, $data['access']['workspaces']['skipped']['alreadyMounted'] ?? 0);
+    }
+
+    public function testCreateProvisionsDedicatedEditorGroupMountedAtRoot(): void
+    {
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'editor-group-site',
+            'parentPageId' => $this->getRootPageUid(),
+            'rootPageTitle' => 'Editor Group Site',
+            'base' => 'https://editor-group.example.com/',
+            'dependencies' => ['vendor/theme'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+
+        $rootPageId = (int)$data['rootPage']['uid'];
+        $group = $data['access']['editorGroup'];
+        self::assertTrue($group['created']);
+        self::assertSame('Editors: Editor Group Site', $group['title']);
+        self::assertSame($rootPageId, $group['mountpoint']);
+
+        // The group is scoped to the new site root and can edit content.
+        $row = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_groups')
+            ->select(['db_mountpoints', 'tables_modify', 'groupMods', 'explicit_allowdeny'], 'be_groups', ['uid' => (int)$group['id']])
+            ->fetchAssociative();
+        self::assertIsArray($row);
+        self::assertSame((string)$rootPageId, $row['db_mountpoints']);
+        self::assertStringContainsString('tt_content', (string)$row['tables_modify']);
+        self::assertStringContainsString('web_layout', (string)$row['groupMods']);
+        self::assertStringContainsString('tt_content:CType:', (string)$row['explicit_allowdeny']);
+
+        // The newly created root page is owned by the editor group with full perms.
+        self::assertTrue($data['access']['pagePermissions']['granted']);
+        $page = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('pages')
+            ->select(['perms_groupid', 'perms_group'], 'pages', ['uid' => $rootPageId])
+            ->fetchAssociative();
+        self::assertSame((int)$group['id'], (int)$page['perms_groupid']);
+        self::assertSame(31, (int)$page['perms_group']);
+    }
+
+    public function testCreateSeedsNamedEditorsIntoGroupAndSkipsAdminAndUnknown(): void
+    {
+        $aliceId = $this->createBackendUserRecord('alice', false, '');
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'identifier' => 'seeded-editor-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://seeded.example.com/',
+            'dependencies' => ['vendor/theme'],
+            'editors' => ['alice', 'admin', 'ghost'],
+        ]);
+
+        $data = $this->extractJsonFromResult($result);
+        self::assertSame('created', $data['status']);
+
+        $groupId = (int)$data['access']['editorGroup']['id'];
+        self::assertContains('alice', $data['access']['editors']['added']);
+        self::assertContains($groupId, $this->readCsvColumn('be_users', $aliceId, 'usergroup'), 'alice should be a member of the editor group');
+
+        // admin user is skipped (ignores mounts), unknown username is skipped.
+        self::assertGreaterThanOrEqual(1, $data['access']['editors']['skipped']['admin'] ?? 0);
+        self::assertGreaterThanOrEqual(1, $data['access']['editors']['skipped']['notFound'] ?? 0);
+    }
+
+    public function testCreateReusesExistingEditorGroup(): void
+    {
+        $params = [
+            'action' => 'create',
+            'identifier' => 'idempotent-site',
+            'rootPageId' => $this->getRootPageUid(),
+            'base' => 'https://idempotent.example.com/',
+            'dependencies' => ['vendor/theme'],
+        ];
+
+        $first = $this->extractJsonFromResult($this->tool->execute($params));
+        self::assertTrue($first['access']['editorGroup']['created']);
+
+        $second = $this->extractJsonFromResult($this->tool->execute($params));
+        self::assertFalse($second['access']['editorGroup']['created'], 'Second create must reuse the existing group');
+        self::assertSame($first['access']['editorGroup']['id'], $second['access']['editorGroup']['id']);
+
+        $count = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_groups')
+            ->count('uid', 'be_groups', ['title' => $first['access']['editorGroup']['title'], 'deleted' => 0]);
+        self::assertSame(1, $count, 'Only one editor group should exist for the site');
+    }
+
+    private function createWorkspaceRecord(string $dbMountpoints): int
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_workspace');
+        $connection->insert('sys_workspace', [
+            'pid' => 0,
+            'title' => 'Test Workspace ' . $dbMountpoints,
+            'description' => 'Workspace for mountpoint sync testing',
+            'adminusers' => '1',
+            'members' => '',
+            'db_mountpoints' => $dbMountpoints,
+            'file_mountpoints' => '',
+            'publish_time' => 0,
+            'publish_access' => 0,
+            'stagechg_notification' => 0,
+            'deleted' => 0,
+        ]);
+
+        return (int)$connection->lastInsertId();
+    }
+
+    private function createBackendUserRecord(string $username, bool $admin, string $dbMountpoints): int
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_users');
+        $connection->insert('be_users', [
+            'pid' => 0,
+            'username' => $username,
+            'password' => '',
+            'admin' => $admin ? 1 : 0,
+            'db_mountpoints' => $dbMountpoints,
+            'deleted' => 0,
+            'disable' => 0,
+        ]);
+
+        return (int)$connection->lastInsertId();
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function readCsvColumn(string $table, int $uid, string $column = 'db_mountpoints'): array
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable($table);
+        $value = $connection
+            ->select([$column], $table, ['uid' => $uid])
+            ->fetchOne();
+
+        $out = [];
+        foreach (explode(',', (string)$value) as $part) {
+            $part = trim($part);
+            if ($part === '' || !is_numeric($part)) {
+                continue;
+            }
+            $out[] = (int)$part;
+        }
+
+        return $out;
+    }
+
     /**
      * @param array<int, array<string, mixed>> $languages
      */
