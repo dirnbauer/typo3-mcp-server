@@ -7,6 +7,29 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.5.0 - 2026-06-15
+
+_The fork version skips from 0.3.0 to 0.5.0: the `0.4.x` tag namespace is
+held by the upstream `hauptsacheNet/typo3-mcp-server` releases this fork is
+built on, so the fork's own line jumps past it to avoid colliding tags._
+
+### Added
+
+- **Per-site editor access on `CreateSite`.** When the `CreateSite` MCP tool
+  (and the `mcp:create-site` CLI) add a website, they now provision a
+  dedicated backend editor group "Editors: &lt;root page title&gt;" mounted at
+  the new root, with content-editing permissions (pages/tt_content tables,
+  editor pagetypes, Page + List modules, and an `explicit_allowdeny`
+  allow-list covering every tt_content CType — required because CType uses
+  authMode). The group becomes the non-destructive owner of the root page, and
+  named `editors` can be added to it, so non-admins can edit the new site
+  without granting access to every existing editor team. New
+  `SiteEditorGroupService` owns this logic.
+- Page-tree-restricted workspaces are extended to cover the new root for
+  staging (`WorkspaceContextService`); unrestricted workspaces are left
+  untouched. The `create` response reports all of this under `access`. Tests,
+  README, and docs were updated alongside.
+
 ## 0.3.0 - 2026-06-08
 
 ### Changed
