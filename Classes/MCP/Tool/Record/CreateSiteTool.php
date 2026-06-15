@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\SiteEditorGroupService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -91,6 +92,7 @@ TYPOSCRIPT;
         private readonly LanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
         private readonly SetRegistry $setRegistry,
+        private readonly SiteEditorGroupService $siteEditorGroupService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -109,6 +111,7 @@ TYPOSCRIPT;
                 . 'Action "addLanguage" adds a language to an existing site. '
                 . 'Action "replaceLanguages" replaces the full language list of an existing site while preserving other site settings. '
                 . 'Site configurations are YAML-based and take effect immediately (not workspace-versioned). '
+                . 'On "create" a dedicated backend editor group is provisioned for the new website (mounted at the root page, with content-editing permissions) so non-admin editors can edit only this site without affecting other teams; pass `editors` (usernames) to add them to that group. Restricted workspaces are also extended to cover the new tree for staging. '
                 . 'IMPORTANT: A site without a Site Set or TypoScript template record will throw "No site configuration or TypoScript template record found" in the frontend. '
                 . 'Pass `dependencies` (array of Site Set names) when creating a site to attach a theme, or use action "update" afterwards. '
                 . 'When no dependencies/sys_template/theme-like Site Set exists, create writes a minimal site-level setup.typoscript fallback in the active TYPO3 site configuration path. '
@@ -140,6 +143,11 @@ TYPOSCRIPT;
                     'rootPageSlug' => [
                         'type' => 'string',
                         'description' => 'Create action only: slug for the new site root page when parentPageId is used. Defaults to "/" plus the identifier.',
+                    ],
+                    'editors' => [
+                        'type' => 'array',
+                        'description' => 'Create action only: usernames of existing non-admin backend users to add to the new site\'s dedicated editor group, so they can edit this website. Admins and unknown usernames are skipped. Omit to create the group empty (an admin can add members later).',
+                        'items' => ['type' => 'string'],
                     ],
                     'base' => [
                         'type' => 'string',
@@ -264,12 +272,14 @@ TYPOSCRIPT;
         if ($rootPageId <= 0) {
             $rootPage = $this->createSiteRootPage($identifier, $params);
             $rootPageId = $rootPage['uid'];
+            $rootPageTitle = $rootPage['title'];
         } else {
             // Validate root page exists
             $page = BackendUtility::getRecord('pages', $rootPageId, 'uid,title');
             if ($page === null) {
                 throw new ValidationException(['Root page with UID ' . $rootPageId . ' does not exist.']);
             }
+            $rootPageTitle = is_string($page['title'] ?? null) ? $page['title'] : '';
         }
 
         $defaultLangParams = is_array($params['defaultLanguage'] ?? null) ? $params['defaultLanguage'] : [];
@@ -292,6 +302,18 @@ TYPOSCRIPT;
         $this->languageService->reset();
         $renderingFallback = $this->ensureRenderingFallback($config, $identifier);
 
+        // Make the new website editable without granting access to every editor:
+        //  - a dedicated editor group scoped to this site (who may edit content), and
+        //  - extending restricted workspaces to cover the new tree (staging scope).
+        $editors = $this->normalizeStringList($params['editors'] ?? null);
+        $editorAccess = $this->siteEditorGroupService->ensureEditorGroup(
+            $rootPageId,
+            $rootPageTitle,
+            $rootPage !== null,
+            $editors,
+        );
+        $workspaceMounts = $this->workspaceContextService->addRootPageToWorkspaceMountpoints($rootPageId);
+
         $response = [
             'status' => 'created',
             'identifier' => $identifier,
@@ -303,6 +325,10 @@ TYPOSCRIPT;
         if ($renderingFallback !== null) {
             $response['renderingFallback'] = $renderingFallback;
         }
+        $access = $this->buildAccessReport($editorAccess, $workspaceMounts);
+        if ($access !== []) {
+            $response['access'] = $access;
+        }
 
         $warning = $this->renderingWarningFor($config, $identifier);
         if ($warning !== null) {
@@ -310,6 +336,29 @@ TYPOSCRIPT;
         }
 
         return $this->createJsonResult($response);
+    }
+
+    /**
+     * Assemble the optional "access" section of the create response: the editor
+     * group that was provisioned and the workspaces extended for staging.
+     *
+     * @param array<string, mixed>|null $editorAccess
+     * @param array{updated: array<mixed>, skipped: array<mixed>} $workspaceMounts
+     * @return array<string, mixed>
+     */
+    private function buildAccessReport(?array $editorAccess, array $workspaceMounts): array
+    {
+        $access = [];
+        if ($editorAccess !== null) {
+            $access['editorGroup'] = $editorAccess['group'];
+            $access['pagePermissions'] = $editorAccess['pagePermissions'];
+            $access['editors'] = $editorAccess['editors'];
+        }
+        if ($workspaceMounts['updated'] !== [] || $workspaceMounts['skipped'] !== []) {
+            $access['workspaces'] = $workspaceMounts;
+        }
+
+        return $access;
     }
 
     /**

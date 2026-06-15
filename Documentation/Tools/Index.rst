@@ -1099,6 +1099,35 @@ Create or update TYPO3 site configurations.
 Admin-only. Site configurations are YAML files, not workspace-versioned.
 Changes take effect immediately.
 
+On ``create`` the tool also wires up editor access for the new website, so
+non-admin editors can edit it **without** granting access to every existing
+editor team:
+
+- **Dedicated editor group**: a backend group ``Editors: <root page title>`` is
+  provisioned (or reused, if it already exists), mounted at the new root page
+  with content-editing permissions — table access to ``pages`` and ``tt_content``,
+  the editor page types, the Page and List modules, and an ``explicit_allowdeny``
+  allow-list covering every registered ``tt_content`` content type (required
+  because ``CType`` uses ``authMode``). Editors gain access purely by membership;
+  no other team's permissions are touched. Pass the ``editors`` parameter (a list
+  of existing non-admin usernames) to add members on creation — admins and unknown
+  usernames are skipped.
+- **Page ownership**: the editor group is made the owner-group of the root page
+  (``perms_groupid`` + full ``perms_group``) so its members may edit content there.
+  This is non-destructive — a pre-existing root page already owned by another
+  group is left as-is.
+- **Workspace staging scope**: workspaces *restricted* to specific page trees are
+  extended to include the new root so the site can be staged there. Unrestricted
+  workspaces (empty ``db_mountpoints``, or one mounting the page-tree root uid
+  ``0``) already reach every tree and are left untouched. This governs staging
+  scope, not who may edit.
+
+The ``create`` response reports this under ``access`` with ``editorGroup``
+(id, title, created, mountpoint), ``pagePermissions`` (pageId, granted, reason),
+``editors`` (added list + skipped reason→count map), and ``workspaces`` (updated
+list + skipped reason→count map). The ``mcp:create-site`` CLI command shares this
+behavior because it runs the same tool.
+
 If ``flag`` is omitted, CreateSite derives the TYPO3 flag identifier from the
 language ISO code (for example ``en`` -> ``us``, ``de`` -> ``de``).
 

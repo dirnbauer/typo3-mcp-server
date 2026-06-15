@@ -184,6 +184,144 @@ final readonly class WorkspaceContextService
         return $uid === $liveUid ? null : $uid;
     }
 
+    /**
+     * Append a freshly created site root page (its "starting point") to the
+     * page-tree mounts of every workspace that is *restricted* to specific page
+     * trees, so the new website can be staged in those workspaces.
+     *
+     * TYPO3 treats an empty ``sys_workspace.db_mountpoints`` — or one that mounts
+     * the page-tree root (uid 0) — as "no restriction": those workspaces already
+     * reach every tree and are intentionally left untouched (appending a single
+     * id would otherwise *restrict* them to that one tree, hiding all other
+     * sites). Only workspaces already limited to specific trees gain the new root
+     * page.
+     *
+     * This governs *staging scope*, not *who may edit* — content-edit permission
+     * is granted via the dedicated editor group ({@see SiteEditorGroupService}).
+     *
+     * ``sys_workspace`` is not workspace-versioned; the update runs through
+     * DataHandler as admin in the live workspace, mirroring {@see createMcpWorkspace()}.
+     *
+     * @return array{updated: list<array{id: int, title: string, mountpoints: string}>, skipped: array<string, int>}
+     */
+    public function addRootPageToWorkspaceMountpoints(int $rootPageId, ?BackendUserAuthentication $beUser = null): array
+    {
+        $report = ['updated' => [], 'skipped' => []];
+        if ($rootPageId <= 0) {
+            return $report;
+        }
+
+        $beUser ??= ($GLOBALS['BE_USER'] ?? null);
+        if (!$beUser instanceof BackendUserAuthentication) {
+            return $report;
+        }
+
+        try {
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
+            $queryBuilder->getRestrictions()->removeAll();
+            $workspaces = $queryBuilder
+                ->select('uid', 'title', 'db_mountpoints')
+                ->from('sys_workspace')
+                ->where($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
+                ->orderBy('uid', 'ASC')
+                ->executeQuery()
+                ->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            $this->logger->warning('Failed to load workspaces for mountpoint sync', ['exception' => $e]);
+            return $report;
+        }
+
+        $datamap = [];
+        foreach ($workspaces as $workspace) {
+            $uid = is_numeric($workspace['uid'] ?? null) ? (int)$workspace['uid'] : 0;
+            if ($uid <= 0) {
+                continue;
+            }
+            $title = is_string($workspace['title'] ?? null) ? $workspace['title'] : '';
+            $mounts = $this->parseMountpoints($workspace['db_mountpoints'] ?? '');
+
+            // Empty or root-mounted (uid 0) workspaces already reach every page tree.
+            if ($mounts === [] || in_array(0, $mounts, true)) {
+                $report['skipped']['unrestricted'] = ($report['skipped']['unrestricted'] ?? 0) + 1;
+                continue;
+            }
+            if (in_array($rootPageId, $mounts, true)) {
+                $report['skipped']['alreadyMounted'] = ($report['skipped']['alreadyMounted'] ?? 0) + 1;
+                continue;
+            }
+
+            $value = implode(',', [...$mounts, $rootPageId]);
+            $datamap[$uid] = $value;
+            $report['updated'][] = ['id' => $uid, 'title' => $title, 'mountpoints' => $value];
+        }
+
+        if ($datamap !== []) {
+            $this->writeWorkspaceMountpoints($beUser, $datamap);
+        }
+
+        return $report;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function parseMountpoints(mixed $value): array
+    {
+        if (!is_string($value) && !is_int($value)) {
+            return [];
+        }
+
+        $out = [];
+        foreach (explode(',', (string)$value) as $part) {
+            $part = trim($part);
+            if ($part === '' || !is_numeric($part)) {
+                continue;
+            }
+            $out[] = (int)$part;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Persist new db_mountpoints values for the given workspaces via DataHandler,
+     * forcing the admin/live context the way {@see createMcpWorkspace()} does
+     * because sys_workspace is not workspace-versioned.
+     *
+     * Best-effort: a DataHandler error is logged but does not abort site creation.
+     *
+     * @param array<int, string> $datamap workspace uid => new db_mountpoints CSV
+     */
+    private function writeWorkspaceMountpoints(BackendUserAuthentication $beUser, array $datamap): void
+    {
+        $data = ['sys_workspace' => []];
+        foreach ($datamap as $uid => $mountpoints) {
+            $data['sys_workspace'][$uid] = ['db_mountpoints' => $mountpoints];
+        }
+
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $originalAdmin = $beUser->user['admin'] ?? 0;
+        $originalWorkspace = $beUser->workspace;
+        $originalWorkspaceId = $beUser->user['workspace_id'] ?? 0;
+
+        $beUser->user['admin'] = 1;
+        $beUser->workspace = 0;
+        $beUser->user['workspace_id'] = 0;
+
+        try {
+            $dataHandler->start($data, []);
+            $dataHandler->process_datamap();
+        } finally {
+            $beUser->user['admin'] = $originalAdmin;
+            $beUser->workspace = $originalWorkspace;
+            $beUser->user['workspace_id'] = $originalWorkspaceId;
+        }
+
+        if ($dataHandler->errorLog !== []) {
+            $this->logger->warning('Failed to update workspace mountpoints', ['errors' => $dataHandler->errorLog]);
+        }
+    }
+
     private function getFirstWritableWorkspace(BackendUserAuthentication $beUser): int
     {
         try {

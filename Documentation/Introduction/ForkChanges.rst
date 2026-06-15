@@ -189,7 +189,14 @@ The fork adds guarded tools for operations that should not appear as ordinary
 editor writes:
 
 - ``CreateSite`` creates or updates YAML site configuration and remains
-  admin-only.
+  admin-only. On ``create`` it also wires up editor access for the new website:
+  it provisions a dedicated per-site backend group (``Editors: <root page
+  title>``) mounted at the root with content-editing permissions, makes that
+  group the owner of the root page, and optionally adds named ``editors`` to it —
+  so non-admins can edit the new site without granting access to every existing
+  editor team. Page-tree–restricted workspaces are extended to cover the new
+  root for staging; unrestricted workspaces are left untouched. The result is
+  reported under ``access`` in the response.
 - ``SiteSet`` attaches or detaches TYPO3 Site Sets and remains admin-only.
 - ``InstallExtension`` installs, activates, searches, or lists extensions and
   remains admin-only.
