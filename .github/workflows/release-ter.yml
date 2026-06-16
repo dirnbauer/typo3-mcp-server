@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (without v prefix)'
+        description: 'Version to build (without v prefix), e.g. 0.5.2'
         required: false
-        default: '0.0.0-dev'
+        default: '0.0.0'
 
 permissions:
   contents: write
