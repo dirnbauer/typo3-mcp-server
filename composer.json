@@ -100,8 +100,7 @@
         ],
         "fractor:fix": [
             "fractor process"
-        ],
-        "build:ter": "bash Build/build-ter.sh"
+        ]
     },
     "config": {
         "allow-plugins": {

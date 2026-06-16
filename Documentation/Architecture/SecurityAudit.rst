@@ -194,10 +194,12 @@ Accepted risks (added)
    TYPO3, or the OAuth-state cookie is sent in the clear over the
    internal hop. Documented as an operator-side concern.
 
-2. ``Build/build-ter.sh`` does not commit a lockfile or sign the bundled
-   ``Resources/Private/PHP/vendor`` payload. The TER zip therefore
-   varies build-to-build. Tracking for a focused supply-chain hardening
-   PR (composer.lock + sha256 manifest + cosign).
+2. Resolved (2026-06-16): the fork no longer ships to TER. The
+   ``Build/build-ter.sh`` packaging script and the ``Release to TER``
+   workflow were removed, so there is no bundled
+   ``Resources/Private/PHP/vendor`` payload to sign and no build-to-build
+   TER zip. Distribution is via Composer/Git, which resolves dependencies
+   from the committed ``composer.lock``.
 
 2026-05-03 (typo3-security skill pass — RFC 9700 alignment)
 ===========================================================
