@@ -24,7 +24,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * structural JSON Schema keywords (type, enum, required, items, default, …)
  * are left untouched so client-side validation keeps working.
  */
-final class ToolSchemaOptimizer
+final readonly class ToolSchemaOptimizer
 {
     /** Character budget for the top-level tool description. */
     private const TOP_LEVEL_BUDGET = 220;
@@ -52,7 +52,7 @@ final class ToolSchemaOptimizer
     ];
 
     public function __construct(
-        private readonly ?ExtensionConfiguration $extensionConfiguration = null,
+        private ?ExtensionConfiguration $extensionConfiguration = null,
     ) {}
 
     /**
@@ -133,7 +133,7 @@ final class ToolSchemaOptimizer
         if ($sentences === false) {
             return $text;
         }
-        $sentences = array_values(array_filter(array_map('trim', $sentences), static fn(string $s): bool => $s !== ''));
+        $sentences = array_values(array_filter(array_map(trim(...), $sentences), static fn(string $s): bool => $s !== ''));
         if ($sentences === []) {
             return $text;
         }

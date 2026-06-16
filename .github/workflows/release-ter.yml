@@ -79,6 +79,10 @@ jobs:
           RELEASE_BODY: ${{ github.event.release.body }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          if [ -z "$TYPO3_API_TOKEN" ]; then
+            echo "::notice::TYPO3_API_TOKEN secret is not set — skipping TER publish. This fork distributes via Composer/Git; the TER-style zip is still built and attached to the GitHub release above."
+            exit 0
+          fi
           COMMENT_FILE="$(mktemp)"
           printf '%s' "$RELEASE_BODY" > "$COMMENT_FILE"
           php ~/.composer/vendor/bin/tailor ter:publish \

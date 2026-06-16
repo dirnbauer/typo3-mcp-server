@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP;
 
 use Hn\McpServer\MCP\McpServerFactory;
+use Hn\McpServer\MCP\Tool\GetCapabilitiesTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 
 /**
@@ -45,13 +46,13 @@ final class ToolSchemaOptimizerIntegrationTest extends AbstractFunctionalTest
         self::assertStringContainsString('REQUIRED', $description);
         self::assertStringContainsString('MUST', $description);
         // ... but the trailing walkthrough prose is dropped (ellipsis marker).
-        self::assertStringEndsWith('…', rtrim($description));
+        self::assertStringEndsWith('…', rtrim((string)$description));
         self::assertStringNotContainsString('Before creating content, use GetPage', $description);
 
         // Per-field descriptions are condensed too, while keeping their gotcha.
         $dataField = $tools['WriteTable']['inputSchema']['properties']['data']['description'];
         self::assertStringContainsString('REPLACES', $dataField);
-        self::assertStringEndsWith('…', rtrim($dataField));
+        self::assertStringEndsWith('…', rtrim((string)$dataField));
     }
 
     public function testFullModeKeepsVerbatimDescriptions(): void
@@ -73,18 +74,18 @@ final class ToolSchemaOptimizerIntegrationTest extends AbstractFunctionalTest
         unset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['schemaDetail']);
 
         $tools = $this->listTools();
-        $conciseLength = strlen($tools['WriteTable']['description']);
+        $conciseLength = strlen((string)$tools['WriteTable']['description']);
 
-        $tool = $this->getService(\Hn\McpServer\MCP\Tool\GetCapabilitiesTool::class);
+        $tool = $this->getService(GetCapabilitiesTool::class);
         $result = $tool->execute(['tool' => 'WriteTable']);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
-        $payload = json_decode($result->content[0]->text, true);
+        $payload = json_decode((string)$result->content[0]->text, true);
         self::assertSame('WriteTable', $payload['tool']);
         $fullDescription = $payload['schema']['description'];
 
         // GetCapabilities ignores the concise setting and returns verbatim text.
         self::assertStringContainsString('Before creating content, use GetPage', $fullDescription);
-        self::assertGreaterThan($conciseLength, strlen($fullDescription));
+        self::assertGreaterThan($conciseLength, strlen((string)$fullDescription));
     }
 }

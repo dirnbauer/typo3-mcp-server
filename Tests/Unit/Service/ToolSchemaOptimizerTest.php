@@ -71,7 +71,7 @@ final class ToolSchemaOptimizerTest extends TestCase
 
         self::assertStringStartsWith('Create or update records.', $optimized['description']);
         self::assertStringEndsWith('…', $optimized['description']);
-        self::assertLessThan(mb_strlen($description), mb_strlen($optimized['description']));
+        self::assertLessThan(mb_strlen($description), mb_strlen((string)$optimized['description']));
     }
 
     public function testCriticalSentenceIsPreservedEvenWhenLate(): void
