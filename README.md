@@ -90,7 +90,7 @@ vendor/bin/typo3 extension:activate mcp_server
 
 **Requirements**
 
-- TYPO3 `^14.0` (no v12/v13 fallback paths in this fork)
+- TYPO3 `^14.3` (no v12/v13 fallback paths in this fork)
 - PHP `8.2 – 8.5` as declared in `ext_emconf.php`
 - `typo3/cms-workspaces`
 
@@ -641,7 +641,7 @@ ddev exec composer fractor         # non-PHP (FlexForm/TypoScript/Fluid) dry-run
 ddev exec composer docs:check      # RST render check (uses Docker)
 ```
 
-CI matrix runs **PHP 8.2 / 8.3 / 8.4 / 8.5 × TYPO3 ^14.0** on every push.
+CI matrix runs **PHP 8.2 / 8.3 / 8.4 / 8.5 × TYPO3 ^14.3** on every push.
 
 E2E (Playwright) — spins up MySQL, TYPO3, Playwright in Docker:
 

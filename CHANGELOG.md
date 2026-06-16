@@ -7,6 +7,18 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.5.1 - 2026-06-15
+
+### Changed
+
+- **Declared TYPO3 support floor raised to `^14.3`** across `composer.json`
+  (runtime and dev `typo3/cms-*` requirements), `ext_emconf.php`
+  constraints, the CI matrix, the README, and `ForkChanges.rst`. The
+  previous `^14.0` always resolved to the latest 14.x, so the fork was only
+  ever installed and tested on 14.3 — this makes the declared floor match
+  the tested reality and aligns it with the rest of the stack. No runtime
+  behaviour change.
+
 ## 0.5.0 - 2026-06-15
 
 _The fork version skips from 0.3.0 to 0.5.0: the `0.4.x` tag namespace is

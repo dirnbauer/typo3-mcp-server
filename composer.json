@@ -13,9 +13,9 @@
     "require": {
         "php": ">=8.2.0",
         "logiscape/mcp-sdk-php": "^1.2",
-        "typo3/cms-backend": "^14.0",
-        "typo3/cms-core": "^14.0",
-        "typo3/cms-workspaces": "^14.0"
+        "typo3/cms-backend": "^14.3",
+        "typo3/cms-core": "^14.3",
+        "typo3/cms-workspaces": "^14.3"
     },
     "require-dev": {
         "brianium/paratest": "^7.8",
@@ -29,12 +29,12 @@
         "saschaegerer/phpstan-typo3": "^3.0",
         "ssch/typo3-rector": "^3.0",
         "typo3/coding-standards": "dev-main",
-        "typo3/cms-extbase": "^14.0",
-        "typo3/cms-fluid": "^14.0",
-        "typo3/cms-frontend": "^14.0",
-        "typo3/cms-install": "^14.0",
+        "typo3/cms-extbase": "^14.3",
+        "typo3/cms-fluid": "^14.3",
+        "typo3/cms-frontend": "^14.3",
+        "typo3/cms-install": "^14.3",
         "typo3/testing-framework": "^9.4",
-        "typo3/cms-redirects": "^14.0"
+        "typo3/cms-redirects": "^14.3"
     },
     "autoload": {
         "psr-4": {

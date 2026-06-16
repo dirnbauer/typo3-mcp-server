@@ -19,7 +19,7 @@ TYPO3 v14 foundation
 
 The fork is a TYPO3 v14-only extension:
 
-- Composer requires TYPO3 ``^14.0`` and ``typo3/cms-workspaces``.
+- Composer requires TYPO3 ``^14.3`` and ``typo3/cms-workspaces``.
 - PHP support follows the extension metadata: PHP 8.2 through 8.5.
 - Tool code uses constructor dependency injection, final classes, TYPO3 v14
   TCA schema APIs, DataHandler, PageRepository, FAL, site, and language APIs.
