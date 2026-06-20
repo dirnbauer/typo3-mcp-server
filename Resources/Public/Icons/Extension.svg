@@ -1,11 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-  <g opacity=".4">
-    <circle fill="currentColor" cx="3" cy="5" r="1.2"/>
-    <circle fill="currentColor" cx="3" cy="11" r="1.2"/>
-    <circle fill="currentColor" cx="13" cy="5" r="1.2"/>
-    <circle fill="currentColor" cx="13" cy="11" r="1.2"/>
-  </g>
-  <path fill="currentColor" d="M8 2C5.79 2 4 3.79 4 6v1H3v2h1v1c0 2.21 1.79 4 4 4s4-1.79 4-4V9h1V7h-1V6c0-2.21-1.79-4-4-4zm3 8c0 1.66-1.34 3-3 3S5 11.66 5 10V9h6v1zm0-3H5V6c0-1.66 1.34-3 3-3s3 1.34 3 3v1z"/>
-  <path fill="var(--icon-color-accent, #ff8700)" d="M4 7H2.5c-.28 0-.5.22-.5.5v1c0 .28.22.5.5.5H4V7zM12 7h1.5c.28 0 .5.22.5.5v1c0 .28-.22.5-.5.5H12V7z"/>
-  <circle fill="var(--icon-color-accent, #ff8700)" cx="8" cy="7" r="1"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="6" y="6" width="52" height="52" rx="10" fill="#f8fafc"/>
+  <rect x="6.75" y="6.75" width="50.5" height="50.5" rx="9.25" fill="none" stroke="#d0d7de" stroke-width="1.5"/>
+  <path d="M19 22v-6h6M45 22v-6h-6M19 42v6h6M45 42v6h-6" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+  <path d="M32 15a10 10 0 0 0-10 10v5h-2v8h2v5a10 10 0 0 0 20 0v-5h2v-8h-2v-5a10 10 0 0 0-10-10Zm7 28a7 7 0 0 1-14 0v-5h14v5Zm0-9H25v-9a7 7 0 0 1 14 0v9Z" fill="#1f2937"/>
+  <circle cx="32" cy="30" r="3.5" fill="#ff8700"/>
 </svg>
