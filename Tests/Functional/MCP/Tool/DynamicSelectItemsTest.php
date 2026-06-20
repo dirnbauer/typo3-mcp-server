@@ -86,7 +86,7 @@ class DynamicSelectItemsTest extends FunctionalTestCase
         self::assertNotNull($resolved);
         self::assertNotContains('999', $resolved['values'], 'colPos 999 should NOT be in resolved items. Got: ' . json_encode($resolved['values']));
 
-        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 999);
+        $error = $this->tableAccessService->validateFieldValue('tt_content', 'colPos', 999, $record);
         self::assertNotNull($error, 'Invalid colPos 999 should fail validation');
         self::assertStringContainsString('must be one of', $error);
     }

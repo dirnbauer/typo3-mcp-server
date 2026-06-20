@@ -1278,7 +1278,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             // Validate field value (with record context for dynamic select item resolution)
-            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value);
+            $validationError = $this->tableAccessService->validateFieldValue($table, $fieldName, $value, $mergedRecord);
             if ($validationError !== null) {
                 return $validationError;
             }

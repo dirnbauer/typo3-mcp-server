@@ -26,7 +26,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class SelectItemResolver
 {
     /**
-     * Runtime cache for compiled form data, keyed by "table:pid"
+     * Runtime cache for compiled form data, keyed by table, pid, and record context.
+     *
      * @var array<string, array>
      */
     private array $cache = [];
@@ -72,6 +73,11 @@ final class SelectItemResolver
     /**
      * Compile form data using TYPO3's FormDataCompiler.
      *
+     * The record's scalar field values are fed into the compiler as defaultValues
+     * (the same mechanism the backend uses for &defVals[...] when opening a new
+     * record). DatabaseRowInitializeNew copies them into the databaseRow that
+     * itemsProcFunc callbacks receive as $parameters['row'].
+     *
      * @param string $table Table name
      * @param array $record Record context for databaseRow and pid resolution
      * @return array The compiled form data
@@ -79,7 +85,8 @@ final class SelectItemResolver
     private function compileFormData(string $table, array $record): array
     {
         $pid = (int)($record['pid'] ?? 0);
-        $cacheKey = $table . ':' . $pid;
+        $rowValues = $this->extractRowValues($table, $record);
+        $cacheKey = $table . ':' . $pid . ':' . md5(serialize($rowValues));
 
         if (isset($this->cache[$cacheKey])) {
             return $this->cache[$cacheKey];
@@ -95,12 +102,163 @@ final class SelectItemResolver
             'tableName' => $table,
             'vanillaUid' => $pid,
             'command' => 'new',
+            'defaultValues' => $rowValues === [] ? [] : [$table => $rowValues],
         ];
 
-        $result = $formDataCompiler->compile($input, $formDataGroup);
+        $restoreTca = $this->disableNoMatchingValueElement($table);
+        try {
+            $result = $formDataCompiler->compile($input, $formDataGroup);
+        } finally {
+            $restoreTca();
+        }
         $this->cache[$cacheKey] = $result;
 
         return $result;
+    }
+
+    /**
+     * Temporarily suppress FormEngine's invalid-value pseudo items for select fields.
+     *
+     * When a submitted select value is seeded into defaultValues, FormEngine may add
+     * it back as an "[ invalid value ]" option to avoid data loss in backend forms.
+     * For MCP validation that would make every submitted value appear allowed.
+     *
+     * @return callable(): void
+     */
+    private function disableNoMatchingValueElement(string $table): callable
+    {
+        $columns = $this->getTcaColumns($table);
+        if ($columns === []) {
+            return static function (): void {};
+        }
+
+        /** @var array<string, mixed> $originals */
+        $originals = [];
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (!is_string($fieldName) || !is_array($fieldConfig)) {
+                continue;
+            }
+
+            $config = $fieldConfig['config'] ?? [];
+            if (!is_array($config) || ($config['type'] ?? '') !== 'select') {
+                continue;
+            }
+
+            $originals[$fieldName] = $config['disableNoMatchingValueElement'] ?? null;
+            $config['disableNoMatchingValueElement'] = true;
+            $fieldConfig['config'] = $config;
+            $columns[$fieldName] = $fieldConfig;
+        }
+
+        if ($originals === []) {
+            return static function (): void {};
+        }
+
+        $this->replaceTcaColumns($table, $columns);
+
+        return function () use ($table, $originals): void {
+            $columns = $this->getTcaColumns($table);
+            foreach ($originals as $fieldName => $original) {
+                $fieldConfig = $columns[$fieldName] ?? null;
+                if (!is_array($fieldConfig)) {
+                    continue;
+                }
+
+                $config = $fieldConfig['config'] ?? [];
+                if (!is_array($config)) {
+                    $config = [];
+                }
+
+                if ($original === null) {
+                    unset($config['disableNoMatchingValueElement']);
+                } else {
+                    $config['disableNoMatchingValueElement'] = $original;
+                }
+
+                $fieldConfig['config'] = $config;
+                $columns[$fieldName] = $fieldConfig;
+            }
+
+            $this->replaceTcaColumns($table, $columns);
+        };
+    }
+
+    /**
+     * Reduce the record context to scalar TCA fields that can seed databaseRow.
+     *
+     * @param string $table Table name
+     * @param array<array-key, mixed> $record Record context
+     * @return array<string, scalar> Field name => value
+     */
+    private function extractRowValues(string $table, array $record): array
+    {
+        $columns = $this->getTcaColumns($table);
+        /** @var array<string, scalar> $rowValues */
+        $rowValues = [];
+        foreach ($record as $fieldName => $value) {
+            if (!is_string($fieldName)) {
+                continue;
+            }
+            if ($fieldName === 'pid') {
+                continue;
+            }
+            if (!is_scalar($value)) {
+                continue;
+            }
+            if (!isset($columns[$fieldName])) {
+                continue;
+            }
+
+            $rowValues[$fieldName] = $value;
+        }
+
+        ksort($rowValues);
+
+        return $rowValues;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getTcaColumns(string $table): array
+    {
+        $tca = $GLOBALS['TCA'] ?? [];
+        if (!is_array($tca)) {
+            return [];
+        }
+
+        $tableConfig = $tca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return [];
+        }
+
+        $columns = $tableConfig['columns'] ?? null;
+        if (!is_array($columns)) {
+            return [];
+        }
+
+        /** @var array<string, mixed> $columns */
+        return $columns;
+    }
+
+    /**
+     * @param array<string, mixed> $columns
+     */
+    private function replaceTcaColumns(string $table, array $columns): void
+    {
+        $tca = $GLOBALS['TCA'] ?? [];
+        if (!is_array($tca)) {
+            return;
+        }
+
+        $tableConfig = $tca[$table] ?? null;
+        if (!is_array($tableConfig)) {
+            return;
+        }
+
+        $tableConfig['columns'] = $columns;
+        $tca[$table] = $tableConfig;
+        $GLOBALS['TCA'] = $tca;
     }
 
     /**

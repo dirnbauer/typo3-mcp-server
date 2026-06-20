@@ -1626,13 +1626,14 @@ final class TableAccessService
     }
 
     /**
-     * Get allowed values for a select field
+     * Get allowed values for a select field.
      *
      * @param string $table Table name
      * @param string $fieldName Field name
+     * @param array<array-key, mixed> $record Record context for dynamic item resolution
      * @return list<string>|null Array of allowed values or null if not a select field
      */
-    public function getSelectFieldAllowedValues(string $table, string $fieldName): ?array
+    public function getSelectFieldAllowedValues(string $table, string $fieldName, array $record = []): ?array
     {
         $fieldConfig = $this->getFieldConfig($table, $fieldName);
         if (!$fieldConfig) {
@@ -1685,6 +1686,26 @@ final class TableAccessService
             return null;
         }
 
+        // Prefer TYPO3's FormEngine pipeline when a record context is available.
+        // This resolves sibling-field dependent item lists such as b13/container's
+        // tt_content.colPos without inferring values for contextless itemsProcFunc fields.
+        if ($record !== []) {
+            $resolver = GeneralUtility::makeInstance(SelectItemResolver::class);
+            $resolved = $resolver->resolveSelectItems($table, $fieldName, $record);
+            $resolvedValues = $resolved['values'] ?? null;
+            if (is_array($resolvedValues) && $resolvedValues !== []) {
+                $allowedValues = [];
+                foreach ($resolvedValues as $resolvedValue) {
+                    if (is_scalar($resolvedValue)) {
+                        $allowedValues[] = (string)$resolvedValue;
+                    }
+                }
+                if ($allowedValues !== []) {
+                    return $allowedValues;
+                }
+            }
+        }
+
         // itemsProcFunc fields add dynamic values beyond the static TCA items array.
         // If the static items contain only blank/placeholder entries ('' or '-1'),
         // the proc func is the sole source of valid values (e.g. pages.backend_layout
@@ -1730,9 +1751,10 @@ final class TableAccessService
      * @param string $table Table name
      * @param string $fieldName Field name
      * @param mixed $value Field value
+     * @param array<array-key, mixed> $record Record context for dynamic select item resolution
      * @return string|null Error message if validation fails, null if valid
      */
-    public function validateFieldValue(string $table, string $fieldName, $value): ?string
+    public function validateFieldValue(string $table, string $fieldName, $value, array $record = []): ?string
     {
         $fieldConfig = $this->getFieldConfig($table, $fieldName);
         if (!$fieldConfig) {
@@ -1752,10 +1774,15 @@ final class TableAccessService
 
         // Validate select fields
         if ($fieldType === 'select' && empty($config['foreign_table'])) {
-            $allowedValues = $this->getSelectFieldAllowedValues($table, $fieldName);
+            $allowedValues = $this->getSelectFieldAllowedValues($table, $fieldName, $record);
             if ($allowedValues !== null) {
-                // Handle comma-separated values for multiple select
-                $values = is_string($value) ? GeneralUtility::trimExplode(',', $value, true) : [$value];
+                if (is_array($value)) {
+                    $values = $value;
+                } elseif (is_string($value)) {
+                    $values = GeneralUtility::trimExplode(',', $value, true);
+                } else {
+                    $values = [$value];
+                }
 
                 foreach ($values as $val) {
                     $normalizedValue = is_scalar($val) ? (string)$val : '';
