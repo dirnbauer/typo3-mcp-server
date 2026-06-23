@@ -39,3 +39,6 @@ Documentation-GENERATED-temp
 node_modules
 npm-debug.log*
 .idea
+
+# Local agent memory
+/memory/
