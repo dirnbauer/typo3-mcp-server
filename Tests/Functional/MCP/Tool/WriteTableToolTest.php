@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Fixtures\TestDataBuilder;
 use Mcp\Types\TextContent;
@@ -261,7 +262,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
 
     public function testCreatePageWithExplicitLanguageField(): void
     {
-        $tableAccessService = GeneralUtility::makeInstance(\Hn\McpServer\Service\TableAccessService::class);
+        $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
         $availableFields = $tableAccessService->getAvailableFields('pages', '1');
         self::assertArrayNotHasKey(
             'sys_language_uid',
