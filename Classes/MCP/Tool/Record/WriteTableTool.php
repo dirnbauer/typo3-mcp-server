@@ -1352,6 +1352,20 @@ final class WriteTableTool extends AbstractRecordTool
             }
         }
 
+        // The language field (ctrl.languageField, usually sys_language_uid) is
+        // control metadata managed by MCP: ISO codes are converted into numeric
+        // IDs, translate sets it explicitly, and non-admin writes default it for
+        // TYPO3's language permission checks. TYPO3 does not list this field in
+        // every showitem, notably pages, so showitem-derived availability must
+        // not reject a value the tool itself added or accepted intentionally.
+        $languageField = $this->tableAccessService->getLanguageFieldName($table);
+        if ($languageField !== null) {
+            $languageFieldConfig = $this->tableAccessService->getFieldConfig($table, $languageField);
+            if (is_array($languageFieldConfig)) {
+                $availableFields[$languageField] = $languageFieldConfig;
+            }
+        }
+
         // If we have type-specific configuration, validate field availability
         if (!empty($availableFields) || !empty($typeField)) {
             // Check each field in data is available

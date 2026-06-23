@@ -322,6 +322,54 @@ class NonAdminWriteTest extends AbstractFunctionalTest
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
+    public function testNonAdminCanCreatePage(): void
+    {
+        $user = $this->setupDefaultBackendUser(99);
+        $user->groupData['tables_select'] = 'pages';
+        $user->groupData['tables_modify'] = 'pages';
+        $user->groupData['non_exclude_fields'] = implode(',', [
+            'pages:title',
+            'pages:slug',
+            'pages:doktype',
+            'pages:sys_language_uid',
+            'pages:l18n_cfg',
+            'pages:hidden',
+        ]);
+        $user->groupData['modules'] = 'web_WorkspacesWorkspaces';
+        $user->groupData['pagetypes_select'] = '1';
+        $user->groupData['webmounts'] = '1,100';
+        $user->user['db_mountpoints'] = '1';
+
+        $this->connectionPool->getConnectionForTable('pages')->update(
+            'pages',
+            ['perms_everybody' => 31],
+            ['uid' => 100],
+        );
+
+        $this->switchToWorkspace(50);
+
+        $result = $this->writeTool->execute([
+            'action' => 'create',
+            'table' => 'pages',
+            'pid' => 100,
+            'data' => [
+                'title' => 'Non-Admin Created Page',
+                'slug' => '/non-admin-created-page',
+                'doktype' => 1,
+            ],
+        ]);
+
+        self::assertFalse(
+            $result->isError,
+            'Non-admin page creation failed: ' . json_encode($result->jsonSerialize(), JSON_PRETTY_PRINT),
+        );
+
+        $responseData = json_decode((string)$result->content[0]->text, true);
+        self::assertIsArray($responseData);
+        self::assertArrayHasKey('uid', $responseData);
+        self::assertGreaterThan(0, $responseData['uid']);
+    }
+
     /**
      * Test read operation for non-admin (should work with basic permissions)
      */

@@ -259,6 +259,35 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $this->assertRecordNotInLive('pages', $pageData['uid']);
     }
 
+    public function testCreatePageWithExplicitLanguageField(): void
+    {
+        $tableAccessService = GeneralUtility::makeInstance(\Hn\McpServer\Service\TableAccessService::class);
+        $availableFields = $tableAccessService->getAvailableFields('pages', '1');
+        self::assertArrayNotHasKey(
+            'sys_language_uid',
+            $availableFields,
+            'Premise: sys_language_uid is not part of the pages showitem',
+        );
+
+        $result = $this->tool->execute([
+            'action' => 'create',
+            'table' => 'pages',
+            'pid' => $this->getRootPageUid(),
+            'data' => [
+                'title' => 'Page With Explicit Language',
+                'slug' => '/page-with-explicit-language',
+                'doktype' => 1,
+                'sys_language_uid' => 0,
+            ],
+        ]);
+
+        $this->assertSuccessfulToolResult($result);
+        $pageData = $this->extractJsonFromResult($result);
+        self::assertEquals('create', $pageData['action']);
+        self::assertIsInt($pageData['uid']);
+        $this->assertRecordNotInLive('pages', $pageData['uid']);
+    }
+
     /**
      * User story: Edit existing content element
      */
