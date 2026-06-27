@@ -11,11 +11,23 @@ trait DevSiteTestTrait
 {
     protected function enableDevSiteTools(): void
     {
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+        $this->setLocalUnsafeMode('on');
     }
 
     protected function disableDevSiteTools(): void
     {
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
+        $this->setLocalUnsafeMode('off');
+    }
+
+    private function setLocalUnsafeMode(string $mode): void
+    {
+        $confVars = is_array($GLOBALS['TYPO3_CONF_VARS'] ?? null) ? $GLOBALS['TYPO3_CONF_VARS'] : [];
+        $extensions = is_array($confVars['EXTENSIONS'] ?? null) ? $confVars['EXTENSIONS'] : [];
+        $mcpServer = is_array($extensions['mcp_server'] ?? null) ? $extensions['mcp_server'] : [];
+
+        $mcpServer['localUnsafeMode'] = $mode;
+        $extensions['mcp_server'] = $mcpServer;
+        $confVars['EXTENSIONS'] = $extensions;
+        $GLOBALS['TYPO3_CONF_VARS'] = $confVars;
     }
 }

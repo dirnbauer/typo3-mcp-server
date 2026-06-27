@@ -8,6 +8,7 @@ use Hn\McpServer\MCP\Tool\GetPageTool;
 use Hn\McpServer\MCP\Tool\GetPageTreeTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -30,6 +31,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+    use DevSiteTestTrait;
 
     protected array $coreExtensionsToLoad = [
         'workspaces',
@@ -48,6 +50,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/tt_content.csv');

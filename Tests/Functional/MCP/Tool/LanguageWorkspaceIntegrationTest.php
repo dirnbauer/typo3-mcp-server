@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -24,6 +25,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+    use DevSiteTestTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -40,6 +42,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         // Create site configuration with languages
         $this->createMultiLanguageSiteConfiguration();

@@ -9,14 +9,17 @@ use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\MCP\Tool\SearchTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 class IntegrationTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+    use DevSiteTestTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -29,6 +32,7 @@ class IntegrationTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         // Import fixtures
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
@@ -37,6 +41,7 @@ class IntegrationTest extends FunctionalTestCase
 
         // Set up backend user
         $this->setUpBackendUser(1);
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)->create('default');
 
         // Initialize workspace context once for all tests
         $workspaceContextService = GeneralUtility::makeInstance(WorkspaceContextService::class);

@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -22,6 +23,8 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 class MmRelationWorkspaceTest extends FunctionalTestCase
 {
+    use DevSiteTestTrait;
+
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -39,6 +42,7 @@ class MmRelationWorkspaceTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         $this->createMultiLanguageSiteConfiguration();
 

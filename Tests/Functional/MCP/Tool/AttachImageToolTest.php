@@ -9,6 +9,7 @@ use Hn\McpServer\MCP\Tool\File\UploadFileTool;
 use Hn\McpServer\MCP\Tool\Record\AttachImageTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -20,6 +21,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class AttachImageToolTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+    use DevSiteTestTrait;
 
     private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
@@ -34,6 +36,7 @@ final class AttachImageToolTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         $this->importCSVDataSet(__DIR__ . '/../../../Functional/Fixtures/be_users.csv');
         $this->importCSVDataSet(__DIR__ . '/../../../Functional/Fixtures/pages.csv');

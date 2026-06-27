@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -20,6 +21,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 class WorkspaceEdgeCaseTest extends FunctionalTestCase
 {
     use GetServiceTrait;
+    use DevSiteTestTrait;
     protected array $coreExtensionsToLoad = [
         'workspaces',
         'frontend',
@@ -36,6 +38,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->disableDevSiteTools();
 
         // Import fixtures
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');

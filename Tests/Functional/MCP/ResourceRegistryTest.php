@@ -8,6 +8,7 @@ use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\ResourceRegistry;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
+use Mcp\Types\TextResourceContents;
 
 final class ResourceRegistryTest extends AbstractFunctionalTest
 {
@@ -32,15 +33,34 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
     public function testReadTcaOverviewContainsPagesTable(): void
     {
         $result = $this->registry->readResource(ResourceRegistry::URI_OVERVIEW);
-        $text = $result->contents[0]->text ?? '';
-        self::assertStringContainsString('`pages`', $text);
+        $content = $result->contents[0] ?? null;
+        self::assertInstanceOf(TextResourceContents::class, $content);
+        self::assertStringContainsString('`pages`', $content->text);
+    }
+
+    public function testReadTcaOverviewSerializesSpecCompliantContents(): void
+    {
+        $result = $this->registry->readResource(ResourceRegistry::URI_OVERVIEW);
+        $payload = json_decode((string)json_encode($result, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertIsArray($payload);
+        self::assertIsArray($payload['contents'] ?? null);
+        self::assertIsArray($payload['contents'][0] ?? null);
+        $content = $payload['contents'][0];
+
+        self::assertSame(
+            ['uri', 'mimeType', 'text'],
+            array_keys($content),
+        );
+        self::assertArrayNotHasKey('extraFields', $content);
     }
 
     public function testReadTcaTableUsesAccessChecks(): void
     {
         $result = $this->registry->readResource(ResourceRegistry::URI_TABLE_PREFIX . 'pages');
-        $text = $result->contents[0]->text ?? '';
-        self::assertStringContainsString('TABLE SCHEMA: pages', $text);
+        $content = $result->contents[0] ?? null;
+        self::assertInstanceOf(TextResourceContents::class, $content);
+        self::assertStringContainsString('TABLE SCHEMA: pages', $content->text);
     }
 
     public function testResourcesBlockedOutsideDevSiteMode(): void

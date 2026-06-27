@@ -11,7 +11,6 @@ use Mcp\Types\ListResourceTemplatesResult;
 use Mcp\Types\ReadResourceResult;
 use Mcp\Types\Resource;
 use Mcp\Types\ResourceTemplate;
-use Mcp\Types\TextResourceContents;
 
 /**
  * MCP resources exposed on dev sites (DDEV / local development mode).
@@ -65,7 +64,7 @@ final readonly class ResourceRegistry
 
         if ($uri === self::URI_OVERVIEW) {
             return new ReadResourceResult([
-                new TextResourceContents(
+                new SpecTextResourceContents(
                     uri: $uri,
                     text: $this->tcaResourceFormatter->renderOverview(),
                     mimeType: 'text/markdown',
@@ -80,7 +79,7 @@ final readonly class ResourceRegistry
             }
 
             return new ReadResourceResult([
-                new TextResourceContents(
+                new SpecTextResourceContents(
                     uri: $uri,
                     text: $this->tcaResourceFormatter->renderTable($tableName),
                     mimeType: 'text/markdown',
