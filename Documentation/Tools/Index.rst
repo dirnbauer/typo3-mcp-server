@@ -195,8 +195,8 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Write
      - Discard pending workspace changes (dry-run by default)
    * - ``ManageRedirects``
-     - Read
-     - List URL redirects and explain workspace write limitations
+     - Read/Write
+     - List URL redirects; create/delete when workspace-safe or trusted local mode allows live writes
    * - ``ImportFromUrl``
      - Read/Write
      - Fetch URL content and propose or create page with elements
@@ -1021,9 +1021,13 @@ tool returns configuration guidance instead of a raw table-access failure.
 
 If the redirects extension is available, ``list`` works normally. On standard
 TYPO3 installs ``sys_redirect`` is not workspace-capable, so ``create`` and
-``delete`` return an explicit workspace-safety error instead of editing live
-redirect rows. If an instance provides workspace-capable redirects, the same
-tool can create and delete through the workspace-safe path.
+``delete`` return an explicit workspace-safety error in strict/production mode
+instead of editing live redirect rows. If an instance provides
+workspace-capable redirects, the same tool can create and delete through the
+workspace-safe path. In trusted local mode (DDEV, TYPO3 Development context, or
+``localUnsafeMode=on`` with strict sandbox off), ``create`` and ``delete`` are
+allowed as direct live writes because local mode already relaxes the
+non-workspace-table write guard.
 
 Content import from URL
 =======================

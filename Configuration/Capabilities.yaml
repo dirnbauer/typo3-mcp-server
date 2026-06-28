@@ -18,7 +18,7 @@ capabilities:
     - file:write        # UploadFile, UploadFileFromUrl, WriteFile
     - cli:safe          # SafeCli (allowlisted commands only)
     - extension:install # InstallExtensionTool (admin-only)
-    - site:write        # CreateSite, ManageRedirects (admin-only)
+    - site:write        # CreateSite, ManageRedirects
     - render:frontend   # RenderRecord, GetPreviewUrl (HTTP fetch to own site)
     - log:read          # GetSystemLog
     - x402:payments     # X402 paid-content tools (only loaded if x402 keys exist)

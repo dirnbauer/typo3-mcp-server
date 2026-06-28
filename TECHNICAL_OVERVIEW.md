@@ -388,8 +388,10 @@ for the full audit snapshot.
 - **`BulkWrite` is capped at 50 operations** per call. Split larger batches
   into multiple calls.
 - **Redirects (`sys_redirect`) are usually outside TYPO3 workspaces.**
-  `ManageRedirects` lists them and explains the limitation. Create/delete
-  only runs on instances where `sys_redirect` is workspace-capable.
+  `ManageRedirects` lists them everywhere. Create/delete only runs when
+  `sys_redirect` is workspace-capable, or as an explicit live write in trusted
+  local mode (DDEV / Development / `localUnsafeMode=on` with strict sandbox
+  off).
 - **Context-window limits.** Operations like "translate the entire page"
   may hit client model limits; process in chunks for very large pages.
 

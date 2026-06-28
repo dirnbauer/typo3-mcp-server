@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -24,13 +25,15 @@ final class ManageRedirectsTool extends AbstractRecordTool
     private const MAX_LIMIT = 200;
     private const ALLOWED_STATUS_CODES = [301, 302, 303, 307];
     private const WRITE_UNSUPPORTED_MESSAGE = 'ManageRedirects cannot modify redirects on this TYPO3 instance because '
-        . 'sys_redirect is not workspace-capable. Live redirect rows must not be edited directly through MCP. '
-        . 'Use the TYPO3 backend or another admin workflow for redirect changes.';
+        . 'sys_redirect is not workspace-capable and local live writes are disabled. '
+        . 'Use the TYPO3 backend or another admin workflow for redirect changes, or run in trusted local mode '
+        . '(DDEV, TYPO3 Development context, or localUnsafeMode=on with strictSandbox off).';
 
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
         private readonly ConnectionPool $connectionPool,
+        private readonly LocalModeService $localMode,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -42,8 +45,9 @@ final class ManageRedirectsTool extends AbstractRecordTool
     {
         return [
             'description' => 'Inspect TYPO3 URL redirects (sys_redirect). '
-                . 'Supports listing existing redirects with filters. On TYPO3 instances where sys_redirect is workspace-capable, '
-                . 'the same tool can also create and delete redirects; otherwise write actions return a workspace-safety limitation message. '
+                . 'Supports listing existing redirects with filters. Create/delete is available when sys_redirect is workspace-capable '
+                . 'or when trusted local mode permits live writes (DDEV, TYPO3 Development context, or localUnsafeMode=on with strictSandbox off). '
+                . 'Otherwise write actions return a workspace-safety limitation message. '
                 . 'Redirects map a source host + path to a target URL or page with a configurable HTTP status code.',
             'inputSchema' => [
                 'type' => 'object',
@@ -269,6 +273,7 @@ final class ManageRedirectsTool extends AbstractRecordTool
         $dataMap = [
             self::TABLE => [
                 $newId => [
+                    'pid' => 0,
                     'source_host' => $sourceHost,
                     'source_path' => $sourcePath,
                     'target' => $target,
@@ -281,8 +286,10 @@ final class ManageRedirectsTool extends AbstractRecordTool
 
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $backendUser;
-        $dataHandler->start($dataMap, []);
-        $dataHandler->process_datamap();
+        $this->runInRedirectWriteContext($backendUser, static function () use ($dataHandler, $dataMap): void {
+            $dataHandler->start($dataMap, []);
+            $dataHandler->process_datamap();
+        });
 
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error creating redirect: ' . implode(', ', $dataHandler->errorLog));
@@ -296,6 +303,8 @@ final class ManageRedirectsTool extends AbstractRecordTool
         return $this->createJsonResult([
             'action' => 'create',
             'uid' => (int)$createdUid,
+            'workspace_staged' => $this->redirectTableIsWorkspaceCapable(),
+            'live_write' => !$this->redirectTableIsWorkspaceCapable(),
             'source_host' => $sourceHost,
             'source_path' => $sourcePath,
             'target' => $target,
@@ -336,8 +345,11 @@ final class ManageRedirectsTool extends AbstractRecordTool
 
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $backendUser;
-        $dataHandler->start([], [self::TABLE => [$uid => ['delete' => 1]]]);
-        $dataHandler->process_cmdmap();
+        $commandMap = [self::TABLE => [$uid => ['delete' => 1]]];
+        $this->runInRedirectWriteContext($backendUser, static function () use ($dataHandler, $commandMap): void {
+            $dataHandler->start([], $commandMap);
+            $dataHandler->process_cmdmap();
+        });
 
         if (!empty($dataHandler->errorLog)) {
             return $this->createErrorResult('Error deleting redirect: ' . implode(', ', $dataHandler->errorLog));
@@ -346,6 +358,8 @@ final class ManageRedirectsTool extends AbstractRecordTool
         return $this->createJsonResult([
             'action' => 'delete',
             'uid' => $uid,
+            'workspace_staged' => $this->redirectTableIsWorkspaceCapable(),
+            'live_write' => !$this->redirectTableIsWorkspaceCapable(),
             'source_host' => is_scalar($row['source_host'] ?? null) ? (string)$row['source_host'] : '',
             'source_path' => is_scalar($row['source_path'] ?? null) ? (string)$row['source_path'] : '',
             'target' => is_scalar($row['target'] ?? null) ? (string)$row['target'] : '',
@@ -389,6 +403,28 @@ final class ManageRedirectsTool extends AbstractRecordTool
     }
 
     private function redirectWritesAreSupported(): bool
+    {
+        return $this->redirectTableIsWorkspaceCapable() || $this->localMode->allowsLiveWrites();
+    }
+
+    private function runInRedirectWriteContext(BackendUserAuthentication $backendUser, \Closure $operation): void
+    {
+        if ($this->redirectTableIsWorkspaceCapable()) {
+            $operation();
+            return;
+        }
+
+        $originalWorkspaceId = $this->workspaceContextService->getCurrentWorkspace();
+        $this->workspaceContextService->setWorkspaceContext($backendUser, 0);
+
+        try {
+            $operation();
+        } finally {
+            $this->workspaceContextService->setWorkspaceContext($backendUser, $originalWorkspaceId);
+        }
+    }
+
+    private function redirectTableIsWorkspaceCapable(): bool
     {
         $globalTca = $GLOBALS['TCA'] ?? null;
         if (!is_array($globalTca)) {

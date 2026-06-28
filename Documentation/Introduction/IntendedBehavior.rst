@@ -106,7 +106,8 @@ instance configuration that may not exist everywhere:
 
 - ``ManageRedirects`` requires the ``sys_redirect`` table to be available; list
   access works when it is available, while create/delete only run on instances
-  where ``sys_redirect`` is workspace-capable
+  where ``sys_redirect`` is workspace-capable or trusted local mode permits live
+  writes (DDEV / Development / ``localUnsafeMode=on`` with strict sandbox off)
 - ``ListPaidContent``, ``GetPaidContent``, and ``GetPaymentStats`` require the
   optional x402 paywall extension surface; when that surface is missing they
   should return configuration guidance instead of raw SQL errors

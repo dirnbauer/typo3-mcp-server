@@ -170,7 +170,8 @@ excerpts and always attach source + copyright metadata to the images.
 1. Call `ManageRedirects` with `action: "list"` and verify the
   tool is available (it will return empty on a clean install). On standard
   TYPO3 installs, create/delete returns the documented workspace-safety error
-  because `sys_redirect` is not workspace-capable.
+  because `sys_redirect` is not workspace-capable, unless trusted local mode
+  permits live writes.
 2. Call `InstallExtension` to install a small, well-known extension
   (e.g. `georgringer/news` on a staging system) — but only if that is
     desired for this run. This exercises the admin-gated tool. Skip on

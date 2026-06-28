@@ -276,8 +276,18 @@ services:
     class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
     arguments:
       $toolName: 'ManageRedirects'
-      $description: 'List and explain TYPO3 redirects.'
-      $exposedOptions: ['action', 'limit', 'offset']
+      $description: 'List and manage TYPO3 redirects.'
+      $exposedOptions:
+        - 'action'
+        - 'uid'
+        - 'source_host'
+        - 'source_path'
+        - 'target'
+        - 'target_statuscode'
+        - 'force_https'
+        - 'respect_query_parameters'
+        - 'limit'
+        - 'offset'
     tags:
       - name: 'console.command'
         command: 'mcp:manage-redirects'
