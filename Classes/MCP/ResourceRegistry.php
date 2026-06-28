@@ -17,8 +17,10 @@ use Mcp\Types\ResourceTemplate;
  */
 final readonly class ResourceRegistry
 {
-    public const URI_OVERVIEW = 'typo3-mcp://tca';
-    public const URI_TABLE_PREFIX = 'typo3-mcp://tca/';
+    public const URI_OVERVIEW = 'typo3-mcp:///tca';
+    public const URI_TABLE_PREFIX = 'typo3-mcp:///tca/';
+    public const LEGACY_URI_OVERVIEW = 'typo3-mcp://tca';
+    public const LEGACY_URI_TABLE_PREFIX = 'typo3-mcp://tca/';
 
     public function __construct(
         private TcaResourceFormatter $tcaResourceFormatter,
@@ -62,7 +64,7 @@ final readonly class ResourceRegistry
     {
         $this->devSiteToolService->assertAvailable();
 
-        if ($uri === self::URI_OVERVIEW) {
+        if ($uri === self::URI_OVERVIEW || $uri === self::LEGACY_URI_OVERVIEW) {
             return new ReadResourceResult([
                 new SpecTextResourceContents(
                     uri: $uri,
@@ -72,8 +74,14 @@ final readonly class ResourceRegistry
             ]);
         }
 
+        $tableName = null;
         if (str_starts_with($uri, self::URI_TABLE_PREFIX)) {
             $tableName = substr($uri, strlen(self::URI_TABLE_PREFIX));
+        } elseif (str_starts_with($uri, self::LEGACY_URI_TABLE_PREFIX)) {
+            $tableName = substr($uri, strlen(self::LEGACY_URI_TABLE_PREFIX));
+        }
+
+        if ($tableName !== null) {
             if ($tableName === '' || preg_match('/^[a-z0-9_]+$/', $tableName) !== 1) {
                 throw new \InvalidArgumentException('Invalid TCA resource URI: ' . $uri);
             }

@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * CLI mirror for MCP TCA resources (`typo3-mcp://tca` and `typo3-mcp://tca/{table}`).
+ * CLI mirror for MCP TCA resources (`typo3-mcp:///tca` and `typo3-mcp:///tca/{table}`).
  */
 final class TcaResourceCommand extends Command
 {
@@ -29,7 +29,7 @@ final class TcaResourceCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setDescription('Read TYPO3 TCA reference markdown (dev-site only). Mirrors MCP resources typo3-mcp://tca.')
+            ->setDescription('Read TYPO3 TCA reference markdown (dev-site only). Mirrors MCP resources typo3-mcp:///tca.')
             ->addOption(
                 'table',
                 't',

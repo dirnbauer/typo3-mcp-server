@@ -38,6 +38,15 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
         self::assertStringContainsString('`pages`', $content->text);
     }
 
+    public function testReadTcaOverviewAcceptsLegacyUri(): void
+    {
+        $result = $this->registry->readResource(ResourceRegistry::LEGACY_URI_OVERVIEW);
+        $content = $result->contents[0] ?? null;
+        self::assertInstanceOf(TextResourceContents::class, $content);
+        self::assertSame(ResourceRegistry::LEGACY_URI_OVERVIEW, $content->uri);
+        self::assertStringContainsString('`pages`', $content->text);
+    }
+
     public function testReadTcaOverviewSerializesSpecCompliantContents(): void
     {
         $result = $this->registry->readResource(ResourceRegistry::URI_OVERVIEW);
@@ -60,6 +69,15 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
         $result = $this->registry->readResource(ResourceRegistry::URI_TABLE_PREFIX . 'pages');
         $content = $result->contents[0] ?? null;
         self::assertInstanceOf(TextResourceContents::class, $content);
+        self::assertStringContainsString('TABLE SCHEMA: pages', $content->text);
+    }
+
+    public function testReadTcaTableAcceptsLegacyUri(): void
+    {
+        $result = $this->registry->readResource(ResourceRegistry::LEGACY_URI_TABLE_PREFIX . 'pages');
+        $content = $result->contents[0] ?? null;
+        self::assertInstanceOf(TextResourceContents::class, $content);
+        self::assertSame(ResourceRegistry::LEGACY_URI_TABLE_PREFIX . 'pages', $content->uri);
         self::assertStringContainsString('TABLE SCHEMA: pages', $content->text);
     }
 

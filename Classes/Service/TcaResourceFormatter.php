@@ -44,8 +44,8 @@ final readonly class TcaResourceFormatter
         }
 
         $output .= "\n## Usage\n\n";
-        $output .= "Read a specific table with MCP resource URI `typo3-mcp://tca/{tableName}`.\n";
-        $output .= "Example: `typo3-mcp://tca/pages` or `typo3-mcp://tca/tt_content`\n";
+        $output .= "Read a specific table with MCP resource URI `typo3-mcp:///tca/{tableName}`.\n";
+        $output .= "Example: `typo3-mcp:///tca/pages` or `typo3-mcp:///tca/tt_content`\n";
 
         return $output;
     }
@@ -57,7 +57,7 @@ final readonly class TcaResourceFormatter
         }
 
         if (!is_array($GLOBALS['TCA'] ?? null) || !is_array($GLOBALS['TCA'][$tableName] ?? null)) {
-            return "# Error\n\nTable `{$tableName}` not found in TCA.\n\nUse `typo3-mcp://tca` to see accessible tables.";
+            return "# Error\n\nTable `{$tableName}` not found in TCA.\n\nUse `typo3-mcp:///tca` to see accessible tables.";
         }
 
         $result = $this->getTableSchemaTool->execute(['table' => $tableName]);
