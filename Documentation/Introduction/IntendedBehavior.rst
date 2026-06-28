@@ -113,8 +113,8 @@ instance configuration that may not exist everywhere:
   should return configuration guidance instead of raw SQL errors
 - ``CreateSite`` changes YAML site configuration immediately and therefore
   remains admin-only
-- ``InstallExtension`` and ``SafeCli`` remain intentionally narrow and validated
-  instead of acting like general shell access
+- ``InstallExtension``, ``SafeCli``, and ``SolrIndexQueue`` remain intentionally
+  narrow and validated instead of acting like general shell access
 
 Verification expectations
 =========================

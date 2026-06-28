@@ -201,6 +201,8 @@ editor writes:
 - ``InstallExtension`` installs, activates, searches, or lists extensions and
   remains admin-only.
 - ``SafeCli`` runs only an allowlisted set of TYPO3 CLI commands.
+- ``SolrIndexQueue`` lists and runs validated EXT:solr scheduler index queue
+  tasks and remains admin-only.
 - x402 tools are optional and return guidance when the paywall surface is not
   installed.
 - ``SiteSettings``, ``ListViewHelpers``, ``GetViewHelperDocumentation``, and

@@ -216,7 +216,7 @@ see the internal workspace version ID.
 
 ## Capabilities at a glance
 
-The extension ships **44 bundled MCP tools** across these groups. For the
+The extension ships **45 bundled MCP tools** across these groups. For the
 authoritative list with parameters, see
 [`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst). The same
 tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
@@ -239,7 +239,8 @@ tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
   `UploadFile`, `UploadFileFromUrl`, `ReadFileMetadata`, `SearchFile`,
   `SearchMedia`, `ListStorages`
 - **Diagnostics** — `ContentAudit`, `GetSystemLog`, `ManageRedirects`
-- **Admin / operations** — `CreateSite`, `SiteSet`, `InstallExtension`, `SafeCli`
+- **Admin / operations** — `CreateSite`, `SiteSet`, `InstallExtension`, `SafeCli`,
+  `SolrIndexQueue`
 - **Dev-site only (DDEV / `localUnsafeMode`)** — `SiteSettings`, `ListViewHelpers`,
   `GetViewHelperDocumentation`, `CreateLocallang`, MCP TCA resources
   (`typo3-mcp://tca`, `typo3-mcp://tca/{table}`)

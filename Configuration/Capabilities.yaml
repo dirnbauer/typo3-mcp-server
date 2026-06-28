@@ -16,7 +16,7 @@ capabilities:
     - workspace:write   # PublishWorkspace, RollbackWorkspace
     - file:read         # BrowseFiles, BrowseFolder, ListStorages, ReadFileMetadata, SearchFile, SearchMedia
     - file:write        # UploadFile, UploadFileFromUrl, WriteFile
-    - cli:safe          # SafeCli (allowlisted commands only)
+    - cli:safe          # SafeCli, SolrIndexQueue (allowlisted commands only)
     - extension:install # InstallExtensionTool (admin-only)
     - site:write        # CreateSite, ManageRedirects
     - render:frontend   # RenderRecord, GetPreviewUrl (HTTP fetch to own site)
@@ -111,6 +111,7 @@ capabilities:
     UploadFileFromUrl:  [file:write]
     WriteFile:          [file:write]
     SafeCli:            [cli:safe]
+    SolrIndexQueue:     [cli:safe, database:read]
     InstallExtension:   [extension:install]
     GetPreviewUrl:      [database:read]
     RenderRecord:       [database:read, render:frontend]

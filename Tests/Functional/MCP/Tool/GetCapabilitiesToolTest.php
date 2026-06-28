@@ -30,6 +30,7 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
         // Tool→subsystems map is exposed so the LLM can introspect.
         self::assertArrayHasKey('ReadTable', $payload['manifest']['tools'] ?? []);
         self::assertSame(['database:read'], $payload['manifest']['tools']['ReadTable']);
+        self::assertSame(['cli:safe', 'database:read'], $payload['manifest']['tools']['SolrIndexQueue']);
 
         // Network outbound default is closed (`self`).
         self::assertSame(['self'], $payload['manifest']['network']['outbound'] ?? []);

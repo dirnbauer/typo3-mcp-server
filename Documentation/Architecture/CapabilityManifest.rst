@@ -140,7 +140,8 @@ Subsystem catalog
    * - ``cli:safe``
      - Runs an allowlisted set of TYPO3 CLI commands (``cache:flush``,
        ``cache:warmup``, ``referenceindex:update``, ``extension:list``,
-       ``site:list``, ``site:show``). Not a shell.
+       ``site:list``, ``site:show``), plus the dedicated ``SolrIndexQueue``
+       scheduler wrapper for validated EXT:solr task UIDs. Not a shell.
    * - ``extension:install``
      - ``InstallExtensionTool`` (admin-only). Disabled by removing this
        entry from the manifest.

@@ -179,6 +179,9 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``SafeCli``
      - Execute
      - Run whitelisted TYPO3 CLI commands
+   * - ``SolrIndexQueue``
+     - Execute / Admin
+     - List or run EXT:solr scheduler index queue tasks
    * - ``ApplyShadcnPreset``
      - Execute
      - Apply a shadcn/ui preset code from ``ui.shadcn.com/create`` to an existing frontend project
@@ -831,6 +834,34 @@ Allowed commands:
 Arguments are validated against a per-command allowlist, and shell injection
 characters are rejected. Each command has an individual timeout. The result
 includes stdout, stderr, exit code, and execution time.
+
+SolrIndexQueue
+--------------
+
+List or run EXT:solr scheduler tasks through MCP without exposing arbitrary
+``scheduler:run`` access.
+
+:Parameters:
+   - ``action`` (string, required): ``list`` or ``run``
+   - ``taskUid`` (integer): scheduler task UID for ``run``. If omitted and
+     exactly one enabled Solr scheduler task is found, that task is used.
+   - ``runs`` (integer): how many times to run the selected task, default ``1``,
+     max ``10``. Useful because Solr index queue workers process batches.
+
+``list`` calls TYPO3's ``scheduler:list`` and returns Solr-related scheduler
+tasks, including candidates discovered from ``tx_scheduler_task``. ``run`` first
+validates that the selected task looks Solr-related, then invokes only
+``scheduler:run --task=<uid>``. It never runs all due scheduler tasks.
+
+CLI shortcut:
+
+.. code-block:: bash
+
+   vendor/bin/typo3 mcp:solr-index-queue --action=list --json
+   vendor/bin/typo3 mcp:solr-index-queue --action=run --taskUid=3 --runs=2 --json
+
+Admin-only. Requires TYPO3 Scheduler and EXT:solr to be installed and an
+``Apache Solr - Index Queue Worker`` scheduler task to exist.
 
 ApplyShadcnPreset
 -----------------

@@ -322,6 +322,16 @@ services:
       - name: 'console.command'
         command: 'mcp:safe-cli'
         description: 'Run a whitelisted TYPO3 CLI command.'
+  Hn\McpServer\Command\Tool\SolrIndexQueueToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SolrIndexQueue'
+      $description: 'List or run EXT:solr scheduler index queue tasks.'
+      $exposedOptions: ['action', 'taskUid', 'runs']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:solr-index-queue'
+        description: 'List or run EXT:solr scheduler index queue tasks.'
   Hn\McpServer\Command\Tool\SearchFileToolCommand:
     class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
     arguments:

@@ -49,7 +49,7 @@ final class McpServerCommand extends Command
                 ? static function ($message) {
                     file_put_contents('php://stderr', '[MCP Server] ' . $message . PHP_EOL);
                 }
-                : null;
+            : null;
 
             $debug?->__invoke('Starting MCP server using logiscape/mcp-sdk-php');
 
