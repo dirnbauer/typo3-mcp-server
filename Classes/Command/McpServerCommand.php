@@ -6,6 +6,7 @@ namespace Hn\McpServer\Command;
 
 use Hn\McpServer\MCP\McpServerFactory;
 use Mcp\Server\ServerRunner;
+use Psr\Log\NullLogger;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -43,21 +44,27 @@ final class McpServerCommand extends Command
             }
             $GLOBALS['TCA'] = $tcaFactory->get();
 
-            // Set up debugging to stderr
-            $debug = static function ($message) {
-                file_put_contents('php://stderr', '[MCP Server] ' . $message . PHP_EOL);
-            };
+            $debugToStderr = getenv('TYPO3_MCP_DEBUG_STDERR') !== false;
+            $debug = $debugToStderr
+                ? static function ($message) {
+                    file_put_contents('php://stderr', '[MCP Server] ' . $message . PHP_EOL);
+                }
+                : null;
 
-            $debug('Starting MCP server using logiscape/mcp-sdk-php');
+            $debug?->__invoke('Starting MCP server using logiscape/mcp-sdk-php');
 
             // Create the MCP server using the factory
             $server = $this->serverFactory->createServer($debug);
 
-            $debug('All handlers registered, starting server...');
+            $debug?->__invoke('All handlers registered, starting server...');
 
             // Create initialization options and run server
             $initOptions = $this->serverFactory->createInitializationOptions($server);
-            $runner = new ServerRunner($server, $initOptions);
+            $runner = new ServerRunner(
+                $server,
+                $initOptions,
+                $debugToStderr ? null : new NullLogger(),
+            );
             $runner->run();
 
             return Command::SUCCESS;
