@@ -13,6 +13,14 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\PageDoktypeRegistry;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Schema\Capability\FieldCapability;
+use TYPO3\CMS\Core\Schema\Capability\LabelCapability;
+use TYPO3\CMS\Core\Schema\Capability\LanguageAwareSchemaCapability;
+use TYPO3\CMS\Core\Schema\Capability\RootLevelCapability;
+use TYPO3\CMS\Core\Schema\Capability\ScalarCapability;
+use TYPO3\CMS\Core\Schema\Capability\SystemInternalFieldCapability;
+use TYPO3\CMS\Core\Schema\Capability\TcaSchemaCapability;
+use TYPO3\CMS\Core\Schema\TcaSchema;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -64,6 +72,47 @@ final class TableAccessService
         private readonly TableTcaResolver $tcaResolver,
     ) {}
 
+    private function getSchema(string $table): ?TcaSchema
+    {
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return null;
+        }
+
+        return $this->tcaSchemaFactory->get($table);
+    }
+
+    public function hasTable(string $table): bool
+    {
+        return $this->tcaSchemaFactory->has($table);
+    }
+
+    public function isWorkspaceCapable(string $table): bool
+    {
+        $schema = $this->getSchema($table);
+
+        return $schema !== null && $schema->hasCapability(TcaSchemaCapability::Workspace);
+    }
+
+    public function isLanguageAware(string $table): bool
+    {
+        $schema = $this->getSchema($table);
+
+        return $schema !== null && $schema->hasCapability(TcaSchemaCapability::Language);
+    }
+
+    public function isRootLevelOnly(string $table): bool
+    {
+        $schema = $this->getSchema($table);
+        if ($schema === null) {
+            return false;
+        }
+
+        $capability = $schema->getCapability(TcaSchemaCapability::RestrictionRootLevel);
+
+        return $capability instanceof RootLevelCapability
+            && $capability->getRootLevelType() === RootLevelCapability::TYPE_ONLY_ON_ROOTLEVEL;
+    }
+
     /**
      * Non-workspace tables that may be exposed as read-only (e.g. sys_file), from extension config.
      *
@@ -106,8 +155,8 @@ final class TableAccessService
 
     public function isEmbeddedChildTable(string $table): bool
     {
-        $hideTable = ($this->tcaResolver->getCtrl($table)['hideTable'] ?? false) === true;
-        if (!$hideTable) {
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::HideInUi)) {
             return false;
         }
 
@@ -237,7 +286,7 @@ final class TableAccessService
         ];
 
         // Check if table exists in TCA
-        if ($this->tcaResolver->getTable($table) === []) {
+        if (!$this->hasTable($table)) {
             $info['reasons'][] = 'Table does not exist in TCA';
             return $info;
         }
@@ -250,8 +299,7 @@ final class TableAccessService
 
         // Workspace is required for the default (write) path; allow configured read-only
         // non-workspace tables (e.g. sys_file) as read-only in that path.
-        $workspaceCapability = $this->tcaResolver->getCtrl($table)['versioningWS'] ?? false;
-        $info['workspace_capable'] = $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
+        $info['workspace_capable'] = $this->isWorkspaceCapable($table);
         $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
         $requiresWorkspaceForWrite = $requireWorkspaceCapability && !$this->localMode->allowsLiveWrites();
         if ($requiresWorkspaceForWrite) {
@@ -678,15 +726,17 @@ final class TableAccessService
         }
 
         // Admin-only tables (only restrict if user is not admin)
-        $ctrl = $this->tcaResolver->getCtrl($table);
-        if (!empty($ctrl['adminOnly']) && !$this->getBackendUser()->isAdmin()) {
+        $schema = $this->getSchema($table);
+        if ($schema === null) {
+            return true;
+        }
+        if ($schema->hasCapability(TcaSchemaCapability::AccessAdminOnly) && !$this->getBackendUser()->isAdmin()) {
             return true;
         }
 
         // True root (pid=0) only: restrict unless workspace-versioned or explicitly whitelisted for read.
         // Note: do not use !empty(rootLevel) — sys_file and similar use -1, which is not the same as root records.
-        $rootLevel = $ctrl['rootLevel'] ?? 0;
-        if ($rootLevel === 1 || $rootLevel === true) {
+        if ($this->isRootLevelOnly($table)) {
             $allowedRootTables = [
                 'sys_file_storage',
                 'sys_domain',
@@ -697,7 +747,7 @@ final class TableAccessService
             if (in_array($table, $allowedRootTables, true)) {
                 return false;
             }
-            $isWorkspaceCapable = !empty($ctrl['versioningWS']);
+            $isWorkspaceCapable = $this->isWorkspaceCapable($table);
             $isAdditionalReadOnly = in_array($table, $this->getAdditionalReadOnlyTables(), true);
             if (!$isWorkspaceCapable && !$isAdditionalReadOnly) {
                 return true;
@@ -728,8 +778,11 @@ final class TableAccessService
 
         // Check for system group tables with workspace support
         // This is likely a misconfiguration as system configuration tables shouldn't support workspaces
+        // groupName has no semantic Schema API capability yet. Keep this one
+        // compatibility read isolated until TYPO3 exposes it through TcaSchema.
+        $ctrl = $this->tcaResolver->getCtrl($table);
         $groupName = is_string($ctrl['groupName'] ?? null) ? $ctrl['groupName'] : '';
-        $isWorkspaceCapable = !empty($ctrl['versioningWS']);
+        $isWorkspaceCapable = $this->isWorkspaceCapable($table);
         if ($groupName === 'system' && $isWorkspaceCapable) {
             // System tables with workspace support are usually misconfigured configuration tables
             // Examples: backend_layout, sys_file_storage, sys_workspace
@@ -752,9 +805,8 @@ final class TableAccessService
             return true;
         }
 
-        // Check TCA configuration
-        $ctrl = $this->tcaResolver->getCtrl($table);
-        if (!empty($ctrl['readOnly'])) {
+        $schema = $this->getSchema($table);
+        if ($schema === null || $schema->hasCapability(TcaSchemaCapability::AccessReadOnly)) {
             return true;
         }
 
@@ -772,8 +824,8 @@ final class TableAccessService
         // Tables without essential fields are typically read-only
         // If table has no label field and no type field, it's likely a pure relation table
         // But relation tables like sys_file_reference should still be writable
-        $hasLabel = !empty($ctrl['label']);
-        $hasType = !empty($ctrl['type']);
+        $hasLabel = $schema->hasCapability(TcaSchemaCapability::Label);
+        $hasType = $schema->supportsSubSchema();
         $isRelationTable = str_contains($table, '_mm')
                                   || str_contains($table, 'sys_file_reference')
                                   || str_contains($table, 'sys_category_record_mm');
@@ -1068,8 +1120,14 @@ final class TableAccessService
      */
     public function getTableTitle(string $table): string
     {
-        $title = $this->tcaResolver->getCtrl($table)['title'] ?? null;
-        return is_string($title) && $title !== '' ? $title : $table;
+        $schema = $this->getSchema($table);
+        if ($schema === null) {
+            return $table;
+        }
+
+        $title = $schema->getTitle();
+
+        return $title !== '' ? $title : $table;
     }
 
     /**
@@ -1077,19 +1135,22 @@ final class TableAccessService
      */
     public function getTypeFieldName(string $table): ?string
     {
-        $typeField = $this->tcaResolver->getCtrl($table)['type'] ?? null;
-        if (!is_string($typeField) || $typeField === '') {
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->supportsSubSchema()) {
             return null;
         }
 
-        // Foreign type notation (e.g. "uid_local:type") derives the record type
-        // from a related record's field. This is not a local column and must not
-        // be used in SQL queries or field lookups.
-        if (str_contains($typeField, ':')) {
+        try {
+            $typeInformation = $schema->getSubSchemaTypeInformation();
+        } catch (\Throwable) {
             return null;
         }
 
-        return $typeField;
+        // A foreign type reference is not a local type column and must not be
+        // used in SQL queries or local field lookups.
+        return $typeInformation->isPointerToForeignFieldInForeignSchema()
+            ? null
+            : $typeInformation->getFieldName();
     }
 
     /**
@@ -1097,8 +1158,14 @@ final class TableAccessService
      */
     public function getLabelFieldName(string $table): ?string
     {
-        $labelField = $this->tcaResolver->getCtrl($table)['label'] ?? null;
-        return is_string($labelField) && $labelField !== '' ? $labelField : null;
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::Label)) {
+            return null;
+        }
+
+        $capability = $schema->getCapability(TcaSchemaCapability::Label);
+
+        return $capability instanceof LabelCapability ? $capability->getPrimaryFieldName() : null;
     }
 
     /**
@@ -1106,8 +1173,14 @@ final class TableAccessService
      */
     public function getSortingFieldName(string $table): ?string
     {
-        $sortby = $this->tcaResolver->getCtrl($table)['sortby'] ?? null;
-        return is_string($sortby) && $sortby !== '' ? $sortby : null;
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::SortByField)) {
+            return null;
+        }
+
+        $capability = $schema->getCapability(TcaSchemaCapability::SortByField);
+
+        return $capability instanceof SystemInternalFieldCapability ? $capability->getFieldName() : null;
     }
 
     /**
@@ -1115,7 +1188,14 @@ final class TableAccessService
      */
     public function getDefaultSorting(string $table): ?string
     {
-        $defaultSorting = $this->tcaResolver->getCtrl($table)['default_sortby'] ?? null;
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::DefaultSorting)) {
+            return null;
+        }
+
+        $capability = $schema->getCapability(TcaSchemaCapability::DefaultSorting);
+        $defaultSorting = $capability instanceof ScalarCapability ? $capability->getValue() : null;
+
         return is_string($defaultSorting) && $defaultSorting !== '' ? $defaultSorting : null;
     }
 
@@ -1124,8 +1204,7 @@ final class TableAccessService
      */
     public function getTimestampFieldName(string $table): ?string
     {
-        $timestampField = $this->tcaResolver->getCtrl($table)['tstamp'] ?? null;
-        return is_string($timestampField) && $timestampField !== '' ? $timestampField : null;
+        return $this->getSystemFieldName($table, TcaSchemaCapability::UpdatedAt);
     }
 
     /**
@@ -1133,8 +1212,7 @@ final class TableAccessService
      */
     public function getCreationDateFieldName(string $table): ?string
     {
-        $creationDateField = $this->tcaResolver->getCtrl($table)['crdate'] ?? null;
-        return is_string($creationDateField) && $creationDateField !== '' ? $creationDateField : null;
+        return $this->getSystemFieldName($table, TcaSchemaCapability::CreatedAt);
     }
 
     /**
@@ -1142,8 +1220,9 @@ final class TableAccessService
      */
     public function getLanguageFieldName(string $table): ?string
     {
-        $languageField = $this->tcaResolver->getCtrl($table)['languageField'] ?? null;
-        return is_string($languageField) && $languageField !== '' ? $languageField : null;
+        $capability = $this->getLanguageCapability($table);
+
+        return $capability?->getLanguageField()->getName();
     }
 
     /**
@@ -1151,12 +1230,14 @@ final class TableAccessService
      */
     public function getHiddenFieldName(string $table): ?string
     {
-        $enableColumns = $this->tcaResolver->getCtrl($table)['enablecolumns'] ?? [];
-        if (!is_array($enableColumns)) {
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::RestrictionDisabledField)) {
             return null;
         }
-        $hiddenField = $enableColumns['disabled'] ?? null;
-        return is_string($hiddenField) && $hiddenField !== '' ? $hiddenField : null;
+
+        $capability = $schema->getCapability(TcaSchemaCapability::RestrictionDisabledField);
+
+        return $capability instanceof FieldCapability ? $capability->getFieldName() : null;
     }
 
     /**
@@ -1164,8 +1245,9 @@ final class TableAccessService
      */
     public function getTranslationParentFieldName(string $table): ?string
     {
-        $parentField = $this->tcaResolver->getCtrl($table)['transOrigPointerField'] ?? null;
-        return is_string($parentField) && $parentField !== '' ? $parentField : null;
+        $capability = $this->getLanguageCapability($table);
+
+        return $capability?->getTranslationOriginPointerField()->getName();
     }
 
     /**
@@ -1173,8 +1255,60 @@ final class TableAccessService
      */
     public function getTranslationSourceFieldName(string $table): ?string
     {
-        $sourceField = $this->tcaResolver->getCtrl($table)['translationSource'] ?? null;
-        return is_string($sourceField) && $sourceField !== '' ? $sourceField : null;
+        $capability = $this->getLanguageCapability($table);
+
+        return $capability?->getTranslationSourceField()?->getName();
+    }
+
+    public function getTranslationDiffSourceFieldName(string $table): ?string
+    {
+        $capability = $this->getLanguageCapability($table);
+
+        return $capability?->getDiffSourceField()?->getName();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getFieldNames(string $table): array
+    {
+        $schema = $this->getSchema($table);
+        if ($schema === null) {
+            return [];
+        }
+
+        $fieldNames = [];
+        foreach ($schema->getFields()->getNames() as $fieldName) {
+            if (is_string($fieldName)) {
+                $fieldNames[] = $fieldName;
+            }
+        }
+
+        return $fieldNames;
+    }
+
+    private function getSystemFieldName(string $table, TcaSchemaCapability $schemaCapability): ?string
+    {
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability($schemaCapability)) {
+            return null;
+        }
+
+        $capability = $schema->getCapability($schemaCapability);
+
+        return $capability instanceof SystemInternalFieldCapability ? $capability->getFieldName() : null;
+    }
+
+    private function getLanguageCapability(string $table): ?LanguageAwareSchemaCapability
+    {
+        $schema = $this->getSchema($table);
+        if ($schema === null || !$schema->hasCapability(TcaSchemaCapability::Language)) {
+            return null;
+        }
+
+        $capability = $schema->getCapability(TcaSchemaCapability::Language);
+
+        return $capability instanceof LanguageAwareSchemaCapability ? $capability : null;
     }
 
     /**
@@ -1324,13 +1458,18 @@ final class TableAccessService
     {
         $availableFields = $this->getAvailableFields($table, $recordType);
 
-        $ctrl = $this->tcaResolver->getCtrl($table);
         $exclude = ['pid'];
 
-        foreach (['tstamp', 'crdate', 'languageField', 'transOrigPointerField', 'transOrigDiffSourceField', 'translationSource'] as $ctrlKey) {
-            $ctrlField = $ctrl[$ctrlKey] ?? null;
-            if (is_string($ctrlField) && $ctrlField !== '') {
-                $exclude[] = $ctrlField;
+        foreach ([
+            $this->getTimestampFieldName($table),
+            $this->getCreationDateFieldName($table),
+            $this->getLanguageFieldName($table),
+            $this->getTranslationParentFieldName($table),
+            $this->getTranslationDiffSourceFieldName($table),
+            $this->getTranslationSourceFieldName($table),
+        ] as $systemField) {
+            if ($systemField !== null) {
+                $exclude[] = $systemField;
             }
         }
 
@@ -1763,6 +1902,24 @@ final class TableAccessService
 
         $config = isset($fieldConfig['config']) && is_array($fieldConfig['config']) ? $fieldConfig['config'] : [];
         $fieldType = is_string($config['type'] ?? null) ? $config['type'] : '';
+
+        // DataHandler casts scalar TCA types to string/number internally. An
+        // array sent to one of those fields therefore emits an array-to-string
+        // warning and stores an implementation-dependent value. Only TCA types
+        // with a documented array representation may cross this boundary.
+        if (is_array($value) && !in_array($fieldType, [
+            'category',
+            'file',
+            'flex',
+            'folder',
+            'group',
+            'imageManipulation',
+            'inline',
+            'json',
+            'select',
+        ], true)) {
+            return "Field '{$fieldName}' does not accept array values (TCA type: {$fieldType})";
+        }
 
         // Check max length for string fields
         if (in_array($fieldType, ['input', 'text', 'email', 'link', 'slug', 'color']) && is_string($value)) {

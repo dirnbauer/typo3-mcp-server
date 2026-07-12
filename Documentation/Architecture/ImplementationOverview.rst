@@ -26,17 +26,16 @@ Remote MCP requests follow this path:
    :php:`OAuthService`, initializes a backend user context plus an anonymous
    in-memory backend user session, and creates an ``HttpServerRunner`` from the
    MCP PHP SDK.
-3. The endpoint calls ``HttpServerRunner::handleRequest()`` directly (not via
-   ``StandardPhpAdapter``) and forwards **all** SDK response headers --
-   including the critical ``Mcp-Session-Id`` -- into the PSR-7 response that
-   TYPO3 emits. This ensures MCP clients can maintain sessions across
-   requests.
-4. ``Classes/MCP/McpServerFactory.php`` builds the MCP server and registers the
-   ``tools/list`` and ``tools/call`` handlers.
+3. The endpoint calls ``HttpServerRunner::handleRequest()`` directly. Stable
+   requests can receive ``Mcp-Session-Id`` and file-backed session state;
+   ``2026-07-28`` requests use an ephemeral, sessionless context.
+4. ``Classes/MCP/McpServerFactory.php`` registers tools, prompts, and
+   resources. The SDK supplies ``server/discover`` and adapts typed results to
+   the negotiated protocol era.
 5. ``Classes/MCP/ToolRegistry.php`` provides the discovered tool instances.
 6. A tool executes and delegates most TYPO3-specific work to shared services.
-7. The tool returns MCP text content, usually as readable text or as JSON
-   encoded into text content.
+7. The tool returns MCP content. Valid single-JSON text results retain their
+   text representation and also gain ``structuredContent``.
 
 Local stdio requests skip the HTTP/OAuth layer and start at
 ``Classes/Command/McpServerCommand.php``.
@@ -47,20 +46,19 @@ MCP ergonomics (external guidance)
 Tool design is checked against the public `mcp-builder` skill (Anthropic,
 https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md ):
 clear descriptions, JSON Schema properties, the four MCP tool **annotations**
-on every tool, pagination hints where results are bounded (e.g. ``ReadTable``
-``hasMore``), and actionable errors via :php:`AbstractTool` /
-:php:`ExceptionHandlerTrait`. For an unknown tool name, :php:`McpServerFactory`
-returns a ``CallToolResult`` with ``isError`` instead of throwing (so the client
-gets a normal tool error, not a JSON-RPC internal error).
+on every tool, pagination hints where results are bounded (for example
+``ReadTable`` ``hasMore``), and actionable errors via :php:`AbstractTool` and
+:php:`ExceptionHandlerTrait`. Unknown tool names use the SDK's typed Invalid
+Params protocol error.
 
 **Naming:** Tools use PascalCase names aligned with TYPO3 concepts
 (``ReadTable``, ``GetPageTree``, …), not a ``prefix_action`` pattern; the
 official tools table in :doc:`../Tools/Index` lists names and access mode for
 LLM discoverability.
 
-**Structured outputs:** The bundled PHP MCP SDK does not advertise
-``outputSchema`` on tool results; outputs remain JSON-in-text (or plain text)
-as documented in :doc:`SecurityAudit`.
+**Structured outputs:** The v2 SDK supports ``outputSchema`` and
+``structuredContent``. Existing tools keep readable text for legacy clients;
+``ToolResultNormalizer`` mirrors valid JSON into structured content.
 
 Main layers
 ===========
@@ -74,9 +72,9 @@ HTTP and backend module layer
   user context setup, and the MCP SDK HTTP transport. The endpoint calls the
   SDK's ``HttpServerRunner::handleRequest()`` directly and maps the SDK
   response (headers, status, body) into TYPO3's PSR-7 response pipeline.
-  MCP transport session state is persisted to ``var/mcp_sessions/`` via
-  ``FileSessionStore``. TYPO3 backend-user session state for token-authenticated
-  calls stays in-memory for the current request only.
+  Stable transport sessions are persisted to ``var/mcp_sessions/`` via
+  ``FileSessionStore``. ``2026-07-28`` has no protocol session. TYPO3
+  backend-user state for token calls stays request-local.
 - OAuth authorization, token, metadata, and registration endpoints
 - shared CORS helpers
 
@@ -90,8 +88,8 @@ MCP runtime layer
 
 The runtime itself is intentionally thin:
 
-- ``McpServerFactory`` wires the MCP SDK server and registers the
-  ``tools/list`` and ``tools/call`` JSON-RPC handlers
+- ``McpServerFactory`` wires typed tools, prompts, resources, private cache
+  hints, and negotiated errors into the SDK server
 - ``ToolRegistry`` collects every Symfony DI service tagged ``mcp.tool``.
   Services implementing ``ToolInterface`` are kept as-is. Any other tagged
   object that exposes ``getName()`` and ``execute()`` is wrapped in
@@ -99,6 +97,9 @@ The runtime itself is intentionally thin:
   result types to the native ``ToolInterface`` contract. This lets
   lightweight or third-party tools participate without depending on the
   extension's interface directly.
+- ``SkillRegistry`` validates bundled skill frontmatter and paths.
+  ``PromptRegistry`` projects user-invocable skills, and ``ResourceRegistry``
+  serves their original Markdown.
 - ``AbstractTool`` centralizes initialization and exception handling
 - ``AbstractRecordTool`` adds one important behavior: it injects an optional
   ``workspace_id`` parameter into record-backed tools and switches workspace
@@ -140,14 +141,15 @@ Shared services
 ===============
 
 ``WorkspaceContextService``
-   Keeps the current non-live workspace by default, switches to an explicit
-   workspace when requested, otherwise selects a writable workspace, or creates
-   an MCP workspace if none exists and the user is allowed to create one.
+   Honors an explicit workspace first. Without one, trusted local mode selects
+   live workspace ``0``; strict/production mode keeps the current draft or
+   selects a writable draft, creating an MCP workspace only when needed and
+   permitted.
 
 ``TableAccessService``
-   The central gatekeeper for table and field visibility. It combines TCA,
-   backend permissions, workspace capability checks, read-only restrictions,
-   and TSconfig-based field disabling.
+   The central gatekeeper for table and field visibility. It is the semantic
+   facade over ``TcaSchemaFactory`` and ``TcaSchemaCapability``, combined with
+   backend permissions, web mounts, read-only policy, and TSconfig.
 
 ``LanguageService``
    Maps TYPO3 site languages to ISO codes. Tool schemas use this service to
@@ -162,12 +164,27 @@ Shared services
    can work with URLs as well as page UIDs.
 
 ``OAuthService``
-   Stores authorization codes, access tokens, and refresh tokens; hashes tokens
-   before database storage; validates PKCE; and tracks token usage metadata.
+   Stores only hashes of authorization codes, access tokens, and refresh
+   tokens; validates client/resource/scope/redirect bindings and mandatory
+   ``S256`` PKCE; rotates refresh-token families transactionally; and detects
+   stale or concurrent replay.
 
 ``CapabilityManifestService``
-   Loads ``Configuration/Capabilities.yaml``, checks subsystem prerequisites,
-   enforces per-tool requirements, and gates outbound HTTP hosts.
+   Loads public capability fields plus ``x-mcp``, checks prerequisites,
+   inventories commands and skills, enforces tools, and gates outbound URL
+   schemes and hosts.
+
+``OutboundUrlGuardService``
+   Resolves all A and AAAA addresses, rejects private or reserved targets, and
+   pins the validated destination to prevent DNS rebinding.
+
+``AbilityBackendUserContextService`` / ``McpCliBackendUserBootstrapService``
+   Revalidate and hydrate real TYPO3 backend-user state for optional Abilities,
+   REST, and CLI projections before native tools run.
+
+``McpToolCatalogService``
+   Shares deterministic list, describe, and execute behavior with optional
+   Abilities, CLI, and REST projections.
 
 ``LocalModeService``
    Detects DDEV / TYPO3 Development context and resolves the
@@ -188,7 +205,8 @@ The extension tries to stay close to TYPO3 core behavior:
 
 - writes use ``DataHandler``
 - page language overlays use ``PageRepository`` and ``LanguageAspect``
-- TCA-driven schema information comes from raw TCA plus ``TcaSchemaFactory``
+- TCA-driven semantics come from ``TcaSchemaFactory`` capabilities; raw TCA is
+  retained only for field detail not exposed by the Schema API
 - file operations go through TYPO3 FAL
 
 Where TYPO3 core does not provide transparent MCP behavior directly, the

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
+use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Mcp\Types\CallToolResult;
-use TYPO3\CMS\Core\Resource\StorageRepository;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
  * Tool for listing available file storages in TYPO3
@@ -43,10 +43,14 @@ final class ListStoragesTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $includeOffline = (bool)($params['includeOffline'] ?? false);
+        $this->ensureTableAccess('sys_file', 'read');
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new AccessDeniedException('backend user context', 'list file storages');
+        }
 
-        $storageRepository = GeneralUtility::makeInstance(StorageRepository::class);
-        $storages = $storageRepository->findAll();
+        $includeOffline = (bool)($params['includeOffline'] ?? false);
+        $storages = $backendUser->getFileStorages();
 
         $lines = [];
         $lines[] = 'FILE STORAGES';

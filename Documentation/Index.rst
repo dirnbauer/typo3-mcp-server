@@ -50,18 +50,24 @@ Highlights
 ==========
 
 - Read and write TYPO3 content through MCP tools
-- Keep record changes in TYPO3 workspaces
+- Keep production record changes in TYPO3 workspaces while documenting trusted
+  local live-edit behavior
 - Support translations and language-aware content access
 - Inspect table schemas and FlexForms before writing
 - Browse, upload, and manage files inside a dedicated MCP file sandbox
 - Harden tool execution with a capability manifest and outbound host policy
 - Mirror the MCP tool surface through TYPO3 CLI commands
 - Connect remote MCP clients using OAuth 2.1 with PKCE
+- Serve stable MCP ``2025-11-25`` and the locked ``2026-07-28`` release
+  candidate from one dual-era endpoint
+- Publish bundled workflows as standard MCP prompts and resources
+- Optionally project the governed tool catalog and bundled skill documents
+  through TYPO3 Abilities and ``sg_apicore`` REST/OpenAPI
 
 The public tool surface adapts to the current TYPO3 instance. For example,
-language parameters are only exposed when multiple site languages exist, and
-record tools automatically switch to an appropriate workspace unless a client
-explicitly requests a ``workspace_id``.
+language parameters are only exposed when multiple site languages exist. Record
+tools select a draft in strict/production mode and live workspace ``0`` in
+trusted local mode unless a client explicitly requests a ``workspace_id``.
 
 .. note::
 
@@ -76,6 +82,7 @@ Documentation map
 Start here depending on your role:
 
 - :doc:`Introduction/Index` for the product overview and safety model
+- :doc:`Introduction/McpBasics` for MCP concepts and a minimal PHP example
 - :doc:`Introduction/ForkChanges` for the maintained fork changes
 - :doc:`Introduction/IntendedBehavior` for the explicit intended-behavior spec
 - :doc:`Installation/Index` for Composer installation and first setup
@@ -87,6 +94,8 @@ Start here depending on your role:
 - :doc:`Testing/Index` for the E2E test suite and CI test workflow
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
   deeper architecture notes
+- :doc:`Integration/Index` for optional Abilities and REST/OpenAPI projections
+- :doc:`Changelog/Index` for the complete 2026 modernization record
 - :doc:`Troubleshooting/Index` when something is not working
 
 Further reading
@@ -104,4 +113,6 @@ Further reading
    Tools/Index
    Testing/Index
    Architecture/Index
+   Integration/Index
+   Changelog/Index
    Troubleshooting/Index

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\MCP\Tool\EdgeCase;
 
-use Doctrine\DBAL\Connection;
 use Exception;
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;

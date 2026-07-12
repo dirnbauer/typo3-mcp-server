@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -28,6 +29,7 @@ final class WorkspaceReviewTool extends AbstractRecordTool
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
         private readonly ConnectionPool $connectionPool,
+        private readonly PageAccessService $pageAccessService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -78,6 +80,11 @@ final class WorkspaceReviewTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $filterTable = is_string($params['table'] ?? null) ? trim($params['table']) : '';
+        // Besides enforcing table permission, this initializes the explicitly
+        // requested read workspace before we inspect the backend-user state.
+        $this->ensureTableAccess($filterTable !== '' ? $filterTable : 'pages', 'read');
+
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
             return $this->createErrorResult('No backend user session available.');
@@ -88,7 +95,6 @@ final class WorkspaceReviewTool extends AbstractRecordTool
             return $this->createErrorResult('Cannot review changes in the live workspace. Switch to a draft workspace first or provide workspace_id.');
         }
 
-        $filterTable = is_string($params['table'] ?? null) ? trim($params['table']) : '';
         $limit = is_numeric($params['limit'] ?? null) ? min((int)$params['limit'], self::MAX_LIMIT) : self::DEFAULT_LIMIT;
         $offset = is_numeric($params['offset'] ?? null) ? max((int)$params['offset'], 0) : 0;
 
@@ -210,23 +216,10 @@ final class WorkspaceReviewTool extends AbstractRecordTool
      */
     private function getWorkspaceChangesForTable(string $table, int $workspaceId): array
     {
-        $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca) || !isset($globalTca[$table])) {
-            return [];
-        }
-
-        $tableConfig = $globalTca[$table];
-        if (!is_array($tableConfig)) {
-            return [];
-        }
-
-        $ctrl = $tableConfig['ctrl'] ?? [];
-        if (!is_array($ctrl)) {
-            return [];
-        }
-
-        // Table must have workspace fields
-        if (!isset($ctrl['versioningWS']) || !$ctrl['versioningWS']) {
+        if (!$this->tableAccessService->hasTable($table)
+            || !$this->tableAccessService->isWorkspaceCapable($table)
+            || !$this->tableAccessService->canReadTable($table)
+        ) {
             return [];
         }
 
@@ -244,10 +237,14 @@ final class WorkspaceReviewTool extends AbstractRecordTool
 
         $rows = $qb->executeQuery()->fetchAllAssociative();
 
-        $labelField = is_string($ctrl['label'] ?? null) ? $ctrl['label'] : '';
+        $labelField = $this->tableAccessService->getLabelFieldName($table) ?? '';
         $changes = [];
 
         foreach ($rows as $row) {
+            if (!$this->pageAccessService->canAccessRecord($table, $row)) {
+                continue;
+            }
+
             $uid = is_numeric($row['uid'] ?? null) ? (int)$row['uid'] : 0;
             $liveUid = is_numeric($row['t3ver_oid'] ?? null) ? (int)$row['t3ver_oid'] : 0;
             $versionState = is_numeric($row['t3ver_state'] ?? null) ? (int)$row['t3ver_state'] : 0;

@@ -100,9 +100,9 @@ class FileReferenceTest extends LlmTestCase
 
         self::assertTrue(
             $queriedSysFile,
-            'Expected LLM to map "fileadmin" to sys_file table. ' .
-            'History: ' . implode(' → ', $this->getToolCallHistory()) . "\n" .
-            $this->getFailureContext($response)
+            'Expected LLM to map "fileadmin" to sys_file table. '
+            . 'History: ' . implode(' → ', $this->getToolCallHistory()) . "\n"
+            . $this->getFailureContext($response)
         );
     }
 
@@ -111,8 +111,8 @@ class FileReferenceTest extends LlmTestCase
     public function testLlmCreatesTextmediaWithNamedFile(string $modelKey): void
     {
         $this->setModel($modelKey);
-        $prompt = 'Create a new textmedia content element on the home page that shows the person.jpg image. ' .
-            'Set the header to "Our Team Lead".';
+        $prompt = 'Create a new textmedia content element on the home page that shows the person.jpg image. '
+            . 'Set the header to "Our Team Lead".';
 
         // Some models spend many turns exploring before writing — allow generous budget.
         $response = $this->executeUntilToolFound(
@@ -124,23 +124,23 @@ class FileReferenceTest extends LlmTestCase
         $history = $this->getToolCallHistory();
         self::assertTrue(
             in_array('ReadTable', $history) || in_array('Search', $history),
-            'Expected LLM to use ReadTable (sys_file) or Search to discover person.jpg. ' .
-            'History: ' . implode(' → ', $history)
+            'Expected LLM to use ReadTable (sys_file) or Search to discover person.jpg. '
+            . 'History: ' . implode(' → ', $history)
         );
 
         $writeCalls = $response->getToolCallsByName('WriteTable');
         self::assertNotEmpty(
             $writeCalls,
-            'Expected WriteTable call. History: ' . implode(' → ', $history) .
-            "\n" . $this->getFailureContext($response)
+            'Expected WriteTable call. History: ' . implode(' → ', $history)
+            . "\n" . $this->getFailureContext($response)
         );
 
         $writeCall = $writeCalls[0]['arguments'];
         self::assertEquals(
             'tt_content',
             $writeCall['table'],
-            'Expected write to tt_content (embedded file reference), not sys_file_reference directly. ' .
-            $this->getFailureContext($response)
+            'Expected write to tt_content (embedded file reference), not sys_file_reference directly. '
+            . $this->getFailureContext($response)
         );
 
         // Execute the write. The LLM may need to retry if it initially passes plain UIDs
@@ -157,8 +157,8 @@ class FileReferenceTest extends LlmTestCase
 
         self::assertNotNull(
             $createdUid,
-            'Expected a new tt_content record to be created. ' .
-            $this->getFailureContext($currentResponse)
+            'Expected a new tt_content record to be created. '
+            . $this->getFailureContext($currentResponse)
         );
 
         // Verify a sys_file_reference was actually created in the workspace.
@@ -171,18 +171,18 @@ class FileReferenceTest extends LlmTestCase
 
         self::assertNotEmpty(
             $allRefs,
-            'LLM did not create a sys_file_reference (content element uid=' . $createdUid . '). ' .
-            'Even after retries, the LLM could not produce embedded file reference records. ' .
-            $this->getFailureContext($currentResponse)
+            'LLM did not create a sys_file_reference (content element uid=' . $createdUid . '). '
+            . 'Even after retries, the LLM could not produce embedded file reference records. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $fileUids = array_map(fn($r) => (int)$r['uid_local'], $allRefs);
         self::assertContains(
             3,
             $fileUids,
-            'File reference must point to person.jpg (sys_file uid=3). ' .
-            'Got references to uids: ' . implode(', ', $fileUids) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'File reference must point to person.jpg (sys_file uid=3). '
+            . 'Got references to uids: ' . implode(', ', $fileUids) . '. '
+            . $this->getFailureContext($currentResponse)
         );
     }
 
@@ -216,8 +216,8 @@ class FileReferenceTest extends LlmTestCase
     {
         $this->setModel($modelKey);
         // tt_content uid=100 is on home page (pid=1) and has 2 assets + 1 media file reference per fixtures.
-        $prompt = 'There is a content element called "Welcome Header" on the home page. ' .
-            'Copy it to the About page, keeping the same file references (images/media) attached.';
+        $prompt = 'There is a content element called "Welcome Header" on the home page. '
+            . 'Copy it to the About page, keeping the same file references (images/media) attached.';
 
         $response = $this->executeUntilToolFound(
             $this->callLlm($prompt),
@@ -249,8 +249,8 @@ class FileReferenceTest extends LlmTestCase
 
         self::assertNotNull(
             $copiedUid,
-            'Expected a new tt_content record on the About page. ' .
-            $this->getFailureContext($currentResponse)
+            'Expected a new tt_content record on the About page. '
+            . $this->getFailureContext($currentResponse)
         );
 
         // Check if file references were created. If not, give the LLM a nudge —
@@ -265,17 +265,17 @@ class FileReferenceTest extends LlmTestCase
 
         self::assertNotEmpty(
             $newRefs,
-            'Copy has no file references. Original element has 3 (2 assets + 1 media), ' .
-            'all pointing to sys_file uid=1. New element uid=' . $copiedUid . ' has none. ' .
-            $this->getFailureContext($currentResponse)
+            'Copy has no file references. Original element has 3 (2 assets + 1 media), '
+            . 'all pointing to sys_file uid=1. New element uid=' . $copiedUid . ' has none. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $newAssetFileUids = array_map(fn($r) => (int)$r['uid_local'], $newRefs);
         self::assertContains(
             1,
             $newAssetFileUids,
-            'Copied file references should point to original sys_file (uid=1). ' .
-            'Got uid_local values: ' . implode(', ', $newAssetFileUids)
+            'Copied file references should point to original sys_file (uid=1). '
+            . 'Got uid_local values: ' . implode(', ', $newAssetFileUids)
         );
     }
 

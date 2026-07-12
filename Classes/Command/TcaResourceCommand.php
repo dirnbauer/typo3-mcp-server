@@ -46,7 +46,7 @@ final class TcaResourceCommand extends Command
             $this->bootstrapBackendUser();
             $this->ensureTcaLoaded();
 
-            if (!$this->resourceRegistry->isAvailable()) {
+            if (!$this->resourceRegistry->isTcaAvailable()) {
                 return $this->writeError(
                     $input,
                     $output,

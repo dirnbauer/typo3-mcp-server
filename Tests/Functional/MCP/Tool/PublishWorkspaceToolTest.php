@@ -33,6 +33,10 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
         ]);
         self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
 
+        // Prove the call honors its explicit workspace_id rather than an
+        // ambient workspace inherited from a previous operation.
+        $this->switchToWorkspace(0);
+
         // Dry-run publish (default)
         $result = $this->tool->execute(['workspace_id' => $wsId]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -58,6 +62,8 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
             'workspace_id' => $wsId,
         ]);
         self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+
+        $this->switchToWorkspace(0);
 
         // Execute publish
         $result = $this->tool->execute([

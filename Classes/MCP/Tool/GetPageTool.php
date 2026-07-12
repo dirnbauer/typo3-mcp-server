@@ -8,6 +8,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService as McpLanguageService;
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -28,6 +29,7 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Routing\PageArguments;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -48,6 +50,8 @@ final class GetPageTool extends AbstractRecordTool
         protected readonly SiteInformationService $siteInformationService,
         protected readonly McpLanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
+        private readonly TcaSchemaFactory $tcaSchemaFactory,
+        private readonly PageAccessService $pageAccessService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -188,6 +192,8 @@ final class GetPageTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureTableAccess('pages', 'read');
+        $this->ensureTableAccess('tt_content', 'read');
 
         // Handle language parameter
         $languageId = 0;
@@ -223,6 +229,7 @@ final class GetPageTool extends AbstractRecordTool
 
         // Get page data (with language overlay if applicable)
         $pageData = $this->getPageData($uid, $languageId);
+        $this->pageAccessService->assertPageAccess($pageData);
 
         // Get page URL using SiteInformationService
         $pageUid = is_numeric($pageData['uid'] ?? null) ? (int)$pageData['uid'] : 0;
@@ -262,7 +269,7 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $queryBuilder->select('*')->from('pages');
 
@@ -348,7 +355,7 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $translations = $queryBuilder->select('sys_language_uid', 'title')
             ->from('pages')
@@ -444,7 +451,7 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $translation = $queryBuilder->select('*')
             ->from('pages')
@@ -579,7 +586,7 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -932,7 +939,7 @@ final class GetPageTool extends AbstractRecordTool
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
             ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $currentWorkspace))
-            ->add(GeneralUtility::makeInstance(WorkspaceDeletePlaceholderRestriction::class, $currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $references = $queryBuilder
             ->select('uid', 't3ver_oid', 'uid_foreign')

@@ -13,12 +13,6 @@ parameters:
 			path: Classes/Command/McpServerCommand.php
 
 		-
-			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: Classes/Command/McpServerCommand.php
-
-		-
 			message: '#^Foreach overwrites \$tool with its value variable\.$#'
 			identifier: foreach.valueOverwrite
 			count: 1
@@ -26,12 +20,6 @@ parameters:
 
 		-
 			message: '#^Only booleans are allowed in a negated boolean, Hn\\McpServer\\MCP\\Tool\\ToolInterface\|null given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: Classes/Command/McpTestCommand.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1
 			path: Classes/Command/McpTestCommand.php
@@ -73,12 +61,6 @@ parameters:
 			path: Classes/Controller/McpServerModuleController.php
 
 		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: Classes/Controller/McpServerModuleController.php
-
-		-
 			message: '#^Method Hn\\McpServer\\Controller\\McpServerModuleController\:\:resolveHostIps\(\) should return array\<string\> but returns list\<mixed\>\.$#'
 			identifier: return.type
 			count: 1
@@ -89,12 +71,6 @@ parameters:
 			identifier: booleanNot.exprNotBoolean
 			count: 5
 			path: Classes/Controller/McpServerModuleController.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: Classes/Database/Query/Restriction/WorkspaceDeletePlaceholderRestriction.php
 
 		-
 			message: '#^Parameter \#1 \$queriedTables \(array\<string, string\>\) of method Hn\\McpServer\\Database\\Query\\Restriction\\WorkspaceDeletePlaceholderRestriction\:\:buildExpression\(\) should be contravariant with parameter \$queriedTables \(array\) of method TYPO3\\CMS\\Core\\Database\\Query\\Restriction\\QueryRestrictionInterface\:\:buildExpression\(\)$#'
@@ -241,24 +217,6 @@ parameters:
 			path: Classes/Http/McpEndpoint.php
 
 		-
-			message: '#^Parameter \#1 \$queryParams of static method Hn\\McpServer\\Http\\McpHttpLogRedactor\:\:redactQueryParamsForLog\(\) expects array\<string, mixed\>, array given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Http/McpEndpoint.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/Http/McpEndpoint.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/Http/OAuthAuthServerMetadataEndpoint.php
-
-		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 1
@@ -277,39 +235,9 @@ parameters:
 			path: Classes/Http/OAuthAuthorizeEndpoint.php
 
 		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/Http/OAuthMetadataEndpoint.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 1
-			path: Classes/Http/OAuthRegisterEndpoint.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/Http/OAuthRegisterEndpoint.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/Http/OAuthResourceMetadataEndpoint.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, array\<string, int\|string\>\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 2
-			path: Classes/Http/OAuthTokenEndpoint.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
 			path: Classes/Http/OAuthTokenEndpoint.php
 
 		-
@@ -496,12 +424,6 @@ parameters:
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 2
-			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, string\|false given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
 			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
 
 		-
@@ -1681,12 +1603,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
 
 		-
-			message: '#^Only booleans are allowed in an if condition, string\|false given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: Classes/MCP/Tool/Record/ImportFromUrlTool.php
-
-		-
 			message: '#^Parameter \#1 \$availableTypes of method Hn\\McpServer\\MCP\\Tool\\Record\\ImportFromUrlTool\:\:buildCTypeProfiles\(\) expects array\<string, string\>, array\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -1879,12 +1795,6 @@ parameters:
 			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
 
 		-
-			message: '#^Casting to string something that''s already string\.$#'
-			identifier: cast.useless
-			count: 1
-			path: Classes/MCP/Tool/Record/PublishWorkspaceTool.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
@@ -2039,12 +1949,6 @@ parameters:
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/MCP/Tool/Record/RollbackWorkspaceTool.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, mixed given\.$#'
-			identifier: booleanNot.exprNotBoolean
-			count: 1
-			path: Classes/MCP/Tool/Record/WorkspaceReviewTool.php
 
 		-
 			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
@@ -2665,60 +2569,6 @@ parameters:
 			path: Classes/MCP/Tool/SearchTool.php
 
 		-
-			message: '''
-				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
-				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
-				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: Classes/MCP/Tool/X402/GetPaidContentTool.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: Classes/MCP/Tool/X402/GetPaidContentTool.php
-
-		-
-			message: '''
-				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
-				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
-				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
-
-		-
-			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
-			identifier: if.condNotBoolean
-			count: 1
-			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/MCP/Tool/X402/GetPaymentStatsTool.php
-
-		-
-			message: '''
-				#^Call to deprecated method listTableColumns\(\) of class Doctrine\\DBAL\\Schema\\AbstractSchemaManager\:
-				Use \{@see introspectTableColumns\(\)\}, \{@see introspectTableColumnsByUnquotedName\(\)\}
-				            or \{@see introspectTableColumnsByQuotedName\(\)\} instead\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: Classes/MCP/Tool/X402/ListPaidContentTool.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 2
-			path: Classes/MCP/Tool/X402/ListPaidContentTool.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
@@ -2787,7 +2637,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 3
+			count: 1
 			path: Classes/Service/OAuthService.php
 
 		-
@@ -3457,18 +3307,6 @@ parameters:
 			path: Classes/Service/Record/RecordReadQueryService.php
 
 		-
-			message: '#^Cannot access offset ''columns'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
 			message: '#^Cannot cast mixed to int\.$#'
 			identifier: cast.int
 			count: 1
@@ -3489,7 +3327,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 13
+			count: 10
 			path: Classes/Service/Record/RecordReadQueryService.php
 
 		-
@@ -3535,12 +3373,6 @@ parameters:
 			path: Classes/Service/Record/RecordReadQueryService.php
 
 		-
-			message: '#^Method Hn\\McpServer\\Service\\Record\\RecordReadQueryService\:\:getTableCtrlArray\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
 			message: '#^Method Hn\\McpServer\\Service\\Record\\RecordReadQueryService\:\:isIntegerArray\(\) has parameter \$values with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
@@ -3573,90 +3405,6 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in an if condition, string\|null given\.$#'
 			identifier: if.condNotBoolean
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$array of function array_keys expects array, mixed given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:eq\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gt\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:gte\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:in\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNotNull\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:isNull\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:like\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lt\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:lte\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:neq\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notIn\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#1 \$fieldName of method TYPO3\\CMS\\Core\\Database\\Query\\Expression\\ExpressionBuilder\:\:notLike\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: Classes/Service/Record/RecordReadQueryService.php
-
-		-
-			message: '#^Parameter \#2 \$fieldName of method Hn\\McpServer\\Service\\TableAccessService\:\:canAccessField\(\) expects string, int\|string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: Classes/Service/Record/RecordReadQueryService.php
 
@@ -4103,18 +3851,6 @@ parameters:
 			path: Classes/Service/Record/RecordSearchExecutor.php
 
 		-
-			message: '#^Cannot access offset ''ctrl'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Service/Record/RecordSearchExecutor.php
-
-		-
-			message: '#^Cannot access offset ''languageField'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Service/Record/RecordSearchExecutor.php
-
-		-
 			message: '#^Cannot access offset ''pid'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
@@ -4136,12 +3872,6 @@ parameters:
 			message: '#^Cannot access offset ''uid'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
-			path: Classes/Service/Record/RecordSearchExecutor.php
-
-		-
-			message: '#^Cannot access offset string on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
 			path: Classes/Service/Record/RecordSearchExecutor.php
 
 		-
@@ -4747,7 +4477,7 @@ parameters:
 		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
-			count: 25
+			count: 19
 			path: Classes/Service/TableAccessService.php
 
 		-
@@ -4883,12 +4613,6 @@ parameters:
 			path: Classes/Service/WorkspaceContextService.php
 
 		-
-			message: '#^Cannot cast mixed to int\.$#'
-			identifier: cast.int
-			count: 2
-			path: Classes/Service/WorkspaceContextService.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 1
@@ -4897,12 +4621,6 @@ parameters:
 		-
 			message: '#^Only booleans are allowed in &&, array\|false given on the left side\.$#'
 			identifier: booleanAnd.leftNotBoolean
-			count: 1
-			path: Classes/Service/WorkspaceContextService.php
-
-		-
-			message: '#^Only booleans are allowed in a negated boolean, array given\.$#'
-			identifier: booleanNot.exprNotBoolean
 			count: 1
 			path: Classes/Service/WorkspaceContextService.php
 

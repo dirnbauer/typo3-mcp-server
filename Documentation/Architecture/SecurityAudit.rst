@@ -7,13 +7,13 @@ Security audit
 Date
 ====
 
-2026-03-15 (TYPO3 v14-only extension; transport/logging hardening)
+2026-07-11 (TYPO3 v14-only extension; protocol and full-feature hardening)
 
 Scope
 =====
 
-``Classes/`` directory, OAuth implementation, MCP HTTP endpoint, file sandbox
-URL download tool, and extension settings.
+``Classes/`` directory, OAuth implementation, MCP HTTP endpoint, file sandbox,
+outbound URL tools, and extension settings.
 
 Findings and remediation
 ========================
@@ -38,14 +38,15 @@ Fixed findings
 
 4. Access tokens in URL query parameters.
 
-   Status: Fixed for default configuration. Query-string tokens are **disabled**
-   unless ``allowMcpTokenInQueryString`` is enabled in extension settings (off by
-   default). When enabled, acceptance is logged at notice level.
+   Status: Fixed. Query-string bearer authentication was removed. ``/mcp``
+   accepts tokens only from the ``Authorization`` header, and an obsolete
+   ``allowMcpTokenInQueryString`` value is ignored.
 
 5. Debug logging of MCP requests could leak secrets.
 
    Status: Fixed. ``Authorization``, cookies, and related sensitive headers are
-   redacted; the ``token`` query parameter is redacted in logged query params.
+   redacted. Token-shaped query values are still redacted as defense in depth,
+   even though they cannot authenticate a request.
    Implementation: ``Classes/Http/McpHttpLogRedactor.php`` (covered by unit tests).
 
 6. Unauthenticated ``?test=auth`` probe exposed server fingerprint data.
@@ -66,9 +67,9 @@ Accepted risks
    Rationale: the scope is limited to workspace creation and gated by explicit
    permission checks.
 
-2. The OAuth consent form does not add a separate CSRF token.
-
-   Rationale: the flow already depends on a backend session and PKCE verifier.
+2. Resolved (2026-07-11): the OAuth consent form now uses TYPO3 backend form
+   protection. Approval POSTs without the session-bound token, or with a forged
+   or expired token, fail before an authorization code is created.
 
 3. Redirect handling accepts client-provided redirect URIs within the supported
    OAuth registration model.
@@ -76,19 +77,13 @@ Accepted risks
    Rationale: the implementation now restricts unsafe remote HTTP(S) targets and
    enforces PKCE ``S256``.
 
-4. CORS reflects allowed origins for cross-origin MCP clients.
+4. CORS permits only exact same-origin or configured origins.
 
-   Rationale: bearer-token usage makes this acceptable at the current risk
-   profile.
+   Rationale: malformed, ``null``, and unlisted origins are rejected before
+   authentication. Operators must explicitly list each additional HTTP(S)
+   origin in ``allowedOrigins``.
 
-5. ``UploadFileFromUrl`` resolves hostnames before download (SSRF mitigation) but
-   cannot fully eliminate DNS rebinding races without additional infrastructure.
-
-   Rationale: documented limits; private/reserved resolved IPs are rejected;
-   redirects/size limits apply. Extend functional coverage when changing this
-   code path.
-
-6. ``localUnsafeMode`` (extension config or User TSconfig; default
+5. ``localUnsafeMode`` (extension config or User TSconfig; default
    ``auto``) relaxes workspace-only writes, the workspace-capable table
    requirement, outbound HTTP, and the file sandbox when DDEV /
    Development context is detected.
@@ -119,12 +114,14 @@ in DDEV".
 Fix
 ---
 
-``LocalModeService::allowsUnrestrictedOutbound()`` added; both gates
-short-circuit when it returns true:
+``LocalModeService::allowsUnrestrictedOutbound()`` added; both production
+gates are deliberately bypassed when it returns true:
 
-- ``CapabilityManifestService::assertHostAllowed()`` returns immediately.
-- ``UploadFileFromUrlTool::validateUrl()`` skips the
-  ``gethostbynamel()`` + private-IP filter.
+- ``CapabilityManifestService::assertUrlAllowed()`` returns immediately.
+- ``UploadFileFromUrl``, ``ImportFromUrl``, ``RenderRecord``, and optional x402
+  facilitator verification skip ``OutboundUrlGuardService`` so local/private
+  development hosts remain reachable. Redirects and response bounds remain in
+  force.
 
 Production behavior is unchanged: with the default
 ``localUnsafeMode=auto`` outside DDEV / Development context the new
@@ -248,26 +245,33 @@ Fixed findings
    add it to ``$TYPO3_CONF_VARS[SYS][textfile_ext]`` and pipe through
    ``TYPO3\\CMS\\Core\\Resource\\Security\\SvgSanitizer``.
 
-7. ``RenderRecord`` cURL fetched without resolving the host to an IP.
+7. Outbound tools did not share complete IPv4, IPv6, and DNS-rebinding
+   protection.
 
-   Status: Fixed. Outside ``localUnsafeMode``, the host is resolved with
-   ``gethostbynamel()`` and any private/reserved address aborts the
-   request — same protection model as ``UploadFileFromUrl``.
+   Status: Fixed. Outside ``localUnsafeMode``, ``UploadFileFromUrl``,
+   ``ImportFromUrl``, ``RenderRecord``, and optional x402 facilitator
+   verification all use
+   ``OutboundUrlGuardService``. It resolves every A and AAAA address, rejects
+   the target when any address is private or reserved, and pins cURL to a
+   validated address with ``CURLOPT_RESOLVE``. This closes the validation-to-
+   connection DNS-rebinding window. Redirects remain disabled so every new
+   authority must pass the complete policy again.
 
 Accepted risks (added)
 ----------------------
 
-1. OAuth authorization code is bound to the client name and redirect URI
-   only loosely (the exchange call does not re-verify the redirect URI).
-   Currently a single-client deployment with a locked-down redirect, so
-   the impact is theoretical — flagged for a focused PR that adds the
-   per-RFC-9700 §4.1.3 strict comparison.
+1. Resolved (2026-07-11): authorization codes are hashed, consumed with an
+   atomic one-time delete, and exactly bound to ``client_id``, redirect URI,
+   resource indicator, and scope. Token exchange revalidates every binding
+   together with the mandatory ``S256`` verifier.
 
-2. Refresh-token rotation does not invalidate the previous refresh token
-   (replay detection / family revocation per RFC 9700 §4.14). Tokens are
-   single-use within their TTL and rotated, but a captured token used
-   twice goes undetected. To be addressed in a focused refresh-rotation
-   PR.
+2. Resolved (2026-07-11): refresh rotation transactionally records every used
+   token hash in ``tx_mcpserver_oauth_refresh_replay`` before a compare-and-
+   swap update. Stale-history matches, unique-key conflicts from concurrent
+   double use, and CAS failure revoke the active family. An absolute family
+   expiry prevents indefinite rotation. Replay-history rows are retained only
+   until that family expiry and then removed by normal OAuth cleanup; after
+   expiry there is no active successor token to protect.
 
 3. No rate limiting on ``/mcp``, ``/mcp_oauth/token``, or
    ``/mcp_oauth/authorize``. Bearer-token brute force is unbounded
@@ -287,20 +291,44 @@ Added findings and mitigations
 
    Status: Enforced. ``Configuration/Capabilities.yaml`` lists every tool
    and the subsystems it needs. ``AbstractTool::execute()`` rejects calls
-   whose required subsystems are not declared. ``UploadFileFromUrl`` and
-   ``RenderRecord`` consult ``CapabilityManifestService::assertHostAllowed()``
-   before opening a socket. Default ``network.outbound`` ships closed at
-   ``[self]``; operators opt in to public web per deployment.
+   whose required subsystems are not declared. ``UploadFileFromUrl``,
+   ``ImportFromUrl``, ``RenderRecord``, and optional x402 facilitator
+   verification consult
+   ``CapabilityManifestService::assertUrlAllowed()`` before opening a socket.
+   The URL-aware check enforces both the declared host and protocol. Default
+   ``network.outbound`` ships closed at ``[self]`` for direct PHP HTTP;
+   operators opt in to public web per deployment.
 
-2. ``RenderRecord`` SSRF gate: redirects disabled, TLS verified.
+2. Shared outbound SSRF gate: redirects disabled and DNS pinned.
 
-   Status: Hardened. ``CURLOPT_FOLLOWLOCATION`` set to ``false`` so a
-   single 302 cannot bypass the host allowlist; ``CURLOPT_SSL_VERIFYPEER``
-   stays on except in ``localUnsafeMode`` (where DDEV's self-signed certs
-   are common). Initial ``assertHostAllowed`` check is the only gate the
-   request must satisfy.
+   Status: Hardened. All direct outbound paths reject redirects. The initial URL
+   must satisfy the manifest protocol/host rule and the shared A/AAAA
+   public-address check, then cURL connects to the validated address through
+   ``CURLOPT_RESOLVE``. ``RenderRecord`` also keeps TLS peer and hostname
+   verification enabled except in ``localUnsafeMode``, where DDEV self-signed
+   certificates are common.
 
-3. CLI ``@path`` parameter file loader.
+3. Subprocess and scheduler network effects bypass the PHP URL guard.
+
+   Status: Explicitly bounded. ``InstallExtension`` and
+   ``ApplyShadcnPreset`` are admin-only and now dev-site-only; their Composer
+   or JavaScript package-manager subprocesses require the manifest's
+   ``network:package-manager`` subsystem. ``SolrIndexQueue`` selects only a
+   pre-existing task identified as Solr-related and invokes it by UID, but the
+   task may contact its configured Solr host; the tool therefore declares
+   ``scheduler:task`` and ``network:scheduler``. These effects are documented
+   exceptions, not covered by ``network.outbound`` or DNS pinning.
+
+4. The optional ``abilities`` API inherited unrelated API Core controllers.
+
+   Status: Fixed. An outer policy middleware honors
+   ``activateAbilitiesApi``, allows only ability list/describe/run and the two
+   public documentation paths, and returns 404 for inherited auth, demo,
+   health, and MCP routes. It blocks API Core's POST MCP handler independently
+   of the global MCP switch. The same layer filters OpenAPI and adds exact
+   registry-derived contracts for the five ``typo3-mcp/*`` abilities.
+
+5. CLI ``@path`` parameter file loader.
 
    Status: Mitigated. ``AbstractMcpToolCommand::coerceValue`` resolves
    ``@file.json`` paths via ``realpath`` and rejects targets outside the
@@ -326,13 +354,131 @@ Accepted risks (additions)
    bootstrap calls (CLI, eID) where constructor injection isn't fully
    set up. The service has no mutable state.
 
+2026-07-11 (dual-era transport and origin hardening)
+=====================================================
+
+Fixed findings
+--------------
+
+1. Browser origins were not rejected early and consistently.
+
+   Status: Fixed. Exact same-origin or ``allowedOrigins`` matching now runs
+   before bearer authentication. Malformed, ``null``, and unlisted origins
+   return 403.
+
+2. MCP request-metadata headers needed an explicit CORS allowlist.
+
+   Status: Fixed. ``MCP-Protocol-Version``, ``Mcp-Method``, ``Mcp-Name``,
+   validated ``Mcp-Param-*`` names, and required content headers are exposed
+   without allowing arbitrary request headers.
+
+3. A stable protocol session could be confused with modern request state.
+
+   Status: Fixed by the SDK's dual-era handling. ``2026-07-28`` requests use
+   ephemeral contexts and never receive ``Mcp-Session-Id``; stable requests
+   retain the legacy session contract.
+
+4. Manifest inventory could drift from executable tools and commands.
+
+   Status: Fixed. Consistency tests compare all registered native tools,
+   ``mcp:*`` Symfony commands, skills, and owned database tables with
+   ``Configuration/Capabilities.yaml``.
+
+5. Raw request-target logging could preserve rejected query-string secrets.
+
+   Status: Fixed. MCP request logs record only the URI path and separately
+   parsed query parameters after recursive secret-key redaction. The raw
+   request target, which contains the unredacted query string, is never logged.
+
+6. OAuth resource identifiers accepted unspecified URI schemes.
+
+   Status: Fixed. Resource identifiers and request-derived MCP resource URLs
+   must be absolute HTTP(S) URIs without user information or fragments. Scheme,
+   host, IPv6 brackets, and default ports are normalized before binding and
+   comparison.
+
+7. Outbound URL checks differed between importing, uploading, and rendering.
+
+   Status: Fixed. ``UploadFileFromUrl``, ``ImportFromUrl``, ``RenderRecord``,
+   and optional x402 facilitator verification now apply the same manifest
+   allowlist, HTTP(S)-only URL validation, full A/AAAA private-address
+   rejection, DNS pinning, and no-redirect policy outside explicitly unsafe
+   local mode.
+
+8. Authorization responses were not bound to an authorization-server issuer.
+
+   Status: Fixed. Successful authorization responses include the RFC 9207
+   ``iss`` parameter, the discovery document advertises support, and tests
+   require the value to match the HTTPS public server base. Insecure
+   non-loopback HTTP bases cannot be emitted as issuers.
+
+9. OAuth and outbound HTTP request bodies could consume unbounded memory.
+
+   Status: Fixed. Dynamic registration and token requests are limited to
+   64 KiB, MCP requests to 25 MiB, ``ImportFromUrl`` and ``RenderRecord`` to
+   5 MiB, ``UploadFileFromUrl`` streams to a 20 MiB temporary file, and x402
+   facilitator responses are capped at 64 KiB. The outbound paths reject
+   excess data while streaming rather than buffering it first.
+
+10. Backend connection diagnostics trusted the request-derived host and
+    followed redirects without consulting the outbound manifest.
+
+    Status: Fixed. ``DiagnosticHttpClient`` checks every final probe URL with
+    ``CapabilityManifestService::assertUrlAllowed()`` before constructing the
+    request or opening a socket. Denied targets remain a normal "unreachable"
+    diagnostic result, and redirects are disabled so an allowed self URL cannot
+    escape to an unvalidated internal destination.
+
+.. _security-audit-page-file-authorization:
+
+2026-07-11 (page-tree and file-mount authorization)
+===================================================
+
+Fixed findings
+--------------
+
+1. Page-oriented read tools trusted table permission without consistently
+   enforcing the backend user's page-tree entry points.
+
+   Status: Fixed. ``PageAccessService`` resolves live records, workspace
+   versions, and page translations before requiring both Core ``PAGE_SHOW``
+   permission and ``isInWebMount()``. ``GetPage``, ``GetPageTree``,
+   ``ContentAudit``, ``GetPreviewUrl``, ``RenderRecord``, and
+   ``WorkspaceReview`` use the shared guard. Per-table read permission is
+   checked before related rows are queried.
+
+2. File search queries could return ``sys_file`` rows, metadata, counts, and
+   thumbnails from folders outside a non-admin user's FAL mounts.
+
+   Status: Fixed. ``SearchFile`` and ``SearchMedia`` add TYPO3 Core's
+   ``FolderMountsRestriction`` to every result and count query. A user with no
+   file mount receives an empty search result rather than an unrestricted one.
+
+3. Storage discovery and direct FAL readers did not share one explicit mount
+   boundary.
+
+   Status: Fixed. ``ListStorages`` uses ``BE_USER->getFileStorages()``.
+   ``FileAccessService`` requires ``sys_file`` read permission, an
+   authenticated backend user, a user-visible storage, Core
+   ``ResourceStorage::isWithinFileMountBoundaries()``, and a matching file
+   mount before metadata or folder output is returned. This remains enforced
+   when ``localUnsafeMode`` relaxes the separate MCP file sandbox.
+
+4. Multi-mount behavior lacked end-to-end regression coverage.
+
+   Status: Fixed. Functional tests use disjoint page branches and sibling FAL
+   folders to prove allowed reads still work while page details, trees, audit
+   results, previews, renders, workspace diffs, searches, counts, metadata,
+   browsers, and storage listings cannot cross the authenticated mounts.
+
 Structured MCP results
 ======================
 
-The bundled ``logiscape/mcp-sdk-php`` build in this project does not expose
-``outputSchema`` / structured content on ``CallToolResult``. Tools therefore
-return JSON in ``TextContent``; keep schemas and descriptions accurate for client
-parsing.
+The v2 ``logiscape/mcp-sdk-php`` build supports ``outputSchema`` and
+``structuredContent``. ``ToolResultNormalizer`` mirrors a successful single
+JSON text result into structured content while retaining text for stable
+clients. Result schemas and descriptions remain security-relevant contracts;
+clients must not treat a schema as authorization.
 
 No issues found
 ===============

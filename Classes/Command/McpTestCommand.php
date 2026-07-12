@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Command;
 
 use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Service\McpCliBackendUserBootstrapService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP Test Command - For testing MCP tools directly
@@ -27,6 +25,7 @@ final class McpTestCommand extends Command
     public function __construct(
         protected ToolRegistry $toolRegistry,
         private readonly TcaFactory $tcaFactory,
+        private readonly McpCliBackendUserBootstrapService $cliBackendUserBootstrap,
     ) {
         parent::__construct();
     }
@@ -58,8 +57,7 @@ final class McpTestCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            // Ensure we have admin rights for the backend user
-            $this->ensureAdminRights();
+            $this->cliBackendUserBootstrap->initialize();
 
             // Ensure TCA is loaded
             $this->ensureTcaLoaded();
@@ -152,43 +150,6 @@ final class McpTestCommand extends Command
         }
 
         return $text;
-    }
-
-    /**
-     * Ensure we have admin rights for the backend user
-     */
-    protected function ensureAdminRights(): void
-    {
-        /** @var BackendUserAuthentication $beUser */
-        $beUser = $GLOBALS['BE_USER'];
-        if (!$beUser) {
-            // Create an admin backend user
-            $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-            // This command runs outside a normal backend login, so bootstrap a synthetic admin user.
-            $beUser->user['admin'] = 1;
-            $beUser->user['uid'] = 1; // Add a UID for the fake user to prevent DataHandler errors
-            $GLOBALS['BE_USER'] = $beUser;
-
-            // Set up workspace context
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceService->switchToOptimalWorkspace($beUser);
-        } elseif (!$beUser->isAdmin()) {
-            // If user exists but is not admin, set admin flag directly
-            $beUser->user['admin'] = 1;
-            if (!isset($beUser->user['uid'])) {
-                $beUser->user['uid'] = 1; // Ensure UID is set
-            }
-
-            // Set up workspace context
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceService->switchToOptimalWorkspace($beUser);
-        } else {
-            // User exists and is admin, still set up workspace context
-            $workspaceService = GeneralUtility::makeInstance(WorkspaceContextService::class);
-            $workspaceService->switchToOptimalWorkspace($beUser);
-        }
-
-        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
     }
 
     /**

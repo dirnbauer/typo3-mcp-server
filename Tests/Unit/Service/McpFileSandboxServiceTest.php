@@ -205,10 +205,10 @@ final class McpFileSandboxServiceTest extends TestCase
         $localMode = new LocalModeService(new ExtensionConfiguration());
 
         $workspaceContextService = new WorkspaceContextService(
-            $this->createMock(ConnectionPool::class),
+            self::createStub(ConnectionPool::class),
             new Context(),
             self::createStub(LoggerInterface::class),
-            $this->createMock(WorkspaceService::class),
+            self::createStub(WorkspaceService::class),
             $localMode,
         );
 
@@ -221,7 +221,12 @@ final class McpFileSandboxServiceTest extends TestCase
 
     private function setBackendUserWorkspace(int $workspaceId): void
     {
-        $backendUser = new BackendUserAuthentication();
+        $backendUser = self::createStub(BackendUserAuthentication::class);
+        $backendUser->method('checkWorkspace')->willReturnCallback(
+            static fn(int|array $workspace): array|false => is_int($workspace) && $workspace === $workspaceId
+                ? ['uid' => $workspaceId, '_ACCESS' => 'member']
+                : false,
+        );
         $backendUser->workspace = $workspaceId;
         $GLOBALS['BE_USER'] = $backendUser;
     }

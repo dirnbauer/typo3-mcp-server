@@ -181,6 +181,36 @@ final class TableAccessServiceTest extends FunctionalTestCase
         self::assertSame('title', $labelField);
     }
 
+    public function testSchemaApiCapabilitiesDescribeWorkspaceAndLanguageSupport(): void
+    {
+        self::assertTrue($this->service->hasTable('pages'));
+        self::assertTrue($this->service->isWorkspaceCapable('pages'));
+        self::assertTrue($this->service->isLanguageAware('pages'));
+
+        self::assertFalse($this->service->hasTable('not_a_tca_table'));
+        self::assertFalse($this->service->isWorkspaceCapable('sys_file'));
+        self::assertFalse($this->service->isLanguageAware('sys_file'));
+    }
+
+    public function testSchemaApiCapabilitiesExposeSemanticSystemFields(): void
+    {
+        self::assertSame('tstamp', $this->service->getTimestampFieldName('pages'));
+        self::assertSame('crdate', $this->service->getCreationDateFieldName('pages'));
+        self::assertSame('hidden', $this->service->getHiddenFieldName('pages'));
+        self::assertSame('sorting', $this->service->getSortingFieldName('pages'));
+        self::assertSame('sys_language_uid', $this->service->getLanguageFieldName('pages'));
+        self::assertSame('l10n_parent', $this->service->getTranslationParentFieldName('pages'));
+        self::assertSame('l10n_source', $this->service->getTranslationSourceFieldName('pages'));
+        self::assertSame('l10n_diffsource', $this->service->getTranslationDiffSourceFieldName('pages'));
+        self::assertContains('title', $this->service->getFieldNames('pages'));
+    }
+
+    public function testSchemaApiRootLevelCapabilityDistinguishesStorageTables(): void
+    {
+        self::assertFalse($this->service->isRootLevelOnly('pages'));
+        self::assertTrue($this->service->isRootLevelOnly('sys_file_storage'));
+    }
+
     public function testGetAvailableTypesReturnsTypesForTtContent(): void
     {
         $types = $this->service->getAvailableTypes('tt_content');
@@ -222,6 +252,13 @@ final class TableAccessServiceTest extends FunctionalTestCase
         $result = $this->service->validateFieldValue('pages', 'title', 'A valid title');
 
         self::assertNull($result);
+    }
+
+    public function testValidateFieldValueRejectsArrayForScalarField(): void
+    {
+        $result = $this->service->validateFieldValue('pages', 'title', ['not', 'scalar']);
+
+        self::assertSame("Field 'title' does not accept array values (TCA type: input)", $result);
     }
 
     public function testValidateFieldValueReturnsErrorForNonexistentField(): void

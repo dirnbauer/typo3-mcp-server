@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\StringUtility;
 
 /**
  * Resolves the full list of select field items using TYPO3's FormDataCompiler.
@@ -102,6 +103,11 @@ final class SelectItemResolver
             'tableName' => $table,
             'vanillaUid' => $pid,
             'command' => 'new',
+            // DatabaseUserPermissionCheck runs before Core's
+            // DatabaseUniqueUidNewRow provider. Seed the same NEW-style uid
+            // used by FormEngine callers so permission failures can format
+            // their exception without indexing a missing databaseRow uid.
+            'databaseRow' => ['uid' => StringUtility::getUniqueId('NEW')],
             'defaultValues' => $rowValues === [] ? [] : [$table => $rowValues],
         ];
 

@@ -22,6 +22,7 @@ final class RollbackWorkspaceToolTest extends AbstractFunctionalTest
     public function testDryRunReturnsPreviewOfPendingChanges(): void
     {
         $workspaceId = $this->createWorkspacePageChange('Rollback dry-run page');
+        $this->switchToWorkspace(0);
 
         $result = $this->tool->execute(['workspace_id' => $workspaceId]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
@@ -38,6 +39,7 @@ final class RollbackWorkspaceToolTest extends AbstractFunctionalTest
     {
         $workspaceId = $this->createWorkspacePageChange('Rollback execute page');
         self::assertTrue($this->workspaceVersionExists('pages', 1, $workspaceId));
+        $this->switchToWorkspace(0);
 
         $result = $this->tool->execute([
             'workspace_id' => $workspaceId,

@@ -7,14 +7,18 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 
 final class ApplyShadcnPresetToolTest extends AbstractFunctionalTest
 {
+    use DevSiteTestTrait;
+
     private ToolInterface $tool;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->enableDevSiteTools();
 
         $registry = $this->getService(ToolRegistry::class);
         $tool = $registry->getTool('ApplyShadcnPreset');

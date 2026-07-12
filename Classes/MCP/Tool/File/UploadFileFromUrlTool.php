@@ -10,6 +10,7 @@ use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpFileSandboxService;
+use Hn\McpServer\Service\OutboundUrlGuardService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Http\RequestFactory;
@@ -43,6 +44,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         private readonly CapabilityManifestService $capabilityManifest,
         private readonly LocalModeService $localMode,
         private readonly FileMetadataIndexService $fileMetadataIndexService,
+        private readonly OutboundUrlGuardService $outboundUrlGuard,
     ) {}
 
     /**
@@ -106,11 +108,11 @@ final class UploadFileFromUrlTool extends AbstractTool
             throw new ValidationException(['Parameter "url" is required.']);
         }
 
-        $this->validateUrl($url);
+        $curlResolveEntry = $this->validateUrl($url);
 
         $tempFile = GeneralUtility::tempnam('mcp_url_download_');
         try {
-            $downloadInfo = $this->downloadToTempFile($url, $tempFile);
+            $downloadInfo = $this->downloadToTempFile($url, $tempFile, $curlResolveEntry);
 
             if ($path === '') {
                 $path = $this->derivePathFromUrl($url, $downloadInfo['contentType']);
@@ -156,7 +158,7 @@ final class UploadFileFromUrlTool extends AbstractTool
         ]);
     }
 
-    private function validateUrl(string $url): void
+    private function validateUrl(string $url): ?string
     {
         $parsed = parse_url($url);
         if ($parsed === false || !isset($parsed['scheme'], $parsed['host'])) {
@@ -171,10 +173,9 @@ final class UploadFileFromUrlTool extends AbstractTool
         }
 
         // Capability-manifest enforcement: refuse hosts not in
-        // network.outbound. The default manifest ships with `*` so this is a
-        // no-op out of the box, but a hardened deployment can replace `*`
-        // with an explicit allowlist.
-        $this->capabilityManifest->assertHostAllowed($parsed['host']);
+        // network.outbound. The default manifest permits only configured
+        // TYPO3 site hosts through the `self` sentinel.
+        $this->capabilityManifest->assertUrlAllowed($url);
 
         // Local-mode (DDEV / localUnsafeMode=on) escape hatch: skip the
         // private-IP filter so workflows like "fetch from my local NAS" or
@@ -182,40 +183,32 @@ final class UploadFileFromUrlTool extends AbstractTool
         // without operators editing the manifest. Production mode keeps
         // the strict gate.
         if ($this->localMode->allowsUnrestrictedOutbound()) {
-            return;
+            return null;
         }
 
-        // Resolve hostname to IP and reject private/internal addresses (SSRF protection).
-        // String-based hostname checks are trivially bypassed via decimal IPs, hex encoding,
-        // DNS rebinding, or IPv6 embeddings — only resolved IP validation is reliable.
-        $host = $parsed['host'];
-        $ips = gethostbynamel($host);
-        if ($ips === false || $ips === []) {
-            throw new ValidationException(['Could not resolve hostname.']);
-        }
-
-        foreach ($ips as $ip) {
-            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                throw new ValidationException(['Downloads from private or reserved network addresses are not allowed.']);
-            }
-        }
+        return $this->outboundUrlGuard->assertPublicAndCreateCurlResolveEntry($url);
     }
 
     /**
      * @return array{contentType: string, size: int}
      */
-    private function downloadToTempFile(string $url, string $tempFile): array
+    private function downloadToTempFile(string $url, string $tempFile, ?string $curlResolveEntry): array
     {
-        $response = $this->requestFactory->request($url, 'GET', [
+        $options = [
             'timeout' => self::REQUEST_TIMEOUT,
             'http_errors' => false,
             'headers' => [
                 'User-Agent' => 'TYPO3-MCP-Server/1.0',
             ],
-            'allow_redirects' => [
-                'max' => 5,
-            ],
-        ]);
+            // Redirects are deliberately not followed. A redirect target is
+            // a separate authority and must be submitted as a new URL so it
+            // receives the full manifest and SSRF validation path.
+            'allow_redirects' => false,
+        ];
+        if ($curlResolveEntry !== null) {
+            $options['curl'] = [CURLOPT_RESOLVE => [$curlResolveEntry]];
+        }
+        $response = $this->requestFactory->request($url, 'GET', $options);
 
         $statusCode = $response->getStatusCode();
         if ($statusCode < 200 || $statusCode >= 300) {

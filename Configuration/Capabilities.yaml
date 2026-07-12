@@ -2,138 +2,289 @@ capabilities:
   version: '1.0'
   extension: mcp_server
 
-  # Subsystems this extension touches. Each subsystem is a coarse permission
-  # bucket. Tools are mapped to required subsystems below; the
-  # CapabilityManifestService refuses to run a tool whose required subsystems
-  # are not listed here. Removing a line below disables every tool that needs
-  # it — useful for hardening (e.g. delete `database:write` to make the MCP
-  # endpoint read-only).
+  # Public, coarse-grained TYPO3 capabilities. This section intentionally
+  # stays compatible with the capability-manifest 1.0 schema. MCP-specific
+  # runtime policy lives below in the namespaced `x-mcp` extension block.
   subsystems:
-    - database:read     # ReadTable, GetPage, GetPageTree, Search, GetTableSchema, ...
-    - database:write    # WriteTable, BulkWrite, CopyContent, ImportContent, ...
-    - database:schema   # GetTableSchema, GetFlexFormSchema, ListTables
-    - workspace:read    # ListWorkspaces, WorkspaceReview
-    - workspace:write   # PublishWorkspace, RollbackWorkspace
-    - file:read         # BrowseFiles, BrowseFolder, ListStorages, ReadFileMetadata, SearchFile, SearchMedia
-    - file:write        # UploadFile, UploadFileFromUrl, WriteFile
-    - cli:safe          # SafeCli, SolrIndexQueue (allowlisted commands only)
-    - extension:install # InstallExtensionTool (admin-only)
-    - site:write        # CreateSite, ManageRedirects
-    - render:frontend   # RenderRecord, GetPreviewUrl (HTTP fetch to own site)
-    - log:read          # GetSystemLog
-    - x402:payments     # X402 paid-content tools (only loaded if x402 keys exist)
-    - project:write     # ApplyShadcnPreset, CreateLocallang (rewrites local project / extension files)
+    - database:read
+    - database:write
+    - database:schema
+    - cache:write
+    - file:read
+    - file:write
+    - backend:module
+    - scheduler:task
+    - cli:command
+    - site:middleware
+    - auth:provider
 
-  # Prerequisite chains. A subsystem on the left is only "effective" when
-  # all subsystems on the right are also declared. Removing `database:write`
-  # therefore also disables every tool that needs `file:write` — uploaded
-  # files only make sense when there is content to attach them to. Removing
-  # `file:read` disables `file:write` (cannot blindly write where you cannot
-  # see). The chain is one of the central ideas from
-  # https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests
-  # adapted for runtime enforcement.
-  requires:
-    file:write:        [file:read, database:write]
-    workspace:write:   [workspace:read, database:write]
-    site:write:        [database:write]
-    render:frontend:   [database:read]
-    extension:install: [database:write]
-    database:write:    [database:read]
-    cli:safe:          [database:read]
-
-  # Network policy. Listeners (UploadFileFromUrl, RenderRecord) refuse
-  # outbound HTTP unless the target host or scheme is permitted here.
-  # Defense-in-depth: the IP-range check inside UploadFileFromUrl still
-  # blocks private/reserved networks even if `*` is added below.
-  network:
-    outbound:
-      # `self` is a sentinel: matches any host configured as a TYPO3 site base.
-      # Required for RenderRecord (it fetches preview URLs of pages on this
-      # very site).
-      - self
-      # To allow UploadFileFromUrl to reach the public web, uncomment one of:
-      #   - '*'                        # any host (still blocks private IPs)
-      #   - 'images.unsplash.com'      # exact host match
-      #   - '*.unsplash.com'           # wildcard subdomain match
-      # Default ships closed — operators opt in per deployment.
-
-  # Database tables the extension owns (none — MCP doesn't ship its own
-  # tables; OAuth tokens land in tx_mcpserver_domain_model_oauth*).
   database:
     own_tables:
-      - tx_mcpserver_domain_model_oauthclient
-      - tx_mcpserver_domain_model_oauthtoken
-      - tx_mcpserver_domain_model_oauthauthorization
-    # Tables MCP is allowed to write through DataHandler. The list mirrors
-    # TableAccessService::getAccessibleTables() filtering, so adding an entry
-    # here without TCA permissions still gets blocked at the DataHandler
-    # layer. The wildcard exists so an admin can opt out of the wildcard and
-    # specify exact tables for an even tighter policy.
-    writes:
-      - '*'
-    reads:
-      - '*'
+      - tx_mcpserver_oauth_clients
+      - tx_mcpserver_oauth_refresh_replay
+      - tx_mcpserver_oauth_codes
+      - tx_mcpserver_access_tokens
+    # MCP intentionally operates on arbitrary TCA tables, subject to TYPO3
+    # permissions, workspace rules, and the tool-level policy below.
+    reads: '*'
+    writes: '*'
 
-  # Required-by-tool mapping. The ToolRegistry consults this when a client
-  # calls a tool. Unlisted tools default to the union of `database:read` +
-  # `database:write` to fail closed. Add the tool name (matching
-  # `Tool->getName()`) on the left and the required subsystems on the right.
-  tools:
-    GetPageTree:        [database:read]
-    GetPage:            [database:read]
-    Search:             [database:read]
-    ListTables:         [database:schema]
-    GetTableSchema:     [database:schema]
-    GetFlexFormSchema:  [database:schema]
-    ReadTable:          [database:read]
-    WriteTable:         [database:write]
-    BulkWrite:          [database:write]
-    AttachImage:        [database:write, file:read]
-    CopyContent:        [database:write, database:read]
-    ImportContent:      [database:write]
-    ImportFromUrl:      [database:write, file:write]
-    ManageRedirects:    [site:write]
-    CreateSite:         [site:write]
-    SiteSet:            [site:write]
-    GetSystemLog:       [log:read]
-    ContentAudit:       [database:read]
-    ListWorkspaces:     [workspace:read]
-    WorkspaceReview:    [workspace:read]
-    PublishWorkspace:   [workspace:write]
-    RollbackWorkspace:  [workspace:write]
-    BrowseFiles:        [file:read]
-    BrowseFolder:       [file:read]
-    ListStorages:       [file:read]
-    ReadFileMetadata:   [file:read]
-    SearchFile:         [file:read]
-    SearchMedia:        [file:read]
-    UploadFile:         [file:write]
-    UploadFileFromUrl:  [file:write]
-    WriteFile:          [file:write]
-    SafeCli:            [cli:safe]
-    SolrIndexQueue:     [cli:safe, database:read]
-    InstallExtension:   [extension:install]
-    GetPreviewUrl:      [database:read]
-    RenderRecord:       [database:read, render:frontend]
-    GetCapabilities:    []
-    ListPaidContent:    [x402:payments, database:read]
-    GetPaidContent:     [x402:payments, database:read]
-    GetPaymentStats:    [x402:payments, database:read]
-    ApplyShadcnPreset:  [project:write]
-    SiteSettings:       [site:write]
-    ListViewHelpers:    []
-    GetViewHelperDocumentation: []
-    CreateLocallang:    [project:write]
+  network:
+    outbound:
+      # `self` is a runtime sentinel resolved against configured TYPO3 sites.
+      # Operators may add exact hosts or wildcard hosts such as
+      # `*.unsplash.com`; `any` is normalized to the runtime wildcard `*`.
+      - host: self
+        purpose: Render workspace previews through the configured TYPO3 site
+        protocol: https
 
-  # Risk score: cumulative weight of declared subsystems. Used by the
-  # GetCapabilities tool's `risk` field. Production reviewers can use this as
-  # a single number to compare configurations.
+  filesystem:
+    paths:
+      - '1:/mcp/'
+      - 'Resources/Private/Skills/'
+      # Dev-site/admin project tooling can update Composer, site, frontend,
+      # language, and installed-skill files below the project/working root.
+      - './'
+      - '<working-directory>/.claude/skills/'
+    writes: true
+
+  events:
+    listens:
+      - Hn\McpServer\Event\BeforeRecordReadEvent
+      - Hn\McpServer\Event\AfterRecordReadEvent
+      - Hn\McpServer\Event\AfterSchemaLoadEvent
+    dispatches:
+      - Hn\McpServer\Event\BeforeRecordReadEvent
+      - Hn\McpServer\Event\AfterRecordReadEvent
+      - Hn\McpServer\Event\BeforeRecordWriteEvent
+      - Hn\McpServer\Event\AfterRecordWriteEvent
+      - Hn\McpServer\Event\AfterSchemaLoadEvent
+
+  permissions:
+    backend_modules:
+      - user_mcp_server
+    tables_modify:
+      - '*'
+    custom:
+      - workspace-safe-record-writes
+      - mcp-file-sandbox
+
   risk:
     level: high
     justification: |
-      MCP exposes structured CRUD on every workspace-capable TCA table plus
-      file uploads. Risk is offset by: (a) OAuth + backend session, (b)
-      workspace staging by default, (c) admin-only gating via #[AdminOnly] on
-      destructive tools, (d) outbound IP allowlist for SSRF. Lower the risk
-      by removing `database:write`, `file:write`, or `extension:install`
-      lines above.
+      MCP exposes authenticated, permission-checked CRUD on workspace-capable
+      TCA tables, sandboxed file operations, a backend module, CLI projections,
+      OAuth endpoints, and a request middleware. Runtime policy in `x-mcp`
+      adds finer gates for each tool and outbound host.
+
+  # Vendor extension to the public capability-manifest schema. These entries
+  # are both machine-readable inventory and runtime policy; they are not new
+  # values in the public `subsystems` enum.
+  x-mcp:
+    protocol:
+      stable_version: '2025-11-25'
+      preview_version: '2026-07-28'
+      compatibility: dual-era
+      transports:
+        - streamable-http
+        - stdio
+
+    integrations:
+      abilities:
+        package: webconsulting/typo3-abilities
+        status: optional
+        projections: [cli, rest]
+        catalog_abilities:
+          - typo3-mcp/list-tools
+          - typo3-mcp/describe-tool
+          - typo3-mcp/execute-tool
+          - typo3-mcp/list-skills
+          - typo3-mcp/get-skill
+      sg_apicore:
+        package: sgalinski/sg-apicore
+        source: https://github.com/dirnbauer/sg_apicore
+        compatible: '^14.1'
+        status: optional
+        api: /api/abilities/v1
+        features: [openapi, scopes, backend-user-tokens, tenants, rate-limits, request-ids, redacted-logs]
+
+    runtime_subsystems:
+      - workspace:read
+      - workspace:write
+      - cli:safe
+      - extension:install
+      - site:write
+      - render:frontend
+      - log:read
+      - x402:payments
+      - project:write
+      # Subprocess-owned network effects cannot pass through the PHP HTTP
+      # allowlist. Package-manager access is dev-site/admin only; scheduler
+      # access uses a preconfigured, UID-validated TYPO3 task.
+      - network:package-manager
+      - network:scheduler
+
+    # A runtime subsystem is effective only when its complete prerequisite
+    # chain is declared. Removing a coarse public capability therefore also
+    # disables dependent MCP tools.
+    requires:
+      file:write:        [file:read, database:write]
+      workspace:write:   [workspace:read, database:write]
+      site:write:        [database:write]
+      render:frontend:   [database:read]
+      extension:install: [database:write]
+      database:write:    [database:read]
+      cli:safe:          [database:read]
+      cache:write:       [database:write]
+      scheduler:task:    [database:write]
+      project:write:     [database:write]
+      network:package-manager: [project:write]
+      network:scheduler: [scheduler:task]
+
+    tools:
+      GetPageTree:        [database:read]
+      GetPage:            [database:read]
+      Search:             [database:read]
+      ListTables:         [database:schema]
+      GetTableSchema:     [database:schema]
+      GetFlexFormSchema:  [database:schema]
+      ReadTable:          [database:read]
+      WriteTable:         [database:write]
+      BulkWrite:          [database:write]
+      AttachImage:        [database:write, file:read]
+      CopyContent:        [database:write, database:read]
+      ImportContent:      [database:write]
+      ImportFromUrl:      [database:write, file:write]
+      ManageRedirects:    [site:write]
+      CreateSite:         [site:write]
+      SiteSet:            [site:write]
+      GetSystemLog:       [log:read]
+      ContentAudit:       [database:read]
+      ListWorkspaces:     [workspace:read]
+      WorkspaceReview:    [workspace:read]
+      PublishWorkspace:   [workspace:write]
+      RollbackWorkspace:  [workspace:write]
+      BrowseFiles:        [file:read]
+      BrowseFolder:       [file:read]
+      ListStorages:       [file:read]
+      ReadFileMetadata:   [file:read]
+      SearchFile:         [file:read]
+      SearchMedia:        [file:read]
+      UploadFile:         [file:write]
+      UploadFileFromUrl:  [file:write]
+      WriteFile:          [file:write]
+      SafeCli:            [cli:safe, database:write, cache:write]
+      SolrIndexQueue:     [cli:safe, database:read, database:write, scheduler:task, network:scheduler]
+      InstallExtension:   [extension:install, project:write, network:package-manager]
+      GetPreviewUrl:      [database:read]
+      RenderRecord:       [database:read, render:frontend]
+      GetCapabilities:    []
+      ListPaidContent:    [x402:payments, database:read]
+      GetPaidContent:     [x402:payments, database:read]
+      GetPaymentStats:    [x402:payments, database:read]
+      ApplyShadcnPreset:  [project:write, network:package-manager]
+      SiteSettings:       [site:write, cache:write]
+      ListViewHelpers:    []
+      GetViewHelperDocumentation: []
+      CreateLocallang:    [project:write]
+
+    # CompatibleToolAdapter rejects every third-party tool unless its exact
+    # runtime name is declared here. This optional read-only tool is supplied
+    # by webconsulting/typo3-abilities when that integration is installed.
+    external_tools:
+      ability_system_site-info: [database:read]
+
+    # Exact Symfony command inventory. Tool projections identify the MCP tool
+    # they invoke; infrastructure commands declare their role instead.
+    commands:
+      mcp:server:                       {kind: transport, transport: stdio}
+      mcp:test:                         {kind: diagnostic}
+      mcp:oauth:                        {kind: oauth-management}
+      mcp:tool:                         {kind: tool-dispatch}
+      mcp:tool:list:                    {kind: tool-discovery}
+      mcp:prompt:list:                  {kind: prompt-discovery}
+      mcp:prompt:get:                   {kind: prompt-renderer}
+      mcp:read-table:                   {kind: tool, tool: ReadTable}
+      mcp:write-table:                  {kind: tool, tool: WriteTable}
+      mcp:get-page:                     {kind: tool, tool: GetPage}
+      mcp:get-page-tree:                {kind: tool, tool: GetPageTree}
+      mcp:search:                       {kind: tool, tool: Search}
+      mcp:list-tables:                  {kind: tool, tool: ListTables}
+      mcp:get-table-schema:             {kind: tool, tool: GetTableSchema}
+      mcp:list-workspaces:              {kind: tool, tool: ListWorkspaces}
+      mcp:publish-workspace:            {kind: tool, tool: PublishWorkspace}
+      mcp:get-capabilities:             {kind: tool, tool: GetCapabilities}
+      mcp:render-record:                {kind: tool, tool: RenderRecord}
+      mcp:get-preview-url:              {kind: tool, tool: GetPreviewUrl}
+      mcp:site-set:                     {kind: tool, tool: SiteSet}
+      mcp:apply-shadcn-preset:          {kind: tool, tool: ApplyShadcnPreset}
+      mcp:attach-image:                 {kind: tool, tool: AttachImage}
+      mcp:browse-files:                 {kind: tool, tool: BrowseFiles}
+      mcp:browse-folder:                {kind: tool, tool: BrowseFolder}
+      mcp:bulk-write:                   {kind: tool, tool: BulkWrite}
+      mcp:content-audit:                {kind: tool, tool: ContentAudit}
+      mcp:copy-content:                 {kind: tool, tool: CopyContent}
+      mcp:create-site:                  {kind: tool, tool: CreateSite}
+      mcp:get-flex-form-schema:         {kind: tool, tool: GetFlexFormSchema}
+      mcp:get-paid-content:             {kind: tool, tool: GetPaidContent}
+      mcp:get-payment-stats:            {kind: tool, tool: GetPaymentStats}
+      mcp:get-system-log:               {kind: tool, tool: GetSystemLog}
+      mcp:import-content:               {kind: tool, tool: ImportContent}
+      mcp:import-from-url:               {kind: tool, tool: ImportFromUrl}
+      mcp:install-extension:             {kind: tool, tool: InstallExtension}
+      mcp:list-paid-content:             {kind: tool, tool: ListPaidContent}
+      mcp:list-storages:                 {kind: tool, tool: ListStorages}
+      mcp:manage-redirects:              {kind: tool, tool: ManageRedirects}
+      mcp:read-file-metadata:            {kind: tool, tool: ReadFileMetadata}
+      mcp:rollback-workspace:            {kind: tool, tool: RollbackWorkspace}
+      mcp:safe-cli:                      {kind: tool, tool: SafeCli}
+      mcp:solr-index-queue:              {kind: tool, tool: SolrIndexQueue}
+      mcp:search-file:                   {kind: tool, tool: SearchFile}
+      mcp:search-media:                  {kind: tool, tool: SearchMedia}
+      mcp:upload-file:                   {kind: tool, tool: UploadFile}
+      mcp:upload-file-from-url:          {kind: tool, tool: UploadFileFromUrl}
+      mcp:workspace-review:              {kind: tool, tool: WorkspaceReview}
+      mcp:install-editor-skills:         {kind: skill-installer}
+      mcp:tca-resource:                  {kind: resource-reader, resource: 'typo3-mcp:///tca'}
+      mcp:site-settings:                 {kind: tool, tool: SiteSettings}
+      mcp:list-viewhelpers:              {kind: tool, tool: ListViewHelpers}
+      mcp:get-viewhelper-documentation:  {kind: tool, tool: GetViewHelperDocumentation}
+      mcp:create-locallang:              {kind: tool, tool: CreateLocallang}
+      mcp:write-file:                    {kind: tool, tool: WriteFile}
+
+    # Agent Skills are discoverable workflow documents. They are not an MCP
+    # protocol capability; clients consume them as resources/prompts or install
+    # them through the command declared above.
+    skills:
+      typo3-content-edit:
+        source: Resources/Private/Skills/typo3-content-edit/SKILL.md
+        user_invocable: true
+        tools:
+          - GetCapabilities
+          - ListWorkspaces
+          - GetPage
+          - GetPageTree
+          - GetTableSchema
+          - GetFlexFormSchema
+          - WriteTable
+          - BulkWrite
+          - AttachImage
+          - ImportContent
+          - ImportFromUrl
+          - ContentAudit
+          - GetPreviewUrl
+          - RenderRecord
+          - WorkspaceReview
+          - PublishWorkspace
+      typo3-translate-page:
+        source: Resources/Private/Skills/typo3-translate-page/SKILL.md
+        user_invocable: true
+        tools:
+          - GetCapabilities
+          - ListWorkspaces
+          - GetPage
+          - GetTableSchema
+          - WriteTable
+          - ContentAudit
+          - WorkspaceReview
+          - PublishWorkspace

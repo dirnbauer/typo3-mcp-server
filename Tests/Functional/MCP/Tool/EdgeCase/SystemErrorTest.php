@@ -29,23 +29,15 @@ final class SystemErrorTest extends AbstractFunctionalTest
      */
     public function testMissingTcaConfiguration(): void
     {
-        // Temporarily remove TCA for a table
-        $originalTca = $GLOBALS['TCA']['tt_content'] ?? [];
-        unset($GLOBALS['TCA']['tt_content']);
+        // TcaSchemaFactory is immutable after container compilation, so use a
+        // genuinely unknown table instead of mutating the legacy global TCA.
+        $result = $this->readTool->execute([
+            'table' => 'tx_missing_tca',
+            'uid' => 1,
+        ]);
 
-        try {
-            $result = $this->readTool->execute([
-                'table' => 'tt_content',
-                'uid' => 1,
-            ]);
-
-            self::assertTrue($result->isError);
-            self::assertStringContainsString('tt_content', $result->content[0]->text);
-
-        } finally {
-            // Restore TCA
-            $GLOBALS['TCA']['tt_content'] = $originalTca;
-        }
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('tx_missing_tca', $result->content[0]->text);
     }
 
     /**

@@ -7,7 +7,7 @@ setup('authenticate as admin', async ({ page }) => {
   await page.goto(config.baseUrl + '/typo3/');
   await page.waitForLoadState('networkidle');
 
-  // TYPO3 v13 login form
+  // TYPO3 v14 login form
   await page.getByLabel('Username').fill(config.admin.username);
   await page.getByLabel('Password').fill(config.admin.password);
   await page.getByRole('button', { name: /log ?in/i }).click();

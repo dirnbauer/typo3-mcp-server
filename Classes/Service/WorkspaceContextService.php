@@ -43,11 +43,20 @@ final readonly class WorkspaceContextService
     public function switchToOptimalWorkspace(BackendUserAuthentication $beUser): int
     {
         $currentWorkspace = $beUser->workspace;
-        if ($currentWorkspace > 0) {
+        if ($currentWorkspace > 0 && $this->canWriteWorkspace($beUser, $currentWorkspace)) {
+            $this->setWorkspaceContext($beUser, $currentWorkspace);
+
             return $currentWorkspace;
         }
 
-        if ($this->localMode->allowsLiveWrites()) {
+        if ($currentWorkspace > 0) {
+            $this->logger->warning('Ignoring inaccessible or non-writable preselected workspace', [
+                'userId' => is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0,
+                'workspaceId' => $currentWorkspace,
+            ]);
+        }
+
+        if ($this->localMode->allowsLiveWrites() && $this->canWriteWorkspace($beUser, 0)) {
             $this->setWorkspaceContext($beUser, 0);
 
             return 0;
@@ -55,13 +64,60 @@ final readonly class WorkspaceContextService
 
         $workspaceId = $this->getFirstWritableWorkspace($beUser);
 
-        if ($workspaceId === 0 && $this->canUserCreateWorkspaces($beUser)) {
+        if ($workspaceId === 0 && $this->canProvisionWorkspace($beUser)) {
             $workspaceId = $this->createMcpWorkspace($beUser);
+        }
+
+        if ($workspaceId <= 0 || !$this->canWriteWorkspace($beUser, $workspaceId)) {
+            throw new AccessDeniedException('writable workspace', 'select');
         }
 
         $this->setWorkspaceContext($beUser, $workspaceId);
 
         return $workspaceId;
+    }
+
+    /**
+     * Establish a workspace overlay for authentication and read-only tools
+     * without requiring the user to own a writable draft. An explicit draft
+     * still has to be accessible; an inaccessible preselected context from an
+     * HTTP header is ignored and safely falls back to live reads.
+     */
+    public function switchToReadWorkspace(
+        BackendUserAuthentication $beUser,
+        ?int $requestedWorkspaceId = null,
+    ): int {
+        $workspaceId = $requestedWorkspaceId ?? $beUser->workspace;
+        if ($workspaceId <= 0) {
+            $this->setLiveReadContext($beUser);
+            return 0;
+        }
+
+        if ($this->canAccessWorkspace($beUser, $workspaceId)) {
+            $this->setWorkspaceContext($beUser, $workspaceId);
+            return $workspaceId;
+        }
+
+        if ($requestedWorkspaceId !== null) {
+            throw new AccessDeniedException(sprintf('workspace %d', $workspaceId), 'read');
+        }
+
+        $this->logger->warning('Ignoring inaccessible preselected read workspace', [
+            'userId' => is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0,
+            'workspaceId' => $workspaceId,
+        ]);
+        $this->setLiveReadContext($beUser);
+        return 0;
+    }
+
+    private function setLiveReadContext(BackendUserAuthentication $beUser): void
+    {
+        // setTemporaryWorkspace(0) checks live *edit* permission. Read-only
+        // authentication still needs a coherent live overlay without gaining
+        // any write rights, so update only the workspace state/aspect here.
+        $beUser->workspace = 0;
+        $beUser->user['workspace_id'] = 0;
+        $this->context->setAspect('workspace', new WorkspaceAspect(0));
     }
 
     /**
@@ -76,7 +132,7 @@ final readonly class WorkspaceContextService
     public function switchToWorkspace(BackendUserAuthentication $beUser, int $workspaceId): int
     {
         if ($workspaceId === 0) {
-            if (!$this->localMode->allowsLiveWrites()) {
+            if (!$this->localMode->allowsLiveWrites() || !$this->canWriteWorkspace($beUser, 0)) {
                 throw new AccessDeniedException('live workspace (set localUnsafeMode=on or run inside DDEV)', 'switch');
             }
             $this->setWorkspaceContext($beUser, 0);
@@ -87,8 +143,7 @@ final readonly class WorkspaceContextService
             throw new AccessDeniedException('workspace', 'switch');
         }
 
-        $workspaceRecord = $beUser->checkWorkspace($workspaceId);
-        if (!$workspaceRecord || !$this->hasWriteAccess($workspaceRecord)) {
+        if (!$this->canWriteWorkspace($beUser, $workspaceId)) {
             throw new AccessDeniedException(
                 sprintf('workspace %d (%s)', $workspaceId, $this->formatAvailableWorkspaces($beUser)),
                 'write',
@@ -348,35 +403,51 @@ final readonly class WorkspaceContextService
     private function hasWriteAccess(array $workspaceRecord): bool
     {
         $access = is_string($workspaceRecord['_ACCESS'] ?? null) ? $workspaceRecord['_ACCESS'] : '';
-        return in_array($access, ['admin', 'owner', 'member'], true);
+        return in_array($access, ['admin', 'owner', 'member', 'online'], true);
+    }
+
+    private function canWriteWorkspace(BackendUserAuthentication $beUser, int $workspaceId): bool
+    {
+        try {
+            $workspaceRecord = $beUser->checkWorkspace($workspaceId);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        if (!$workspaceRecord) {
+            return false;
+        }
+
+        return $this->hasWriteAccess($workspaceRecord);
+    }
+
+    private function canAccessWorkspace(BackendUserAuthentication $beUser, int $workspaceId): bool
+    {
+        try {
+            return (bool)$beUser->checkWorkspace($workspaceId);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     private function getWorkspaceFromDatabase(BackendUserAuthentication $beUser): int
     {
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_workspace');
-            $userId = (int)($beUser->user['uid'] ?? 0);
-
-            $workspace = $queryBuilder
+            $workspaces = $queryBuilder
                 ->select('uid')
                 ->from('sys_workspace')
-                ->where(
-                    $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('adminusers', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
-                        $queryBuilder->expr()->like('adminusers', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
-                        $queryBuilder->expr()->eq('members', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
-                        $queryBuilder->expr()->like('members', $queryBuilder->createNamedParameter('%,' . $userId . ',%')),
-                    ),
-                )
-                ->andWhere($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
+                ->where($queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)))
                 ->orderBy('uid', 'ASC')
-                ->setMaxResults(1)
                 ->executeQuery()
-                ->fetchAssociative();
+                ->fetchAllAssociative();
 
-            if (is_array($workspace)) {
+            foreach ($workspaces as $workspace) {
                 $workspaceUid = $workspace['uid'] ?? 0;
-                return is_numeric($workspaceUid) ? (int)$workspaceUid : 0;
+                $workspaceId = is_numeric($workspaceUid) ? (int)$workspaceUid : 0;
+                if ($workspaceId > 0 && $this->canWriteWorkspace($beUser, $workspaceId)) {
+                    return $workspaceId;
+                }
             }
         } catch (\Throwable) {
         }
@@ -384,18 +455,25 @@ final readonly class WorkspaceContextService
         return 0;
     }
 
-    private function canUserCreateWorkspaces(BackendUserAuthentication $beUser): bool
+    private function canProvisionWorkspace(BackendUserAuthentication $beUser): bool
     {
-        if ($beUser->isAdmin()) {
-            return true;
-        }
-
-        return $beUser->check('modules', 'web_WorkspacesWorkspaces');
+        // Backend module visibility only controls access to TYPO3's Workspaces
+        // UI. It is not an authorization boundary for editing records in an
+        // already assigned workspace. MCP provisions an isolated draft as a
+        // safety mechanism; normal table, field, page and DataHandler checks
+        // still decide whether the requested record operation is permitted.
+        return is_numeric($beUser->user['uid'] ?? null) && (int)$beUser->user['uid'] > 0;
     }
 
     private function createMcpWorkspace(BackendUserAuthentication $beUser): int
     {
         try {
+            $rawUserId = $beUser->user['uid'] ?? null;
+            if (!is_numeric($rawUserId) || (int)$rawUserId <= 0) {
+                return 0;
+            }
+            $userId = (int)$rawUserId;
+
             $realName = $beUser->user['realName'] ?? '';
             $username = $beUser->user['username'] ?? 'unknown_user';
             $workspaceTitle = 'MCP Workspace for ' . ($realName ?: $username);
@@ -404,7 +482,9 @@ final readonly class WorkspaceContextService
                 'pid' => 0,
                 'title' => $workspaceTitle,
                 'description' => 'Automatically created workspace for Model Context Protocol operations',
-                'adminusers' => $beUser->user['uid'] ?? 0,
+                // TYPO3 group fields store typed relation tokens. A bare UID
+                // is never recognized by BackendUserAuthentication::checkWorkspace().
+                'adminusers' => 'be_users_' . $userId,
                 'members' => '',
                 'db_mountpoints' => '',
                 'file_mountpoints' => '',
@@ -434,7 +514,7 @@ final readonly class WorkspaceContextService
 
             $newUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
 
-            if ($newUid && !$dataHandler->errorLog) {
+            if (is_numeric($newUid) && (int)$newUid > 0 && $dataHandler->errorLog === []) {
                 return (int)$newUid;
             }
         } catch (\Throwable $e) {

@@ -25,33 +25,38 @@ final readonly class OAuthAuthServerMetadataEndpoint
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
+        $corsRejection = $this->rejectDisallowedCorsRequest($request);
+        if ($corsRejection instanceof ResponseInterface) {
+            return $corsRejection;
+        }
+
         // Handle preflight OPTIONS request
         if ($request->getMethod() === 'OPTIONS') {
-            return $this->handlePreflightRequest();
+            return $this->handlePreflightRequest($request);
         }
 
         $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
 
         $metadata = $this->oauthService->getMetadata($baseUrl);
 
-        return $this->createJsonResponse($metadata);
+        return $this->createJsonResponse($metadata, $request);
     }
 
     /**
      * @param array<string, mixed> $data
      */
-    private function createJsonResponse(array $data): ResponseInterface
+    private function createJsonResponse(array $data, ServerRequestInterface $request): ResponseInterface
     {
         $response = new JsonResponse($data);
 
         // Add CORS headers
-        $response = $this->addCorsHeaders($response);
+        $response = $this->addCorsHeaders($response, $request);
 
         // Add cache headers (short cache for dynamic content)
         $response = $response
             ->withHeader('Cache-Control', 'public, max-age=300') // 5 minutes
             ->withHeader('Vary', 'Origin');
 
-        return $response;
+        return $this->addSecurityHeaders($response);
     }
 }

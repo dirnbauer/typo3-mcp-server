@@ -36,10 +36,10 @@ final class SearchTool extends AbstractRecordTool
     protected function getToolSchema(): array
     {
         $schema = [
-            'description' => 'Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. ' .
-                'Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, ' .
-                'or for thorough duplicate checking after initial exploration. ' .
-                'Pass either "query" (single string or array of strings) or "terms" (array of strings) — both are accepted.',
+            'description' => 'Search for records across workspace-capable TYPO3 tables using TCA-based searchable fields. '
+                . 'Uses SQL LIKE queries for pattern matching. Useful when you need to find pages or content that might not be visible in the page tree, '
+                . 'or for thorough duplicate checking after initial exploration. '
+                . 'Pass either "query" (single string or array of strings) or "terms" (array of strings) — both are accepted.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [

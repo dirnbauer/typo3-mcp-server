@@ -20,6 +20,10 @@ abstract class AbstractRecordTool extends AbstractTool
      */
     private ?int $requestedWorkspaceId = null;
 
+    private bool $readWorkspaceInitialized = false;
+
+    private bool $writeWorkspaceInitialized = false;
+
     public function __construct(
         protected readonly TableAccessService $tableAccessService,
         protected readonly WorkspaceContextService $workspaceContextService,
@@ -38,6 +42,8 @@ abstract class AbstractRecordTool extends AbstractTool
         } else {
             $this->requestedWorkspaceId = null;
         }
+        $this->readWorkspaceInitialized = false;
+        $this->writeWorkspaceInitialized = false;
         return parent::executeInternal($params);
     }
 
@@ -91,11 +97,6 @@ abstract class AbstractRecordTool extends AbstractTool
         $languageServiceFactory = GeneralUtility::makeInstance(LanguageServiceFactory::class);
         $GLOBALS['LANG'] = $languageServiceFactory->createFromUserPreferences($backendUser);
 
-        if ($this->requestedWorkspaceId !== null) {
-            $this->workspaceContextService->switchToWorkspace($backendUser, $this->requestedWorkspaceId);
-        } else {
-            $this->workspaceContextService->switchToOptimalWorkspace($backendUser);
-        }
     }
 
     /**
@@ -108,6 +109,39 @@ abstract class AbstractRecordTool extends AbstractTool
     protected function ensureTableAccess(string $table, string $operation = 'read'): void
     {
         $this->tableAccessService->validateTableAccess($table, $operation);
+        // Reject an inaccessible table before selecting or provisioning a
+        // workspace. This keeps errors tool-specific and avoids creating a
+        // draft as a side effect of an operation that can never be allowed.
+        $this->ensureWorkspaceForOperation($operation);
+    }
+
+    /**
+     * Select the requested or automatic workspace for tools whose operation
+     * is not tied to one table (for example publish and rollback).
+     */
+    final protected function ensureWorkspaceForOperation(string $operation): void
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            return;
+        }
+
+        $requiresWrite = !in_array($operation, ['read', 'schema'], true);
+        if ($requiresWrite && !$this->writeWorkspaceInitialized) {
+            if ($this->requestedWorkspaceId !== null) {
+                $this->workspaceContextService->switchToWorkspace($backendUser, $this->requestedWorkspaceId);
+            } else {
+                $this->workspaceContextService->switchToOptimalWorkspace($backendUser);
+            }
+            $this->readWorkspaceInitialized = true;
+            $this->writeWorkspaceInitialized = true;
+            return;
+        }
+
+        if (!$requiresWrite && !$this->readWorkspaceInitialized) {
+            $this->workspaceContextService->switchToReadWorkspace($backendUser, $this->requestedWorkspaceId);
+            $this->readWorkspaceInitialized = true;
+        }
     }
     /**
      * Create a successful result with text content

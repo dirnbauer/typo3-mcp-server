@@ -13,7 +13,6 @@ use Hn\McpServer\Exception\DatabaseException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
-use Hn\McpServer\Service\TableTcaResolver;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -22,6 +21,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final readonly class RecordReadQueryService
@@ -36,7 +36,7 @@ final readonly class RecordReadQueryService
     public function __construct(
         private ConnectionPool $connectionPool,
         private TableAccessService $tableAccessService,
-        private TableTcaResolver $tcaResolver,
+        private TcaSchemaFactory $tcaSchemaFactory,
         private RecordFieldReadConverter $fieldReadConverter,
         private LanguageService $languageService,
     ) {}
@@ -56,11 +56,6 @@ final readonly class RecordReadQueryService
         return $this->getBackendUserForRelations();
     }
 
-    private function getTableCtrlArray(string $table): array
-    {
-        return $this->tcaResolver->getCtrl($table);
-    }
-
     private function getTableLabel(string $table): string
     {
         if (!$this->tableExists($table)) {
@@ -72,7 +67,7 @@ final readonly class RecordReadQueryService
 
     private function tableExists(string $table): bool
     {
-        return $this->tcaResolver->hasTable($table);
+        return $this->tableAccessService->hasTable($table);
     }
 
     private function logException(\Throwable $e, string $context): void
@@ -97,7 +92,10 @@ final readonly class RecordReadQueryService
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceDeletePlaceholderRestriction(
+                $this->getBackendUser()->workspace ?? 0,
+                $this->tcaSchemaFactory,
+            ));
 
         // Always include hidden records (like the TYPO3 backend does)
 
@@ -107,8 +105,7 @@ final readonly class RecordReadQueryService
 
         // Filter by pid if specified, but skip for root-level-only tables (rootLevel=1)
         // Root-level tables like sys_file store all records at pid=0
-        $rootLevel = $this->getTableCtrlArray($table)['rootLevel'] ?? 0;
-        $isRootLevelOnly = ($rootLevel === 1 || $rootLevel === true);
+        $isRootLevelOnly = $this->tableAccessService->isRootLevelOnly($table);
         if ($pid !== null && $this->tableHasPidField($table) && !$isRootLevelOnly) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, ParameterType::INTEGER))
@@ -133,7 +130,7 @@ final readonly class RecordReadQueryService
             // 2. The UID is a live UID (for existing records with workspace versions)
 
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0 && !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false)) {
+            if ($currentWorkspace > 0 && $this->tableAccessService->isWorkspaceCapable($table)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $queryBuilder->andWhere(
@@ -174,7 +171,10 @@ final readonly class RecordReadQueryService
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceDeletePlaceholderRestriction(
+                $this->getBackendUser()->workspace ?? 0,
+                $this->tcaSchemaFactory,
+            ));
 
         $countQueryBuilder->count('uid')->from($table);
 
@@ -199,7 +199,7 @@ final readonly class RecordReadQueryService
             $uids = is_array($uid) ? $uid : [$uid];
             // Apply the same UID filtering logic for count query
             $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
-            if ($currentWorkspace > 0 && !empty($this->getTableCtrlArray($table)['versioningWS'] ?? false)) {
+            if ($currentWorkspace > 0 && $this->tableAccessService->isWorkspaceCapable($table)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
                 $countQueryBuilder->andWhere(
@@ -356,10 +356,10 @@ final readonly class RecordReadQueryService
             return [];
         }
 
-        // Build a lowercase → actual name map from TCA columns and essential fields
+        // Build a lowercase → actual name map from Schema API fields and essential fields.
         $knownFields = [];
-        foreach (array_keys($GLOBALS['TCA'][$table]['columns'] ?? []) as $columnName) {
-            $knownFields[strtolower((string)$columnName)] = $columnName;
+        foreach ($this->tableAccessService->getFieldNames($table) as $fieldName) {
+            $knownFields[strtolower($fieldName)] = $fieldName;
         }
         foreach ($this->tableAccessService->getEssentialFields($table) as $essentialName) {
             $knownFields[strtolower($essentialName)] = $essentialName;
@@ -384,9 +384,9 @@ final readonly class RecordReadQueryService
      */
     public function applyFilters(QueryBuilder $queryBuilder, array $filters, string $table): void
     {
-        // Build set of valid field names for this table (TCA columns + essential fields)
+        // Build set of valid field names for this table (Schema API fields + essential fields)
         $essentialFields = $this->tableAccessService->getEssentialFields($table);
-        $validFields = array_merge(array_keys($GLOBALS['TCA'][$table]['columns'] ?? []), $essentialFields);
+        $validFields = array_merge($this->tableAccessService->getFieldNames($table), $essentialFields);
         $validFieldsLower = [];
         foreach ($validFields as $fieldName) {
             $validFieldsLower[strtolower((string)$fieldName)] = $fieldName;
@@ -555,7 +555,7 @@ final readonly class RecordReadQueryService
         if ($workspaceId <= 0) {
             return $records;
         }
-        if (empty($this->getTableCtrlArray($table)['versioningWS'] ?? false)) {
+        if (!$this->tableAccessService->isWorkspaceCapable($table)) {
             return $records;
         }
 

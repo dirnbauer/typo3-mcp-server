@@ -27,7 +27,7 @@ usage() {
 Usage: $(basename "$0") [options] [-- phpunit-args]
 
 Options:
-    -p <version>    PHP version: 8.2, 8.3 (default), 8.4, 8.5
+    -p <version>    PHP version: 8.3 (default), 8.4, 8.5
     -s <suite>      Test suite: functional (default), lint, e2e
     -n, --no-docker Run e2e locally without Docker (uses host PHP, SQLite, local Playwright)
     -h, --help      Show this help
@@ -79,8 +79,8 @@ IMAGE="php:${PHP_VERSION}-cli"
 
 # Validate inputs
 case "${PHP_VERSION}" in
-    8.2|8.3|8.4|8.5) ;;
-    *) echo "Error: unsupported PHP version '${PHP_VERSION}'. Use 8.2, 8.3, 8.4, or 8.5." >&2; exit 1 ;;
+    8.3|8.4|8.5) ;;
+    *) echo "Error: unsupported PHP version '${PHP_VERSION}'. Use 8.3, 8.4, or 8.5." >&2; exit 1 ;;
 esac
 
 case "${TEST_SUITE}" in

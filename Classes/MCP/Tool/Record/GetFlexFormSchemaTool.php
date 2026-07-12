@@ -94,9 +94,9 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
         // TYPO3 14 removed ds_pointerField and the multi-entry ds array.
         // DataStructures are now attached to a record type via
         // `types.{type}.columnsOverrides.{field}.config.ds` (single DS per
-        // type). On TYPO3 13 the same field still uses the central `ds` map
-        // keyed by `<list_type>` or `*,<list_type>` (and form_formframework
-        // historically uses `*,form_formframework`). We try every shape.
+        // type). We also accept the historical central `ds` map because a
+        // third-party extension can still provide migrated or compatibility
+        // TCA in that shape. We try every supported input shape.
         $dsValue = $GLOBALS['TCA'][$table]['types'][$identifier]['columnsOverrides'][$field]['config']['ds']
             ?? ($flexFormConfig['ds'][$identifier] ?? null)
             ?? ($flexFormConfig['ds']['*,' . $identifier] ?? null)

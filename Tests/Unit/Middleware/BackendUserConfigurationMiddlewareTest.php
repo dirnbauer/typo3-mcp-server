@@ -31,7 +31,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
     #[Test]
     public function processRepairsMissingUcDefaultsAndPersistsThem(): void
     {
-        $backendUser = new class () extends BackendUserAuthentication {
+        $backendUser = new class extends BackendUserAuthentication {
             public int $writeUcCalls = 0;
 
             public function writeUC(): void
@@ -43,7 +43,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         $backendUser->uc = ['lang' => 'de'];
         $GLOBALS['BE_USER'] = $backendUser;
 
-        $response = $this->createMock(ResponseInterface::class);
+        $response = self::createStub(ResponseInterface::class);
         $handler = new class ($response) implements RequestHandlerInterface {
             public int $calls = 0;
 
@@ -58,7 +58,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
 
         $subject = new BackendUserConfigurationMiddleware();
         $result = $subject->process(
-            $this->createMock(ServerRequestInterface::class),
+            self::createStub(ServerRequestInterface::class),
             $handler,
         );
 
@@ -73,7 +73,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
     #[Test]
     public function processLeavesCompleteUcUntouched(): void
     {
-        $backendUser = new class () extends BackendUserAuthentication {
+        $backendUser = new class extends BackendUserAuthentication {
             public int $writeUcCalls = 0;
 
             public function writeUC(): void
@@ -91,7 +91,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         ];
         $GLOBALS['BE_USER'] = $backendUser;
 
-        $response = $this->createMock(ResponseInterface::class);
+        $response = self::createStub(ResponseInterface::class);
         $handler = new class ($response) implements RequestHandlerInterface {
             public function __construct(private readonly ResponseInterface $response) {}
 
@@ -103,7 +103,7 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
 
         $subject = new BackendUserConfigurationMiddleware();
         $result = $subject->process(
-            $this->createMock(ServerRequestInterface::class),
+            self::createStub(ServerRequestInterface::class),
             $handler,
         );
 

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\FileAccessService;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\Folder;
@@ -17,15 +20,23 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class BrowseFolderTool extends AbstractRecordTool
 {
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly FileAccessService $fileAccessService,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
     /**
      * @return array<string, mixed>
      */
     protected function getToolSchema(): array
     {
         return [
-            'description' => 'Browse folder contents in a TYPO3 file storage. Lists subfolders and files with metadata (size, type, modification date). ' .
-                'Use combined identifier format like "1:/user_upload/" where 1 is the storage UID. ' .
-                'Note: File listing is limited to 100 files per folder. Use SearchFile for larger folders or filtered results.',
+            'description' => 'Browse folder contents in a TYPO3 file storage. Lists subfolders and files with metadata (size, type, modification date). '
+                . 'Use combined identifier format like "1:/user_upload/" where 1 is the storage UID. '
+                . 'Note: File listing is limited to 100 files per folder. Use SearchFile for larger folders or filtered results.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -52,10 +63,14 @@ final class BrowseFolderTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureTableAccess('sys_file', 'read');
+        $this->fileAccessService->requireReadableBackendUser();
+
         $folderIdentifier = (string)($params['folder'] ?? '/');
         $recursive = (bool)($params['recursive'] ?? false);
 
         $folder = $this->resolveFolder($folderIdentifier);
+        $this->fileAccessService->assertResourceReadable($folder);
 
         $lines = [];
         $lines[] = sprintf('📁 Storage: %s (UID: %d)', $folder->getStorage()->getName(), $folder->getStorage()->getUid());

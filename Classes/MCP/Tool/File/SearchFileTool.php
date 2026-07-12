@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\File;
 
 use Doctrine\DBAL\ParameterType;
+use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\ImageContent;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
+use TYPO3\CMS\Core\Resource\Search\QueryRestrictions\FolderMountsRestriction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -89,6 +92,12 @@ final class SearchFileTool extends AbstractRecordTool
 
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureTableAccess('sys_file', 'read');
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new AccessDeniedException('backend user context', 'search files');
+        }
+
         $name = (string)($params['name'] ?? '');
         $extension = (string)($params['extension'] ?? '');
         $folder = (string)($params['folder'] ?? '');
@@ -106,7 +115,8 @@ final class SearchFileTool extends AbstractRecordTool
 
         $queryBuilder->getRestrictions()
             ->removeAll()
-            ->add(new DeletedRestriction());
+            ->add(new DeletedRestriction())
+            ->add(new FolderMountsRestriction($backendUser));
 
         $queryBuilder
             ->select('uid', 'name', 'identifier', 'storage', 'extension', 'mime_type', 'size', 'sha1', 'creation_date', 'modification_date')

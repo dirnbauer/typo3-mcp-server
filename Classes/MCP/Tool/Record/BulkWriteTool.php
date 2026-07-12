@@ -42,8 +42,8 @@ final class BulkWriteTool extends AbstractRecordTool
                 . 'All operations run in workspace context. Maximum 50 operations per call. '
                 . 'LIMITATION: BulkWrite does NOT support inline child records in "data" (no nested arrays of child records, no sys_file_reference objects). '
                 . 'For any operation that needs inline children (image/assets on tt_content, nested container elements, etc.), use WriteTable. '
-                . 'Other limitations: no positioning, no translate action, no search-and-replace — use WriteTable for those. ' .
-                'BulkWrite is best for flat field updates and bulk create/delete. '
+                . 'Other limitations: no positioning, no translate action, no search-and-replace — use WriteTable for those. '
+                . 'BulkWrite is best for flat field updates and bulk create/delete. '
                 . 'Multiple sortable create operations for the same pid are appended in operation order.',
             'inputSchema' => [
                 'type' => 'object',

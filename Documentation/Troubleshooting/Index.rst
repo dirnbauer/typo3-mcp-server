@@ -79,10 +79,10 @@ Fixes:
 - **Proxy / CDN**: verify that the proxy forwards the ``Authorization``
   header unchanged.
 
-As an emergency workaround you can temporarily enable
-:confval:`allowMcpTokenInQueryString <ext-mcp-server-allowMcpTokenInQueryString>`
-and pass ``?token=…`` on ``/mcp``. This leaks tokens into logs and should
-not stay enabled in production.
+There is no query-string fallback. The removed
+``allowMcpTokenInQueryString`` setting is ignored, and ``?token=…`` never
+authenticates. Correct the web server or proxy so it forwards the
+``Authorization`` header.
 
 "No writable workspace" when writing records
 ============================================
@@ -91,14 +91,17 @@ Symptom: record-writing tools return an error about workspaces.
 
 Check:
 
+- This applies to strict/production mode or to a call that explicitly requests
+  a draft. In trusted local mode, omitted ``workspace_id`` normally selects
+  live workspace ``0`` instead; verify with ``GetCapabilities``.
 - The authenticated backend user must either be in a workspace already or
   be allowed to create one.
 - The extension automatically selects the first writable workspace, or
   creates an ``MCP`` workspace if permissions allow. If neither is possible,
   assign the user to a workspace via :guilabel:`Workspaces` in the TYPO3
   backend.
-- Admin users always have access; non-admins require explicit group
-  membership.
+- Admin users can normally access workspaces; non-admins require explicit group
+  membership and suitable page mounts.
 
 Tool calls return "Table not allowed"
 =====================================
@@ -161,10 +164,14 @@ Symptom: the stdio server starts but every tool returns a permission error.
 
 Check:
 
-- ``mcp:server`` requires **admin** privileges by design
-  (``McpServerCommand::ensureAdminRights()``). Run it as an admin user.
-- Use ``mcp:test`` to call a single tool with JSON args to isolate the
-  problem.
+- ``mcp:server`` authenticates TYPO3's real, database-backed ``_cli_`` backend
+  user; it does not synthesize admin UID 1. Verify that ``_cli_`` is enabled and
+  has the groups, page/file mounts, table permissions, workspace access, and
+  admin flag required by the tool being called.
+- User and group TSconfig on ``_cli_`` also affect local-mode and strict-sandbox
+  policy. Check ``mcp:get-capabilities --json`` in the same CLI environment.
+- Use ``mcp:test`` to call a single tool with JSON args under the same ``_cli_``
+  identity and isolate the problem.
 
 File tools refuse my path
 =========================
@@ -216,7 +223,8 @@ Fix:
 A network-using tool returns "outbound request not in manifest"
 ===============================================================
 
-Symptom: ``UploadFileFromUrl`` or ``RenderRecord`` returns
+Symptom: ``UploadFileFromUrl``, ``ImportFromUrl``, ``RenderRecord``, or an x402
+facilitator verification triggered by ``GetPaidContent`` returns
 ``AccessDenied: outbound request to "..." (not in capability manifest
 network.outbound)``.
 
@@ -225,7 +233,11 @@ host. Default ships at ``[self]`` only.
 
 Fix: edit ``Configuration/Capabilities.yaml`` and add the host (or
 ``*.example.com`` wildcard) under ``network.outbound``. Use ``*`` to allow
-any host (the IP-range SSRF check still rejects private addresses).
+any public host (the public-IP check still rejects private/reserved addresses
+outside trusted local mode). Redirects remain disabled; add the actual final
+host instead of relying on a redirect. x402 verification additionally fails
+closed when its optional compatible adapter or facilitator configuration is
+unavailable.
 
 Live writes are rejected even though I expect them to work
 ==========================================================

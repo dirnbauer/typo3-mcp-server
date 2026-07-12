@@ -16,7 +16,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
     #[Test]
     public function runChecksReportsErrorWhenMcpEndpointIsUnreachable(): void
     {
-        $httpClient = $this->createMock(DiagnosticHttpClient::class);
+        $httpClient = self::createStub(DiagnosticHttpClient::class);
         $httpClient->method('requestMany')->willReturn([
             'mcp_endpoint' => null,
             'oauth_authorization' => null,
@@ -24,7 +24,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
         ]);
 
         $service = new McpConnectionDiagnosticService(
-            $this->createMock(ExtensionConfiguration::class),
+            self::createStub(ExtensionConfiguration::class),
             new SiteBaseUrlResolver(),
             $httpClient,
         );
@@ -52,7 +52,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
     #[Test]
     public function runChecksReportsOkWhenMcpEndpointReturns401(): void
     {
-        $httpClient = $this->createMock(DiagnosticHttpClient::class);
+        $httpClient = self::createStub(DiagnosticHttpClient::class);
         $httpClient->method('requestMany')->willReturnCallback(function (array $requests): array {
             $results = [];
             foreach ($requests as $id => $spec) {
@@ -67,7 +67,7 @@ final class McpConnectionDiagnosticServiceTest extends TestCase
             return $results;
         });
 
-        $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
+        $extensionConfiguration = self::createStub(ExtensionConfiguration::class);
         $extensionConfiguration->method('get')->willReturn(['enableMcpAuthHeaderDiagnostic' => '0']);
 
         $service = new McpConnectionDiagnosticService(

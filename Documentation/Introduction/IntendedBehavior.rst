@@ -19,11 +19,27 @@ The extension is intended to behave like this:
   assuming a fixed contract forever
 - tool names stay TYPO3-oriented (``ReadTable``, ``GetPageTree``, ``WriteTable``)
   even when parameters or descriptions evolve between releases
-- successful tool results are usually returned as JSON encoded into MCP text
-  content, because the bundled PHP SDK does not expose structured
-  ``outputSchema`` results in the same way as some other MCP stacks
+- successful JSON tool results retain MCP text content for stable clients and
+  also expose ``structuredContent`` through the v2 SDK
 - validation and recoverable workflow mistakes should return actionable tool
   errors instead of generic internal failures
+- stable clients use the ``2025-11-25`` handshake while release-candidate
+  clients can use stateless ``2026-07-28`` requests against the same server
+
+.. _intended-behavior-prompts:
+
+Prompts and skill behavior
+--------------------------
+
+Bundled Agent Skills are expected to remain workflow guidance, not permission
+grants:
+
+- original Markdown is available through ``typo3-mcp:///skills`` resources
+- user-invocable workflows are available through ``prompts/list`` and
+  ``prompts/get``
+- hosts may display prompt names as slash commands
+- every operation described by a skill still requires an allowed native tool
+  call
 
 Record behavior
 ===============
@@ -113,8 +129,10 @@ instance configuration that may not exist everywhere:
   should return configuration guidance instead of raw SQL errors
 - ``CreateSite`` changes YAML site configuration immediately and therefore
   remains admin-only
-- ``InstallExtension``, ``SafeCli``, and ``SolrIndexQueue`` remain intentionally
-  narrow and validated instead of acting like general shell access
+- ``InstallExtension`` is additionally dev-site-only; ``SafeCli`` and
+  ``SolrIndexQueue`` remain intentionally narrow and validated instead of
+  acting like general shell access. Package-manager and configured scheduler
+  network effects are declared separately from direct HTTP.
 
 Verification expectations
 =========================

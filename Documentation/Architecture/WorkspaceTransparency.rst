@@ -10,7 +10,8 @@ Overview
 This document describes how the MCP server hides TYPO3 workspace complexity
 from MCP clients. The goal is to expose a simplified content model while still
 keeping production writes safely inside TYPO3 workspaces. Trusted local mode
-can explicitly permit live writes with ``workspace_id: 0``.
+defaults an omitted ``workspace_id`` to live workspace ``0``; callers that want
+review-before-publish locally must pass an explicit draft ID greater than ``0``.
 
 Background
 ==========

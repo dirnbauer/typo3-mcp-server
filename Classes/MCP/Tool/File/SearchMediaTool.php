@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\File;
 
+use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\TableAccessService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Resource\Search\QueryRestrictions\FolderMountsRestriction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -23,6 +27,7 @@ final class SearchMediaTool extends AbstractTool
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
+        private readonly TableAccessService $tableAccessService,
     ) {}
 
     /**
@@ -101,6 +106,12 @@ final class SearchMediaTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->tableAccessService->validateTableAccess('sys_file', 'read');
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$backendUser instanceof BackendUserAuthentication) {
+            throw new AccessDeniedException('backend user context', 'search media');
+        }
+
         $keyword = is_string($params['keyword'] ?? null) ? trim($params['keyword']) : '';
         $mimeType = is_string($params['mimeType'] ?? null) ? trim($params['mimeType']) : '';
         $extension = is_string($params['extension'] ?? null) ? trim($params['extension']) : '';
@@ -124,7 +135,10 @@ final class SearchMediaTool extends AbstractTool
         }
 
         $qb = $this->connectionPool->getQueryBuilderForTable('sys_file');
-        $qb->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $qb->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(new FolderMountsRestriction($backendUser));
 
         $qb->select(
             'f.uid',
@@ -204,7 +218,10 @@ final class SearchMediaTool extends AbstractTool
 
         // Count total using a separate query builder (TYPO3 v14 QueryBuilder has no resetQueryPart)
         $countQb = $this->connectionPool->getQueryBuilderForTable('sys_file');
-        $countQb->getRestrictions()->removeAll()->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        $countQb->getRestrictions()
+            ->removeAll()
+            ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+            ->add(new FolderMountsRestriction($backendUser));
         $countQb->count('f.uid')
             ->from('sys_file', 'f')
             ->leftJoin('f', 'sys_file_metadata', 'm', $countQb->expr()->eq('m.file', $countQb->quoteIdentifier('f.uid')));

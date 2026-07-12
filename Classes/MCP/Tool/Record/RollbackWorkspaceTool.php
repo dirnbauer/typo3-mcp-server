@@ -72,6 +72,8 @@ final class RollbackWorkspaceTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureWorkspaceForOperation('write');
+
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
             return $this->createErrorResult('No backend user session available.');

@@ -15,6 +15,7 @@ TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.
 
    E2eSuite
    E2eCiDebugging
+   ProtocolCompatibility
 
 .. seealso::
 
@@ -36,6 +37,9 @@ The project uses several layers of tests:
 - LLM-oriented tests for MCP response ergonomics and model-facing workflows
 - Playwright E2E tests for browser-visible backend module workflows
 - code-quality checks for PHPStan, PHP CS Fixer, Rector, and Fractor
+- dual-era wire checks for MCP ``2025-11-25`` and ``2026-07-28``
+- optional Abilities/``sg_apicore`` CLI, REST, OpenAPI, scope, and rate-limit
+  checks
 
 The E2E suite is intentionally narrow. It verifies the TYPO3 backend module as
 an editor sees it, while deeper MCP tool contracts stay in PHP tests.
@@ -60,10 +64,9 @@ Use these commands during normal development:
 .. code-block:: bash
    :caption: Run the E2E suite
 
-   ddev exec bash Build/runTests.sh -s e2e --no-docker
+   bash Build/runTests.sh -s e2e
 
 .. code-block:: bash
    :caption: Render the documentation
 
    composer docs:check
-

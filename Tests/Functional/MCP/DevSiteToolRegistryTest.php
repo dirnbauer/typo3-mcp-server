@@ -22,6 +22,8 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
 
         self::assertNotContains('SiteSettings', $names);
         self::assertNotContains('ListViewHelpers', $names);
+        self::assertNotContains('InstallExtension', $names);
+        self::assertNotContains('ApplyShadcnPreset', $names);
         self::assertContains('ReadTable', $names);
     }
 
@@ -33,6 +35,8 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
 
         self::assertContains('SiteSettings', $names);
         self::assertContains('ListViewHelpers', $names);
+        self::assertContains('InstallExtension', $names);
+        self::assertContains('ApplyShadcnPreset', $names);
     }
 
     public function testStrictSandboxHidesDevSiteToolsEvenWhenLocalUnsafeModeIsOn(): void
@@ -45,6 +49,8 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
 
         self::assertNotContains('SiteSettings', $names);
         self::assertNotContains('ListViewHelpers', $names);
+        self::assertNotContains('InstallExtension', $names);
+        self::assertNotContains('ApplyShadcnPreset', $names);
     }
 
     public function testInstallEditorSkillsCommandCopiesSkills(): void

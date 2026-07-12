@@ -8,6 +8,8 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\CompositeExpression;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionInterface;
+use TYPO3\CMS\Core\Schema\Capability\TcaSchemaCapability;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Versioning\VersionState;
 
@@ -23,7 +25,10 @@ use TYPO3\CMS\Core\Versioning\VersionState;
  */
 final readonly class WorkspaceDeletePlaceholderRestriction implements QueryRestrictionInterface
 {
-    public function __construct(private int $workspaceId) {}
+    public function __construct(
+        private int $workspaceId,
+        private TcaSchemaFactory $tcaSchemaFactory,
+    ) {}
 
     /**
      * Main method to build expressions for given tables
@@ -42,11 +47,10 @@ final readonly class WorkspaceDeletePlaceholderRestriction implements QueryRestr
         }
 
         foreach ($queriedTables as $tableAlias => $tableName) {
-            // Only apply to workspace-enabled tables
-            $globalTca = $GLOBALS['TCA'] ?? null;
-            $tableConfig = is_array($globalTca) ? ($globalTca[$tableName] ?? null) : null;
-            $ctrl = is_array($tableConfig) && is_array($tableConfig['ctrl'] ?? null) ? $tableConfig['ctrl'] : [];
-            if (empty($ctrl['versioningWS'])) {
+            // Only apply to tables that declare TYPO3's workspace capability.
+            if (!$this->tcaSchemaFactory->has($tableName)
+                || !$this->tcaSchemaFactory->get($tableName)->hasCapability(TcaSchemaCapability::Workspace)
+            ) {
                 continue;
             }
 

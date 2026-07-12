@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
+use Hn\McpServer\Service\ToolResultNormalizer;
 use Hn\McpServer\Service\ToolSchemaOptimizer;
 use Mcp\Server\InitializationOptions;
+use Mcp\Server\McpServerException;
 use Mcp\Server\NotificationOptions;
 use Mcp\Server\Server;
-use Mcp\Types\CallToolResult;
+use Mcp\Types\CacheableResult;
 use Mcp\Types\ListResourcesResult;
 use Mcp\Types\ListResourceTemplatesResult;
-use Mcp\Types\TextContent;
+use Mcp\Types\ListToolsResult;
+use Mcp\Types\PromptArguments;
+use Mcp\Types\Tool;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -29,6 +33,8 @@ final readonly class McpServerFactory
         private ToolRegistry $toolRegistry,
         private ?ResourceRegistry $resourceRegistry = null,
         private ?ToolSchemaOptimizer $schemaOptimizer = null,
+        private ?PromptRegistry $promptRegistry = null,
+        private ?ToolResultNormalizer $resultNormalizer = null,
     ) {}
 
     /**
@@ -106,7 +112,9 @@ final readonly class McpServerFactory
             $debug('Handling tools/list request');
             $tools = [];
 
-            foreach ($toolRegistry->getTools() as $tool) {
+            $registeredTools = $toolRegistry->getTools();
+            ksort($registeredTools, SORT_STRING);
+            foreach ($registeredTools as $tool) {
                 $schema = $tool->getSchema();
 
                 // Condense verbose descriptions to save context-window tokens
@@ -123,49 +131,41 @@ final readonly class McpServerFactory
                 $rawInputSchema = $schema['inputSchema'] ?? [];
                 $schema['inputSchema'] = self::normaliseInputSchema(is_array($rawInputSchema) ? $rawInputSchema : []);
 
-                $tools[] = [
+                $tools[] = Tool::fromArray([
                     'name' => $tool->getName(),
                     ...$schema,
-                ];
+                ]);
             }
 
-            return ['tools' => $tools];
+            $result = new ListToolsResult($tools);
+            $result->setCacheHints(30_000, CacheableResult::CACHE_SCOPE_PRIVATE);
+            return $result;
         });
 
         // Register tool/call handler
-        $server->registerHandler('tools/call', static function ($params) use ($toolRegistry, $debug) {
+        $resultNormalizer = $this->resultNormalizer ?? new ToolResultNormalizer();
+        $server->registerHandler('tools/call', static function ($params) use ($toolRegistry, $resultNormalizer, $debug) {
             $toolName = $params->name;
-            $arguments = $params->arguments;
+            // MCP allows clients to omit `arguments` for parameterless tools.
+            // The SDK models that field as ?array while ToolInterface accepts
+            // an array, so normalize the valid null representation here.
+            $arguments = $params->arguments ?? [];
 
             $debug('Handling tools/call request for tool: ' . $toolName);
 
             $tool = $toolRegistry->getTool($toolName);
             if (!$tool) {
-                // Return CallToolResult instead of throwing: Server::handleMessage maps generic
-                // exceptions to JSON-RPC -32603 and exposes the raw message. Tool-level isError
-                // matches MCP/mcp-builder expectations for recoverable agent mistakes.
                 $debug('Unknown tool name: ' . $toolName);
                 $safeName = is_string($toolName) ? $toolName : '';
-                $hint = 'Call tools/list for the exact tool names exposed by this server '
-                    . '(see TYPO3 docs: Documentation/Tools/Index.rst). '
-                    . 'Optional: use a consistent prefix pattern if you rename tools for LLM ergonomics '
-                    . '(mcp-builder skill: https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).';
-
-                return new CallToolResult(
-                    [new TextContent(
-                        $safeName !== ''
-                            ? 'Unknown tool "' . $safeName . '". ' . $hint
-                            : 'Unknown tool (missing name). ' . $hint,
-                    )],
-                    true,
-                );
+                throw McpServerException::unknownTool($safeName !== '' ? $safeName : '(missing name)');
             }
 
             // Exceptions are normalized to CallToolResult by AbstractTool::executeInternal().
-            return $tool->execute($arguments);
+            return $resultNormalizer->normalize($tool->execute($arguments));
         });
 
         $this->registerResourceHandlers($server, $debug);
+        $this->registerPromptHandlers($server, $debug);
     }
 
     /**
@@ -199,7 +199,9 @@ final readonly class McpServerFactory
                 return new ListResourcesResult([]);
             }
 
-            return $resourceRegistry->listResources();
+            $result = $resourceRegistry->listResources();
+            $result->setCacheHints(60_000, CacheableResult::CACHE_SCOPE_PRIVATE);
+            return $result;
         });
 
         $server->registerHandler('resources/templates/list', static function () use ($resourceRegistry, $debug) {
@@ -208,32 +210,64 @@ final readonly class McpServerFactory
                 return new ListResourceTemplatesResult([]);
             }
 
-            return $resourceRegistry->listResourceTemplates();
+            $result = $resourceRegistry->listResourceTemplates();
+            $result->setCacheHints(60_000, CacheableResult::CACHE_SCOPE_PRIVATE);
+            return $result;
         });
 
-        $server->registerHandler('resources/read', static function ($params) use ($resourceRegistry, $debug) {
+        $server->registerHandler('resources/read', static function ($params) use ($resourceRegistry, $debug, $server) {
             $uri = '';
             if (is_object($params) && property_exists($params, 'uri') && is_string($params->uri)) {
                 $uri = $params->uri;
             }
             $debug('Handling resources/read request for URI: ' . $uri);
 
-            if (!$resourceRegistry->isAvailable()) {
-                throw new \InvalidArgumentException(
-                    'MCP resources are only available in DDEV / local development mode.',
-                );
+            try {
+                return $resourceRegistry->readResource($uri);
+            } catch (\InvalidArgumentException) {
+                $modernErrorCode = $server->clientSupportsFeature('resource_not_found_invalid_params');
+                throw McpServerException::unknownResource($uri, $modernErrorCode);
             }
+        });
+    }
 
-            return $resourceRegistry->readResource($uri);
+    private function registerPromptHandlers(Server $server, callable $debug): void
+    {
+        if ($this->promptRegistry === null) {
+            return;
+        }
+
+        $promptRegistry = $this->promptRegistry;
+        $server->registerHandler('prompts/list', static function () use ($promptRegistry, $debug) {
+            $debug('Handling prompts/list request');
+            return $promptRegistry->listPrompts();
+        });
+        $server->registerHandler('prompts/get', static function ($params) use ($promptRegistry, $debug) {
+            $name = is_object($params) && property_exists($params, 'name') && is_string($params->name)
+                ? $params->name
+                : '';
+            $arguments = [];
+            if (is_object($params) && property_exists($params, 'arguments') && $params->arguments instanceof PromptArguments) {
+                $serialized = $params->arguments->jsonSerialize();
+                if (is_array($serialized)) {
+                    foreach ($serialized as $key => $value) {
+                        if (is_string($key) && is_string($value)) {
+                            $arguments[$key] = $value;
+                        }
+                    }
+                }
+            }
+            $debug('Handling prompts/get request for prompt: ' . $name);
+            return $promptRegistry->getPrompt($name, $arguments);
         });
     }
 
     /**
      * Normalise an inputSchema so that it survives strict MCP client validation.
      *
-     * - Ensures `properties` is always a JSON object (not array), because
-     *   `'properties' => []` in PHP serialises to `[]` instead of `{}` and
-     *   clients such as Cursor reject the entire tool catalog on that mismatch.
+     * - Ensures `properties` is an array suitable for the SDK's typed
+     *   ToolInputProperties model. That model serialises an empty map as `{}`
+     *   so strict clients never receive the invalid JSON array `[]`.
      * - Drops `required` when it is an empty array (invalid per JSON Schema spec).
      *
      * All other JSON Schema keywords (enum, default, minimum, maximum, oneOf,
@@ -245,16 +279,8 @@ final readonly class McpServerFactory
      */
     private static function normaliseInputSchema(array $inputSchema): array
     {
-        // Ensure properties is always a JSON object, never a JSON array.
-        if (isset($inputSchema['properties'])) {
-            $props = $inputSchema['properties'];
-            if ($props instanceof \stdClass) {
-                // Already correct (empty object)
-            } elseif (is_array($props) && $props === []) {
-                // Empty PHP array [] would serialise as JSON array []; coerce to object {}.
-                $inputSchema['properties'] = new \stdClass();
-            }
-            // Non-empty associative arrays serialise as JSON objects automatically.
+        if (($inputSchema['properties'] ?? null) instanceof \stdClass) {
+            $inputSchema['properties'] = [];
         }
 
         // Remove empty required arrays — invalid per JSON Schema spec.

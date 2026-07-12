@@ -41,15 +41,16 @@ jobs:
           mkdir -p var/log
           vendor/bin/phpunit -c Tests/UnitTests.xml --coverage-clover var/log/unit-coverage.xml
 
+      - name: Verify stable and release-candidate MCP lifecycles
+        run: composer test:protocol
+
   functional-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          # TYPO3 v14.3 LTS supports PHP 8.2-8.5; cover all four.
-          - php-version: '8.2'
-            typo3-version: '^14.3'
+          # This extension targets the modern PHP 8.3-8.5 baseline.
           - php-version: '8.3'
             typo3-version: '^14.3'
           - php-version: '8.4'

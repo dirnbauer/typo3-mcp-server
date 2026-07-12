@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\LocalModeService;
+use Hn\McpServer\Service\OutboundUrlGuardService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -49,30 +51,13 @@ final class ImportFromUrlTool extends AbstractRecordTool
         'image'   => [false, false, true, false],
     ];
 
-    /**
-     * Private / reserved IPv4 ranges for SSRF protection (CIDR).
-     */
-    private const BLOCKED_CIDR4 = [
-        '10.0.0.0/8',
-        '172.16.0.0/12',
-        '192.168.0.0/16',
-        '127.0.0.0/8',
-        '169.254.0.0/16',
-        '0.0.0.0/8',
-        '100.64.0.0/10',   // Shared address space (RFC 6598)
-        '192.0.0.0/24',    // IETF protocol assignments
-        '192.0.2.0/24',    // TEST-NET-1
-        '198.51.100.0/24', // TEST-NET-2
-        '203.0.113.0/24',  // TEST-NET-3
-        '224.0.0.0/4',     // Multicast
-        '240.0.0.0/4',     // Reserved
-    ];
-
     public function __construct(
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
         private readonly RequestFactory $requestFactory,
+        private readonly CapabilityManifestService $capabilityManifest,
         private readonly LocalModeService $localMode,
+        private readonly OutboundUrlGuardService $outboundUrlGuard,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -119,7 +104,9 @@ final class ImportFromUrlTool extends AbstractRecordTool
                 'required' => ['url', 'targetPid'],
             ],
             'annotations' => [
-                'readOnlyHint' => true, // overridden dynamically in doExecute for execute mode
+                // The schema cannot vary by call parameters. Because execute mode
+                // writes records, advertise the conservative capability.
+                'readOnlyHint' => false,
                 'destructiveHint' => false,
                 'idempotentHint' => false,
                 'openWorldHint' => true,
@@ -165,10 +152,13 @@ final class ImportFromUrlTool extends AbstractRecordTool
         if ($host === '') {
             throw new ValidationException(['URL has no host']);
         }
-        $this->validateHostSafety($host);
+        $this->capabilityManifest->assertUrlAllowed($url);
+        $curlResolveEntry = $this->localMode->allowsUnrestrictedOutbound()
+            ? null
+            : $this->outboundUrlGuard->assertPublicAndCreateCurlResolveEntry($url);
 
         // --- Fetch the HTML -------------------------------------------------------
-        $html = $this->fetchUrl($url);
+        $html = $this->fetchUrl($url, $curlResolveEntry);
 
         // --- Parse ----------------------------------------------------------------
         $title = $this->extractTitle($html);
@@ -179,7 +169,7 @@ final class ImportFromUrlTool extends AbstractRecordTool
         $sections = $this->mergeConsecutiveSections($sections);
 
         // --- Build CType profiles -------------------------------------------------
-        $this->ensureTableAccess('tt_content', 'write');
+        $this->ensureTableAccess('tt_content', $mode === self::MODE_EXECUTE ? 'write' : 'read');
         $availableTypes = $this->tableAccessService->getAvailableTypes('tt_content');
         $ctypeProfiles = $this->buildCTypeProfiles($availableTypes);
 
@@ -241,92 +231,45 @@ final class ImportFromUrlTool extends AbstractRecordTool
     }
 
     // -----------------------------------------------------------------------
-    // SSRF protection
-    // -----------------------------------------------------------------------
-
-    /**
-     * Resolve hostname and reject private/reserved IPs.
-     */
-    private function validateHostSafety(string $host): void
-    {
-        if ($this->localMode->allowsUnrestrictedOutbound()) {
-            return;
-        }
-
-        // Reject literal IPv6 loopback
-        $cleanHost = trim($host, '[]');
-        if (in_array($cleanHost, ['::1', '::'], true)) {
-            throw new ValidationException(['URL resolves to a private/reserved IP address']);
-        }
-
-        // If it already looks like an IPv4 literal, check directly
-        if (filter_var($cleanHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            if ($this->isBlockedIpv4($cleanHost)) {
-                throw new ValidationException(['URL resolves to a private/reserved IP address']);
-            }
-            return;
-        }
-
-        // DNS resolution
-        $ips = gethostbynamel($cleanHost);
-        if ($ips === false || $ips === []) {
-            throw new ValidationException(['Could not resolve hostname: ' . $host]);
-        }
-
-        foreach ($ips as $ip) {
-            if ($this->isBlockedIpv4($ip)) {
-                throw new ValidationException(['URL resolves to a private/reserved IP address']);
-            }
-        }
-    }
-
-    /**
-     * Check whether an IPv4 address falls within any blocked CIDR range.
-     */
-    private function isBlockedIpv4(string $ip): bool
-    {
-        $ipLong = ip2long($ip);
-        if ($ipLong === false) {
-            return true; // unparseable = blocked
-        }
-
-        foreach (self::BLOCKED_CIDR4 as $cidr) {
-            [$subnet, $bits] = explode('/', $cidr);
-            $subnetLong = ip2long($subnet);
-            $mask = -1 << (32 - (int)$bits);
-            if (($ipLong & $mask) === ($subnetLong & $mask)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // -----------------------------------------------------------------------
     // HTTP fetch
     // -----------------------------------------------------------------------
 
-    private function fetchUrl(string $url): string
+    private function fetchUrl(string $url, ?string $curlResolveEntry): string
     {
-        $response = $this->requestFactory->request($url, 'GET', [
+        $options = [
             'headers' => [
                 'User-Agent' => 'TYPO3-MCP-ImportFromUrl/1.0',
                 'Accept' => 'text/html, application/xhtml+xml',
             ],
             'timeout' => self::REQUEST_TIMEOUT,
-            'allow_redirects' => [
-                'max' => 5,
-            ],
-        ]);
+            // Redirects are deliberately not followed: every hop is a new
+            // outbound authority and would need fresh allowlist, DNS, and
+            // private-address validation. Callers can submit the final URL.
+            'allow_redirects' => false,
+        ];
+        if ($curlResolveEntry !== null) {
+            $options['curl'] = [CURLOPT_RESOLVE => [$curlResolveEntry]];
+        }
+        $response = $this->requestFactory->request($url, 'GET', $options);
 
         $statusCode = $response->getStatusCode();
-        if ($statusCode < 200 || $statusCode >= 400) {
+        if ($statusCode < 200 || $statusCode >= 300) {
             throw new ValidationException(['HTTP request failed with status ' . $statusCode]);
         }
 
-        $body = $response->getBody()->getContents();
-        if (strlen($body) > self::MAX_CONTENT_SIZE) {
-            throw new ValidationException(['Response body exceeds maximum size of ' . (self::MAX_CONTENT_SIZE / 1024 / 1024) . ' MB']);
+        $stream = $response->getBody();
+        $body = '';
+        while (!$stream->eof()) {
+            $chunk = $stream->read(8192);
+            if ($chunk === '') {
+                break;
+            }
+            $body .= $chunk;
+            if (strlen($body) > self::MAX_CONTENT_SIZE) {
+                throw new ValidationException([
+                    'Response body exceeds maximum size of ' . (self::MAX_CONTENT_SIZE / 1024 / 1024) . ' MB',
+                ]);
+            }
         }
 
         if (trim($body) === '') {

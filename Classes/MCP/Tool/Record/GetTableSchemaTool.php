@@ -37,9 +37,9 @@ final class GetTableSchemaTool extends AbstractRecordTool
                     ],
                     'type' => [
                         'type' => 'string',
-                        'description' => 'Specific record type to show fields for (e.g., "textmedia" for tt_content). Each type has different fields. ' .
-                            'If omitted, shows fields for the first available type and lists all available types. ' .
-                            'Call again with a different type to see its fields. Types may be filtered by backend TSconfig (some types hidden from the list).',
+                        'description' => 'Specific record type to show fields for (e.g., "textmedia" for tt_content). Each type has different fields. '
+                            . 'If omitted, shows fields for the first available type and lists all available types. '
+                            . 'Call again with a different type to see its fields. Types may be filtered by backend TSconfig (some types hidden from the list).',
                     ],
                     'pid' => [
                         'type' => 'integer',
@@ -524,10 +524,10 @@ final class GetTableSchemaTool extends AbstractRecordTool
                         $parts = explode(',', (string)$id);
                         // Check if the identifier matches the current type
                         // Either directly or with a wildcard
-                        if (($parts[0] === '*' && $parts[1] === $filterType) ||
-                            ($parts[1] === '*' && $parts[0] === $filterType) ||
-                            ($parts[0] === $filterType) ||
-                            ($parts[1] === $filterType)) {
+                        if (($parts[0] === '*' && $parts[1] === $filterType)
+                            || ($parts[1] === '*' && $parts[0] === $filterType)
+                            || ($parts[0] === $filterType)
+                            || ($parts[1] === $filterType)) {
                             $filteredIdentifiers[] = $id;
                         }
                     } elseif ($id === $filterType) {

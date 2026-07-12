@@ -9,6 +9,11 @@ services:
     exclude:
       # Instantiated only via `new` in ToolRegistry — not a DI service (constructor uses `object`).
       - '../Classes/MCP/Tool/CompatibleToolAdapter.php'
+      # Optional adapter classes extend the external Abilities API and are
+      # loaded conditionally from Configuration/Services.php.
+      - '../Classes/Integration/Abilities/*'
+      - '../Classes/Integration/ApiCore/*'
+      - '../Classes/Integration/X402/*'
 
   _instanceof:
     Hn\McpServer\MCP\Tool\ToolInterface:
@@ -45,6 +50,16 @@ services:
       - name: 'console.command'
         command: 'mcp:tool:list'
         description: 'List MCP tools registered in this TYPO3 instance.'
+  Hn\McpServer\Command\McpPromptListCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:prompt:list'
+        description: 'List MCP prompts exposed as user-invoked slash-command workflows.'
+  Hn\McpServer\Command\McpPromptGetCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:prompt:get'
+        description: 'Render one MCP prompt / slash-command workflow.'
   Hn\McpServer\Command\Tool\ReadTableToolCommand:
     tags:
       - name: 'console.command'
@@ -436,6 +451,11 @@ services:
 
   Hn\McpServer\Service\DevSiteToolService:
     public: true
+
+  # AbstractTool resolves this security boundary for every execution. Keep it
+  # public so TYPO3's GeneralUtility bridge cannot inline/remove the service.
+  Hn\McpServer\Service\CapabilityManifestService:
+    public: true
     
   # Make WorkspaceContextService public 
   Hn\McpServer\Service\WorkspaceContextService:
@@ -458,7 +478,7 @@ services:
     public: true
     
   # Event listeners are registered via the #[AsEventListener] attribute
-  # on the listener classes themselves (TYPO3 v13+ pattern). Services.yaml
+  # on the listener classes themselves (TYPO3 v14 pattern). Services.yaml
   # tags are no longer needed — autoconfigure: true picks them up.
 
   Hn\McpServer\EventListener\SysFileMetadataRestrictionListener:

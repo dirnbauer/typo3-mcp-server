@@ -33,6 +33,10 @@ Operator setup (endpoint URL, OAuth clients, tokens) is documented under
 :doc:`../Configuration/Index` and exposed in the backend module
 **User → MCP Server**.
 
+If MCP is new to you, start with :doc:`McpBasics`. It explains hosts,
+clients, servers, tools, resources, prompts, transports, and the corresponding
+PHP concepts.
+
 For the explicit product-level specification of how the maintained line is
 intended to behave, see :doc:`IntendedBehavior`.
 
@@ -61,8 +65,10 @@ How it works
 2. The client authenticates using OAuth, or runs locally through the TYPO3 CLI.
 3. The client discovers available tools and their schemas.
 4. Read operations return TYPO3 content, structure, and metadata.
-5. Record writes happen in workspace context.
-6. Editors review and publish workspace changes in TYPO3.
+5. In strict/production mode, record writes happen in a draft workspace. In
+   trusted local mode, an omitted ``workspace_id`` writes live by design.
+6. Editors review and publish draft changes in TYPO3; intentional local live
+   writes have no later publish phase.
 
 .. note::
 
@@ -94,14 +100,17 @@ behavior wherever possible.
 Transparent workspace handling
 ------------------------------
 
-MCP clients do not need to know TYPO3 workspace internals. The extension
-selects or creates a suitable workspace and keeps returned identifiers stable.
+MCP clients do not need to know TYPO3 version-row internals. In
+strict/production mode the extension selects or creates a suitable draft. In
+trusted local mode it selects live workspace ``0`` unless the client supplies
+an explicit draft ID. Returned identifiers remain stable in either mode.
 
 File sandboxing
 ---------------
 
-File tools do not get unrestricted ``fileadmin`` access. They operate inside a
-configurable MCP file sandbox, which defaults to ``fileadmin/mcp/``.
+In strict mode, file-write tools operate inside a configurable MCP file
+sandbox, which defaults to ``fileadmin/mcp/``. Trusted local mode can relax
+that sandbox, but TYPO3 backend file mounts and FAL permissions still apply.
 
 Permission-aware access
 -----------------------
@@ -116,15 +125,19 @@ Every tool declares which subsystems it needs (``database:read``,
 ``file:write``, ``render:frontend``, …). The shipped
 ``Configuration/Capabilities.yaml`` enumerates them and maps every tool
 to its requirements. ``AbstractTool::execute()`` rejects calls whose
-required subsystems aren't declared, and outbound HTTP for
-``UploadFileFromUrl`` / ``RenderRecord`` is gated by
-``network.outbound`` (default: ``self`` only).
+required subsystems aren't declared. Outbound HTTP for ``UploadFileFromUrl``,
+``ImportFromUrl``, ``RenderRecord``, and optional x402 facilitator verification
+is gated by ``network.outbound`` (default: ``self`` only). Dev-site Composer /
+JavaScript package runners and the UID-validated Solr scheduler projection are
+declared separately because subprocess traffic cannot pass through the PHP
+HTTP guard.
 
 Hardening means deleting lines from the manifest. Removing
 ``database:write`` makes the MCP read-only; keeping the default
 ``network.outbound: [self]`` or replacing an opened policy with
 ``[self, 'images.unsplash.com']`` locks outbound HTTP to intentional
-targets.
+targets. The manifest prerequisite graph makes project writes, cache writes,
+and scheduler execution depend on ``database:write`` as well.
 
 DDEV / local-development mode
 -----------------------------
@@ -158,7 +171,8 @@ Supported versions
 ==================
 
 - TYPO3 v14
-- PHP 8.2 or higher
+- PHP 8.3 or higher
+- MCP ``2025-11-25`` stable and ``2026-07-28`` release-candidate wire formats
 
 The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
 clients evolve: tool names, parameters, and behavior **may change** between
@@ -179,3 +193,4 @@ versions and validate upgrades in a non-production environment first.
 
    ForkChanges
    IntendedBehavior
+   McpBasics

@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Process\Process;
@@ -23,6 +24,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * - search: search for TYPO3 extensions on Packagist (composer search)
  */
 #[AdminOnly]
+#[DevSiteOnly]
 final class InstallExtensionTool extends AbstractTool
 {
     /**
@@ -48,7 +50,8 @@ final class InstallExtensionTool extends AbstractTool
         return [
             'description' => 'Install, activate, or search for TYPO3 extensions. '
                 . 'Actions: "require" installs a Composer package, "activate" enables an installed extension, '
-                . '"search" finds TYPO3 extensions on Packagist, "list" returns loaded extensions with version and state. Admin-only.',
+                . '"search" finds TYPO3 extensions on Packagist, "list" returns loaded extensions with version and state. '
+                . 'Dev-site only because Composer may write the project and contact package repositories. Admin-only.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [

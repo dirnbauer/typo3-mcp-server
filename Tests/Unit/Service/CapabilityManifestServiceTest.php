@@ -30,7 +30,31 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertContains('database:read', $subsystems);
         self::assertContains('database:write', $subsystems);
         self::assertContains('file:write', $subsystems);
+        self::assertContains('cli:command', $subsystems);
+        // MCP-only runtime gates are merged with public coarse capabilities
+        // for enforcement, but live under capabilities.x-mcp in the file.
         self::assertContains('render:frontend', $subsystems);
+    }
+
+    #[Test]
+    public function exposesCommandSkillAndProtocolInventoriesFromMcpExtension(): void
+    {
+        $service = $this->createSubject();
+
+        $commands = $service->getCommandDefinitions();
+        self::assertSame('ReadTable', $commands['mcp:read-table']['tool'] ?? null);
+        self::assertSame('resource-reader', $commands['mcp:tca-resource']['kind'] ?? null);
+
+        $skills = $service->getSkillDefinitions();
+        self::assertSame(
+            'Resources/Private/Skills/typo3-content-edit/SKILL.md',
+            $skills['typo3-content-edit']['source'] ?? null,
+        );
+        self::assertArrayHasKey('typo3-translate-page', $skills);
+
+        $protocol = $service->getProtocolMetadata();
+        self::assertSame('2025-11-25', $protocol['stable_version'] ?? null);
+        self::assertContains('streamable-http', $protocol['transports'] ?? []);
     }
 
     #[Test]
@@ -43,12 +67,40 @@ final class CapabilityManifestServiceTest extends TestCase
     }
 
     #[Test]
-    public function unknownToolFailsClosedToReadAndWrite(): void
+    public function unknownToolHasNoImplicitPolicyAndIsDenied(): void
     {
         $service = $this->createSubject();
         $required = $service->getRequiredSubsystemsForTool('CompletelyMadeUpTool');
 
-        self::assertSame(['database:read', 'database:write'], $required);
+        self::assertSame([], $required);
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessage('not declared in capability manifest');
+        $service->assertToolAllowed('CompletelyMadeUpTool');
+    }
+
+    #[Test]
+    public function explicitlyDeclaredExternalToolUsesItsOwnPolicy(): void
+    {
+        $service = $this->createSubject();
+
+        self::assertSame(
+            ['database:read'],
+            $service->getRequiredSubsystemsForTool('ability_system_site-info'),
+        );
+        $service->assertToolAllowed('ability_system_site-info');
+    }
+
+    #[Test]
+    public function onlyExplicitFalseValuesDisableEnforcement(): void
+    {
+        foreach ([false, 0, '0', 'false', 'no', 'off'] as $value) {
+            self::assertFalse($this->createSubject(['enforceCapabilityManifest' => $value])->isEnforced());
+        }
+
+        foreach ([true, 1, 2, '1', 'true', 'yes', 'on', 'unexpected', ''] as $value) {
+            self::assertTrue($this->createSubject(['enforceCapabilityManifest' => $value])->isEnforced());
+        }
     }
 
     #[Test]
@@ -58,6 +110,44 @@ final class CapabilityManifestServiceTest extends TestCase
 
         $this->expectException(AccessDeniedException::class);
         $service->assertHostAllowed('evil.example.org');
+    }
+
+    #[Test]
+    public function structuredOutboundDeclarationsAreNormalizedForRuntimeEnforcement(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => [],
+            'network' => [
+                'outbound' => [
+                    ['host' => 'api.example.org', 'purpose' => 'Test API', 'protocol' => 'https'],
+                    ['host' => '*.assets.example.org', 'purpose' => 'Test CDN', 'protocol' => 'https'],
+                ],
+            ],
+        ]);
+
+        self::assertSame(['api.example.org', '*.assets.example.org'], $service->getNetworkOutboundPolicy());
+        $service->assertHostAllowed('api.example.org');
+        $service->assertHostAllowed('images.assets.example.org');
+        $service->assertUrlAllowed('https://api.example.org/data');
+
+        try {
+            $service->assertUrlAllowed('http://api.example.org/data');
+            self::fail('The structured HTTPS-only rule must reject plaintext HTTP.');
+        } catch (AccessDeniedException) {
+            self::assertTrue(true);
+        }
+    }
+
+    #[Test]
+    public function schemaAnyOutboundValueIsNormalizedToRuntimeWildcard(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => [],
+            'network' => ['outbound' => 'any'],
+        ]);
+
+        self::assertSame(['*'], $service->getNetworkOutboundPolicy());
+        $service->assertHostAllowed('api.example.org');
     }
 
     #[Test]
@@ -79,7 +169,7 @@ final class CapabilityManifestServiceTest extends TestCase
         // SSRF private-IP filter inside UploadFileFromUrl is also lifted
         // in this mode (see UploadFileFromUrlTool::validateUrl).
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
-        $siteFinder = $this->createMock(SiteFinder::class);
+        $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);
         $service = new CapabilityManifestService(
             new ExtensionConfiguration(),
@@ -140,6 +230,26 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertNotContains('file:write', $effective, 'file:write must drop out when database:write is missing');
     }
 
+    #[Test]
+    public function mcpExtensionPolicyTakesPrecedenceOverLegacyTopLevelPolicy(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read'],
+            'tools' => ['ReadTable' => ['database:write']],
+            'requires' => ['database:read' => ['database:write']],
+            'x-mcp' => [
+                'runtime_subsystems' => ['workspace:read'],
+                'tools' => ['ReadTable' => ['database:read']],
+                'requires' => [],
+            ],
+        ]);
+
+        self::assertSame(['database:read'], $service->getRequiredSubsystemsForTool('ReadTable'));
+        self::assertSame([], $service->getRequiresMap());
+        self::assertContains('workspace:read', $service->getDeclaredSubsystems());
+        $service->assertToolAllowed('ReadTable');
+    }
+
     /**
      * @param array<string, mixed> $capabilities
      */
@@ -151,7 +261,7 @@ final class CapabilityManifestServiceTest extends TestCase
         }
         file_put_contents($tmp, Yaml::dump(['capabilities' => $capabilities]));
 
-        $siteFinder = $this->createMock(SiteFinder::class);
+        $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);
 
         return new CapabilityManifestService(
@@ -168,7 +278,7 @@ final class CapabilityManifestServiceTest extends TestCase
     private function createSubject(array $config = []): CapabilityManifestService
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $config;
-        $siteFinder = $this->createMock(SiteFinder::class);
+        $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn([]);
         return new CapabilityManifestService(
             new ExtensionConfiguration(),

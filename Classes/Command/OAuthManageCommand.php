@@ -81,16 +81,27 @@ final class OAuthManageCommand extends Command
         $clientName = is_string($clientNameOption) ? $clientNameOption : 'MCP Client';
         $baseUrl = $this->baseUrlResolver->resolveConfiguredOrPlaceholder();
 
-        $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, $clientName);
+        $verifier = rtrim(strtr(base64_encode(random_bytes(64)), '+/', '-_'), '=');
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+
+        $authUrl = $this->oauthService->generateAuthorizationUrl(
+            $baseUrl,
+            $clientName,
+            codeChallenge: $challenge,
+        );
 
         $output->writeln("<info>OAuth Authorization URL for user '$username':</info>");
         $output->writeln("<info>$authUrl</info>");
+        $output->writeln('');
+        $output->writeln('<comment>PKCE verifier (keep secret until the code exchange):</comment>');
+        $output->writeln($verifier);
         $output->writeln('');
         $output->writeln('Instructions:');
         $output->writeln('1. Open this URL in your browser');
         $output->writeln('2. Log in to TYPO3 backend if not already logged in');
         $output->writeln('3. Authorize the MCP client access');
-        $output->writeln('4. Use the generated token in your MCP client configuration');
+        $output->writeln('4. Exchange the displayed code with this verifier at /mcp_oauth/token');
+        $output->writeln('5. Use the returned access token in your MCP client configuration');
 
         return Command::SUCCESS;
     }

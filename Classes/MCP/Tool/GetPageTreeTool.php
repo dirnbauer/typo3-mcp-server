@@ -9,6 +9,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -21,6 +22,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -36,6 +38,8 @@ final class GetPageTreeTool extends AbstractRecordTool
         private readonly SiteInformationService $siteInformationService,
         private readonly LanguageService $languageService,
         private readonly ConnectionPool $connectionPool,
+        private readonly TcaSchemaFactory $tcaSchemaFactory,
+        private readonly PageAccessService $pageAccessService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -92,6 +96,7 @@ final class GetPageTreeTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureTableAccess('pages', 'read');
 
         $startPage = (int)($params['startPage'] ?? 0);
         // Bound depth to prevent unbounded resource consumption (OWASP API4).
@@ -108,8 +113,14 @@ final class GetPageTreeTool extends AbstractRecordTool
             }
         }
 
+        if ($startPage > 0) {
+            $this->pageAccessService->assertPageAccess($startPage);
+        }
+
         // Get page tree with the specified parameters
-        $pageTree = $this->getPageTree($startPage, $depth, $languageUid);
+        $pageTree = $startPage === 0 && !$this->pageAccessService->isAdmin()
+            ? $this->getMountedPageTree($depth, $languageUid)
+            : $this->getPageTree($startPage, $depth, $languageUid);
 
         // Collect all page UIDs from the tree
         $pageUids = $this->collectPageUids($pageTree);
@@ -176,6 +187,63 @@ final class GetPageTreeTool extends AbstractRecordTool
     }
 
     /**
+     * Treat a restricted editor's web mounts as the children of the virtual
+     * page-tree root. This mirrors TYPO3's backend tree and avoids traversing
+     * inaccessible ancestors just to discover a nested mount point.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function getMountedPageTree(int $depth, ?int $languageUid): array
+    {
+        $mountUids = $this->pageAccessService->getAccessibleWebMountPageUids();
+        if ($mountUids === []) {
+            return [];
+        }
+
+        $pageRepository = $this->createPageRepository($languageUid);
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(new DeletedRestriction())
+            ->add(new WorkspaceRestriction($currentWorkspace))
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
+
+        $rows = $queryBuilder->select('*')
+            ->from('pages')
+            ->where(
+                $queryBuilder->expr()->in(
+                    'uid',
+                    $queryBuilder->createNamedParameter($mountUids, ArrayParameterType::INTEGER),
+                ),
+                $queryBuilder->expr()->eq(
+                    'sys_language_uid',
+                    $queryBuilder->createNamedParameter(0, ParameterType::INTEGER),
+                ),
+            )
+            ->orderBy('sorting')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        $subpageCounts = $this->batchCountSubpages($mountUids);
+        $tree = [];
+        foreach ($rows as $row) {
+            $page = $this->mapPageRowToTreeEntry($row, $languageUid, $pageRepository);
+            if ($page === null) {
+                continue;
+            }
+            $pageUid = (int)$page['uid'];
+            $page['subpageCount'] = $subpageCounts[$pageUid] ?? 0;
+            $page['subpages'] = $depth > 1
+                ? $this->getPageTree($pageUid, $depth - 1, $languageUid)
+                : [];
+            $tree[] = $page;
+        }
+
+        return $tree;
+    }
+
+    /**
      * Fetch children for multiple parent UIDs in a single query.
      *
      * @param array $parentUids Parent page UIDs to fetch children for
@@ -202,7 +270,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($currentWorkspace))
-            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $query = $queryBuilder->select('*')
             ->from('pages')
@@ -229,17 +297,11 @@ final class GetPageTreeTool extends AbstractRecordTool
 
         // Group pages by parent and apply per-parent limit
         foreach ($allPages as $page) {
-            if ($currentWorkspace > 0) {
-                BackendUtility::workspaceOL('pages', $page);
-                if (!is_array($page)) {
-                    continue;
-                }
+            $pageData = $this->mapPageRowToTreeEntry($page, $languageUid, $pageRepository);
+            if ($pageData === null) {
+                continue;
             }
-
-            $liveUid = isset($page['t3ver_oid']) && (int)$page['t3ver_oid'] > 0
-                ? (int)$page['t3ver_oid']
-                : (int)$page['uid'];
-            $pid = (int)$page['pid'];
+            $pid = (int)$pageData['pid'];
             if (!isset($grouped[$pid])) {
                 $grouped[$pid] = ['pages' => [], 'total' => 0];
             }
@@ -249,23 +311,6 @@ final class GetPageTreeTool extends AbstractRecordTool
             // Skip pages beyond the per-parent limit (but keep counting total)
             if ($perParentLimit !== null && count($grouped[$pid]['pages']) >= $perParentLimit) {
                 continue;
-            }
-
-            $pageData = [
-                'uid' => $liveUid,
-                'pid' => $pid,
-                'title' => $page['title'],
-                'nav_title' => $page['nav_title'],
-                'hidden' => (bool)$page['hidden'],
-                'doktype' => (int)$page['doktype'],
-                'subpageCount' => 0,
-                'url' => $this->siteInformationService->generatePageUrl($liveUid, $languageUid ?? 0),
-            ];
-
-            // Apply language overlay
-            if ($languageUid !== null && $languageUid > 0) {
-                $page['uid'] = $liveUid;
-                $pageData = $this->applyPageLanguageOverlay($page, $pageData, $languageUid, $pageRepository);
             }
 
             $grouped[$pid]['pages'][] = $pageData;
@@ -286,40 +331,63 @@ final class GetPageTreeTool extends AbstractRecordTool
             return [];
         }
 
-        $queryBuilder = $this->connectionPool
-            ->getQueryBuilderForTable('pages');
-
-        $currentWorkspace = $this->getCurrentWorkspaceId();
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($currentWorkspace))
-            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
-
-        $counts = $queryBuilder
-            ->select('pid')
-            ->addSelectLiteral('COUNT(*) AS count')
-            ->from('pages')
-            ->where(
-                $queryBuilder->expr()->in(
-                    'pid',
-                    $queryBuilder->createNamedParameter($parentUids, ArrayParameterType::INTEGER)
-                ),
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)
-                )
-            )
-            ->groupBy('pid')
-            ->executeQuery()
-            ->fetchAllAssociative();
-
         $result = [];
-        foreach ($counts as $row) {
-            $result[(int)$row['pid']] = (int)$row['count'];
+        $children = $this->fetchChildrenBatch(
+            $parentUids,
+            null,
+            $this->createPageRepository(null),
+        );
+        foreach ($children as $parentUid => $group) {
+            /** @var array{pages: list<array<string, mixed>>, total: int} $group */
+            $result[(int)$parentUid] = $group['total'];
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $page
+     * @return array<string, mixed>|null
+     */
+    private function mapPageRowToTreeEntry(
+        array $page,
+        ?int $languageUid,
+        PageRepository $pageRepository,
+    ): ?array {
+        $currentWorkspace = $this->getCurrentWorkspaceId();
+        if ($currentWorkspace > 0) {
+            BackendUtility::workspaceOL('pages', $page);
+            if (!is_array($page)) {
+                return null;
+            }
+        }
+
+        /** @var array<string, mixed> $permissionPage */
+        $permissionPage = $page;
+        if (!$this->pageAccessService->canAccessRecord('pages', $permissionPage)) {
+            return null;
+        }
+
+        $liveUid = isset($page['t3ver_oid']) && (int)$page['t3ver_oid'] > 0
+            ? (int)$page['t3ver_oid']
+            : (int)$page['uid'];
+        $pageData = [
+            'uid' => $liveUid,
+            'pid' => (int)$page['pid'],
+            'title' => $page['title'],
+            'nav_title' => $page['nav_title'],
+            'hidden' => (bool)$page['hidden'],
+            'doktype' => (int)$page['doktype'],
+            'subpageCount' => 0,
+            'url' => $this->siteInformationService->generatePageUrl($liveUid, $languageUid ?? 0),
+        ];
+
+        if ($languageUid !== null && $languageUid > 0) {
+            $page['uid'] = $liveUid;
+            $pageData = $this->applyPageLanguageOverlay($page, $pageData, $languageUid, $pageRepository);
+        }
+
+        return $pageData;
     }
 
     /**
@@ -456,7 +524,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($currentWorkspace))
-            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $translation = $queryBuilder->select('*')
             ->from('pages')
@@ -558,7 +626,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 ->removeAll()
                 ->add(new DeletedRestriction())
                 ->add(new WorkspaceRestriction($currentWorkspace))
-                ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
+                ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
             // Count records grouped by pid
             $counts = $queryBuilder
@@ -601,6 +669,10 @@ final class GetPageTreeTool extends AbstractRecordTool
     {
         $hints = '';
 
+        if (!$this->tableAccessService->canReadTable('tt_content')) {
+            return $hints;
+        }
+
         // Query for plugins on this page
         $queryBuilder = $this->connectionPool
             ->getQueryBuilderForTable('tt_content');
@@ -610,7 +682,7 @@ final class GetPageTreeTool extends AbstractRecordTool
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($currentWorkspace))
-            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace));
+            ->add(new WorkspaceDeletePlaceholderRestriction($currentWorkspace, $this->tcaSchemaFactory));
 
         $plugins = $queryBuilder
             ->select('*')

@@ -76,20 +76,20 @@ final class WriteTableTool extends AbstractRecordTool
         sort($tableNames); // Sort alphabetically for better readability
 
         return [
-            'description' => 'Create, update, translate, move, or delete records in TYPO3 tables. In strict mode, all changes are made in workspace context and require publishing to become live. In DDEV/local mode, live writes and non-workspace tables are allowed for local development. ' .
-                'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). ' .
-                'REQUIRED PARAMETERS PER ACTION: ' .
-                'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). ' .
-                'translate: table, uid, data. data MUST contain sys_language_uid AND translated values for every text field you want localized ' .
-                '(header, bodytext, title, nav_title, subheader, …). Sending only sys_language_uid leaves TYPO3 placeholders like "[Translate to DE:] Original" ' .
-                'because DataHandler\'s localize command copies source values verbatim; your translated values replace them in a follow-up update. ' .
-                'Run GetTableSchema first to see which fields are translatable for the table. ' .
-                'INLINE RELATIONS (CRITICAL): On update, passing an inline field REPLACES ALL existing children — omitted children are deleted (embedded) or unlinked (independent). ' .
-                'To keep existing children, include their UIDs: [2546, 2547, {"CType": "textmedia", "header": "New"}]. To update an existing child: {"uid": 2546, "header": "Updated"}. Order in the array defines sorting. ' .
-                'Nested inline relations are supported: child record data may itself contain inline arrays. ' .
-                'FLEXFORM FIELDS: Pass as JSON objects (auto-converted to XML). Use "settings.fieldName" keys for plugin settings. ' .
-                'ORDERING: When creating multiple elements on a page, chain positions: create first with "bottom", then "after:{uid}" for each next. ' .
-                'Before creating content, use GetPage + ReadTable to understand page structure and existing content.',
+            'description' => 'Create, update, translate, move, or delete records in TYPO3 tables. In strict mode, all changes are made in workspace context and require publishing to become live. In DDEV/local mode, live writes and non-workspace tables are allowed for local development. '
+                . 'Language fields (sys_language_uid) accept ISO codes ("de", "fr") instead of numeric IDs. Date/time fields accept ISO 8601 strings and are auto-converted to timestamps. Slug fields are auto-normalized (leading slash ensured). '
+                . 'REQUIRED PARAMETERS PER ACTION: '
+                . 'create: table, pid, data. update: table, uid, data. delete: table, uid. move: table, uid, position (and optionally pid for cross-page). '
+                . 'translate: table, uid, data. data MUST contain sys_language_uid AND translated values for every text field you want localized '
+                . '(header, bodytext, title, nav_title, subheader, …). Sending only sys_language_uid leaves TYPO3 placeholders like "[Translate to DE:] Original" '
+                . 'because DataHandler\'s localize command copies source values verbatim; your translated values replace them in a follow-up update. '
+                . 'Run GetTableSchema first to see which fields are translatable for the table. '
+                . 'INLINE RELATIONS (CRITICAL): On update, passing an inline field REPLACES ALL existing children — omitted children are deleted (embedded) or unlinked (independent). '
+                . 'To keep existing children, include their UIDs: [2546, 2547, {"CType": "textmedia", "header": "New"}]. To update an existing child: {"uid": 2546, "header": "Updated"}. Order in the array defines sorting. '
+                . 'Nested inline relations are supported: child record data may itself contain inline arrays. '
+                . 'FLEXFORM FIELDS: Pass as JSON objects (auto-converted to XML). Use "settings.fieldName" keys for plugin settings. '
+                . 'ORDERING: When creating multiple elements on a page, chain positions: create first with "bottom", then "after:{uid}" for each next. '
+                . 'Before creating content, use GetPage + ReadTable to understand page structure and existing content.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -113,13 +113,13 @@ final class WriteTableTool extends AbstractRecordTool
                     ],
                     'data' => [
                         'type' => 'object',
-                        'description' => 'Record data as field-value pairs. ' .
-                            'INLINE RELATIONS: For embedded tables, pass record data arrays to create new children or {"uid": N} to reference existing ones (optionally with fields to update). ' .
-                            'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. Array order drives display order. ' .
-                            'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. ' .
-                            'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. ' .
-                            'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. ' .
-                            'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML.',
+                        'description' => 'Record data as field-value pairs. '
+                            . 'INLINE RELATIONS: For embedded tables, pass record data arrays to create new children or {"uid": N} to reference existing ones (optionally with fields to update). '
+                            . 'For independent tables, pass UIDs to link. On update, the array REPLACES all children — include existing UIDs to keep them. Array order drives display order. '
+                            . 'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. '
+                            . 'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. '
+                            . 'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. '
+                            . 'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML.',
                         'additionalProperties' => true,
                         'examples' => [
                             ['title' => 'News Title', 'bodytext' => 'News <b>content</b>', 'datetime' => '2024-01-01 10:00:00'],
@@ -206,15 +206,15 @@ final class WriteTableTool extends AbstractRecordTool
             if (isset($params['data']) && !is_array($params['data'])) {
                 $dataType = gettype($params['data']);
                 throw new ValidationException([
-                    "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. " .
-                    'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, ' .
-                    'not a plain string. Each field name should be a key with its corresponding value.',
+                    "Invalid data parameter: Expected an object/array with field names as keys, but received {$dataType}. "
+                    . 'The data parameter must be an object like {"title": "My Title", "bodytext": "Content"}, '
+                    . 'not a plain string. Each field name should be a key with its corresponding value.',
                 ]);
             }
             if (empty($data) && !($action === 'update' && $positionExplicit)) {
                 throw new ValidationException([
-                    "The data parameter must contain record fields for {$action} actions. " .
-                    'Provide field names as keys, e.g. {"title": "Page Title", "bodytext": "Content"}.',
+                    "The data parameter must contain record fields for {$action} actions. "
+                    . 'Provide field names as keys, e.g. {"title": "Page Title", "bodytext": "Content"}.',
                 ]);
             }
         }
@@ -802,7 +802,10 @@ final class WriteTableTool extends AbstractRecordTool
         $sortingField = $this->tableAccessService->getSortingFieldName($table);
 
         // Resolve reference record's pid and sorting in workspace context
-        $refRecord = BackendUtility::getRecord($table, $referenceUid, 'pid' . ($sortingField ? ',' . $sortingField : ''));
+        // workspaceOL() requires the primary key even when callers only need a
+        // small field projection. Omitting it makes Core index $row['uid'] and
+        // emits a warning before it can resolve the workspace version.
+        $refRecord = BackendUtility::getRecord($table, $referenceUid, 'uid,pid' . ($sortingField ? ',' . $sortingField : ''));
         BackendUtility::workspaceOL($table, $refRecord);
 
         $refPid = $refRecord ? (int)$refRecord['pid'] : $pid;
@@ -1313,8 +1316,8 @@ final class WriteTableTool extends AbstractRecordTool
             // Convert arrays to comma-separated strings for multi-value fields
             if (is_array($value)) {
                 $fieldType = $fieldConfig['config']['type'] ?? '';
-                if (in_array($fieldType, ['select', 'category']) ||
-                    ($fieldType === 'group' && !empty($fieldConfig['config']['multiple']))) {
+                if (in_array($fieldType, ['select', 'category'])
+                    || ($fieldType === 'group' && !empty($fieldConfig['config']['multiple']))) {
                     $data[$fieldName] = implode(',', array_map(strval(...), $value));
                 }
             }
@@ -1621,6 +1624,25 @@ final class WriteTableTool extends AbstractRecordTool
     {
         $beUser = $GLOBALS['BE_USER'];
 
+        // Root-level records are validated by DataHandler's TCA rootLevel
+        // capability and, for pages, assertRootLevelPageCreationAllowed().
+        if ($pid === 0) {
+            return null;
+        }
+
+        if ($pid < 0) {
+            return sprintf('Invalid target page ID %d: page IDs must be zero or positive.', $pid);
+        }
+
+        // DataHandler assumes that a positive pid resolves to a complete page
+        // row and directly reads its doktype. Validate existence first so a
+        // malformed MCP pid becomes a structured error instead of a Core PHP
+        // warning (and a misleading successful response for admin users).
+        $page = BackendUtility::getRecord('pages', $pid, 'uid,doktype');
+        if (!is_array($page) || !is_numeric($page['uid'] ?? null)) {
+            return sprintf('Target page %d does not exist or is deleted.', $pid);
+        }
+
         // Admin users have access to all pages
         if ($beUser->isAdmin()) {
             return null;
@@ -1629,8 +1651,8 @@ final class WriteTableTool extends AbstractRecordTool
         // Check if user has access to this page through webmounts
         if (!$beUser->isInWebMount($pid)) {
             return sprintf(
-                'Permission denied: You do not have access to page %d. Your account needs database mount point (DB Mount) ' .
-                'access to this page or its parent pages. Contact your administrator.',
+                'Permission denied: You do not have access to page %d. Your account needs database mount point (DB Mount) '
+                . 'access to this page or its parent pages. Contact your administrator.',
                 $pid
             );
         }
@@ -1742,8 +1764,8 @@ final class WriteTableTool extends AbstractRecordTool
             // Parse common TYPO3 DataHandler error patterns
             if (str_contains((string)$error, 'Attempt to insert record on pages:')) {
                 if (str_contains((string)$error, 'not allowed')) {
-                    $errors[] = 'Cannot create record on this page. Check that you have database mount point access ' .
-                        'and the necessary table permissions.';
+                    $errors[] = 'Cannot create record on this page. Check that you have database mount point access '
+                        . 'and the necessary table permissions.';
                     continue;
                 }
             }

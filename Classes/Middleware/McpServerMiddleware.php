@@ -107,6 +107,8 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
             'code_challenge' => $oauthData['code_challenge'] ?? '',
             'code_challenge_method' => $oauthData['code_challenge_method'] ?? '',
             'state' => $oauthData['state'] ?? '',
+            'resource' => $oauthData['resource'] ?? '',
+            'scope' => $oauthData['scope'] ?? '',
         ]);
 
         $oauthAuthorizeUrl = '/mcp_oauth/authorize?' . $queryParams;
@@ -146,6 +148,16 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
         if (!is_array($oauthData)) {
             return null;
         }
+
+        $issuedAt = $oauthData['issued_at'] ?? null;
+        if (!is_string($issuedAt) || !ctype_digit($issuedAt)) {
+            return null;
+        }
+        $age = time() - (int)$issuedAt;
+        if ($age < -60 || $age > 600) {
+            return null;
+        }
+        unset($oauthData['issued_at']);
 
         $result = [];
         foreach ($oauthData as $key => $value) {

@@ -6,6 +6,8 @@ namespace Hn\McpServer\Tests\Functional\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Service\WorkspaceContextService;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -54,6 +56,102 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
 
         $second = $this->service->switchToOptimalWorkspace($backendUser);
         self::assertSame($first, $second, 'Should return current workspace when already set');
+    }
+
+    public function testSwitchToOptimalWorkspaceDoesNotTrustInaccessiblePreselectedWorkspace(): void
+    {
+        $this->createBackendUser(2);
+        $this->createWorkspace(10, 'Permitted Workspace', '', 'be_users_2');
+        $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
+
+        $backendUser = $this->setUpBackendUser(2);
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+
+        // Model an untrusted preselection made by an optional transport adapter,
+        // for example from an X-TYPO3-Workspace request header.
+        $backendUser->workspace = 20;
+        $backendUser->user['workspace_id'] = 20;
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $workspaceId = $this->service->switchToOptimalWorkspace($backendUser);
+
+        self::assertSame(10, $workspaceId);
+        self::assertSame(10, $backendUser->workspace);
+    }
+
+    public function testSwitchToOptimalWorkspaceProvisionsIsolatedDraftForNonAdmin(): void
+    {
+        $this->createBackendUser(2);
+        $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
+
+        $backendUser = $this->setUpBackendUser(2);
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+        $backendUser->workspace = 20;
+        $backendUser->user['workspace_id'] = 20;
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $workspaceId = $this->service->switchToOptimalWorkspace($backendUser);
+
+        self::assertGreaterThan(0, $workspaceId);
+        self::assertNotSame(20, $workspaceId);
+        self::assertSame($workspaceId, $backendUser->workspace);
+
+        $workspace = $backendUser->checkWorkspace($workspaceId);
+        self::assertIsArray($workspace);
+        self::assertSame('owner', $workspace['_ACCESS']);
+        self::assertSame('be_users_2', $workspace['adminusers']);
+    }
+
+    public function testSwitchToOptimalWorkspaceFailsClosedWithoutAuthenticatedIdentity(): void
+    {
+        $backendUser = $GLOBALS['BE_USER'];
+        $backendUser->user['uid'] = 0;
+        $backendUser->user['admin'] = 0;
+        $backendUser->groupData['workspace_perms'] = 0;
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->service->switchToOptimalWorkspace($backendUser);
+    }
+
+    public function testReadContextFallsBackToLiveWithoutRequiringWritePermission(): void
+    {
+        $this->createBackendUser(2);
+        $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
+        $backendUser = $this->setUpBackendUser(2);
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+        $backendUser->workspace = 20;
+        $backendUser->user['workspace_id'] = 20;
+
+        $workspaceId = $this->service->switchToReadWorkspace($backendUser);
+
+        self::assertSame(0, $workspaceId);
+        self::assertSame(0, $backendUser->workspace);
+        self::assertSame(0, $backendUser->user['workspace_id']);
+    }
+
+    public function testExplicitInaccessibleReadWorkspaceIsRejected(): void
+    {
+        $this->createBackendUser(2);
+        $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
+        $backendUser = $this->setUpBackendUser(2);
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+
+        $this->expectException(AccessDeniedException::class);
+        $this->service->switchToReadWorkspace($backendUser, 20);
+    }
+
+    public function testReadContextKeepsAccessibleDraftWithoutRequiringWritableAccess(): void
+    {
+        $this->createBackendUser(2);
+        $this->createWorkspace(10, 'Readable Workspace', '', 'be_users_2');
+        $backendUser = $this->setUpBackendUser(2);
+        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+
+        $workspaceId = $this->service->switchToReadWorkspace($backendUser, 10);
+
+        self::assertSame(10, $workspaceId);
+        self::assertSame(10, $backendUser->workspace);
     }
 
     public function testSwitchToWorkspaceWithExistingWorkspace(): void
@@ -123,5 +221,43 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $wsId = $this->service->getCurrentWorkspace();
 
         self::assertIsInt($wsId);
+    }
+
+    private function createBackendUser(int $uid): void
+    {
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_users')
+            ->insert('be_users', [
+                'uid' => $uid,
+                'pid' => 0,
+                'username' => 'workspace_user_' . $uid,
+                'password' => '',
+                'admin' => 0,
+                'disable' => 0,
+                'deleted' => 0,
+                'workspace_id' => 0,
+                'workspace_perms' => 0,
+                'userMods' => '',
+                'tstamp' => time(),
+                'crdate' => time(),
+            ]);
+    }
+
+    private function createWorkspace(
+        int $uid,
+        string $title,
+        string $adminUsers,
+        string $members,
+    ): void {
+        GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('sys_workspace')
+            ->insert('sys_workspace', [
+                'uid' => $uid,
+                'pid' => 0,
+                'title' => $title,
+                'adminusers' => $adminUsers,
+                'members' => $members,
+                'deleted' => 0,
+            ]);
     }
 }

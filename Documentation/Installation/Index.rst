@@ -12,7 +12,7 @@ Requirements
 ============
 
 - TYPO3 v14
-- PHP 8.2+
+- PHP 8.3+
 - TYPO3 backend access for the editors who will use MCP
 - TYPO3 Workspaces extension, installed as a dependency
 
@@ -44,6 +44,11 @@ Activate the extension:
    vendor/bin/typo3 extension:activate mcp_server
 
 The backend module will then be available under :guilabel:`User > MCP Server`.
+
+The project requires ``logiscape/mcp-sdk-php:^2.0.0-beta3`` and the committed
+lock file currently selects ``2.0.0-beta3`` while the locked ``2026-07-28``
+protocol release candidate is validated. Test both protocol eras before
+updating that lock.
 
 First backend check
 ===================
@@ -107,6 +112,12 @@ This is the recommended setup for remote MCP clients.
 
 The module includes setup instructions for multiple client types.
 
+The endpoint serves MCP ``2025-11-25`` and the ``2026-07-28`` release
+candidate. Current Codex, Cursor, and Claude product documentation does not
+provide a dependable dated revision matrix, so leave stable fallback enabled
+and test the installed client version. See
+:doc:`../Architecture/ProtocolMigration`.
+
 .. _installation-local-cli:
 
 Local TYPO3 CLI server
@@ -168,6 +179,8 @@ Run any registered tool by name:
 
    vendor/bin/typo3 mcp:tool ReadTable --param table=pages --param pid=1 --json
    vendor/bin/typo3 mcp:tool:list --schema=ReadTable
+   vendor/bin/typo3 mcp:prompt:list
+   vendor/bin/typo3 mcp:prompt:get typo3-content-edit --request='Edit page 42'
 
 Or use one of the shipped per-tool shortcuts:
 
@@ -190,6 +203,15 @@ the TYPO3 project root). Most dedicated shortcuts are
 create a custom ``AbstractMcpToolCommand`` subclass only when a shortcut needs
 bespoke options or output formatting.
 
+Optional Abilities REST projection
+----------------------------------
+
+The MCP endpoint does not require another API extension. Install
+``webconsulting/typo3-abilities`` and the TYPO3 v14 ``sg_apicore`` fork only
+when CLI-governed abilities, REST discovery/execution, or generated OpenAPI are
+needed. Follow :doc:`../Integration/SgApiCore`; it includes the maintained
+repositories, scopes, and post-install checks.
+
 After installation
 ==================
 
@@ -200,3 +222,5 @@ Continue with:
 - :doc:`../Tools/Index` to review the available MCP tools
 - :doc:`../Architecture/CapabilityManifest` to understand the
   declaration-and-enforcement security model
+- :doc:`../Testing/ProtocolCompatibility` to verify both MCP eras on the
+  installed TYPO3 instance

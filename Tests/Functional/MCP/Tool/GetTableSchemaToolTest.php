@@ -372,7 +372,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
     /**
      * Select TCA items with numeric (int) labels must not break schema
      * formatting. Reproduces a real-world third-party `ranking` field on
-     * sys_file_metadata (TYPO3 13) that lists items with integer labels
+     * sys_file_metadata-style field that lists items with integer labels
      * 0..5. Before the fix, parseSelectItems handed the int label straight
      * to the type-strict TableAccessService::translateLabel(string $label),
      * raising a TypeError — schema introspection (which an LLM client

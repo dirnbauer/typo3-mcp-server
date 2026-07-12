@@ -71,4 +71,15 @@ final class SafeCliToolTest extends AbstractFunctionalTest
         $result = $this->tool->execute(['command' => '']);
         self::assertTrue($result->isError, 'Expected error for empty command');
     }
+
+    public function testNonAdminBackendUserCannotRunMaintenanceCommands(): void
+    {
+        $backendUser = $GLOBALS['BE_USER'];
+        $backendUser->user['admin'] = 0;
+
+        $result = $this->tool->execute(['command' => 'extension:list']);
+
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('admin privileges', $this->getFirstTextContent($result));
+    }
 }

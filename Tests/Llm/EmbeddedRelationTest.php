@@ -39,8 +39,8 @@ class EmbeddedRelationTest extends LlmTestCase
 
         // tt_content uid=100 has two assets: ref uid=1 (Hero Image) and ref uid=2 (Second Image),
         // both pointing to sys_file uid=1 (test.jpg).
-        $prompt = 'Content element uid=100 in tt_content has an image titled "Hero Image". ' .
-            'Update the alternative text of that image to "Updated alt text" without touching the other image.';
+        $prompt = 'Content element uid=100 in tt_content has an image titled "Hero Image". '
+            . 'Update the alternative text of that image to "Updated alt text" without touching the other image.';
 
         $response = $this->executeUntilToolFound(
             $this->callLlm($prompt),
@@ -63,8 +63,8 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertCount(
             2,
             $refs,
-            'Patching one image must not create a duplicate row or drop the other reference. ' .
-            'Got ' . count($refs) . ' references. ' . $this->getFailureContext($currentResponse)
+            'Patching one image must not create a duplicate row or drop the other reference. '
+            . 'Got ' . count($refs) . ' references. ' . $this->getFailureContext($currentResponse)
         );
 
         $refByUid = [];
@@ -74,29 +74,29 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertArrayHasKey(
             1,
             $refByUid,
-            'Original sys_file_reference uid=1 must be reused, not replaced. ' .
-            'Existing uids: ' . implode(',', array_keys($refByUid)) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'Original sys_file_reference uid=1 must be reused, not replaced. '
+            . 'Existing uids: ' . implode(',', array_keys($refByUid)) . '. '
+            . $this->getFailureContext($currentResponse)
         );
         self::assertArrayHasKey(
             2,
             $refByUid,
-            'Untouched sys_file_reference uid=2 must remain. ' .
-            $this->getFailureContext($currentResponse)
+            'Untouched sys_file_reference uid=2 must remain. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $hero = $refByUid[1];
         self::assertSame(
             1,
             (int)$hero['uid_local'],
-            'uid_local must be preserved (no broken reference with uid_local=0). ' .
-            $this->getFailureContext($currentResponse)
+            'uid_local must be preserved (no broken reference with uid_local=0). '
+            . $this->getFailureContext($currentResponse)
         );
         self::assertSame(
             'Updated alt text',
             (string)$hero['alternative'],
-            'alternative on the Hero Image reference should be updated. ' .
-            $this->getFailureContext($currentResponse)
+            'alternative on the Hero Image reference should be updated. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $other = $refByUid[2];
@@ -113,9 +113,9 @@ class EmbeddedRelationTest extends LlmTestCase
     {
         $this->setModel($modelKey);
 
-        $prompt = 'Content element uid=100 in tt_content has two images attached: "Hero Image" first, ' .
-            'then "Second Image". Swap their order so that "Second Image" appears first and "Hero Image" second. ' .
-            'Keep both images attached and do not change any other fields.';
+        $prompt = 'Content element uid=100 in tt_content has two images attached: "Hero Image" first, '
+            . 'then "Second Image". Swap their order so that "Second Image" appears first and "Hero Image" second. '
+            . 'Keep both images attached and do not change any other fields.';
 
         $response = $this->executeUntilToolFound(
             $this->callLlm($prompt),
@@ -138,8 +138,8 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertCount(
             2,
             $refs,
-            'Both references must remain after reordering. Got ' . count($refs) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'Both references must remain after reordering. Got ' . count($refs) . '. '
+            . $this->getFailureContext($currentResponse)
         );
 
         usort($refs, fn($a, $b) => (int)$a['sorting_foreign'] <=> (int)$b['sorting_foreign']);
@@ -148,17 +148,17 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertSame(
             ['Second Image', 'Hero Image'],
             $titles,
-            'Reorder must change the sort order of existing references. ' .
-            'Got titles in order: ' . implode(' → ', $titles) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'Reorder must change the sort order of existing references. '
+            . 'Got titles in order: ' . implode(' → ', $titles) . '. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $uidLocals = array_unique(array_map(fn($r) => (int)$r['uid_local'], $refs));
         self::assertSame(
             [1],
             array_values($uidLocals),
-            'No reference should have been recreated with uid_local=0. ' .
-            $this->getFailureContext($currentResponse)
+            'No reference should have been recreated with uid_local=0. '
+            . $this->getFailureContext($currentResponse)
         );
     }
 
@@ -169,8 +169,8 @@ class EmbeddedRelationTest extends LlmTestCase
         $this->setModel($modelKey);
 
         // person.jpg = sys_file uid=3
-        $prompt = 'Content element uid=100 in tt_content already has two images. ' .
-            'Add person.jpg as a third image to the existing assets, keeping the existing two images intact.';
+        $prompt = 'Content element uid=100 in tt_content already has two images. '
+            . 'Add person.jpg as a third image to the existing assets, keeping the existing two images intact.';
 
         $response = $this->executeUntilToolFound(
             $this->callLlm($prompt),
@@ -192,8 +192,8 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertCount(
             3,
             $refs,
-            'Expected three asset references after adding a third image. Got ' . count($refs) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'Expected three asset references after adding a third image. Got ' . count($refs) . '. '
+            . $this->getFailureContext($currentResponse)
         );
 
         $fileUids = array_map(fn($r) => (int)$r['uid_local'], $refs);
@@ -201,9 +201,9 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertContains(
             3,
             $fileUids,
-            'New reference must point to person.jpg (sys_file uid=3). ' .
-            'Got uid_local values: ' . implode(',', $fileUids) . '. ' .
-            $this->getFailureContext($currentResponse)
+            'New reference must point to person.jpg (sys_file uid=3). '
+            . 'Got uid_local values: ' . implode(',', $fileUids) . '. '
+            . $this->getFailureContext($currentResponse)
         );
 
         // Both original references (uid=1, uid=2 — both pointing at sys_file uid=1) must still be there.
@@ -211,14 +211,14 @@ class EmbeddedRelationTest extends LlmTestCase
         self::assertContains(
             1,
             $existingRefUids,
-            'Original Hero Image reference (uid=1) was dropped. ' .
-            $this->getFailureContext($currentResponse)
+            'Original Hero Image reference (uid=1) was dropped. '
+            . $this->getFailureContext($currentResponse)
         );
         self::assertContains(
             2,
             $existingRefUids,
-            'Original Second Image reference (uid=2) was dropped. ' .
-            $this->getFailureContext($currentResponse)
+            'Original Second Image reference (uid=2) was dropped. '
+            . $this->getFailureContext($currentResponse)
         );
     }
 

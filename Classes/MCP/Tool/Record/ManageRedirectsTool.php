@@ -394,12 +394,7 @@ final class ManageRedirectsTool extends AbstractRecordTool
 
     private function redirectsAreAvailable(): bool
     {
-        $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
-            return false;
-        }
-
-        return is_array($globalTca[self::TABLE] ?? null);
+        return $this->tableAccessService->hasTable(self::TABLE);
     }
 
     private function redirectWritesAreSupported(): bool
@@ -426,22 +421,6 @@ final class ManageRedirectsTool extends AbstractRecordTool
 
     private function redirectTableIsWorkspaceCapable(): bool
     {
-        $globalTca = $GLOBALS['TCA'] ?? null;
-        if (!is_array($globalTca)) {
-            return false;
-        }
-
-        $tableTca = $globalTca[self::TABLE] ?? null;
-        if (!is_array($tableTca)) {
-            return false;
-        }
-
-        $ctrl = $tableTca['ctrl'] ?? null;
-        if (!is_array($ctrl)) {
-            return false;
-        }
-
-        $workspaceCapability = $ctrl['versioningWS'] ?? false;
-        return $workspaceCapability === true || $workspaceCapability === 1 || $workspaceCapability === '1';
+        return $this->tableAccessService->isWorkspaceCapable(self::TABLE);
     }
 }

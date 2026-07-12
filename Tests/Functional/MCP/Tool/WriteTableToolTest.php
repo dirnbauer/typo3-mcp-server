@@ -2208,8 +2208,8 @@ XML;
         self::assertSame(
             $expectedHeaders,
             $actualHeaders,
-            'Content elements must appear in the order they were created. ' .
-            'Sequential "bottom" writes should produce ascending sorting values.'
+            'Content elements must appear in the order they were created. '
+            . 'Sequential "bottom" writes should produce ascending sorting values.'
         );
 
         // Also verify UIDs match in order

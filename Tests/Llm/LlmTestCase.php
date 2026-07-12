@@ -127,7 +127,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $this->attemptCount = $attempt;
             try {
                 return parent::invokeTestMethod($methodName, $testArguments);
-            } catch (SkippedWithMessageException | IncompleteTestError $e) {
+            } catch (SkippedWithMessageException|IncompleteTestError $e) {
                 throw $e;
             } catch (AssertionFailedError $e) {
                 $lastException = $e;
@@ -496,9 +496,9 @@ abstract class LlmTestCase extends FunctionalTestCase
                 }
             }
 
-            $hasErrorContent = str_starts_with($content, 'Error:') ||
-                              str_contains($content, 'authentication') ||
-                              str_contains($content, 'not properly initialized');
+            $hasErrorContent = str_starts_with($content, 'Error:')
+                              || str_contains($content, 'authentication')
+                              || str_contains($content, 'not properly initialized');
 
             $isError = $result->isError || $hasErrorContent;
             if ($isError) {

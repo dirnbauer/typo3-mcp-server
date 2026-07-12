@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\X402;
 
 use Doctrine\DBAL\ParameterType;
-use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Service\X402\X402ContentAccessService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * MCP tool for querying x402 payment statistics.
@@ -19,21 +21,22 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * paid content pages. Works with the tx_x402_payment_log table
  * from the typo3-x402-paywall extension.
  */
-final class GetPaymentStatsTool extends AbstractTool
+#[AdminOnly]
+final class GetPaymentStatsTool extends AbstractRecordTool
 {
     public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
         private readonly ConnectionPool $connectionPool,
-    ) {}
-
-    public function getName(): string
-    {
-        return 'GetPaymentStats';
+        private readonly X402ContentAccessService $contentAccess,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
             'description' => 'Get x402 payment statistics. Returns revenue, transaction counts, and top content. '
@@ -75,18 +78,27 @@ final class GetPaymentStatsTool extends AbstractTool
         $groupBy = is_string($groupByRaw) ? $groupByRaw : 'page';
 
         // Check if payment log table exists
-        if (!$this->tableExists('tx_x402_payment_log')) {
+        if (!$this->databaseTableExists('tx_x402_payment_log')) {
+            if ($this->columnExists('pages', 'tx_x402_paywall_enabled')) {
+                $this->ensureTableAccess('pages', 'read');
+            }
             return $this->returnConfigStatus();
         }
 
-        $since = match ($period) {
+        // Payment logs are not workspace-versioned, so use the dedicated
+        // read-only access check after establishing the page read context.
+        $this->ensureTableAccess('pages', 'read');
+        $this->tableAccessService->validateReadTableAccess('tx_x402_payment_log');
+
+        $sinceValue = match ($period) {
             'today' => strtotime('today'),
             '7days' => strtotime('-7 days'),
             '30days' => strtotime('-30 days'),
             default => 0,
         };
+        $since = is_int($sinceValue) ? $sinceValue : 0;
 
-        $stats = $this->getPaymentStats($since ?: 0, $groupBy);
+        $stats = $this->getPaymentStats($since, $groupBy);
 
         return new CallToolResult([
             new TextContent(json_encode($stats, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
@@ -185,7 +197,7 @@ final class GetPaymentStatsTool extends AbstractTool
             default => null,
         };
 
-        if ($groupField) {
+        if ($groupField !== null) {
             $queryBuilder->addGroupBy($groupField);
             $queryBuilder->orderBy('revenue', 'DESC');
         }
@@ -197,19 +209,7 @@ final class GetPaymentStatsTool extends AbstractTool
 
     private function getGatedPageCount(): int
     {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-
-        $countRaw = $queryBuilder
-            ->count('uid')
-            ->from('pages')
-            ->where($queryBuilder->expr()->eq('tx_x402_paywall_enabled', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER)))
-            ->executeQuery()
-            ->fetchOne();
-
-        return is_numeric($countRaw) ? (int)$countRaw : 0;
+        return count($this->contentAccess->getGatedPages());
     }
 
     private function returnConfigStatus(): CallToolResult
@@ -232,7 +232,7 @@ final class GetPaymentStatsTool extends AbstractTool
         ]);
     }
 
-    private function tableExists(string $table): bool
+    private function databaseTableExists(string $table): bool
     {
         try {
             $connection = $this->connectionPool->getConnectionForTable($table);
@@ -244,10 +244,17 @@ final class GetPaymentStatsTool extends AbstractTool
 
     private function columnExists(string $table, string $column): bool
     {
+        if ($table === '') {
+            return false;
+        }
         try {
             $connection = $this->connectionPool->getConnectionForTable($table);
-            $columns = $connection->createSchemaManager()->listTableColumns($table);
-            return isset($columns[$column]);
+            foreach ($connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table) as $tableColumn) {
+                if ($tableColumn->getObjectName()->getIdentifier()->getValue() === $column) {
+                    return true;
+                }
+            }
+            return false;
         } catch (\Exception) {
             return false;
         }

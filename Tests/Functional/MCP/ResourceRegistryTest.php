@@ -8,6 +8,7 @@ use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\ResourceRegistry;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
+use Mcp\Types\CacheableResult;
 use Mcp\Types\TextResourceContents;
 
 final class ResourceRegistryTest extends AbstractFunctionalTest
@@ -26,8 +27,12 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
     public function testListResourcesIncludesTcaOverview(): void
     {
         $result = $this->registry->listResources();
-        self::assertCount(1, $result->resources);
-        self::assertSame(ResourceRegistry::URI_OVERVIEW, $result->resources[0]->uri);
+        $uris = array_map(static fn($resource): string => (string)$resource->uri, $result->resources);
+
+        self::assertCount(4, $result->resources);
+        self::assertContains(ResourceRegistry::URI_OVERVIEW, $uris);
+        self::assertContains(ResourceRegistry::URI_SKILLS_OVERVIEW, $uris);
+        self::assertContains(ResourceRegistry::URI_SKILL_PREFIX . 'typo3-content-edit', $uris);
     }
 
     public function testReadTcaOverviewContainsPagesTable(): void
@@ -36,6 +41,8 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
         $content = $result->contents[0] ?? null;
         self::assertInstanceOf(TextResourceContents::class, $content);
         self::assertStringContainsString('`pages`', $content->text);
+        self::assertSame(60_000, $result->getTtlMs());
+        self::assertSame(CacheableResult::CACHE_SCOPE_PRIVATE, $result->getCacheScope());
     }
 
     public function testReadTcaOverviewAcceptsLegacyUri(): void
@@ -84,9 +91,15 @@ final class ResourceRegistryTest extends AbstractFunctionalTest
     public function testResourcesBlockedOutsideDevSiteMode(): void
     {
         $this->disableDevSiteTools();
-        self::assertFalse($this->registry->isAvailable());
+        self::assertTrue($this->registry->isAvailable(), 'Static skills remain available outside local mode.');
+        self::assertFalse($this->registry->isTcaAvailable());
+
+        $listed = $this->registry->listResources();
+        $uris = array_map(static fn($resource): string => (string)$resource->uri, $listed->resources);
+        self::assertCount(3, $listed->resources);
+        self::assertNotContains(ResourceRegistry::URI_OVERVIEW, $uris);
 
         $this->expectException(ValidationException::class);
-        $this->registry->listResources();
+        $this->registry->readResource(ResourceRegistry::URI_OVERVIEW);
     }
 }

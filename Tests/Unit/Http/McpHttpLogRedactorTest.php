@@ -29,13 +29,23 @@ final class McpHttpLogRedactorTest extends TestCase
     }
 
     #[Test]
-    public function redactsTokenQueryParameter(): void
+    public function redactsSensitiveQueryParametersRecursivelyAndCaseInsensitively(): void
     {
-        $params = ['token' => 'supersecret', 'foo' => 'bar'];
+        $params = [
+            'token' => 'supersecret',
+            'ACCESS_TOKEN' => 'secret-access-token',
+            'code_verifier' => 'secret-verifier',
+            'nested' => ['client_secret' => 'secret-client', 'visible' => 'yes'],
+            'foo' => 'bar',
+        ];
 
         $out = McpHttpLogRedactor::redactQueryParamsForLog($params);
 
         self::assertSame('[REDACTED]', $out['token']);
+        self::assertSame('[REDACTED]', $out['ACCESS_TOKEN']);
+        self::assertSame('[REDACTED]', $out['code_verifier']);
+        self::assertSame('[REDACTED]', $out['nested']['client_secret']);
+        self::assertSame('yes', $out['nested']['visible']);
         self::assertSame('bar', $out['foo']);
     }
 }

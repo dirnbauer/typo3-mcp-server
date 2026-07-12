@@ -19,9 +19,16 @@ final readonly class SiteBaseUrlResolver
         }
 
         $uri = $request->getUri();
-        $baseUrl = $uri->getScheme() . '://' . $uri->getHost();
+        $scheme = strtolower($uri->getScheme());
+        $host = $uri->getHost();
+        if (str_contains($host, ':') && !str_starts_with($host, '[')) {
+            $host = '[' . $host . ']';
+        }
+        $baseUrl = $scheme . '://' . $host;
         $port = $uri->getPort();
-        if ($port !== null && !in_array($port, [80, 443], true)) {
+        $isDefaultPort = ($scheme === 'http' && $port === 80)
+            || ($scheme === 'https' && $port === 443);
+        if ($port !== null && !$isDefaultPort) {
             $baseUrl .= ':' . $port;
         }
 

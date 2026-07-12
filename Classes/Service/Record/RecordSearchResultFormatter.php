@@ -25,8 +25,8 @@ final readonly class RecordSearchResultFormatter
             $result .= 'Query: "' . $searchTerms[0] . "\"\n";
         } else {
             $result .= 'Search Terms: [' . implode(', ', array_map(fn($t) => '"' . $t . '"', $searchTerms)) . "]\n";
-            $result .= 'Logic: ' . $termLogic . ' (records must match ' .
-                      ($termLogic === 'AND' ? 'ALL terms' : 'ANY term') . ")\n";
+            $result .= 'Logic: ' . $termLogic . ' (records must match '
+                      . ($termLogic === 'AND' ? 'ALL terms' : 'ANY term') . ")\n";
         }
 
         if ($languageId !== null) {

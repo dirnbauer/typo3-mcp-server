@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\Updates;
 
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Updates\HashExistingTokensUpgradeWizard;
+use PHPUnit\Framework\Attributes\Test;
 
 /**
  * Functional tests for the HashExistingTokensUpgradeWizard
@@ -25,9 +26,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         $this->subject = new HashExistingTokensUpgradeWizard();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testUpdateNecessaryReturnsTrueWhenPlainTokensExist(): void
     {
         $this->insertToken('aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233', 0);
@@ -35,9 +34,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertTrue($this->subject->updateNecessary());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testUpdateNecessaryReturnsFalseWhenAllTokensHashed(): void
     {
         $this->insertToken('aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233', 1);
@@ -45,17 +42,13 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertFalse($this->subject->updateNecessary());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testUpdateNecessaryReturnsFalseWhenNoTokensExist(): void
     {
         self::assertFalse($this->subject->updateNecessary());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testExecuteUpdateHashesPlainTokens(): void
     {
         $plainToken = 'aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233';
@@ -70,9 +63,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertSame(1, (int)$row['token_version'], 'Token version should be set to 1');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testExecuteUpdateSkipsAlreadyHashedTokens(): void
     {
         $hashedToken = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
@@ -85,9 +76,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertSame(1, (int)$row['token_version'], 'Token version should remain 1');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testExecuteUpdateHandlesMultipleTokens(): void
     {
         $plainToken1 = 'aaaa000011112222333344445555666677778888999900001111222233334444';
@@ -113,9 +102,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertSame(1, (int)$row3['token_version']);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testAfterExecutionUpdateNecessaryReturnsFalse(): void
     {
         $this->insertToken('aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233', 0);
@@ -127,9 +114,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertFalse($this->subject->updateNecessary(), 'Should not need update after execution');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testGetTitleReturnsString(): void
     {
         $title = $this->subject->getTitle();
@@ -138,9 +123,7 @@ class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
         self::assertNotEmpty($title);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function testGetDescriptionReturnsString(): void
     {
         $description = $this->subject->getDescription();

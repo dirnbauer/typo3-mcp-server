@@ -15,6 +15,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class OAuthTokenEndpointTest extends AbstractFunctionalTest
 {
+    private const RESOURCE = 'https://example.com/mcp';
+
     private OAuthService $oauthService;
 
     protected function setUp(): void
@@ -28,11 +30,20 @@ final class OAuthTokenEndpointTest extends AbstractFunctionalTest
 
     public function testAuthorizationCodeGrantAcceptsJsonBody(): void
     {
-        $code = $this->oauthService->createAuthorizationCode(1, 'Cursor');
+        $verifier = str_repeat('a', 64);
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+        $code = $this->oauthService->createAuthorizationCode(
+            1,
+            'Cursor',
+            pkceChallenge: $challenge,
+            resource: self::RESOURCE,
+        );
         $response = ($this->createEndpoint())($this->createJsonTokenRequest([
             'grant_type' => 'authorization_code',
             'client_id' => 'typo3-mcp-server',
             'code' => $code,
+            'code_verifier' => $verifier,
+            'resource' => self::RESOURCE,
         ]));
 
         $payload = $this->decodeJsonResponse($response);
@@ -45,14 +56,26 @@ final class OAuthTokenEndpointTest extends AbstractFunctionalTest
 
     public function testRefreshTokenGrantAcceptsFormBody(): void
     {
-        $code = $this->oauthService->createAuthorizationCode(1, 'Cursor');
-        $firstTokenPair = $this->oauthService->exchangeCodeForToken($code);
+        $verifier = str_repeat('b', 64);
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+        $code = $this->oauthService->createAuthorizationCode(
+            1,
+            'Cursor',
+            pkceChallenge: $challenge,
+            resource: self::RESOURCE,
+        );
+        $firstTokenPair = $this->oauthService->exchangeCodeForToken(
+            $code,
+            $verifier,
+            resource: self::RESOURCE,
+        );
         self::assertIsArray($firstTokenPair);
 
         $response = ($this->createEndpoint())($this->createFormTokenRequest([
             'grant_type' => 'refresh_token',
             'client_id' => 'typo3-mcp-server',
             'refresh_token' => $firstTokenPair['refresh_token'],
+            'resource' => self::RESOURCE,
         ]));
 
         $payload = $this->decodeJsonResponse($response);
@@ -62,6 +85,18 @@ final class OAuthTokenEndpointTest extends AbstractFunctionalTest
         self::assertArrayHasKey('refresh_token', $payload);
         self::assertNotSame($firstTokenPair['access_token'], $payload['access_token'] ?? null);
         self::assertNotSame($firstTokenPair['refresh_token'], $payload['refresh_token'] ?? null);
+    }
+
+    public function testOversizedUnauthenticatedBodyIsRejectedBeforeParsing(): void
+    {
+        $response = ($this->createEndpoint())($this->createTokenRequest(
+            '{"padding":"' . str_repeat('x', 65536) . '"}',
+            'application/json',
+        ));
+        $payload = $this->decodeJsonResponse($response);
+
+        self::assertSame(413, $response->getStatusCode());
+        self::assertSame('invalid_request', $payload['error'] ?? null);
     }
 
     private function createEndpoint(): OAuthTokenEndpoint

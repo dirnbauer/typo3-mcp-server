@@ -373,20 +373,8 @@ final class InvalidDataTest extends AbstractFunctionalTest
             ],
         ]);
 
-        // TYPO3 might convert array to string
-        if ($result->isError) {
-            $errorText = $result->content[0]->text;
-            self::assertTrue(
-                str_contains((string)$errorText, 'Invalid') || str_contains((string)$errorText, 'does not accept array values'),
-                'Unexpected validation error: ' . $errorText,
-            );
-        } else {
-            // If it succeeded, check what was stored
-            $data = json_decode((string)$result->content[0]->text, true);
-            if (isset($data['title'])) {
-                self::assertIsString($data['title']);
-            }
-        }
+        self::assertTrue($result->isError);
+        self::assertStringContainsString("Field 'title' does not accept array values", $result->content[0]->text);
     }
 
     /**

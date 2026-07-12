@@ -17,6 +17,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 
 final readonly class RecordSearchExecutor
 {
@@ -24,6 +25,7 @@ final readonly class RecordSearchExecutor
         private ConnectionPool $connectionPool,
         private TableAccessService $tableAccessService,
         private EventDispatcherInterface $eventDispatcher,
+        private TcaSchemaFactory $tcaSchemaFactory,
     ) {}
 
     public function getSearchableFields(string $table): array
@@ -107,7 +109,10 @@ final readonly class RecordSearchExecutor
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction($GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new WorkspaceDeletePlaceholderRestriction(
+                $GLOBALS['BE_USER']->workspace ?? 0,
+                $this->tcaSchemaFactory,
+            ));
 
         // Select all fields
         $queryBuilder->select('*')->from($table);
@@ -159,22 +164,23 @@ final readonly class RecordSearchExecutor
         }
 
         // Filter by language if specified and table has language support
-        if ($languageId !== null && $this->tableHasLanguageSupport($table)) {
+        $languageField = $this->tableAccessService->getLanguageFieldName($table);
+        if ($languageId !== null && $languageField !== null) {
             if ($languageId === 0) {
-                // Default language: only show records with sys_language_uid = 0 or -1 (all languages)
+                // Default language: only show records in the default or all-languages variants.
                 $queryBuilder->andWhere(
                     $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
+                        $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
+                        $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
                     )
                 );
             } else {
                 // Specific language: show records in that language, default language, or all languages
                 $queryBuilder->andWhere(
                     $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
-                        $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
+                        $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter($languageId, ParameterType::INTEGER)),
+                        $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter(0, ParameterType::INTEGER)),
+                        $queryBuilder->expr()->eq($languageField, $queryBuilder->createNamedParameter(-1, ParameterType::INTEGER))
                     )
                 );
             }
@@ -207,7 +213,7 @@ final readonly class RecordSearchExecutor
 
     public function tableHasLanguageSupport(string $table): bool
     {
-        return isset($GLOBALS['TCA'][$table]['ctrl']['languageField']);
+        return $this->tableAccessService->isLanguageAware($table);
     }
 
     /**

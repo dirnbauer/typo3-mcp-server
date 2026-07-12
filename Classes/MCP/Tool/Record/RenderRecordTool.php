@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
+use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\LocalModeService;
+use Hn\McpServer\Service\OutboundUrlGuardService;
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use TYPO3\CMS\Backend\Routing\PreviewUriBuilder;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 
 /**
  * Fetch the rendered frontend HTML for a page in workspace context.
@@ -31,6 +37,8 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
  */
 final class RenderRecordTool extends AbstractRecordTool
 {
+    private const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
+
     private const MAX_LENGTH = 200000;
 
     public function __construct(
@@ -40,6 +48,9 @@ final class RenderRecordTool extends AbstractRecordTool
         private readonly LanguageService $languageService,
         private readonly CapabilityManifestService $capabilityManifest,
         private readonly LocalModeService $localMode,
+        private readonly OutboundUrlGuardService $outboundUrlGuard,
+        private readonly PageAccessService $pageAccessService,
+        private readonly ConnectionPool $connectionPool,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -116,6 +127,11 @@ final class RenderRecordTool extends AbstractRecordTool
         $maxLength = max(1000, min(self::MAX_LENGTH, $maxLength));
 
         $this->ensureTableAccess('pages', 'read');
+        $this->pageAccessService->assertPageAccess($pageId);
+        if ($contentUid > 0) {
+            $this->ensureTableAccess('tt_content', 'read');
+            $this->assertContentBelongsToPage($contentUid, $pageId);
+        }
 
         $languageId = 0;
         if ($language !== null && $language !== '') {
@@ -185,34 +201,25 @@ final class RenderRecordTool extends AbstractRecordTool
             throw new ValidationException(['Invalid render URL — could not extract host.']);
         }
         // Manifest gate: host must be in network.outbound (default `self`).
-        $this->capabilityManifest->assertHostAllowed($host);
+        $this->capabilityManifest->assertUrlAllowed($url);
 
         // SSRF defense in depth: even if the manifest allows the host (e.g.
         // `self` matches a misconfigured site whose host resolves to 127.0.0.1
         // or another internal address), refuse to dial private/reserved IPs.
         // In local mode (DDEV) DNS commonly resolves to private addresses for
         // the dev TLD, so the check is lifted there.
-        if (!$this->localMode->isLocalMode()) {
-            $ips = gethostbynamel($host);
-            if ($ips === false || $ips === []) {
-                throw new ValidationException(['Could not resolve render-host: ' . $host]);
-            }
-            foreach ($ips as $ip) {
-                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                    throw new ValidationException([
-                        'Render request would target a private/reserved network address — refused.',
-                    ]);
-                }
-            }
-        }
+        $curlResolveEntry = $this->localMode->isLocalMode()
+            ? null
+            : $this->outboundUrlGuard->assertPublicAndCreateCurlResolveEntry($url);
 
         $handle = curl_init($url);
         if ($handle === false) {
             throw new ValidationException(['cURL is not available — cannot fetch render output.']);
         }
         $localMode = $this->localMode->isLocalMode();
+        $body = '';
+        $responseTooLarge = false;
         curl_setopt_array($handle, [
-            CURLOPT_RETURNTRANSFER => true,
             // Do not follow redirects — a single HTTP/302 to a private IP would
             // bypass the host check above. If the editor's site uses redirects
             // for canonical URLs they show up as a non-2xx error and the LLM
@@ -224,13 +231,27 @@ final class RenderRecordTool extends AbstractRecordTool
             // verify TLS to keep MITM out of LLM-ingested HTML.
             CURLOPT_SSL_VERIFYPEER => !$localMode,
             CURLOPT_SSL_VERIFYHOST => $localMode ? 0 : 2,
+            CURLOPT_WRITEFUNCTION => static function ($curlHandle, string $chunk) use (&$body, &$responseTooLarge): int {
+                if (strlen($body) + strlen($chunk) > self::MAX_RESPONSE_SIZE) {
+                    $responseTooLarge = true;
+                    return 0;
+                }
+                $body .= $chunk;
+                return strlen($chunk);
+            },
         ]);
-        $body = curl_exec($handle);
+        if ($curlResolveEntry !== null) {
+            curl_setopt($handle, CURLOPT_RESOLVE, [$curlResolveEntry]);
+        }
+        $success = curl_exec($handle);
         $status = curl_getinfo($handle, CURLINFO_HTTP_CODE);
         $error = curl_error($handle);
         curl_close($handle);
 
-        if (!is_string($body) || $body === '') {
+        if ($responseTooLarge) {
+            throw new ValidationException(['Render response exceeds the 5 MB safety limit.']);
+        }
+        if ($success === false || $body === '') {
             throw new ValidationException([
                 'Render request returned no body. HTTP ' . $status . ($error !== '' ? ' ' . $error : ''),
             ]);
@@ -240,6 +261,50 @@ final class RenderRecordTool extends AbstractRecordTool
         }
 
         return $body;
+    }
+
+    private function assertContentBelongsToPage(int $contentUid, int $pageId): void
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(new DeletedRestriction());
+        $row = $queryBuilder->select('*')
+            ->from('tt_content')
+            ->where($queryBuilder->expr()->or(
+                $queryBuilder->expr()->eq(
+                    'uid',
+                    $queryBuilder->createNamedParameter($contentUid, ParameterType::INTEGER),
+                ),
+                $queryBuilder->expr()->eq(
+                    't3ver_oid',
+                    $queryBuilder->createNamedParameter($contentUid, ParameterType::INTEGER),
+                ),
+            ))
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if (!is_array($row)) {
+            throw new ValidationException(['No content element found with UID ' . $contentUid . '.']);
+        }
+
+        $workspaceId = $this->getWorkspaceId();
+        if ($workspaceId > 0) {
+            BackendUtility::workspaceOL('tt_content', $row, $workspaceId);
+            if (!is_array($row)) {
+                throw new ValidationException(['Content element ' . $contentUid . ' is deleted in the active workspace.']);
+            }
+        }
+
+        /** @var array<string, mixed> $row */
+        $this->pageAccessService->assertRecordAccess('tt_content', $row);
+        $contentPageId = $this->pageAccessService->resolveRecordPageUid('tt_content', $row);
+        if ($contentPageId !== $pageId) {
+            throw new ValidationException([
+                'Content element ' . $contentUid . ' does not belong to page ' . $pageId . '.',
+            ]);
+        }
     }
 
     private function extractContentElement(string $html, int $contentUid): ?string

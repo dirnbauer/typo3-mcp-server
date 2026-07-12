@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Hn\McpServer\Command;
 
 use Hn\McpServer\MCP\McpServerFactory;
+use Hn\McpServer\Service\McpCliBackendUserBootstrapService;
 use Mcp\Server\ServerRunner;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -21,6 +21,7 @@ final class McpServerCommand extends Command
 {
     public function __construct(
         private readonly McpServerFactory $serverFactory,
+        private readonly McpCliBackendUserBootstrapService $cliBackendUserBootstrap,
     ) {
         parent::__construct();
     }
@@ -34,8 +35,7 @@ final class McpServerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            // Ensure we have admin rights for the backend user
-            $this->ensureAdminRights();
+            $this->cliBackendUserBootstrap->initialize();
 
             // Ensure TCA is loaded using proper TYPO3 core method
             $tcaFactory = GeneralUtility::getContainer()->get(TcaFactory::class);
@@ -75,32 +75,4 @@ final class McpServerCommand extends Command
         }
     }
 
-    /**
-     * Ensure we have admin rights for the backend user
-     */
-    protected function ensureAdminRights(): void
-    {
-        /** @var BackendUserAuthentication $beUser */
-        $beUser = $GLOBALS['BE_USER'];
-        if (!$beUser) {
-            // Create an admin backend user
-            $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-            // This command runs outside a normal backend login, so bootstrap a synthetic admin user.
-            $beUser->user['admin'] = 1;
-            $beUser->user['uid'] = 1; // Add a UID for the fake user to prevent DataHandler errors
-            $beUser->user['workspace_id'] = 0; // Set workspace ID to live workspace
-            $beUser->workspace = 0; // Set workspace to live workspace
-            $GLOBALS['BE_USER'] = $beUser;
-        } elseif (!$beUser->isAdmin()) {
-            // If user exists but is not admin, set admin flag directly
-            $beUser->user['admin'] = 1;
-            if (!isset($beUser->user['uid'])) {
-                $beUser->user['uid'] = 1; // Ensure UID is set
-            }
-            $beUser->user['workspace_id'] = 0; // Set workspace ID to live workspace
-            $beUser->workspace = 0; // Set workspace to live workspace
-        }
-
-        $beUser->uc = array_merge($beUser->uc_default, $beUser->uc);
-    }
 }

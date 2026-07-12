@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
@@ -43,6 +44,7 @@ final class ContentAuditTool extends AbstractRecordTool
         TableAccessService $tableAccessService,
         WorkspaceContextService $workspaceContextService,
         private readonly ConnectionPool $connectionPool,
+        private readonly PageAccessService $pageAccessService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -62,8 +64,7 @@ final class ContentAuditTool extends AbstractRecordTool
                 'properties' => [
                     'rootPageId' => [
                         'type' => 'integer',
-                        'description' => 'Root page ID to audit (includes all subpages). Default: site root (page 1).',
-                        'default' => 1,
+                        'description' => 'Root page ID to audit (includes all subpages). When omitted, admins use page 1 and restricted editors use their first accessible web mount.',
                     ],
                     'checks' => [
                         'type' => 'array',
@@ -110,7 +111,20 @@ final class ContentAuditTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
-        $rootPageId = is_numeric($params['rootPageId'] ?? null) ? (int)$params['rootPageId'] : 1;
+        $this->ensureTableAccess('pages', 'read');
+        $this->ensureTableAccess('tt_content', 'read');
+
+        $rootWasProvided = is_numeric($params['rootPageId'] ?? null);
+        $rootPageId = $rootWasProvided ? (int)$params['rootPageId'] : 1;
+        if (!$rootWasProvided && !$this->pageAccessService->isAdmin()) {
+            $mounts = $this->pageAccessService->getAccessibleWebMountPageUids();
+            if ($mounts === []) {
+                throw new ValidationException([
+                    'No readable backend web mount is available. Provide an accessible rootPageId or ask an administrator to configure a page-tree entry point.',
+                ]);
+            }
+            $rootPageId = $mounts[0];
+        }
         $depth = is_numeric($params['depth'] ?? null) ? min((int)$params['depth'], self::MAX_DEPTH) : self::DEFAULT_DEPTH;
         $limit = is_numeric($params['limit'] ?? null) ? min((int)$params['limit'], self::MAX_LIMIT) : self::DEFAULT_LIMIT;
 
@@ -120,6 +134,8 @@ final class ContentAuditTool extends AbstractRecordTool
         if ($limit < 1) {
             $limit = self::DEFAULT_LIMIT;
         }
+
+        $this->pageAccessService->assertPageAccess($rootPageId);
 
         $checks = self::AVAILABLE_CHECKS;
         if (is_array($params['checks'] ?? null) && $params['checks'] !== []) {
@@ -132,6 +148,11 @@ final class ContentAuditTool extends AbstractRecordTool
             if ($requestedChecks !== []) {
                 $checks = $requestedChecks;
             }
+        }
+
+        if (in_array('missing_alt_text', $checks, true)) {
+            $this->ensureTableAccess('sys_file_reference', 'read');
+            $this->ensureTableAccess('sys_file', 'read');
         }
 
         // Resolve page subtree
@@ -195,7 +216,7 @@ final class ContentAuditTool extends AbstractRecordTool
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
                 ->add(GeneralUtility::makeInstance(WorkspaceRestriction::class, $workspaceId));
 
-            $rows = $qb->select('uid')
+            $rows = $qb->select('*')
                 ->from('pages')
                 ->where(
                     $qb->expr()->in('pid', $qb->createNamedParameter($currentLevel, Connection::PARAM_INT_ARRAY)),
@@ -207,7 +228,13 @@ final class ContentAuditTool extends AbstractRecordTool
 
             $currentLevel = [];
             foreach ($rows as $row) {
-                $uid = is_numeric($row['uid'] ?? null) ? (int)$row['uid'] : 0;
+                if (!$this->pageAccessService->canAccessRecord('pages', $row)) {
+                    continue;
+                }
+                $versionUid = is_numeric($row['t3ver_oid'] ?? null) ? (int)$row['t3ver_oid'] : 0;
+                $uid = $versionUid > 0
+                    ? $versionUid
+                    : (is_numeric($row['uid'] ?? null) ? (int)$row['uid'] : 0);
                 if ($uid > 0) {
                     $allPageUids[] = $uid;
                     $currentLevel[] = $uid;

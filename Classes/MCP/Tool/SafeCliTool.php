@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Exception\ValidationException;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Process\Process;
@@ -13,6 +14,7 @@ use TYPO3\CMS\Core\Core\Environment;
 /**
  * Execute a whitelisted subset of TYPO3 CLI commands.
  */
+#[AdminOnly]
 final class SafeCliTool extends AbstractTool
 {
     /**

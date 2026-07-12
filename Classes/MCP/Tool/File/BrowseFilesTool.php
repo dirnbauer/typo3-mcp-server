@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\FileAccessService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -21,6 +22,7 @@ final class BrowseFilesTool extends AbstractTool
     public function __construct(
         private readonly ResourceFactory $resourceFactory,
         private readonly McpFileSandboxService $fileSandboxService,
+        private readonly FileAccessService $fileAccessService,
     ) {}
 
     /**
@@ -63,6 +65,8 @@ final class BrowseFilesTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->fileAccessService->requireReadableBackendUser();
+
         $path = is_string($params['path'] ?? null) ? $params['path'] : null;
         $recursive = (bool)($params['recursive'] ?? false);
 
@@ -106,6 +110,8 @@ final class BrowseFilesTool extends AbstractTool
      */
     private function browseResolvedFolder(array $folderTarget, bool $recursive, array $lines, bool $allowMissing): CallToolResult
     {
+        $this->fileAccessService->assertCombinedIdentifierReadable($folderTarget['combinedIdentifier']);
+
         try {
             $folder = $this->resourceFactory->getFolderObjectFromCombinedIdentifier($folderTarget['combinedIdentifier']);
         } catch (FolderDoesNotExistException) {
@@ -124,6 +130,7 @@ final class BrowseFilesTool extends AbstractTool
         }
 
         $storage = $folder->getStorage();
+        $this->fileAccessService->assertResourceReadable($folder);
         if (!$storage->isOnline() || !$storage->isBrowsable()) {
             throw new ValidationException(['Storage is not available or not browsable']);
         }

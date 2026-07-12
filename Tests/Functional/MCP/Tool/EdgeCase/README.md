@@ -84,7 +84,7 @@ redaction.
 
 ## Running the tests
 
-Use PHP 8.2+:
+Use PHP 8.3+:
 
 ```bash
 composer test:functional -- --filter="EdgeCase"

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
@@ -71,10 +72,14 @@ abstract class AbstractTool implements ToolInterface
     {
         try {
             $manifest = GeneralUtility::makeInstance(CapabilityManifestService::class);
-        } catch (\Throwable) {
-            // DI not booted (e.g. very early CLI); skip — the runtime
-            // execution path will eventually hit the manifest in normal calls.
-            return;
+        } catch (\Throwable $exception) {
+            // Capability enforcement is a security boundary. A broken or
+            // unavailable container must not silently turn it off.
+            throw new AccessDeniedException(
+                'capability manifest service',
+                'execute tool',
+                $exception,
+            );
         }
         $manifest->assertToolAllowed($this->getName());
     }

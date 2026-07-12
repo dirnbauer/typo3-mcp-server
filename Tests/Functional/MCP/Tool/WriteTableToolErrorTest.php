@@ -387,7 +387,8 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('Target page 99999 does not exist or is deleted', $result->content[0]->text);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Process\Process;
@@ -15,6 +16,7 @@ use TYPO3\CMS\Core\Core\Environment;
  * Apply a shadcn/ui preset to an existing frontend project.
  */
 #[AdminOnly]
+#[DevSiteOnly]
 final class ApplyShadcnPresetTool extends AbstractTool
 {
     private const PRESET_PATTERN = '/^[A-Za-z0-9_-]{2,128}$/';
@@ -27,7 +29,8 @@ final class ApplyShadcnPresetTool extends AbstractTool
         return [
             'description' => 'Apply a shadcn/ui preset to an existing frontend project using `shadcn apply --preset`. '
                 . 'Accepts preset codes from https://ui.shadcn.com/create, such as "b0" or "bkqYkPSa0", '
-                . 'or the full create URL. Admin-only because it rewrites project frontend files.',
+                . 'or the full create URL. Dev-site only and admin-only because it downloads a package runner '
+                . 'and rewrites project frontend files.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [

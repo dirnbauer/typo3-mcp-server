@@ -4,41 +4,42 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\X402;
 
-use Doctrine\DBAL\ParameterType;
-use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Service\X402\X402ContentAccessService;
+use Hn\McpServer\Service\X402\X402PaymentRequirement;
+use Hn\McpServer\Service\X402\X402PaymentVerifierInterface;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * MCP tool that exposes x402-gated content for paid access.
- *
- * AI agents can discover which content requires payment, get pricing,
- * and retrieve content after payment verification. Works with the
- * webconsulting/typo3-x402-paywall extension.
+ * Retrieves visible TYPO3 content after facilitator-backed x402 verification.
  */
-final class GetPaidContentTool extends AbstractTool
+final class GetPaidContentTool extends AbstractRecordTool
 {
-    public function __construct(
-        private readonly ConnectionPool $connectionPool,
-    ) {}
+    private const MAX_PAYMENT_PROOF_BYTES = 64 * 1024;
 
-    public function getName(): string
-    {
-        return 'GetPaidContent';
+    public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
+        private readonly ConnectionPool $connectionPool,
+        private readonly X402ContentAccessService $contentAccess,
+        private readonly X402PaymentVerifierInterface $paymentVerifier,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
-            'description' => 'Retrieve x402-gated content from TYPO3. Returns content that requires payment via the x402 protocol. '
-                . 'Use ListPaidContent to discover available paid content first. '
-                . 'Requires a valid x402 payment proof to access the full content.',
+            'description' => 'Retrieve visible x402-gated TYPO3 content. A gated page is returned only after the '
+                . 'configured x402 facilitator verifies paymentProof. Without a proof, the tool returns the exact '
+                . 'PAYMENT-REQUIRED value that must be paid.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -48,7 +49,12 @@ final class GetPaidContentTool extends AbstractTool
                     ],
                     'paymentProof' => [
                         'type' => 'string',
-                        'description' => 'Base64-encoded x402 payment signature. If omitted, returns payment requirements instead of content.',
+                        'description' => 'x402 PAYMENT-SIGNATURE value verified by the configured facilitator.',
+                        'maxLength' => self::MAX_PAYMENT_PROOF_BYTES,
+                    ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'Optional TYPO3 site language ISO code.',
                     ],
                 ],
                 'required' => ['pageUid'],
@@ -70,168 +76,114 @@ final class GetPaidContentTool extends AbstractTool
         $pageUidRaw = $params['pageUid'] ?? 0;
         $pageUid = is_numeric($pageUidRaw) ? (int)$pageUidRaw : 0;
         $paymentProofRaw = $params['paymentProof'] ?? '';
-        $paymentProof = is_string($paymentProofRaw) ? $paymentProofRaw : '';
+        $paymentProof = is_string($paymentProofRaw) ? trim($paymentProofRaw) : '';
+        $language = isset($params['language']) && is_string($params['language'])
+            ? trim($params['language'])
+            : null;
 
         if ($pageUid <= 0) {
             return $this->createErrorResult('pageUid is required and must be positive');
+        }
+        if (strlen($paymentProof) > self::MAX_PAYMENT_PROOF_BYTES) {
+            return $this->createErrorResult('paymentProof exceeds the 64 KiB limit.');
         }
 
         if (!$this->hasPaywallColumns()) {
             return $this->returnConfigStatus($pageUid);
         }
 
-        // Check if the page exists and has x402 paywall enabled
-        $page = $this->getPageWithPaywallInfo($pageUid);
+        // These calls also establish the requested read-workspace context.
+        $this->ensureTableAccess('pages', 'read');
+        $this->ensureTableAccess('tt_content', 'read');
+
+        $page = $this->contentAccess->getPage($pageUid, $language);
         if ($page === null) {
-            return $this->createErrorResult("Page $pageUid not found");
+            return $this->createErrorResult("Page $pageUid not found or not visible");
         }
 
         $isGated = (bool)($page['tx_x402_paywall_enabled'] ?? false);
+        if (!$isGated) {
+            return $this->returnFullContent($pageUid, $page, false, $language);
+        }
+
         $priceRaw = $page['tx_x402_paywall_price'] ?? '0.01';
-        $price = is_scalar($priceRaw) ? (string)$priceRaw : '0.01';
+        $price = is_scalar($priceRaw) && (string)$priceRaw !== '' ? (string)$priceRaw : '0.01';
         $descRaw = $page['tx_x402_paywall_description'] ?? $page['title'] ?? '';
         $description = is_scalar($descRaw) ? (string)$descRaw : '';
+        $requirement = $this->paymentVerifier->prepareRequirement($pageUid, $price, $description);
 
-        // If not gated, return content directly
-        if (!$isGated) {
-            return $this->returnFullContent($pageUid, $page);
+        // A gated page must never be exposed if the optional integration is
+        // absent, its site configuration is invalid, or requirement building fails.
+        if (!$requirement instanceof X402PaymentRequirement) {
+            return $this->createErrorResult(
+                'x402 payment verification is unavailable or not configured for this page. Gated content remains locked.',
+            );
         }
 
-        // If gated but no payment proof → return payment requirements
         if ($paymentProof === '') {
-            return $this->returnPaymentRequired($pageUid, $price, $description, $page);
+            return $this->returnPaymentRequired($pageUid, $description, $page, $requirement);
         }
 
-        // Payment proof provided → verify and return content
-        // Note: In production, this would verify via the facilitator.
-        // For the MCP tool, we trust the payment proof if it's well-formed base64
-        // because the actual HTTP middleware handles real verification.
-        if (!$this->isValidPaymentProof($paymentProof)) {
-            return $this->createErrorResult('Invalid payment proof format. Provide a valid x402 PAYMENT-SIGNATURE.');
+        if (!$this->paymentVerifier->verifyAndSettle($paymentProof, $requirement)) {
+            return $this->createErrorResult('Payment verification or settlement failed. Gated content remains locked.');
         }
 
-        return $this->returnFullContent($pageUid, $page, $paymentProof);
-    }
-
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function getPageWithPaywallInfo(int $pageUid): ?array
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-
-        $row = $queryBuilder
-            ->select(
-                'uid',
-                'pid',
-                'title',
-                'subtitle',
-                'description',
-                'abstract',
-                'tx_x402_paywall_enabled',
-                'tx_x402_paywall_price',
-                'tx_x402_paywall_description'
-            )
-            ->from('pages')
-            ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($pageUid, ParameterType::INTEGER)))
-            ->executeQuery()
-            ->fetchAssociative();
-
-        return $row ?: null;
+        return $this->returnFullContent($pageUid, $page, true, $language);
     }
 
     /**
      * @param array<string, mixed> $page
      */
-    private function returnFullContent(int $pageUid, array $page, string $paymentProof = ''): CallToolResult
-    {
-        // Get all content elements on this page
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-
-        $contentElements = $queryBuilder
-            ->select('uid', 'CType', 'header', 'bodytext', 'colPos', 'sorting')
-            ->from('tt_content')
-            ->where($queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pageUid, ParameterType::INTEGER)))
-            ->orderBy('sorting', 'ASC')
-            ->executeQuery()
-            ->fetchAllAssociative();
-
+    private function returnFullContent(
+        int $pageUid,
+        array $page,
+        bool $paid,
+        ?string $language,
+    ): CallToolResult {
         $result = [
-            'page' => [
-                'uid' => $page['uid'],
-                'title' => $page['title'],
-                'subtitle' => $page['subtitle'] ?? '',
-                'description' => $page['description'] ?? '',
-                'abstract' => $page['abstract'] ?? '',
-            ],
-            'content' => array_map(fn(array $ce) => [
-                'uid' => $ce['uid'],
-                'type' => $ce['CType'],
-                'header' => $ce['header'],
-                'bodytext' => $ce['bodytext'],
-                'colPos' => $ce['colPos'],
-            ], $contentElements),
+            'page' => $this->contentAccess->projectPage($page),
+            'content' => $this->contentAccess->getContentElements($pageUid, $language),
             'x402' => [
-                'paid' => $paymentProof !== '',
-                'paymentProof' => $paymentProof !== '' ? '(verified)' : null,
+                'paid' => $paid,
+                'verification' => $paid ? 'facilitator_verified' : 'not_required',
             ],
         ];
 
-        return new CallToolResult([
-            new TextContent(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
-        ]);
+        return $this->jsonResult($result);
     }
 
     /**
      * @param array<string, mixed> $page
      */
-    private function returnPaymentRequired(int $pageUid, string $price, string $description, array $page): CallToolResult
-    {
+    private function returnPaymentRequired(
+        int $pageUid,
+        string $description,
+        array $page,
+        X402PaymentRequirement $requirement,
+    ): CallToolResult {
+        $pageData = $this->contentAccess->projectPage($page);
         $result = [
             'status' => 'payment_required',
             'page' => [
                 'uid' => $pageUid,
-                'title' => $page['title'],
+                'title' => $pageData['title'] ?? '',
                 'description' => $description,
             ],
             'x402' => [
                 'version' => '2',
-                'price' => $price,
-                'currency' => 'USDC',
-                'instruction' => 'To access this content, send a GET request with PAYMENT-SIGNATURE header to the TYPO3 x402 endpoint, '
-                    . 'or provide the paymentProof parameter with a valid x402 payment signature.',
-                'requirement' => [
-                    'scheme' => 'exact',
-                    'maxAmountRequired' => $price,
-                    'resource' => "/api/v1/content/$pageUid",
-                    'description' => $description ?: $page['title'],
-                ],
+                'currency' => $requirement->currency,
+                'network' => $requirement->network,
+                'paymentRequired' => $requirement->encoded,
+                'requirements' => [$requirement->data],
+                'instruction' => 'Pay this exact requirement and pass the resulting PAYMENT-SIGNATURE as paymentProof.',
             ],
             'preview' => [
-                'abstract' => $page['abstract'] ?? '',
-                'subtitle' => $page['subtitle'] ?? '',
+                'abstract' => $pageData['abstract'] ?? '',
+                'subtitle' => $pageData['subtitle'] ?? '',
             ],
         ];
 
-        return new CallToolResult([
-            new TextContent(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
-        ]);
-    }
-
-    private function isValidPaymentProof(string $proof): bool
-    {
-        $decoded = base64_decode($proof, true);
-        if ($decoded === false) {
-            return false;
-        }
-        $json = json_decode($decoded, true);
-        return is_array($json) && isset($json['signature']);
+        return $this->jsonResult($result);
     }
 
     private function hasPaywallColumns(): bool
@@ -243,26 +195,42 @@ final class GetPaidContentTool extends AbstractTool
 
     private function returnConfigStatus(int $pageUid): CallToolResult
     {
-        $status = [
+        return $this->jsonResult([
             'status' => 'configuration_info',
             'pageUid' => $pageUid,
             'x402_paywall_extension' => 'not installed',
             'message' => 'Install webconsulting/typo3-x402-paywall to access paid content.',
-        ];
-
-        return new CallToolResult([
-            new TextContent(json_encode($status, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
         ]);
     }
 
     private function columnExists(string $table, string $column): bool
     {
+        if ($table === '') {
+            return false;
+        }
         try {
             $connection = $this->connectionPool->getConnectionForTable($table);
-            $columns = $connection->createSchemaManager()->listTableColumns($table);
-            return isset($columns[$column]);
+            foreach ($connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table) as $tableColumn) {
+                if ($tableColumn->getObjectName()->getIdentifier()->getValue() === $column) {
+                    return true;
+                }
+            }
+            return false;
         } catch (\Exception) {
             return false;
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function jsonResult(array $data): CallToolResult
+    {
+        return new CallToolResult([
+            new TextContent(json_encode(
+                $data,
+                JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
+            )),
+        ]);
     }
 }

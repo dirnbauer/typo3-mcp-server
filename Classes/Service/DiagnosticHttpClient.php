@@ -6,6 +6,7 @@ namespace Hn\McpServer\Service;
 
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
+use Hn\McpServer\Exception\AccessDeniedException;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Http\Client\GuzzleClientFactory;
 
@@ -19,6 +20,7 @@ readonly class DiagnosticHttpClient
     public function __construct(
         private GuzzleClientFactory $clientFactory,
         private LocalModeService $localModeService,
+        private CapabilityManifestService $capabilityManifest,
     ) {}
 
     /**
@@ -31,18 +33,31 @@ readonly class DiagnosticHttpClient
             return [];
         }
 
-        $client = $this->clientFactory->getClient();
         $results = array_fill_keys(array_keys($requests), null);
 
         $poolRequests = [];
         foreach ($requests as $id => $spec) {
+            try {
+                // The diagnostic base URL can originate from the incoming Host
+                // header. Apply the same manifest boundary as MCP tools before
+                // constructing a request or opening a socket.
+                $this->capabilityManifest->assertUrlAllowed($spec['url']);
+            } catch (AccessDeniedException) {
+                // Keep the backend diagnostics usable: a denied target is
+                // reported as unreachable instead of breaking the module.
+                continue;
+            }
             $poolRequests[$id] = new Request(
                 $spec['method'],
                 $spec['url'],
                 $spec['headers'] ?? [],
             );
         }
+        if ($poolRequests === []) {
+            return $results;
+        }
 
+        $client = $this->clientFactory->getClient();
         $options = $this->buildPoolOptions($requests);
 
         $pool = new Pool($client, $poolRequests, [
@@ -91,7 +106,9 @@ readonly class DiagnosticHttpClient
     {
         $options = [
             'timeout' => self::REQUEST_TIMEOUT,
-            'allow_redirects' => true,
+            // Never let an allowlisted/self diagnostic URL redirect the server
+            // to an unvalidated internal or attacker-controlled destination.
+            'allow_redirects' => false,
             'http_errors' => false,
         ];
 

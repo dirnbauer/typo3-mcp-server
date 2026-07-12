@@ -12,15 +12,17 @@ inspection, record operations, workspaces, and file handling.
 General notes
 =============
 
-- Record-backed tools keep the current non-live workspace by default, or
-  otherwise select or create a suitable workspace automatically.
+- Record-backed tools honor an explicit workspace. Without one,
+  strict/production mode keeps or selects a writable draft and can create one
+  when permitted; trusted local mode deliberately selects live workspace ``0``.
 - Most record-backed tools also accept an optional ``workspace_id`` override.
 - Language-related parameters are only exposed when the TYPO3 instance has
   multiple configured languages.
 - File-write tools are restricted to the configured MCP file sandbox in
-  strict mode. FAL-wide read tools can inspect storages the backend user may
-  access, and DDEV / local-development mode can relax the sandbox for local
-  work.
+  strict mode. FAL-wide read tools can inspect only storages and folders visible
+  through the backend user's file mounts. DDEV/local mode can relax the MCP
+  sandbox for local work, but does not relax TYPO3 file mounts or FAL
+  permissions.
 - Some tool families are optional at runtime. For example, ``ManageRedirects``
   requires ``sys_redirect`` to be available, and the x402 tools require the
   optional paywall extension surface.
@@ -33,8 +35,8 @@ Dev-site tools
 When DDEV, TYPO3 Development context, or ``localUnsafeMode=on`` is active,
 additional tools and MCP resources are exposed. They share the same
 ``localMode`` gate as live workspace writes (``workspace_id: 0``) and
-unrestricted FAL file access; ``mcpServer.strictSandbox`` disables all three
-even inside DDEV.
+access outside the MCP file sandbox; backend file mounts still apply.
+``mcpServer.strictSandbox`` disables all three relaxations even inside DDEV.
 
 On production (``localUnsafeMode=auto`` outside DDEV/Development, or
 ``localUnsafeMode=off``):
@@ -66,9 +68,13 @@ inside ``AbstractTool::execute()``. The active manifest lives at
 subsystem disables every tool that requires it; the call returns an
 ``AccessDeniedException`` rather than executing.
 
-Outbound HTTP from ``UploadFileFromUrl`` and ``RenderRecord`` is gated by the
-manifest's ``network.outbound`` policy. Default ships closed at ``[self]`` —
-operators opt in to additional hosts per deployment.
+Direct outbound HTTP from ``UploadFileFromUrl``, ``ImportFromUrl``,
+``RenderRecord``, and optional x402 facilitator verification/settlement is gated by the manifest's
+``network.outbound`` policy. Default ships closed at ``[self]`` — operators opt
+in to additional hosts per deployment. All direct paths disable redirects.
+Composer/JavaScript package runners and the preconfigured Solr scheduler task
+declare separate indirect-network subsystems because their subprocess traffic
+cannot pass through the PHP URL guard.
 
 CLI mirror
 ----------
@@ -133,16 +139,16 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Cross-table LIKE search (per-table cap)
    * - ``WriteTable``
      - Write
-     - Create/update/translate/delete in workspace (not live)
+     - Create/update/translate/delete in a strict-mode draft or intentional local live workspace
    * - ``AttachImage``
      - Write
-     - Stage images in the sandbox (URL or ``sys_file``), optional FAL processing, attach to TCA file fields
+     - Store/process a sandbox file immediately and attach a workspace-aware TCA file reference
    * - ``ListStorages``
      - Read
-     - List all FAL file storages (UIDs, names, capabilities)
+     - List FAL storages visible through the backend user's file mounts
    * - ``BrowseFolder``
      - Read
-     - Browse folder contents in any FAL storage (not sandbox-restricted)
+     - Browse mounted FAL folders (read-only; not MCP-sandbox-restricted)
    * - ``SearchFile``
      - Read
      - Search FAL for files by name, extension, folder, or MIME type
@@ -163,7 +169,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Create/replace text file in sandbox
    * - ``SearchMedia``
      - Read
-     - Search files across all FAL storage by metadata, type, or dimensions
+     - Search mounted FAL files by metadata, type, or dimensions
    * - ``ContentAudit``
      - Read
      - Audit page tree for SEO and content quality issues
@@ -183,8 +189,8 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Execute / Admin
      - List or run EXT:solr scheduler index queue tasks
    * - ``ApplyShadcnPreset``
-     - Execute
-     - Apply a shadcn/ui preset code from ``ui.shadcn.com/create`` to an existing frontend project
+     - Dev / Admin
+     - Apply a shadcn/ui preset code from ``ui.shadcn.com/create`` to an existing frontend project (dev-site only)
    * - ``PublishWorkspace``
      - Write
      - Publish pending workspace changes to live (dry-run by default)
@@ -210,8 +216,8 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Read/Write
      - Find installed Site Sets and attach/detach them on sites (admin-only)
    * - ``InstallExtension``
-     - Execute
-     - Install, activate, search, or list loaded TYPO3 extensions (admin-only)
+     - Dev / Admin
+     - Install, activate, search, or list loaded TYPO3 extensions (dev-site only)
    * - ``SiteSettings``
      - Dev / Admin
      - List/read/update site settings from Site Sets (dev-site only)
@@ -448,7 +454,9 @@ Create, update, translate, move, or delete TYPO3 records.
 
 Important behavior:
 
-- writes always happen in workspace context
+- writes always happen in an explicit TYPO3 workspace context: a draft in
+  strict/production mode, or live workspace ``0`` when trusted local mode is
+  active and no draft ID is supplied
 - language-aware tables accept ISO codes such as ``de`` for
   ``sys_language_uid`` (resolved per-site — e.g. ``hu`` maps to the language
   UID that the owning site assigns to Hungarian, even when another site uses
@@ -540,8 +548,10 @@ This tool is read-only and does not accept parameters. It shows:
 - active workspace marker
 
 Clients can pass the returned ``workspace_id`` to record-backed tools when they
-need explicit workspace selection. Otherwise the extension auto-selects or
-creates a suitable workspace.
+need explicit workspace selection. This read-only tool does not create a
+workspace. Without an explicit ID, strict/production writes may select or
+create a suitable draft; trusted local-mode writes default to live workspace
+``0``.
 
 File tools
 ==========
@@ -549,8 +559,8 @@ File tools
 The extension exposes two tiers of file tools:
 
 - **FAL-wide, read-only** — ``ListStorages``, ``BrowseFolder``,
-  ``SearchFile``, ``SearchMedia``. These inspect any TYPO3 file storage the
-  backend user can access.
+  ``SearchFile``, ``SearchMedia``. These inspect only TYPO3 storages and folders
+  visible through the backend user's file mounts.
 - **Sandbox-scoped, read/write** — ``BrowseFiles``, ``ReadFileMetadata``,
   ``WriteFile``, ``UploadFile``, ``UploadFileFromUrl``. These are restricted
   to the configured MCP file sandbox (default ``1:/mcp/``).
@@ -558,7 +568,7 @@ The extension exposes two tiers of file tools:
 ListStorages
 ------------
 
-List all TYPO3 FAL file storages visible to the current user.
+List TYPO3 FAL storage mounts visible to the current backend user.
 
 :Parameters:
    - ``includeOffline`` (boolean): include storages that are currently
@@ -571,7 +581,8 @@ with combined identifiers like ``1:/user_upload/``.
 BrowseFolder
 ------------
 
-Browse folder contents in any file storage the user can access.
+Browse folder contents within a FAL storage/folder mount visible to the backend
+user.
 
 :Parameters:
    - ``folder`` (string): combined identifier such as ``1:/user_upload/``;
@@ -583,7 +594,8 @@ Useful for auditing where media is stored outside the MCP sandbox. Read-only.
 SearchFile
 ----------
 
-Search FAL for existing files across storages.
+Search FAL for existing files across the backend user's mounted storages and
+folders.
 
 :Parameters:
    - ``name`` (string): partial, case-insensitive filename match
@@ -599,8 +611,8 @@ BrowseFiles
 -----------
 
 Browse folders inside the MCP file sandbox. In DDEV / ``localUnsafeMode=on``,
-combined identifiers can point to any FAL storage/folder the backend user may
-access.
+combined identifiers can point outside the sandbox, but only to FAL
+storage/folder mounts visible to the backend user.
 
 :Parameters:
    - ``path`` (string): relative folder path or combined identifier inside the
@@ -692,7 +704,7 @@ Security measures include:
 - allow-listing only ``http`` and ``https``
 - rejecting private and reserved network targets after DNS resolution
 - streaming downloads with a 20 MB size limit
-- limiting redirects and request timeout
+- disabling redirects and limiting request duration
 - relying on TYPO3 file validation when the file is stored
 
 Media search
@@ -701,8 +713,8 @@ Media search
 SearchMedia
 -----------
 
-Search for files across all TYPO3 file storage by metadata, type, or
-dimensions.
+Search for files across TYPO3 storage/folder mounts visible to the backend user
+by metadata, type, or dimensions.
 
 :Parameters:
    - ``keyword`` (string): search in file name, metadata title, description,
@@ -719,7 +731,8 @@ dimensions.
    - ``offset`` (integer): pagination offset
 
 At least one filter parameter is required. Unlike the sandbox-restricted file
-tools, ``SearchMedia`` searches across all FAL storage (read-only).
+tools, ``SearchMedia`` searches across the backend user's mounted FAL surface
+(read-only). Local mode does not expand those TYPO3 file mounts.
 
 The result includes file UID, name, identifier, MIME type, dimensions, and
 metadata summary. Use ``ReadFileMetadata`` for full details on a specific file.
@@ -818,6 +831,10 @@ SafeCli
 
 Execute a whitelisted TYPO3 CLI command.
 
+This maintenance surface is restricted to TYPO3 administrators. Its
+capability policy declares database-write access because cache and reference
+index maintenance can change system-wide state.
+
 :Parameters:
    - ``command`` (string, required): command name from the allowed list
    - ``arguments`` (array): optional command arguments, validated per command
@@ -862,6 +879,9 @@ CLI shortcut:
 
 Admin-only. Requires TYPO3 Scheduler and EXT:solr to be installed and an
 ``Apache Solr - Index Queue Worker`` scheduler task to exist.
+The validated task may contact the Solr service configured by the TYPO3
+installation. This indirect network effect requires ``scheduler:task`` and
+``network:scheduler``; it is not governed by the direct HTTP host allowlist.
 
 ApplyShadcnPreset
 -----------------
@@ -882,7 +902,9 @@ fonts, icons, and related shadcn files.
    - ``packageManager`` (string): ``auto`` (default), ``npx``, ``pnpm``,
      ``yarn``, or ``bun``
 
-The tool is admin-only because it rewrites local project files. It runs
+The tool is dev-site-only and admin-only because it downloads through the
+selected package runner and rewrites local project files. It requires
+``project:write`` and ``network:package-manager``, runs
 non-interactively with ``--yes`` and returns stdout, stderr, exit code, working
 directory, selected package runner, and execution time.
 
@@ -1241,9 +1263,11 @@ Install, activate, or search TYPO3 extensions.
    - ``key`` (string): extension key (required for activate)
    - ``query`` (string): search terms (required for search)
 
-Admin-only. Package names must match Composer naming conventions. Extension keys
-must be lowercase alphanumeric with underscores. Shell injection characters are
-rejected.
+Dev-site-only and admin-only. Package names must match Composer naming
+conventions. Extension keys must be lowercase alphanumeric with underscores.
+Shell injection characters are rejected. Composer's network traffic is an
+explicit ``network:package-manager`` effect and is not governed by the direct
+PHP HTTP allowlist.
 
 Optional x402 monetization
 ==========================
@@ -1251,6 +1275,16 @@ Optional x402 monetization
 The following tools are only meaningful when the optional x402 paywall
 extension surface is present on the TYPO3 instance. When that surface is
 missing, the tools return configuration guidance instead of raw SQL failures.
+
+.. warning::
+
+   ``typo3-x402-paywall`` 1.0.2 cannot be Composer-coinstalled with this MCP
+   server. It requires ``mcp/sdk:^0.5`` while this server requires
+   ``logiscape/mcp-sdk-php``; both packages autoload incompatible classes in
+   the same ``Mcp\\`` namespace. The root package therefore conflicts with
+   ``mcp/sdk:*``. Keep the paywall package out of the installation until a
+   compatible release removes or migrates that SDK dependency. The MCP x402
+   tools remain fail closed in the meantime.
 
 ListPaidContent
 ---------------
@@ -1261,6 +1295,7 @@ List pages that are gated by the optional x402 paywall fields on ``pages``.
    - ``limit`` (integer): maximum number of results, default ``50``, max ``200``
    - ``offset`` (integer): pagination offset
    - ``parentPageUid`` (integer): optional parent page filter
+   - ``language`` (string): optional site-language ISO code
 
 GetPaidContent
 --------------
@@ -1271,15 +1306,26 @@ optional x402 paywall extension.
 :Parameters:
    - ``pageUid`` (integer, required): page UID to inspect
    - ``paymentProof`` (string): optional x402 payment signature payload
+   - ``language`` (string): optional site-language ISO code
 
 If the page is gated and ``paymentProof`` is omitted, the tool returns the
-payment requirement payload. If the page is not gated, it returns page content
-directly.
+exact payment requirement payload. A supplied proof is verified against the
+configured facilitator under the MCP outbound allowlist, DNS pinning,
+no-redirect, and bounded-response rules. If the compatible verifier or its
+site configuration is unavailable, gated content remains locked. If the page
+is not gated, the tool returns only content visible to the authenticated TYPO3
+backend user after table, field, page-mount, workspace, language, and enable
+field checks.
+
+In strict mode, add the facilitator as an exact HTTPS host under
+``capabilities.network.outbound`` in ``Configuration/Capabilities.yaml``. The
+default ``self``-only policy intentionally denies external facilitators.
 
 GetPaymentStats
 ---------------
 
 Summarize x402 payment statistics when the optional payment-log table exists.
+This tool is admin-only.
 
 :Parameters:
    - ``period`` (string): ``today``, ``7days``, ``30days`` (default), or ``all``
@@ -1394,8 +1440,10 @@ MCP resources (dev-site)
 
 When dev-site mode is active, the MCP server exposes read-only TCA resources:
 
-- ``typo3-mcp://tca`` — overview of tables accessible to the current backend user
-- ``typo3-mcp://tca/{tableName}`` — schema summary plus permission-filtered field list
+- ``typo3-mcp:///tca`` — overview of tables accessible to the current backend
+  user
+- ``typo3-mcp:///tca/{tableName}`` — schema summary plus
+  permission-filtered field list
 
 Use ``resources/list``, ``resources/templates/list``, and ``resources/read`` in
 MCP clients that support contextual resources.

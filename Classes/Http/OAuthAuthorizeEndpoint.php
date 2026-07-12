@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\Http;
 
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Crypto\HashAlgo;
 use TYPO3\CMS\Core\Crypto\HashService;
+use TYPO3\CMS\Core\FormProtection\FormProtectionFactory;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -19,55 +21,115 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final readonly class OAuthAuthorizeEndpoint
 {
+    use CorsHeadersTrait;
+
     public function __construct(
         private OAuthService $oauthService,
         private HashService $hashService,
+        private FormProtectionFactory $formProtectionFactory,
+        private SiteBaseUrlResolver $baseUrlResolver,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
+        $corsRejection = $this->rejectDisallowedCorsRequest($request);
+        if ($corsRejection instanceof ResponseInterface) {
+            return $corsRejection;
+        }
+        if ($request->getMethod() === 'OPTIONS') {
+            return $this->handlePreflightRequest($request);
+        }
+
         try {
-            $postParams = $this->getRequestData($request->getParsedBody());
-            $queryParams = $this->getRequestData($request->getQueryParams());
-
-            // Initialize backend user context for eID
-            $this->initializeBackendUserContext($request);
-
-            $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
-            // RFC 9700 §2.1.1 makes PKCE mandatory for the authorization-code
-            // grant. Reject the flow if the client did not send a challenge.
-            $challengeRaw = $queryParams['code_challenge'] ?? '';
-            if (!is_string($challengeRaw) || $challengeRaw === '') {
-                return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
-            }
-            $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
-            if ($challengeMethod !== 'S256') {
-                return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
-            }
-
-            // Check if user is authenticated
-            if (!$this->isBackendUserAuthenticated()) {
-                return $this->redirectToLogin($request);
-            }
-
-            $beUser = $GLOBALS['BE_USER'] ?? null;
-            if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
-                return $this->createErrorResponse('server_error', 'Backend user context could not be initialized');
-            }
-            $beUserId = (int)$beUser->user['uid'];
-
-            // Handle authorization approval
-            if ($request->getMethod() === 'POST' && isset($postParams['approve'])) {
-                return $this->handleApproval($request, $beUserId);
-            }
-
-            // Show consent form
-            return $this->showConsentForm($request);
-
-        } catch (\InvalidArgumentException) {
-            return $this->createErrorResponse('invalid_request', 'Invalid redirect_uri');
+            $response = $this->handleRequest($request);
+        } catch (\InvalidArgumentException $e) {
+            $response = $this->createErrorResponse($request, 'invalid_request', $e->getMessage());
         } catch (\Throwable) {
-            return $this->createErrorResponse('server_error', 'Authorization failed');
+            $response = $this->createErrorResponse($request, 'server_error', 'Authorization failed');
+        }
+
+        return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
+    }
+
+    private function handleRequest(ServerRequestInterface $request): ResponseInterface
+    {
+        if (!in_array($request->getMethod(), ['GET', 'POST'], true)) {
+            return $this->createErrorResponse($request, 'invalid_request', 'Method not allowed');
+        }
+
+        $postParams = $this->getRequestData($request->getParsedBody());
+        $queryParams = $this->getRequestData($request->getQueryParams());
+
+        $this->validateAuthorizationRequest($request, $queryParams);
+
+        // Initialize backend user context for eID
+        $this->initializeBackendUserContext($request);
+
+        // RFC 9700 §2.1.1 makes PKCE mandatory for the authorization-code
+        // grant. Reject the flow if the client did not send a challenge.
+        $challengeRaw = $queryParams['code_challenge'] ?? '';
+        if (!is_string($challengeRaw) || !$this->oauthService->isValidPkceChallenge($challengeRaw)) {
+            return $this->createErrorResponse($request, 'invalid_request', 'PKCE code_challenge is required (S256).');
+        }
+        $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
+        if ($challengeMethod !== 'S256') {
+            return $this->createErrorResponse($request, 'invalid_request', 'Only S256 PKCE challenges are supported');
+        }
+
+        // Check if user is authenticated
+        if (!$this->isBackendUserAuthenticated()) {
+            return $this->redirectToLogin($request);
+        }
+
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+            return $this->createErrorResponse($request, 'server_error', 'Backend user context could not be initialized');
+        }
+        $beUserId = (int)$beUser->user['uid'];
+
+        // Handle authorization approval
+        if ($request->getMethod() === 'POST' && isset($postParams['approve'])) {
+            return $this->handleApproval($request, $beUserId);
+        }
+
+        // Show consent form
+        return $this->showConsentForm($request);
+    }
+
+    /** @param array<string, string|null> $queryParams */
+    private function validateAuthorizationRequest(ServerRequestInterface $request, array $queryParams): void
+    {
+        $clientId = $queryParams['client_id'] ?? '';
+        $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
+        $resource = $queryParams['resource'] ?? '';
+        $scope = $queryParams['scope'] ?? OAuthService::DEFAULT_SCOPE;
+
+        if (($queryParams['response_type'] ?? '') !== 'code') {
+            throw new \InvalidArgumentException('response_type must be code');
+        }
+        if ($clientId === '' || !$this->oauthService->isValidClientId($clientId)) {
+            throw new \InvalidArgumentException('Invalid client_id');
+        }
+        if (!$this->oauthService->isRedirectUriAllowed($clientId, $redirectUri)) {
+            throw new \InvalidArgumentException('redirect_uri does not exactly match the registered client metadata');
+        }
+        if ($scope === '' || !$this->oauthService->isScopeAllowed($clientId, $scope)) {
+            throw new \InvalidArgumentException('Invalid scope');
+        }
+        if ($resource === '') {
+            throw new \InvalidArgumentException('resource is required');
+        }
+        $state = $queryParams['state'] ?? '';
+        if (!is_string($state) || strlen($state) > 1024) {
+            throw new \InvalidArgumentException('state must not exceed 1024 bytes');
+        }
+
+        $expectedResource = $this->oauthService->canonicalMcpResourceFromRequest($request);
+        if (!hash_equals(
+            $expectedResource,
+            $this->oauthService->requireCanonicalResourceUri($resource),
+        )) {
+            throw new \InvalidArgumentException('resource does not identify this MCP server');
         }
     }
 
@@ -95,6 +157,14 @@ final readonly class OAuthAuthorizeEndpoint
     private function resolveClientName(ServerRequestInterface $request): string
     {
         $queryParams = $this->getRequestData($request->getQueryParams());
+
+        $clientId = $queryParams['client_id'] ?? '';
+        if ($clientId !== '' && $clientId !== OAuthService::BUILT_IN_CLIENT_ID) {
+            $client = $this->oauthService->getRegisteredClient($clientId);
+            if ($client !== null && $client['client_name'] !== '') {
+                return $client['client_name'];
+            }
+        }
 
         // Check query params
         if (isset($queryParams['client_name']) && is_string($queryParams['client_name']) && $queryParams['client_name'] !== '') {
@@ -152,6 +222,9 @@ final readonly class OAuthAuthorizeEndpoint
             'code_challenge' => $queryParams['code_challenge'] ?? '',
             'code_challenge_method' => $queryParams['code_challenge_method'] ?? '',
             'state' => $queryParams['state'] ?? '',
+            'resource' => $queryParams['resource'] ?? '',
+            'scope' => $queryParams['scope'] ?? OAuthService::DEFAULT_SCOPE,
+            'issued_at' => (string)time(),
         ];
 
         $oauthDataEncoded = $this->encodeOAuthCookie($oauthData);
@@ -183,20 +256,34 @@ final readonly class OAuthAuthorizeEndpoint
         $queryParams = $this->getRequestData($request->getQueryParams());
         $postParams = $this->getRequestData($request->getParsedBody());
 
-        $clientName = $postParams['client_name'] ?? $this->resolveClientName($request);
+        $clientName = $this->resolveClientName($request);
+        $clientId = $queryParams['client_id'] ?? '';
+        $formToken = $postParams['form_token'] ?? '';
+        if (!is_string($formToken)
+            || $formToken === ''
+            || !$this->formProtectionFactory
+                ->createForType('backend')
+                ->validateToken($formToken, 'mcpserver/oauthConsent', $clientId)
+        ) {
+            return $this->createErrorResponse($request, 'invalid_request', 'Consent form token is invalid or expired.');
+        }
         $redirectUri = $this->validateRedirectUri($queryParams['redirect_uri'] ?? '');
         $pkceChallenge = $queryParams['code_challenge'] ?? '';
         $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
         // RFC 9700 §2.1.1 — PKCE is mandatory; no plain method, no missing
         // challenge. The GET handler already rejects missing challenges; we
         // re-check here so a forged POST cannot bypass.
-        if (!is_string($pkceChallenge) || $pkceChallenge === '') {
-            return $this->createErrorResponse('invalid_request', 'PKCE code_challenge is required (S256).');
+        if (!is_string($pkceChallenge) || !$this->oauthService->isValidPkceChallenge($pkceChallenge)) {
+            return $this->createErrorResponse($request, 'invalid_request', 'PKCE code_challenge is required (S256).');
         }
         if ($challengeMethod !== 'S256') {
-            return $this->createErrorResponse('invalid_request', 'Only S256 PKCE challenges are supported');
+            return $this->createErrorResponse($request, 'invalid_request', 'Only S256 PKCE challenges are supported');
         }
-        $state = $postParams['state'] ?? $queryParams['state'] ?? '';
+        // State belongs to the validated authorization request. Never let a
+        // form-body value replace the exact client-provided query value.
+        $state = $queryParams['state'] ?? '';
+        $resource = $queryParams['resource'] ?? '';
+        $scope = $queryParams['scope'] ?? OAuthService::DEFAULT_SCOPE;
 
         $code = $this->oauthService->createAuthorizationCode(
             $beUserId,
@@ -204,17 +291,22 @@ final readonly class OAuthAuthorizeEndpoint
             $redirectUri,
             $pkceChallenge,
             $challengeMethod,
+            $clientId,
+            $resource,
+            $scope,
         );
 
         // If redirect_uri is provided, redirect there with the code
         if (!empty($redirectUri)) {
-            $separator = str_contains($redirectUri, '?') ? '&' : '?';
-            $redirectUrl = $redirectUri . $separator . 'code=' . urlencode($code);
-
-            // Add state parameter if provided
+            $responseParameters = [
+                'code' => $code,
+                'iss' => $this->resolveAuthorizationIssuer($request),
+            ];
             if (!empty($state)) {
-                $redirectUrl .= '&state=' . urlencode($state);
+                $responseParameters['state'] = $state;
             }
+            $separator = str_contains($redirectUri, '?') ? '&' : '?';
+            $redirectUrl = $redirectUri . $separator . http_build_query($responseParameters);
 
             $stream = new Stream('php://temp', 'rw');
             $stream->write('');
@@ -251,15 +343,17 @@ final readonly class OAuthAuthorizeEndpoint
         $codeChallenge = $queryParams['code_challenge'] ?? '';
         $challengeMethod = $queryParams['code_challenge_method'] ?? 'S256';
         $state = $queryParams['state'] ?? '';
+        $resource = $queryParams['resource'] ?? '';
+        $scope = $queryParams['scope'] ?? OAuthService::DEFAULT_SCOPE;
 
         // Validate required parameters
-        if (empty($clientId) || $clientId !== 'typo3-mcp-server') {
-            return $this->createErrorResponse('invalid_client', 'Invalid client_id');
+        if (empty($clientId) || !$this->oauthService->isValidClientId($clientId)) {
+            return $this->createErrorResponse($request, 'invalid_client', 'Invalid client_id');
         }
 
         $beUser = $GLOBALS['BE_USER'] ?? null;
         if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
-            return $this->createErrorResponse('server_error', 'Backend user context missing');
+            return $this->createErrorResponse($request, 'server_error', 'Backend user context missing');
         }
         $username = is_string($beUser->user['username'] ?? null) ? $beUser->user['username'] : 'Unknown';
         $userId = is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0;
@@ -278,6 +372,11 @@ final readonly class OAuthAuthorizeEndpoint
             'code_challenge' => $esc($codeChallenge),
             'code_challenge_method' => $esc($challengeMethod),
             'state' => $esc($state),
+            'resource' => $esc($resource),
+            'scope' => $esc($scope),
+            'form_token' => $esc($this->formProtectionFactory
+                ->createForType('backend')
+                ->generateToken('mcpserver/oauthConsent', $clientId)),
             'user_id' => $userId,
         ]);
 
@@ -302,12 +401,22 @@ final readonly class OAuthAuthorizeEndpoint
         );
     }
 
-    private function createErrorResponse(string $error, string $description = ''): ResponseInterface
-    {
+    private function createErrorResponse(
+        ServerRequestInterface $request,
+        string $error,
+        string $description = '',
+    ): ResponseInterface {
         $errorData = [
             'error' => $error,
             'error_description' => $description,
         ];
+        try {
+            $errorData['iss'] = $this->resolveAuthorizationIssuer($request);
+        } catch (\InvalidArgumentException) {
+            // An insecure/malformed public base URL cannot be emitted as an
+            // RFC 9207 issuer. Still return a bounded OAuth error instead of
+            // throwing again while handling the original failure.
+        }
 
         $stream = new Stream('php://temp', 'rw');
         $stream->write($this->encodeJson($errorData));
@@ -329,6 +438,9 @@ final readonly class OAuthAuthorizeEndpoint
      *   code_challenge: string,
      *   code_challenge_method: string,
      *   state: string,
+     *   resource: string,
+     *   scope: string,
+     *   form_token: string,
      *   user_id: int
      * } $data
      */
@@ -467,6 +579,9 @@ final readonly class OAuthAuthorizeEndpoint
             <input type="hidden" name="code_challenge" value="' . $data['code_challenge'] . '">
             <input type="hidden" name="code_challenge_method" value="' . $data['code_challenge_method'] . '">
             <input type="hidden" name="state" value="' . $data['state'] . '">
+            <input type="hidden" name="resource" value="' . $data['resource'] . '">
+            <input type="hidden" name="scope" value="' . $data['scope'] . '">
+            <input type="hidden" name="form_token" value="' . $data['form_token'] . '">
             <input type="hidden" name="user_id" value="' . $data['user_id'] . '">
 
             <div class="buttons">
@@ -620,40 +735,48 @@ final readonly class OAuthAuthorizeEndpoint
 
     private function validateRedirectUri(?string $redirectUri): string
     {
-        $trimmedRedirectUri = trim((string)$redirectUri);
-        if ($trimmedRedirectUri === '') {
+        $redirectUri = (string)$redirectUri;
+        if ($redirectUri === '') {
             return '';
         }
-
-        // CRLF / NUL byte rejection (header-injection defense). The validated
-        // URL is later concatenated into a Location: response header; any
-        // unescaped \r\n would split the header. parse_url() does not strip
-        // these for non-http schemes (cursor://, vscode://, …), so we
-        // gate explicitly here.
-        if (preg_match('/[\r\n\0]/', $trimmedRedirectUri) === 1) {
+        if (strlen($redirectUri) > 2048 || trim($redirectUri) !== $redirectUri
+            || preg_match('/[\x00-\x20\x7f]/', $redirectUri) === 1
+        ) {
             throw new \InvalidArgumentException('Invalid redirect_uri');
         }
 
-        $parsedUrl = parse_url($trimmedRedirectUri);
-        if (!is_array($parsedUrl)) {
+        $parsedUrl = parse_url($redirectUri);
+        if (!is_array($parsedUrl)
+            || !is_string($parsedUrl['scheme'] ?? null)
+            || $parsedUrl['scheme'] === ''
+            || isset($parsedUrl['fragment'])
+            || isset($parsedUrl['user'])
+            || isset($parsedUrl['pass'])
+        ) {
             throw new \InvalidArgumentException('Invalid redirect_uri');
         }
 
-        $scheme = is_string($parsedUrl['scheme'] ?? null) ? strtolower($parsedUrl['scheme']) : '';
-        if ($scheme === '') {
-            throw new \InvalidArgumentException('Invalid redirect_uri');
+        // Scheme and transport security were validated when this exact URI
+        // was persisted by dynamic client registration.
+        return $redirectUri;
+    }
+
+    private function resolveAuthorizationIssuer(ServerRequestInterface $request): string
+    {
+        $issuer = $this->baseUrlResolver->resolveFromRequest($request);
+        $parsed = parse_url($issuer);
+        $scheme = is_array($parsed) && is_string($parsed['scheme'] ?? null)
+            ? strtolower($parsed['scheme'])
+            : '';
+        $host = is_array($parsed) && is_string($parsed['host'] ?? null)
+            ? strtolower(trim($parsed['host'], '[]'))
+            : '';
+        $loopbackHttp = $scheme === 'http'
+            && ($host === 'localhost' || $host === '::1' || str_starts_with($host, '127.'));
+        if ($scheme !== 'https' && !$loopbackHttp) {
+            throw new \InvalidArgumentException('OAuth authorization issuer must use HTTPS.');
         }
 
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            return $trimmedRedirectUri;
-        }
-
-        $host = is_string($parsedUrl['host'] ?? null) ? strtolower($parsedUrl['host']) : '';
-        $allowedHosts = ['localhost', '127.0.0.1', '::1'];
-        if ($host !== '' && (in_array($host, $allowedHosts, true) || str_ends_with($host, '.localhost'))) {
-            return $trimmedRedirectUri;
-        }
-
-        throw new \InvalidArgumentException('Invalid redirect_uri');
+        return $issuer;
     }
 }

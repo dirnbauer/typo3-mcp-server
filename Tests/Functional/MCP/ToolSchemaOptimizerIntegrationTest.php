@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\MCP;
 use Hn\McpServer\MCP\McpServerFactory;
 use Hn\McpServer\MCP\Tool\GetCapabilitiesTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Mcp\Types\ListToolsResult;
 
 /**
  * Verifies that the MCP `tools/list` payload is condensed by default to save
@@ -25,10 +26,14 @@ final class ToolSchemaOptimizerIntegrationTest extends AbstractFunctionalTest
         $handlers = $server->getHandlers();
         self::assertIsCallable($handlers['tools/list']);
         $result = $handlers['tools/list']();
+        self::assertInstanceOf(ListToolsResult::class, $result);
 
         $byName = [];
-        foreach ($result['tools'] as $tool) {
-            $byName[$tool['name']] = $tool;
+        foreach ($result->tools as $tool) {
+            $serialized = json_decode(json_encode($tool, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+            self::assertIsArray($serialized);
+            self::assertIsString($serialized['name'] ?? null);
+            $byName[$serialized['name']] = $serialized;
         }
         return $byName;
     }

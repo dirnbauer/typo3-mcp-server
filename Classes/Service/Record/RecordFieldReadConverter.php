@@ -43,17 +43,17 @@ final readonly class RecordFieldReadConverter
         // Process each field
         foreach ($record as $field => $value) {
             // Special handling for pi_flexform in list content elements
-            if ($field === 'pi_flexform' && $table === 'tt_content' &&
-                isset($record['CType']) && $record['CType'] === 'list' &&
-                !empty($record['list_type'])) {
+            if ($field === 'pi_flexform' && $table === 'tt_content'
+                && isset($record['CType']) && $record['CType'] === 'list'
+                && !empty($record['list_type'])) {
                 // Check if there's a FlexForm DS configured for this plugin
                 $flexFormDs = $GLOBALS['TCA']['tt_content']['columns']['pi_flexform']['config']['ds'] ?? [];
                 $listType = $record['list_type'];
 
                 // Check various DS key patterns
-                $hasFlexFormConfig = isset($flexFormDs[$listType . ',list']) ||
-                                    isset($flexFormDs['*,' . $listType]) ||
-                                    isset($flexFormDs[$listType]);
+                $hasFlexFormConfig = isset($flexFormDs[$listType . ',list'])
+                                    || isset($flexFormDs['*,' . $listType])
+                                    || isset($flexFormDs[$listType]);
 
                 if ($hasFlexFormConfig) {
                     // Include pi_flexform for this plugin

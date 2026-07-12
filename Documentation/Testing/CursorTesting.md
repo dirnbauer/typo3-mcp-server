@@ -61,8 +61,10 @@ designed to be pasted into a chat client verbatim. Cursor handles it well:
 3. Add: *"Work through this checklist top-to-bottom. After each phase,
    summarize what you did and what the MCP server returned. Stop and ask
    me before publishing anything (Phase 9)."*
-4. Watch the tool calls scroll by. Each successful step leaves a visible
-   workspace change — verify in TYPO3 backend → Workspaces module.
+4. Watch the tool calls scroll by. The script first requires an explicit draft
+   workspace and passes it to record-backed calls; verify those pending records
+   in TYPO3 backend → Workspaces. Physical files, site YAML/settings, Composer,
+   XLF, and frontend-project changes are immediate and do not appear there.
 
 ## 4. Manual smoke tests (no script)
 
@@ -78,10 +80,12 @@ If you just want to confirm the basics work:
 | "Render that page so I can see what it looks like."              | `RenderRecord`           |
 | "Discard my pending workspace changes."                          | `RollbackWorkspace`      |
 
-For the destructive ones (`PublishWorkspace`, `RollbackWorkspace`,
-`DeleteRedirect`), the tool defaults to **dry-run mode** — Cursor will
-show what would happen, then ask the LLM to confirm before re-running with
-`dryRun: false`.
+`PublishWorkspace` and `RollbackWorkspace` default to **dry-run mode**. Inspect
+the report before asking Cursor to repeat either call with `dryRun: false`.
+Redirect deletion is `ManageRedirects` with `action: "delete"`; it has no
+`dryRun` parameter. Use it only after explicit confirmation on a disposable
+environment, and only where workspace-safe redirects or trusted local mode make
+the write available.
 
 ## 5. Local-only testing without OAuth
 

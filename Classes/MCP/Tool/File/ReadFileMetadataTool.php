@@ -6,6 +6,7 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\FileAccessService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
@@ -22,6 +23,7 @@ final class ReadFileMetadataTool extends AbstractTool
         private readonly ResourceFactory $resourceFactory,
         private readonly ConnectionPool $connectionPool,
         private readonly McpFileSandboxService $fileSandboxService,
+        private readonly FileAccessService $fileAccessService,
     ) {}
 
     /**
@@ -69,6 +71,8 @@ final class ReadFileMetadataTool extends AbstractTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->fileAccessService->requireReadableBackendUser();
+
         $uid = isset($params['uid']) && is_numeric($params['uid']) ? (int)$params['uid'] : null;
         $identifier = is_string($params['identifier'] ?? null) ? $params['identifier'] : null;
 
@@ -91,6 +95,7 @@ final class ReadFileMetadataTool extends AbstractTool
             throw new ValidationException(['File could not be loaded']);
         }
 
+        $this->fileAccessService->assertResourceReadable($file);
         $this->fileSandboxService->assertFileAllowed($file);
 
         $props = $file->getProperties();

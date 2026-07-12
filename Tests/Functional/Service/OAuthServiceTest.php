@@ -35,7 +35,7 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testCreateAuthorizationCodeReturnsNonEmptyString(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        [$code] = $this->createPkceAuthorizationCode();
 
         self::assertNotEmpty($code);
         self::assertGreaterThan(32, strlen($code));
@@ -43,7 +43,7 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testCreateAuthorizationCodeStoresInDatabase(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        [$code] = $this->createPkceAuthorizationCode();
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
@@ -52,7 +52,7 @@ final class OAuthServiceTest extends FunctionalTestCase
             ->select('*')
             ->from('tx_mcpserver_oauth_codes')
             ->where('code = :code')
-            ->setParameter('code', $code)
+            ->setParameter('code', hash('sha256', $code))
             ->executeQuery()
             ->fetchAssociative();
 
@@ -63,7 +63,8 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testCreateAuthorizationCodeWithPkceStoresChallenge(): void
     {
-        $challenge = 'abc123challenge';
+        $verifier = str_repeat('a', 64);
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
         $code = $this->service->createAuthorizationCode(
             1,
             'TestClient',
@@ -79,7 +80,7 @@ final class OAuthServiceTest extends FunctionalTestCase
             ->select('pkce_challenge', 'pkce_challenge_method', 'redirect_uri')
             ->from('tx_mcpserver_oauth_codes')
             ->where('code = :code')
-            ->setParameter('code', $code)
+            ->setParameter('code', hash('sha256', $code))
             ->executeQuery()
             ->fetchAssociative();
 
@@ -92,9 +93,9 @@ final class OAuthServiceTest extends FunctionalTestCase
     public function testCreateAuthorizationCodeRejectsNonS256Method(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Only S256 PKCE challenges are supported');
+        $this->expectExceptionMessage('PKCE requires a valid S256 code challenge');
 
-        $this->service->createAuthorizationCode(1, 'TestClient', '', 'challenge', 'plain');
+        $this->service->createAuthorizationCode(1, 'TestClient', '', str_repeat('a', 43), 'plain');
     }
 
     public function testCreateDirectAccessTokenReturnsToken(): void
@@ -208,9 +209,9 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testExchangeCodeForTokenWithValidCode(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
 
-        $result = $this->service->exchangeCodeForToken($code);
+        $result = $this->service->exchangeCodeForToken($code, $verifier);
 
         self::assertIsArray($result);
         self::assertArrayHasKey('access_token', $result);
@@ -222,8 +223,8 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testRefreshAccessTokenRotatesTokenPair(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
-        $first = $this->service->exchangeCodeForToken($code);
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $first = $this->service->exchangeCodeForToken($code, $verifier);
         self::assertIsArray($first);
 
         $second = $this->service->refreshAccessToken($first['refresh_token']);
@@ -234,6 +235,10 @@ final class OAuthServiceTest extends FunctionalTestCase
         self::assertNull($this->service->validateToken($first['access_token']));
         self::assertIsArray($this->service->validateToken($second['access_token']));
         self::assertNull($this->service->refreshAccessToken($first['refresh_token']));
+        self::assertNull(
+            $this->service->validateToken($second['access_token']),
+            'Replaying a rotated refresh token must revoke the complete token family.',
+        );
     }
 
     public function testRefreshAccessTokenRejectsInvalidToken(): void
@@ -243,8 +248,8 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testCleanupKeepsExpiredAccessTokenWithValidRefreshToken(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
-        $first = $this->service->exchangeCodeForToken($code);
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $first = $this->service->exchangeCodeForToken($code, $verifier);
         self::assertIsArray($first);
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -265,12 +270,177 @@ final class OAuthServiceTest extends FunctionalTestCase
 
     public function testExchangeCodeForTokenConsumesCode(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'TestClient');
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
 
-        $first = $this->service->exchangeCodeForToken($code);
+        $first = $this->service->exchangeCodeForToken($code, $verifier);
         self::assertIsArray($first);
 
-        $second = $this->service->exchangeCodeForToken($code);
+        $second = $this->service->exchangeCodeForToken($code, $verifier);
         self::assertNull($second, 'Code should only be usable once');
+    }
+
+    public function testDisabledBackendUserInvalidatesBearerAndRefreshTokensImmediately(): void
+    {
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $tokens = $this->service->exchangeCodeForToken($code, $verifier);
+        self::assertIsArray($tokens);
+
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('be_users');
+        $connection->update('be_users', ['disable' => 1], ['uid' => 1]);
+
+        self::assertNull($this->service->validateToken($tokens['access_token']));
+        self::assertNull($this->service->refreshAccessToken($tokens['refresh_token']));
+    }
+
+    public function testRefreshRotationNeverExtendsTheAbsoluteFamilyLifetime(): void
+    {
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $tokens = $this->service->exchangeCodeForToken($code, $verifier);
+        self::assertIsArray($tokens);
+
+        $familyExpires = time() + 60;
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_mcpserver_access_tokens');
+        $connection->update(
+            'tx_mcpserver_access_tokens',
+            ['refresh_family_expires' => $familyExpires],
+            ['be_user_uid' => 1],
+        );
+
+        self::assertIsArray($this->service->refreshAccessToken($tokens['refresh_token']));
+        $storedRefreshExpiry = $connection->select(
+            ['refresh_expires'],
+            'tx_mcpserver_access_tokens',
+            ['be_user_uid' => 1],
+        )->fetchOne();
+
+        self::assertSame($familyExpires, (int)$storedRefreshExpiry);
+    }
+
+    public function testReplayFromAnyEarlierRefreshGenerationRevokesTheCurrentFamily(): void
+    {
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $first = $this->service->exchangeCodeForToken($code, $verifier);
+        self::assertIsArray($first);
+        $second = $this->service->refreshAccessToken($first['refresh_token']);
+        self::assertIsArray($second);
+        $third = $this->service->refreshAccessToken($second['refresh_token']);
+        self::assertIsArray($third);
+        self::assertIsArray($this->service->validateToken($third['access_token']));
+
+        self::assertNull($this->service->refreshAccessToken($first['refresh_token']));
+        self::assertNull($this->service->validateToken($third['access_token']));
+    }
+
+    public function testDynamicRegistrationPersistsExactSecureRedirectUris(): void
+    {
+        $registered = $this->service->registerClient([
+            'client_name' => 'Remote editor',
+            'redirect_uris' => ['https://client.example/oauth/callback'],
+            'grant_types' => ['authorization_code', 'refresh_token'],
+            'response_types' => ['code'],
+        ]);
+
+        $loaded = $this->service->getRegisteredClient($registered['client_id']);
+
+        self::assertIsArray($loaded);
+        self::assertSame(['https://client.example/oauth/callback'], $loaded['redirect_uris']);
+        self::assertTrue($this->service->isRedirectUriAllowed(
+            $registered['client_id'],
+            'https://client.example/oauth/callback',
+        ));
+        self::assertFalse($this->service->isRedirectUriAllowed(
+            $registered['client_id'],
+            'https://client.example/oauth/callback/',
+        ));
+    }
+
+    public function testAuthorizationCodeRefreshAndBearerStayBoundToClientAndResource(): void
+    {
+        $client = $this->service->registerClient([
+            'client_name' => 'Bound client',
+            'redirect_uris' => ['https://client.example/callback'],
+            'grant_types' => ['authorization_code', 'refresh_token'],
+            'response_types' => ['code'],
+        ]);
+        $resource = 'https://cms.example/mcp';
+        $verifier = str_repeat('c', 64);
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+        $code = $this->service->createAuthorizationCode(
+            1,
+            'Bound client',
+            'https://client.example/callback',
+            $challenge,
+            'S256',
+            $client['client_id'],
+            $resource,
+        );
+
+        self::assertNull($this->service->exchangeCodeForToken(
+            $code,
+            $verifier,
+            clientId: 'wrong-client',
+            redirectUri: 'https://client.example/callback',
+            resource: $resource,
+        ));
+        self::assertNull($this->service->exchangeCodeForToken(
+            $code,
+            $verifier,
+            clientId: $client['client_id'],
+            redirectUri: 'https://client.example/callback',
+            resource: 'https://other.example/mcp',
+        ));
+
+        $tokens = $this->service->exchangeCodeForToken(
+            $code,
+            $verifier,
+            clientId: $client['client_id'],
+            redirectUri: 'https://client.example/callback',
+            resource: $resource,
+        );
+        self::assertIsArray($tokens);
+        self::assertIsArray($this->service->validateToken(
+            $tokens['access_token'],
+            expectedResource: $resource,
+            requiredScope: OAuthService::DEFAULT_SCOPE,
+        ));
+        self::assertNull($this->service->validateToken(
+            $tokens['access_token'],
+            expectedResource: 'https://other.example/mcp',
+            requiredScope: OAuthService::DEFAULT_SCOPE,
+        ));
+
+        self::assertNull($this->service->refreshAccessToken(
+            $tokens['refresh_token'],
+            clientId: $client['client_id'],
+            resource: 'https://other.example/mcp',
+        ));
+        self::assertIsArray($this->service->refreshAccessToken(
+            $tokens['refresh_token'],
+            clientId: $client['client_id'],
+            resource: $resource,
+        ));
+    }
+
+    public function testPkceVerifierSyntaxIsValidatedBeforeHashComparison(): void
+    {
+        $verifier = str_repeat('d', 64);
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+        $code = $this->service->createAuthorizationCode(1, 'TestClient', pkceChallenge: $challenge);
+
+        self::assertNull($this->service->exchangeCodeForToken($code, str_repeat('!', 64)));
+    }
+
+    /** @return array{string, string} */
+    private function createPkceAuthorizationCode(string $clientName = 'TestClient'): array
+    {
+        $verifier = bin2hex(random_bytes(32));
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+
+        return [
+            $this->service->createAuthorizationCode(1, $clientName, pkceChallenge: $challenge),
+            $verifier,
+        ];
     }
 }

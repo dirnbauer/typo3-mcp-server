@@ -10,9 +10,9 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 
 final class ToolSchemaOptimizerTest extends TestCase
 {
-    private function createOptimizer(string|null|false $schemaDetail): ToolSchemaOptimizer
+    private function createOptimizer(string|false|null $schemaDetail): ToolSchemaOptimizer
     {
-        $extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
+        $extensionConfiguration = self::createStub(ExtensionConfiguration::class);
         if ($schemaDetail === false) {
             $extensionConfiguration->method('get')->willThrowException(new \RuntimeException('not set'));
         } else {

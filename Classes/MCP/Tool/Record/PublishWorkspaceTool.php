@@ -78,6 +78,8 @@ final class PublishWorkspaceTool extends AbstractRecordTool
      */
     protected function doExecute(array $params): CallToolResult
     {
+        $this->ensureWorkspaceForOperation('write');
+
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication) {
             return $this->createErrorResult('No backend user session available.');
@@ -233,21 +235,13 @@ final class PublishWorkspaceTool extends AbstractRecordTool
      */
     private function filterCmdMapToTranslations(array $cmdMap): array
     {
-        $tca = $GLOBALS['TCA'] ?? null;
-
         $filtered = [];
         foreach ($cmdMap as $tableName => $records) {
             if (!is_string($tableName) || !is_array($records)) {
                 continue;
             }
-            $languageField = '';
-            if (is_array($tca) && isset($tca[$tableName]) && is_array($tca[$tableName])) {
-                $ctrl = $tca[$tableName]['ctrl'] ?? null;
-                if (is_array($ctrl) && is_string($ctrl['languageField'] ?? null)) {
-                    $languageField = (string)$ctrl['languageField'];
-                }
-            }
-            if ($languageField === '') {
+            $languageField = $this->tableAccessService->getLanguageFieldName($tableName);
+            if ($languageField === null) {
                 continue;
             }
 

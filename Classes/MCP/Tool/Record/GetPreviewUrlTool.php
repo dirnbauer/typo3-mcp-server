@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
+use Hn\McpServer\Service\PageAccessService;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -37,6 +38,7 @@ final class GetPreviewUrlTool extends AbstractRecordTool
         WorkspaceContextService $workspaceContextService,
         private readonly SiteInformationService $siteInformationService,
         private readonly LanguageService $languageService,
+        private readonly PageAccessService $pageAccessService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -121,13 +123,16 @@ final class GetPreviewUrlTool extends AbstractRecordTool
         } else {
             $pageId = $uid;
             $anchor = '';
-            if ($language === null) {
-                $row = $this->fetchPageRow($uid);
-                if ($row !== null && is_numeric($row['sys_language_uid'] ?? null)) {
-                    $languageId = (int)$row['sys_language_uid'];
-                }
+            $row = $this->fetchPageRow($uid);
+            if ($row === null) {
+                throw new ValidationException(['No page found with UID ' . $uid . '.']);
+            }
+            if ($language === null && is_numeric($row['sys_language_uid'] ?? null)) {
+                $languageId = (int)$row['sys_language_uid'];
             }
         }
+
+        $this->pageAccessService->assertPageAccess($pageId);
 
         $additionalParams = [];
         if ($languageId > 0) {

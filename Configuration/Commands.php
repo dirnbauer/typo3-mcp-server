@@ -1,6 +1,8 @@
 <?php
 
 use Hn\McpServer\Command\InstallEditorSkillsCommand;
+use Hn\McpServer\Command\McpPromptGetCommand;
+use Hn\McpServer\Command\McpPromptListCommand;
 use Hn\McpServer\Command\McpServerCommand;
 use Hn\McpServer\Command\McpTestCommand;
 use Hn\McpServer\Command\McpToolListCommand;
@@ -47,6 +49,14 @@ return [
     ],
     'mcp:tool:list' => [
         'class' => McpToolListCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:prompt:list' => [
+        'class' => McpPromptListCommand::class,
+        'schedulable' => false,
+    ],
+    'mcp:prompt:get' => [
+        'class' => McpPromptGetCommand::class,
         'schedulable' => false,
     ],
 

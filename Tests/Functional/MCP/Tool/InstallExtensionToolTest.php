@@ -6,14 +6,18 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\InstallExtensionTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 
 final class InstallExtensionToolTest extends AbstractFunctionalTest
 {
+    use DevSiteTestTrait;
+
     private InstallExtensionTool $tool;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->enableDevSiteTools();
         $this->tool = $this->getService(InstallExtensionTool::class);
     }
 

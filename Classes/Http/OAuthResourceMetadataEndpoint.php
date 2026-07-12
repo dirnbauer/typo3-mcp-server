@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -12,7 +13,7 @@ use TYPO3\CMS\Core\Http\Stream;
 
 /**
  * OAuth Resource Server Metadata endpoint
- * RFC 8707: https://tools.ietf.org/html/rfc8707
+ * RFC 9728: https://www.rfc-editor.org/rfc/rfc9728.html
  */
 final class OAuthResourceMetadataEndpoint
 {
@@ -24,9 +25,12 @@ final class OAuthResourceMetadataEndpoint
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
-        // Handle preflight OPTIONS request
+        $corsRejection = $this->rejectDisallowedCorsRequest($request);
+        if ($corsRejection instanceof ResponseInterface) {
+            return $corsRejection;
+        }
         if ($request->getMethod() === 'OPTIONS') {
-            return $this->handlePreflightRequest();
+            return $this->handlePreflightRequest($request);
         }
 
         // Get base URL from request
@@ -39,13 +43,11 @@ final class OAuthResourceMetadataEndpoint
             ],
             'bearer_methods_supported' => [
                 'header',
-                'query',
+            ],
+            'scopes_supported' => [
+                OAuthService::DEFAULT_SCOPE,
             ],
             'resource_documentation' => $baseUrl . '/typo3/module/user/mcp-server',
-            'revocation_endpoint' => $baseUrl . '/mcp_oauth/token',
-            'revocation_endpoint_auth_methods_supported' => [
-                'none',
-            ],
         ];
 
         $stream = new Stream('php://temp', 'rw');
@@ -57,10 +59,9 @@ final class OAuthResourceMetadataEndpoint
             200,
             [
                 'Content-Type' => 'application/json',
-                'Cache-Control' => 'public, max-age=3600',
             ],
         );
 
-        return $this->addCorsHeaders($response);
+        return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
     }
 }

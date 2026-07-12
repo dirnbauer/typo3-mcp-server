@@ -6,12 +6,15 @@ user-invocable: true
 
 # TYPO3 Content Editing Skill
 
-Guides an AI assistant through safe, workspace-staged content edits on a TYPO3 v14 site using EXT:mcp_server.
+Guides an AI assistant through safe content edits on a TYPO3 v14 site using EXT:mcp_server.
 
 ## Prerequisites
 
-1. Call `GetCapabilities` to confirm the MCP server is reachable and whether DDEV/local mode is active.
-2. Call `ListWorkspaces` if you need an explicit `workspace_id`.
+1. Call `GetCapabilities` to confirm the MCP server is reachable. Check `allows_live_writes` and `localMode.enabled`.
+2. Choose the write mode before changing records:
+   - For review-before-publish, call `ListWorkspaces`, choose a writable draft with an ID greater than `0`, and pass that `workspace_id` to every record-backed call. `ListWorkspaces` does not create a workspace; stop and ask an administrator to create or assign one if none is available.
+   - For intentional immediate editing on a trusted local site, confirm `allows_live_writes=true`, omit `workspace_id` (or use `0`), tell the user that records change live, and skip the workspace publish phase.
+   - In strict/production mode, an omitted ID selects or creates a draft automatically, but an explicit draft ID is clearer when several workspaces exist.
 3. Use full URLs or page UIDs from `GetPageTree` / `GetPage` — do not guess identifiers.
 
 ## Workflow
@@ -33,14 +36,15 @@ Parameters: table=tt_content, type=<CType if known>
 
 For plugins or list types, also call `GetFlexFormSchema` when FlexForm fields matter.
 
-### 3. Stage changes (never live)
+### 3. Write changes in the selected mode
 
 ```
 Tool: WriteTable
-Parameters: action=create|update|translate|move|delete, table, uid/pid, data
+Parameters: action=create|update|translate|move|delete, table, uid/pid, data, workspace_id=<draft ID when staging>
 ```
 
-All record writes land in a workspace automatically. Review with `WorkspaceReview` before publishing.
+Keep using the mode selected in the prerequisites. In particular, do not omit `workspace_id` halfway through a
+staged workflow on DDEV/local mode: that would switch the write to live.
 
 ### 4. Verify visually
 
@@ -48,7 +52,9 @@ All record writes land in a workspace automatically. Review with `WorkspaceRevie
 Tools: GetPreviewUrl, RenderRecord
 ```
 
-Share the preview URL with stakeholders or fetch rendered HTML to confirm the change.
+For a staged workflow, pass the same draft `workspace_id`. Share the preview URL with stakeholders or fetch
+rendered HTML to confirm the change. For an immediate local workflow, verify the live page and state that no
+publish action remains.
 
 ### 5. Publish deliberately
 
@@ -56,7 +62,9 @@ Share the preview URL with stakeholders or fetch rendered HTML to confirm the ch
 Tools: WorkspaceReview → PublishWorkspace (dryRun=true first)
 ```
 
-Only set `dryRun=false` when the editor approves publication.
+Run this phase only for a draft workspace. Pass the selected draft `workspace_id` to both tools and only set
+`dryRun=false` when the editor approves publication. Do not call `PublishWorkspace` for intentional local live
+edits.
 
 ## Tips
 

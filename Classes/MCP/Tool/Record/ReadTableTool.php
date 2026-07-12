@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\WorkspaceRestriction;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 
 /**
  * Tool for reading records from TYPO3 tables
@@ -41,6 +42,7 @@ final class ReadTableTool extends AbstractRecordTool
         private readonly RecordReadQueryService $readQueryService,
         private readonly RecordRelationReadService $relationReadService,
         private readonly RecordFieldReadConverter $fieldReadConverter,
+        private readonly TcaSchemaFactory $tcaSchemaFactory,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
     }
@@ -70,8 +72,8 @@ final class ReadTableTool extends AbstractRecordTool
         // explicitly for phpstan-strict-rules.
         if (((int)($beUser->isInWebMount($pid) ?? 0)) <= 0) {
             throw new ValidationException([sprintf(
-                'Permission denied: You do not have access to page %d. Your account needs database mount point (DB Mount) ' .
-                'access to this page or its parent pages. Contact your administrator.',
+                'Permission denied: You do not have access to page %d. Your account needs database mount point (DB Mount) '
+                . 'access to this page or its parent pages. Contact your administrator.',
                 $pid,
             )]);
         }
@@ -186,14 +188,14 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         return [
-            'description' => 'Read records from TYPO3 tables with filtering, pagination, and relation embedding. ' .
-                'Returns records from ALL languages mixed together by default (like TYPO3\'s list module). Use the language parameter to filter. ' .
-                'Hidden records are always included (like the TYPO3 backend); only deleted records are excluded. ' .
-                'INLINE RELATIONS: Embedded inline fields (hideTable/passthrough) return full child record data arrays. Independent inline fields return only UIDs. ' .
-                'MM RELATIONS: Basic support — does not resolve foreign_table_where conditions or complex TYPO3 relation scenarios. ' .
-                'WORKSPACE: Returns live UIDs for workspace-overlaid records (transparent for subsequent WriteTable calls). ' .
-                'OUTPUT: {table, tableLabel, records[], total, limit, offset, hasMore}. Max limit: 1000. ' .
-                'For page content, use pid filter instead of individual record lookups.',
+            'description' => 'Read records from TYPO3 tables with filtering, pagination, and relation embedding. '
+                . 'Returns records from ALL languages mixed together by default (like TYPO3\'s list module). Use the language parameter to filter. '
+                . 'Hidden records are always included (like the TYPO3 backend); only deleted records are excluded. '
+                . 'INLINE RELATIONS: Embedded inline fields (hideTable/passthrough) return full child record data arrays. Independent inline fields return only UIDs. '
+                . 'MM RELATIONS: Basic support — does not resolve foreign_table_where conditions or complex TYPO3 relation scenarios. '
+                . 'WORKSPACE: Returns live UIDs for workspace-overlaid records (transparent for subsequent WriteTable calls). '
+                . 'OUTPUT: {table, tableLabel, records[], total, limit, offset, hasMore}. Max limit: 1000. '
+                . 'For page content, use pid filter instead of individual record lookups.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => $properties,
@@ -393,7 +395,10 @@ final class ReadTableTool extends AbstractRecordTool
             ->removeAll()
             ->add(new DeletedRestriction())
             ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
-            ->add(new WorkspaceDeletePlaceholderRestriction($this->getBackendUser()->workspace ?? 0));
+            ->add(new WorkspaceDeletePlaceholderRestriction(
+                $this->getBackendUser()->workspace ?? 0,
+                $this->tcaSchemaFactory,
+            ));
 
         $records = $queryBuilder
             ->select('*')

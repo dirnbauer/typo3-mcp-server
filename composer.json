@@ -11,15 +11,15 @@
         }
     ],
     "require": {
-        "php": ">=8.2.0",
-        "logiscape/mcp-sdk-php": "^1.2",
+        "php": "^8.3",
+        "logiscape/mcp-sdk-php": "^2.0.0-beta3",
         "typo3/cms-backend": "^14.3",
         "typo3/cms-core": "^14.3",
         "typo3/cms-workspaces": "^14.3"
     },
     "require-dev": {
         "brianium/paratest": "^7.8",
-        "a9f/typo3-fractor": "^0.5",
+        "a9f/typo3-fractor": "^1.0",
         "friendsofphp/php-cs-fixer": "^3.94",
         "georgringer/news": "^14.0",
         "phpat/phpat": "^0.12.3",
@@ -34,8 +34,27 @@
         "typo3/cms-frontend": "^14.3",
         "typo3/cms-install": "^14.3",
         "typo3/testing-framework": "^9.4",
-        "typo3/cms-redirects": "^14.3"
+        "typo3/cms-redirects": "^14.3",
+        "sgalinski/sg-apicore": "dev-main",
+        "webconsulting/typo3-abilities": "dev-main"
     },
+    "suggest": {
+        "sgalinski/sg-apicore": "Optional TYPO3 v14 REST/OpenAPI, scoped-token, tenant, rate-limit, and request-tracing projection.",
+        "webconsulting/typo3-abilities": "Optional installation-wide abilities registry for governed MCP, CLI, and REST projections."
+    },
+    "conflict": {
+        "mcp/sdk": "*"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/dirnbauer/sg_apicore"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/dirnbauer/typo3-abilities"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "Hn\\McpServer\\": "Classes/"
@@ -66,10 +85,13 @@
             "@test:functional"
         ],
         "test:unit": [
-            "phpunit -c Tests/UnitTests.xml"
+            "phpunit -c Tests/UnitTests.xml --fail-on-phpunit-notice"
         ],
         "test:functional": [
-            "paratest -c phpunit.xml.dist -p 4"
+            "paratest -c phpunit.xml.dist -p 4 --fail-on-phpunit-notice"
+        ],
+        "test:protocol": [
+            "php Build/protocol-smoke.php"
         ],
         "test:llm": [
             "rm -rf .Build/llm-stats",
@@ -109,7 +131,7 @@
             "typo3/cms-composer-installers": true
         },
         "platform": {
-            "php": "8.2.0"
+            "php": "8.3.0"
         }
     }
 }

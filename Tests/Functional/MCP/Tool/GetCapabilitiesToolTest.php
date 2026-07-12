@@ -27,13 +27,22 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
         self::assertContains('database:read', $payload['manifest']['subsystems'] ?? []);
         self::assertContains('file:write', $payload['manifest']['subsystems'] ?? []);
 
-        // Tool→subsystems map is exposed so the LLM can introspect.
-        self::assertArrayHasKey('ReadTable', $payload['manifest']['tools'] ?? []);
-        self::assertSame(['database:read'], $payload['manifest']['tools']['ReadTable']);
-        self::assertSame(['cli:safe', 'database:read'], $payload['manifest']['tools']['SolrIndexQueue']);
+        // Fine-grained MCP inventory is namespaced away from the public TYPO3
+        // capability schema, while remaining fully introspectable by clients.
+        $mcp = $payload['manifest']['x-mcp'] ?? null;
+        self::assertIsArray($mcp);
+        self::assertArrayHasKey('ReadTable', $mcp['tools'] ?? []);
+        self::assertSame(['database:read'], $mcp['tools']['ReadTable']);
+        self::assertSame(
+            ['cli:safe', 'database:read', 'database:write', 'scheduler:task', 'network:scheduler'],
+            $mcp['tools']['SolrIndexQueue'],
+        );
+        self::assertSame('ReadTable', $mcp['commands']['mcp:read-table']['tool'] ?? null);
+        self::assertArrayHasKey('typo3-content-edit', $mcp['skills'] ?? []);
 
-        // Network outbound default is closed (`self`).
-        self::assertSame(['self'], $payload['manifest']['network']['outbound'] ?? []);
+        // Network outbound default is closed (`self`) and uses the structured
+        // capability-manifest representation.
+        self::assertSame('self', $payload['manifest']['network']['outbound'][0]['host'] ?? null);
 
         // Runtime mode is reported.
         self::assertArrayHasKey('localMode', $payload);

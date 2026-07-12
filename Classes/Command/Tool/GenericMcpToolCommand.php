@@ -6,6 +6,7 @@ namespace Hn\McpServer\Command\Tool;
 
 use Hn\McpServer\Command\AbstractMcpToolCommand;
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\McpCliBackendUserBootstrapService;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 
 final class GenericMcpToolCommand extends AbstractMcpToolCommand
@@ -16,11 +17,12 @@ final class GenericMcpToolCommand extends AbstractMcpToolCommand
     public function __construct(
         ToolRegistry $toolRegistry,
         TcaFactory $tcaFactory,
+        McpCliBackendUserBootstrapService $cliBackendUserBootstrap,
         private readonly string $toolName = '',
         private readonly string $description = '',
         private readonly array $exposedOptions = [],
     ) {
-        parent::__construct($toolRegistry, $tcaFactory);
+        parent::__construct($toolRegistry, $tcaFactory, $cliBackendUserBootstrap);
     }
 
     protected function toolName(): string

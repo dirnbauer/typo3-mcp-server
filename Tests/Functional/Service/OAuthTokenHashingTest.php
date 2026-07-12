@@ -73,8 +73,8 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
 
     public function testTokenHashingWorksForCodeExchange(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'test-client');
-        $tokenData = $this->service->exchangeCodeForToken($code);
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        $tokenData = $this->service->exchangeCodeForToken($code, $verifier);
 
         self::assertNotNull($tokenData);
         $result = $this->service->validateToken($tokenData['access_token']);
@@ -151,18 +151,50 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
 
     public function testAuthorizationCodeIsOneTimeUse(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'test-client');
-        self::assertNotNull($this->service->exchangeCodeForToken($code));
-        self::assertNull($this->service->exchangeCodeForToken($code), 'Second exchange must fail');
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
+        self::assertNotNull($this->service->exchangeCodeForToken($code, $verifier));
+        self::assertNull($this->service->exchangeCodeForToken($code, $verifier), 'Second exchange must fail');
     }
 
     public function testExpiredAuthorizationCodeIsRejected(): void
     {
-        $code = $this->service->createAuthorizationCode(1, 'test-client');
+        [$code, $verifier] = $this->createPkceAuthorizationCode();
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('tx_mcpserver_oauth_codes');
-        $connection->update('tx_mcpserver_oauth_codes', ['expires' => time() - 1], ['code' => $code]);
+        $connection->update(
+            'tx_mcpserver_oauth_codes',
+            ['expires' => time() - 1],
+            ['code' => hash('sha256', $code)],
+        );
 
-        self::assertNull($this->service->exchangeCodeForToken($code));
+        self::assertNull($this->service->exchangeCodeForToken($code, $verifier));
+    }
+
+    public function testAuthorizationCodeIsHashedAtRest(): void
+    {
+        [$code] = $this->createPkceAuthorizationCode();
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_mcpserver_oauth_codes');
+        $storedCode = $connection->select(
+            ['code'],
+            'tx_mcpserver_oauth_codes',
+            ['be_user_uid' => 1],
+        )->fetchOne();
+
+        self::assertIsString($storedCode);
+        self::assertNotSame($code, $storedCode);
+        self::assertSame(hash('sha256', $code), $storedCode);
+    }
+
+    /** @return array{string, string} */
+    private function createPkceAuthorizationCode(): array
+    {
+        $verifier = bin2hex(random_bytes(32));
+        $challenge = rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '=');
+
+        return [
+            $this->service->createAuthorizationCode(1, 'test-client', pkceChallenge: $challenge),
+            $verifier,
+        ];
     }
 }

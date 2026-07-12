@@ -40,7 +40,7 @@ The common harness lives in `LlmTestCase.php`.
 
 ### Prerequisites
 
-1. Use PHP 8.2+ for this repository:
+1. Use PHP 8.3+ for this repository:
   ```bash
    composer test:llm
   ```

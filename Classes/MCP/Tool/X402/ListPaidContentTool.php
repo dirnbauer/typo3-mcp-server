@@ -4,40 +4,35 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\X402;
 
-use Doctrine\DBAL\ParameterType;
-use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
+use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Service\X402\X402ContentAccessService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * MCP tool for discovering x402-gated content.
- *
- * AI agents can use this to find which pages have paid content,
- * their prices, and descriptions — before deciding to pay.
+ * Discovers gated pages visible to the current TYPO3 backend user.
  */
-final class ListPaidContentTool extends AbstractTool
+final class ListPaidContentTool extends AbstractRecordTool
 {
     public function __construct(
+        TableAccessService $tableAccessService,
+        WorkspaceContextService $workspaceContextService,
         private readonly ConnectionPool $connectionPool,
-    ) {}
-
-    public function getName(): string
-    {
-        return 'ListPaidContent';
+        private readonly X402ContentAccessService $contentAccess,
+    ) {
+        parent::__construct($tableAccessService, $workspaceContextService);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function getSchema(): array
+    protected function getToolSchema(): array
     {
         return [
-            'description' => 'List all pages that require x402 payment for access. '
-                . 'Returns page UIDs, titles, prices, and descriptions. '
-                . 'Use this to discover paid content before requesting it with GetPaidContent.',
+            'description' => 'List x402-gated pages visible in the current TYPO3 workspace, language, page permissions, and database mounts.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -56,7 +51,12 @@ final class ListPaidContentTool extends AbstractTool
                     ],
                     'parentPageUid' => [
                         'type' => 'integer',
-                        'description' => 'Filter by parent page UID (optional)',
+                        'description' => 'Filter by an accessible parent page UID.',
+                        'minimum' => 1,
+                    ],
+                    'language' => [
+                        'type' => 'string',
+                        'description' => 'Optional TYPO3 site language ISO code.',
                     ],
                 ],
             ],
@@ -64,7 +64,7 @@ final class ListPaidContentTool extends AbstractTool
                 'readOnlyHint' => true,
                 'destructiveHint' => false,
                 'idempotentHint' => true,
-                'openWorldHint' => true,
+                'openWorldHint' => false,
             ],
         ];
     }
@@ -79,84 +79,53 @@ final class ListPaidContentTool extends AbstractTool
         $offsetRaw = $params['offset'] ?? 0;
         $offset = max(0, is_numeric($offsetRaw) ? (int)$offsetRaw : 0);
         $parentPageUid = null;
-        if (isset($params['parentPageUid'])) {
+        if (array_key_exists('parentPageUid', $params)) {
             $parentRaw = $params['parentPageUid'];
-            $parentPageUid = is_numeric($parentRaw) ? (int)$parentRaw : null;
+            $parentPageUid = is_numeric($parentRaw) ? (int)$parentRaw : 0;
+            if ($parentPageUid <= 0) {
+                return $this->createErrorResult('parentPageUid must be a positive page UID.');
+            }
         }
+        $language = isset($params['language']) && is_string($params['language'])
+            ? trim($params['language'])
+            : null;
 
         if (!$this->hasPaywallColumns()) {
             return $this->returnConfigStatus($limit, $offset, $parentPageUid);
         }
 
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
-        $queryBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+        // Establish the requested read-workspace and enforce table permission.
+        $this->ensureTableAccess('pages', 'read');
+        $allPages = $this->contentAccess->getGatedPages($parentPageUid, $language);
+        $total = count($allPages);
+        $pages = array_slice($allPages, $offset, $limit);
 
-        $queryBuilder
-            ->select(
-                'uid',
-                'pid',
-                'title',
-                'subtitle',
-                'abstract',
-                'tx_x402_paywall_enabled',
-                'tx_x402_paywall_price',
-                'tx_x402_paywall_description'
-            )
-            ->from('pages')
-            ->where(
-                $queryBuilder->expr()->eq('tx_x402_paywall_enabled', $queryBuilder->createNamedParameter(1, ParameterType::INTEGER))
-            )
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
-            ->orderBy('sorting', 'ASC');
-
-        if ($parentPageUid !== null) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($parentPageUid, ParameterType::INTEGER))
-            );
-        }
-
-        $pages = $queryBuilder->executeQuery()->fetchAllAssociative();
-
-        // Count total
-        $countBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
-        $countBuilder->getRestrictions()
-            ->removeAll()
-            ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
-        $countBuilder->count('uid')->from('pages')
-            ->where($countBuilder->expr()->eq('tx_x402_paywall_enabled', $countBuilder->createNamedParameter(1, ParameterType::INTEGER)));
-        if ($parentPageUid !== null) {
-            $countBuilder->andWhere(
-                $countBuilder->expr()->eq('pid', $countBuilder->createNamedParameter($parentPageUid, ParameterType::INTEGER))
-            );
-        }
-        $totalRaw = $countBuilder->executeQuery()->fetchOne();
-        $total = is_numeric($totalRaw) ? (int)$totalRaw : 0;
-
-        $result = [
-            'pages' => array_map(fn(array $page) => [
-                'uid' => $page['uid'],
-                'pid' => $page['pid'],
-                'title' => $page['title'],
-                'subtitle' => $page['subtitle'] ?? '',
-                'abstract' => $page['abstract'] ?? '',
+        $resultPages = [];
+        foreach ($pages as $page) {
+            $pageData = $this->contentAccess->projectPage($page);
+            $price = is_scalar($page['tx_x402_paywall_price'] ?? null)
+                ? (string)$page['tx_x402_paywall_price']
+                : '';
+            $description = is_scalar($page['tx_x402_paywall_description'] ?? null)
+                ? (string)$page['tx_x402_paywall_description']
+                : '';
+            $resultPages[] = [
+                ...$pageData,
                 'x402' => [
-                    'price' => $page['tx_x402_paywall_price'] ?: '0.01',
+                    'price' => $price !== '' ? $price : '0.01',
                     'currency' => 'USDC',
-                    'description' => $page['tx_x402_paywall_description'] ?: $page['title'],
+                    'description' => $description !== '' ? $description : ($pageData['title'] ?? ''),
                 ],
-            ], $pages),
+            ];
+        }
+
+        return $this->jsonResult([
+            'pages' => $resultPages,
             'total' => $total,
-            'count' => count($pages),
+            'count' => count($resultPages),
             'limit' => $limit,
             'offset' => $offset,
-            'hasMore' => ($offset + count($pages)) < $total,
-        ];
-
-        return new CallToolResult([
-            new TextContent(json_encode($result, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
+            'hasMore' => ($offset + count($resultPages)) < $total,
         ]);
     }
 
@@ -180,24 +149,41 @@ final class ListPaidContentTool extends AbstractTool
             'offset' => $offset,
             'hasMore' => false,
         ];
-
         if ($parentPageUid !== null) {
             $status['parentPageUid'] = $parentPageUid;
         }
 
-        return new CallToolResult([
-            new TextContent(json_encode($status, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
-        ]);
+        return $this->jsonResult($status);
     }
 
     private function columnExists(string $table, string $column): bool
     {
+        if ($table === '') {
+            return false;
+        }
         try {
             $connection = $this->connectionPool->getConnectionForTable($table);
-            $columns = $connection->createSchemaManager()->listTableColumns($table);
-            return isset($columns[$column]);
+            foreach ($connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table) as $tableColumn) {
+                if ($tableColumn->getObjectName()->getIdentifier()->getValue() === $column) {
+                    return true;
+                }
+            }
+            return false;
         } catch (\Exception) {
             return false;
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function jsonResult(array $data): CallToolResult
+    {
+        return new CallToolResult([
+            new TextContent(json_encode(
+                $data,
+                JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
+            )),
+        ]);
     }
 }

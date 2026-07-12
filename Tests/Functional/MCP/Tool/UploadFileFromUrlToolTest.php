@@ -7,6 +7,9 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\File\UploadFileFromUrlTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Http\Stream;
 
 /**
  * SSRF and URL validation for UploadFileFromUrl (no outbound HTTP required).
@@ -65,5 +68,44 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
         ]);
 
         $this->assertToolError($result, 'private or reserved');
+    }
+
+    #[Test]
+    public function redirectResponseIsNotFollowed(): void
+    {
+        $body = new Stream('php://temp', 'rw');
+        $body->write('redirect');
+        $body->rewind();
+        $requestFactory = $this->createMock(RequestFactory::class);
+        $requestFactory->expects($this->once())
+            ->method('request')
+            ->with(
+                'https://93.184.216.34/file.txt',
+                'GET',
+                self::callback(static fn(array $options): bool => ($options['allow_redirects'] ?? null) === false),
+            )
+            ->willReturn(new Response($body, 302, ['Location' => 'http://127.0.0.1/private']));
+
+        $registeredTool = $this->getService(UploadFileFromUrlTool::class);
+        $tool = new UploadFileFromUrlTool(
+            $this->readToolDependency($registeredTool, 'storageRepository'),
+            $this->readToolDependency($registeredTool, 'fileSandboxService'),
+            $requestFactory,
+            $this->readToolDependency($registeredTool, 'capabilityManifest'),
+            $this->readToolDependency($registeredTool, 'localMode'),
+            $this->readToolDependency($registeredTool, 'fileMetadataIndexService'),
+            $this->readToolDependency($registeredTool, 'outboundUrlGuard'),
+        );
+        $result = $tool->execute(['url' => 'https://93.184.216.34/file.txt']);
+
+        $this->assertToolError($result, 'HTTP 302');
+    }
+
+    private function readToolDependency(UploadFileFromUrlTool $tool, string $property): object
+    {
+        $reflection = new \ReflectionProperty($tool, $property);
+        $value = $reflection->getValue($tool);
+        self::assertIsObject($value);
+        return $value;
     }
 }

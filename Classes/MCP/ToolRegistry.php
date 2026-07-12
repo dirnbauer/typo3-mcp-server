@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP;
 
+use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\Service\CapabilityManifestService;
@@ -35,8 +36,13 @@ final class ToolRegistry
                 continue;
             }
 
-            $this->tools[$normalizedTool->getName()] = $normalizedTool;
+            $name = $normalizedTool->getName();
+            if (isset($this->tools[$name])) {
+                throw new \LogicException('Duplicate MCP tool name: ' . $name);
+            }
+            $this->tools[$name] = $normalizedTool;
         }
+        ksort($this->tools, SORT_STRING);
     }
 
     /**
@@ -73,8 +79,15 @@ final class ToolRegistry
 
     private function normalizeTool(mixed $tool): ?ToolInterface
     {
-        if ($tool instanceof ToolInterface) {
+        if ($tool instanceof AbstractTool) {
             return $tool;
+        }
+
+        // Capability-manifest, admin-only, and dev-site-only enforcement live
+        // in AbstractTool::execute(). A third-party service implementing the
+        // interface directly must therefore still pass through the adapter.
+        if ($tool instanceof ToolInterface) {
+            return new CompatibleToolAdapter($tool);
         }
 
         if (!is_object($tool)) {

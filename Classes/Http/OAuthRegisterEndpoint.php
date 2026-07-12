@@ -12,7 +12,7 @@ use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 
 /**
- * OAuth client registration endpoint for the fixed public MCP client.
+ * OAuth dynamic client registration endpoint (RFC 7591).
  */
 final readonly class OAuthRegisterEndpoint
 {
@@ -25,41 +25,50 @@ final readonly class OAuthRegisterEndpoint
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
     {
+        $corsRejection = $this->rejectDisallowedCorsRequest($request);
+        if ($corsRejection instanceof ResponseInterface) {
+            return $corsRejection;
+        }
+
         // Handle preflight OPTIONS request
         if ($request->getMethod() === 'OPTIONS') {
-            return $this->handlePreflightRequest();
+            return $this->handlePreflightRequest($request);
         }
 
         try {
             // Only accept POST requests
             if ($request->getMethod() !== 'POST') {
-                return $this->createErrorResponse('invalid_request', 'Method not allowed', 405);
+                return $this->finalizeResponse(
+                    $this->createErrorResponse('invalid_request', 'Method not allowed', 405),
+                    $request,
+                );
             }
 
-            // Get request body
-            $body = $request->getBody()->getContents();
+            // Read at most one byte beyond the limit. This also protects
+            // chunked requests whose Content-Length is absent or dishonest.
+            $body = $this->readBoundedBody($request, 65536);
+            if ($body === null) {
+                return $this->finalizeResponse(
+                    $this->createErrorResponse('invalid_client_metadata', 'Registration payload exceeds 64 KiB'),
+                    $request,
+                );
+            }
             $clientData = json_decode($body, true);
 
             if (!is_array($clientData)) {
-                return $this->createErrorResponse('invalid_request', 'Invalid JSON in request body');
+                return $this->finalizeResponse(
+                    $this->createErrorResponse('invalid_request', 'Invalid JSON in request body'),
+                    $request,
+                );
             }
 
-            // Validate required fields (minimal validation for MCP)
-            if (!isset($clientData['client_name']) || !is_string($clientData['client_name']) || $clientData['client_name'] === '') {
-                $clientData['client_name'] = 'MCP Client';
+            $normalizedClientData = [];
+            foreach ($clientData as $key => $value) {
+                if (is_string($key)) {
+                    $normalizedClientData[$key] = $value;
+                }
             }
-
-            // redirect_uris is required by RFC 7591, but for MCP clients we can provide a default
-            if (empty($clientData['redirect_uris']) || !is_array($clientData['redirect_uris'])) {
-                $clientData['redirect_uris'] = ['http://localhost']; // Default for local MCP clients
-            }
-
-            // Set default values for MCP clients
-            $clientData['grant_types'] ??= ['authorization_code'];
-            $clientData['response_types'] ??= ['code'];
-            $clientData['scope'] ??= 'mcp_access';
-            /** @var array{client_name: string, redirect_uris: list<string>, grant_types: list<string>, response_types: list<string>, scope: string} $clientData */
-            $clientInfo = $this->oauthService->registerClient($clientData);
+            $clientInfo = $this->oauthService->registerClient($normalizedClientData);
 
             // Return client registration response
             $stream = new Stream('php://temp', 'rw');
@@ -76,12 +85,20 @@ final readonly class OAuthRegisterEndpoint
                 ],
             );
 
-            return $this->addCorsHeaders($response);
+            return $this->finalizeResponse($response, $request);
 
+        } catch (\InvalidArgumentException $e) {
+            return $this->finalizeResponse(
+                $this->createErrorResponse('invalid_client_metadata', $e->getMessage()),
+                $request,
+            );
         } catch (\Throwable $e) {
             $this->logger->error('OAuth client registration failed', ['exception' => $e]);
 
-            return $this->createErrorResponse('server_error', 'Unable to register the client right now.', 500);
+            return $this->finalizeResponse(
+                $this->createErrorResponse('server_error', 'Unable to register the client right now.', 500),
+                $request,
+            );
         }
     }
 
@@ -102,7 +119,33 @@ final readonly class OAuthRegisterEndpoint
             ['Content-Type' => 'application/json'],
         );
 
-        return $this->addCorsHeaders($response);
+        return $response;
+    }
+
+    private function finalizeResponse(ResponseInterface $response, ServerRequestInterface $request): ResponseInterface
+    {
+        return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
+    }
+
+    private function readBoundedBody(ServerRequestInterface $request, int $maximumBytes): ?string
+    {
+        $contentLength = trim($request->getHeaderLine('Content-Length'));
+        if ($contentLength !== '' && ctype_digit($contentLength) && (int)$contentLength > $maximumBytes) {
+            return null;
+        }
+
+        $stream = $request->getBody();
+        $body = '';
+        while (!$stream->eof() && strlen($body) <= $maximumBytes) {
+            $remaining = ($maximumBytes + 1) - strlen($body);
+            $chunk = $stream->read(min(8192, $remaining));
+            if ($chunk === '') {
+                break;
+            }
+            $body .= $chunk;
+        }
+
+        return strlen($body) > $maximumBytes || !$stream->eof() ? null : $body;
     }
 
     /**

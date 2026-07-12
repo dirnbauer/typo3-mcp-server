@@ -19,4 +19,9 @@ parameters:
         - Tests/Architecture
     excludePaths:
         - Classes/Domain/Model/*
+    scanFiles:
+        # The optional paywall package intentionally cannot be installed in
+        # this dependency tree until it drops mcp/sdk. Keep its conditional
+        # adapter type-checked against the exact API surface we consume.
+        - Build/PHPStan/typo3-x402-paywall.php
     treatPhpDocTypesAsCertain: false

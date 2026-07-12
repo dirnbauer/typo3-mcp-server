@@ -15,15 +15,16 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
  * Reads and enforces Configuration/Capabilities.yaml.
  *
  * The manifest is the single source of truth for "what is this MCP server
- * allowed to do?". It declares (a) which subsystems the extension touches,
- * (b) which outbound network destinations are permitted, (c) which TYPO3
- * tables it owns, and (d) the required subsystems per MCP tool.
+ * allowed to do?". Its public fields follow the TYPO3 capability-manifest
+ * 1.0 schema. Fine-grained MCP runtime policy is namespaced under `x-mcp`,
+ * which keeps custom gates out of the public subsystem enum while retaining
+ * runtime enforcement.
  *
  * The flow:
  *   1. ToolRegistry::getTool() asks `assertToolAllowed($name)` before handing
  *      a tool to a caller.
  *   2. Outbound HTTP code paths (UploadFileFromUrl, RenderRecord) ask
- *      `assertHostAllowed($host)` before opening a socket.
+ *      `assertUrlAllowed($url)` before opening a socket.
  *
  * Enforcement is gated by extension setting `enforceCapabilityManifest`
  * (default on). When disabled the service still reads the manifest so the
@@ -80,16 +81,13 @@ final class CapabilityManifestService
      */
     public function getDeclaredSubsystems(): array
     {
-        $manifest = $this->getManifest();
-        $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
-        $subsystems = $capabilities['subsystems'] ?? [];
-        if (!is_array($subsystems)) {
-            return [];
-        }
-        return array_values(array_filter(array_map(
-            static fn(mixed $v): string => is_string($v) ? $v : '',
-            $subsystems,
-        ), static fn(string $v): bool => $v !== ''));
+        $capabilities = $this->getCapabilities();
+        $mcp = $this->getMcpExtension();
+
+        $public = $this->normalizeStringList($capabilities['subsystems'] ?? []);
+        $runtime = $this->normalizeStringList($mcp['runtime_subsystems'] ?? []);
+
+        return array_values(array_unique([...$public, ...$runtime]));
     }
 
     /**
@@ -120,9 +118,14 @@ final class CapabilityManifestService
      */
     public function getRequiresMap(): array
     {
-        $manifest = $this->getManifest();
-        $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
-        $requires = $capabilities['requires'] ?? [];
+        $capabilities = $this->getCapabilities();
+        $mcp = $this->getMcpExtension();
+        // Legacy top-level fallback keeps operator manifests made for older
+        // extension releases working. A present x-mcp map is authoritative,
+        // including when deliberately empty.
+        $requires = array_key_exists('requires', $mcp)
+            ? $mcp['requires']
+            : ($capabilities['requires'] ?? []);
         if (!is_array($requires)) {
             return [];
         }
@@ -167,21 +170,46 @@ final class CapabilityManifestService
     }
 
     /**
-     * @return list<string> required subsystems for a tool, or an empty list
+     * @return list<string> required subsystems for a declared tool, or an
+     *                      empty list when it is undeclared/malformed
      */
     public function getRequiredSubsystemsForTool(string $toolName): array
     {
-        $manifest = $this->getManifest();
-        $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
-        $tools = $capabilities['tools'] ?? [];
-        if (!is_array($tools) || !isset($tools[$toolName]) || !is_array($tools[$toolName])) {
-            // Fail-closed default for unmapped tools: require both read and write.
-            return ['database:read', 'database:write'];
+        $tools = $this->getToolPolicyDefinitions();
+        if (!array_key_exists($toolName, $tools) || !is_array($tools[$toolName])) {
+            return [];
         }
-        return array_values(array_filter(array_map(
-            static fn(mixed $v): string => is_string($v) ? $v : '',
-            $tools[$toolName],
-        ), static fn(string $v): bool => $v !== ''));
+        return $this->normalizeStringList($tools[$toolName]);
+    }
+
+    /**
+     * Exact Symfony command inventory declared by this extension.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getCommandDefinitions(): array
+    {
+        return $this->getMcpDefinitions('commands');
+    }
+
+    /**
+     * Bundled Agent Skills inventory. Skills are an MCP extension concern,
+     * not a value in the protocol's server-capabilities object.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function getSkillDefinitions(): array
+    {
+        return $this->getMcpDefinitions('skills');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getProtocolMetadata(): array
+    {
+        $protocol = $this->getMcpExtension()['protocol'] ?? [];
+        return is_array($protocol) ? $this->normalizeStringKeyedMap($protocol) : [];
     }
 
     /**
@@ -192,6 +220,13 @@ final class CapabilityManifestService
     {
         if (!$this->isEnforced()) {
             return;
+        }
+        $tools = $this->getToolPolicyDefinitions();
+        if (!array_key_exists($toolName, $tools) || !is_array($tools[$toolName])) {
+            throw new AccessDeniedException(
+                sprintf('tool "%s" (not declared in capability manifest)', $toolName),
+                'execute',
+            );
         }
         $required = $this->getRequiredSubsystemsForTool($toolName);
         $effective = $this->getEffectiveSubsystems();
@@ -229,6 +264,29 @@ final class CapabilityManifestService
      */
     public function assertHostAllowed(string $host): void
     {
+        $this->assertOutboundTargetAllowed($host, null);
+    }
+
+    /**
+     * Enforce both the host declaration and its optional protocol field.
+     *
+     * @throws AccessDeniedException when enforcement is on and the URL is not permitted
+     */
+    public function assertUrlAllowed(string $url): void
+    {
+        $parsed = parse_url($url);
+        $host = is_array($parsed) && is_string($parsed['host'] ?? null) ? $parsed['host'] : '';
+        $scheme = is_array($parsed) && is_string($parsed['scheme'] ?? null)
+            ? strtolower($parsed['scheme'])
+            : '';
+        if ($scheme === '') {
+            throw new AccessDeniedException('outbound request (missing URL scheme)', 'network');
+        }
+        $this->assertOutboundTargetAllowed($host, $scheme);
+    }
+
+    private function assertOutboundTargetAllowed(string $host, ?string $scheme): void
+    {
         if (!$this->isEnforced()) {
             return;
         }
@@ -245,26 +303,25 @@ final class CapabilityManifestService
             throw new AccessDeniedException('outbound request (empty host)', 'network');
         }
 
-        $allowed = $this->getNetworkOutboundPolicy();
         $hostLower = strtolower($host);
-        foreach ($allowed as $entry) {
-            if ($entry === '*' || strtolower($entry) === $hostLower) {
-                return;
+        foreach ($this->getNetworkOutboundRules() as $rule) {
+            if ($scheme !== null && $rule['protocol'] !== null && $rule['protocol'] !== $scheme) {
+                continue;
             }
-            if ($entry === 'self' && $this->matchesAnySiteHost($hostLower)) {
+            $entry = $rule['host'];
+            $hostMatches = $entry === '*'
+                || strtolower($entry) === $hostLower
+                || ($entry === 'self' && $this->matchesAnySiteHost($hostLower))
+                || (str_starts_with($entry, '*.') && str_ends_with($hostLower, strtolower(substr($entry, 1))));
+            if ($hostMatches) {
                 return;
-            }
-            if (str_starts_with($entry, '*.')) {
-                $suffix = strtolower(substr($entry, 1));
-                if (str_ends_with($hostLower, $suffix)) {
-                    return;
-                }
             }
         }
 
         throw new AccessDeniedException(
             sprintf(
-                'outbound request to "%s" (not in capability manifest network.outbound)',
+                'outbound request to "%s%s" (not in capability manifest network.outbound)',
+                $scheme !== null ? $scheme . '://' : '',
                 $host,
             ),
             'network',
@@ -276,17 +333,145 @@ final class CapabilityManifestService
      */
     public function getNetworkOutboundPolicy(): array
     {
-        $manifest = $this->getManifest();
-        $capabilities = is_array($manifest['capabilities'] ?? null) ? $manifest['capabilities'] : [];
+        return array_values(array_unique(array_column($this->getNetworkOutboundRules(), 'host')));
+    }
+
+    /**
+     * @return list<array{host: string, protocol: string|null}>
+     */
+    private function getNetworkOutboundRules(): array
+    {
+        $capabilities = $this->getCapabilities();
         $network = is_array($capabilities['network'] ?? null) ? $capabilities['network'] : [];
         $outbound = $network['outbound'] ?? [];
+
+        // The public schema represents unrestricted outbound access as the
+        // scalar `any`; the runtime historically used `*`.
+        if ($outbound === 'any' || $outbound === '*') {
+            return [['host' => '*', 'protocol' => null]];
+        }
         if (!is_array($outbound)) {
             return [];
         }
+
+        $rules = [];
+        foreach ($outbound as $entry) {
+            // String entries are accepted for backward compatibility with
+            // pre-schema manifests. New manifests use {host, purpose, ...}.
+            $host = is_string($entry)
+                ? $entry
+                : (is_array($entry) && is_string($entry['host'] ?? null) ? $entry['host'] : '');
+            $host = trim($host);
+            if ($host === '') {
+                continue;
+            }
+            $protocol = is_array($entry) && is_string($entry['protocol'] ?? null)
+                ? strtolower(trim($entry['protocol']))
+                : null;
+            $rules[] = [
+                'host' => $host === 'any' ? '*' : $host,
+                'protocol' => $protocol !== '' ? $protocol : null,
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getCapabilities(): array
+    {
+        $manifest = $this->getManifest();
+        $capabilities = $manifest['capabilities'] ?? null;
+        return is_array($capabilities) ? $this->normalizeStringKeyedMap($capabilities) : [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getMcpExtension(): array
+    {
+        $mcp = $this->getCapabilities()['x-mcp'] ?? [];
+        return is_array($mcp) ? $this->normalizeStringKeyedMap($mcp) : [];
+    }
+
+    /**
+     * Native tools require matching CLI projections. Explicitly trusted
+     * third-party adapters live in `external_tools`, so installing another
+     * package can never silently expand the MCP attack surface.
+     *
+     * @return array<string, mixed>
+     */
+    private function getToolPolicyDefinitions(): array
+    {
+        $capabilities = $this->getCapabilities();
+        $mcp = $this->getMcpExtension();
+        // See getRequiresMap(): new manifests use x-mcp, old installations
+        // may still carry the native map directly under capabilities.
+        $native = array_key_exists('tools', $mcp)
+            ? $mcp['tools']
+            : ($capabilities['tools'] ?? []);
+        $external = $mcp['external_tools'] ?? [];
+
+        $native = is_array($native) ? $this->normalizeStringKeyedMap($native) : [];
+        $external = is_array($external) ? $this->normalizeStringKeyedMap($external) : [];
+
+        // Native policy is authoritative if a third-party package attempts
+        // to register a colliding name.
+        return $native + $external;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeStringList(mixed $values): array
+    {
+        if (!is_array($values)) {
+            return [];
+        }
         return array_values(array_filter(array_map(
-            static fn(mixed $v): string => is_string($v) ? $v : '',
-            $outbound,
-        ), static fn(string $v): bool => $v !== ''));
+            static fn(mixed $value): string => is_string($value) ? trim($value) : '',
+            $values,
+        ), static fn(string $value): bool => $value !== ''));
+    }
+
+    /**
+     * YAML maps can technically contain integer keys. Public service methods
+     * deliberately expose only named manifest fields.
+     *
+     * @param array<mixed> $values
+     * @return array<string, mixed>
+     */
+    private function normalizeStringKeyedMap(array $values): array
+    {
+        $normalized = [];
+        foreach ($values as $key => $value) {
+            if (is_string($key) && $key !== '') {
+                $normalized[$key] = $value;
+            }
+        }
+        return $normalized;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function getMcpDefinitions(string $key): array
+    {
+        $definitions = $this->getMcpExtension()[$key] ?? [];
+        if (!is_array($definitions)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($definitions as $name => $definition) {
+            if (!is_string($name) || $name === '' || !is_array($definition)) {
+                continue;
+            }
+            $normalized[$name] = $this->normalizeStringKeyedMap($definition);
+        }
+        return $normalized;
     }
 
     public function isEnforced(): bool
@@ -304,10 +489,10 @@ final class CapabilityManifestService
             return $value;
         }
         if (is_int($value)) {
-            return $value === 1;
+            return $value !== 0;
         }
         if (is_string($value)) {
-            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+            return !in_array(strtolower(trim($value)), ['0', 'false', 'no', 'off'], true);
         }
         return true;
     }

@@ -259,7 +259,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
      */
     public function testGetPagePrependsWorkspaceNotice(): void
     {
-        // Tools auto-switch to workspace via AbstractRecordTool
+        // Read-only tools preserve the current readable workspace and no
+        // longer escalate a live read into a draft. Enter one explicitly.
+        $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
+
         $result = $this->getPageTool->execute(['uid' => 1]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 

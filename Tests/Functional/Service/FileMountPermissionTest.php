@@ -166,8 +166,8 @@ class FileMountPermissionTest extends FunctionalTestCase
         self::assertEquals(
             1,
             $data['total'],
-            'Only team-photo.jpg should be accessible via /user_upload/team/ mount. Got: ' .
-            json_encode(array_column($data['records'], 'name'))
+            'Only team-photo.jpg should be accessible via /user_upload/team/ mount. Got: '
+            . json_encode(array_column($data['records'], 'name'))
         );
 
         $names = array_column($data['records'], 'name');

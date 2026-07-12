@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace Hn\McpServer\Command;
 
 use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Service\McpCliBackendUserBootstrapService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
 use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Base class for "mcp:tool:<name>" Symfony console commands.
@@ -40,6 +38,7 @@ abstract class AbstractMcpToolCommand extends Command
     public function __construct(
         protected readonly ToolRegistry $toolRegistry,
         protected readonly TcaFactory $tcaFactory,
+        protected readonly McpCliBackendUserBootstrapService $cliBackendUserBootstrap,
     ) {
         parent::__construct();
     }
@@ -108,7 +107,7 @@ abstract class AbstractMcpToolCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $this->bootstrapBackendUser();
+            $this->cliBackendUserBootstrap->initialize();
             $this->ensureTcaLoaded();
 
             $tool = $this->toolRegistry->getTool($this->toolName());
@@ -307,29 +306,6 @@ abstract class AbstractMcpToolCommand extends Command
             return;
         }
         $output->writeln('<error>' . $message . '</error>');
-    }
-
-    /**
-     * Mirrors McpTestCommand::ensureAdminRights so direct CLI calls run with
-     * the same workspace + user context the MCP HTTP transport sets up.
-     */
-    private function bootstrapBackendUser(): void
-    {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        if (!$beUser instanceof BackendUserAuthentication) {
-            $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-            $beUser->user = ['admin' => 1, 'uid' => 1];
-            $GLOBALS['BE_USER'] = $beUser;
-        }
-        if (!$beUser->isAdmin()) {
-            $beUser->user['admin'] = 1;
-            $beUser->user['uid'] ??= 1;
-        }
-        $defaults = $beUser->uc_default;
-        $beUser->uc = array_merge(is_array($defaults) ? $defaults : [], is_array($beUser->uc) ? $beUser->uc : []);
-
-        $workspace = GeneralUtility::makeInstance(WorkspaceContextService::class);
-        $workspace->switchToOptimalWorkspace($beUser);
     }
 
     private function ensureTcaLoaded(): void

@@ -34,7 +34,7 @@ text, or records.
 +----------------------------+---------------------------+---------------------------+
 | Publish step               | Usually not needed        | Required                  |
 +----------------------------+---------------------------+---------------------------+
-| Can override to live?      | Yes (turn **off** via     | Yes (turn **on** via      |
+| Can override default?      | Yes (turn **off** via     | Yes (turn **on** via      |
 |                            | TSconfig — see below)     | TSconfig — see below)     |
 +----------------------------+---------------------------+---------------------------+
 
@@ -76,7 +76,8 @@ diagram).
 
        EP --> CTX["Backend user + workspace context"]
        HTTP --> REAL["Token owner: permissions + User TSconfig apply"]
-       STDIO --> SYNTH["Synthetic admin uid 1<br/>extension / auto policy mainly"]
+       STDIO --> CLIUSER["Database-backed _cli_ backend user<br/>groups, permissions + TSconfig apply"]
+       CLI --> CLIUSER
 
        CTX --> POLICY
 
@@ -119,10 +120,11 @@ Reading the diagram
 - **Remote HTTP** — Claude Desktop, n8n, Manus, etc. using the MCP URL from
   the backend module. Uses the **real backend user** who created the OAuth token.
 - **Local stdio** — Cursor “Install in Cursor” / ``mcp:server``. Runs inside
-  DDEV on your laptop; uses a **built-in admin user**, not your personal
-  TSconfig (unless you change that setup).
+  DDEV on your laptop; authenticates TYPO3's real, database-backed ``_cli_``
+  backend user. That user's admin flag, groups, permissions, mounts, and User or
+  group TSconfig apply; it is not the OAuth token owner's identity.
 - **TYPO3 CLI** — ``vendor/bin/typo3 mcp:write-table`` and similar; same
-  workspace rules as MCP tools.
+  ``_cli_`` identity and workspace rules as the stdio server.
 
 **Hosting context (②)** — not a separate code path; it feeds the ``auto``
 branch. DDEV and Development context typically enable local mode; production
@@ -350,8 +352,10 @@ If you override local mode on a **non-DDEV** server, the chatbot gets the
   database rows — not a hidden workspace draft.
 - **File tools:** can reach paths outside the default ``fileadmin/mcp/``
   sandbox (when local mode relaxes file access).
-- **Outbound HTTP:** ``UploadFileFromUrl`` and ``RenderRecord`` are less
-  restricted (manifest outbound allowlist and some SSRF checks are bypassed).
+- **Outbound HTTP:** ``UploadFileFromUrl``, ``ImportFromUrl``,
+  ``RenderRecord``, and optional x402 facilitator verification are less
+  restricted (manifest outbound allowlisting and public-IP checks are
+  bypassed). Redirects remain disabled and response-size/time limits remain.
 - **Dev-site tools:** may become visible (same ``localMode`` gate).
 
 Authentication, backend-user permissions, and the capability manifest still
@@ -405,8 +409,9 @@ Where to paste this:
 
 **Important for chatbots:** Remote MCP (Claude Desktop, n8n, OAuth URL) uses
 the **token owner's** TSconfig. The Cursor **“Install in Cursor”** stdio setup
-runs as a synthetic admin inside DDEV and does **not** use your personal
-TSconfig — that path is for local dev only.
+uses the database-backed ``_cli_`` user inside DDEV. Its own User TSconfig and
+group TSconfig apply, not the OAuth user's personal TSconfig. Configure and
+audit ``_cli_`` deliberately; that path is for trusted local development only.
 
 Option 2 — Whole TYPO3 instance (avoid on real production)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

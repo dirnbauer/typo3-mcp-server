@@ -63,7 +63,6 @@ final readonly class McpServerModuleController
         $baseUrl = $this->baseUrlResolver->resolveFromRequest($request);
         $endpointUrl = $baseUrl . '/mcp';
         $siteName = $this->clientConfigBuilder->getSiteName();
-        $authUrl = $this->oauthService->generateAuthorizationUrl($baseUrl, 'Claude Desktop');
 
         $tools = [];
         foreach ($this->toolRegistry->getTools() as $tool) {
@@ -84,7 +83,6 @@ final readonly class McpServerModuleController
 
         $templateVariables = [
             'tokens' => $this->formatTokensForView($tokens, $neverUsed),
-            'authUrl' => $authUrl,
             'baseUrl' => $baseUrl,
             'endpointUrl' => $endpointUrl,
             'cursorInstallUrl' => $this->clientConfigBuilder->buildCursorInstallUrl($siteName, $localStdioConfig),

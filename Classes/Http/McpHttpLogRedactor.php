@@ -40,15 +40,43 @@ final class McpHttpLogRedactor
     }
 
     /**
-     * @param array<string, mixed> $queryParams
-     * @return array<string, mixed>
+     * @param array<array-key, mixed> $queryParams
+     * @return array<array-key, mixed>
      */
     public static function redactQueryParamsForLog(array $queryParams): array
     {
-        if (array_key_exists('token', $queryParams)) {
-            $queryParams['token'] = '[REDACTED]';
+        $redacted = [];
+        foreach ($queryParams as $key => $value) {
+            if (is_string($key) && self::isSensitiveQueryKey($key)) {
+                $redacted[$key] = '[REDACTED]';
+                continue;
+            }
+            $redacted[$key] = is_array($value)
+                ? self::redactQueryParamsForLog($value)
+                : $value;
         }
 
-        return $queryParams;
+        return $redacted;
+    }
+
+    private static function isSensitiveQueryKey(string $key): bool
+    {
+        $key = strtolower(trim($key));
+        if (in_array($key, [
+            'token',
+            'access_token',
+            'refresh_token',
+            'code',
+            'code_verifier',
+            'client_secret',
+            'api_key',
+            'key',
+            'password',
+            'state',
+        ], true)) {
+            return true;
+        }
+
+        return preg_match('/(?:token|secret|password)$/D', $key) === 1;
     }
 }

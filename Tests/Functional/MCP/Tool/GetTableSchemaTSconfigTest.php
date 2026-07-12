@@ -7,15 +7,17 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\GetTableSchemaTool;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Site\Entity\NullSite;
+use TYPO3\CMS\Core\TypoScript\PageTsConfigFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Test TSconfig field visibility support for GetTableSchemaTool
  *
- * This test class sets TSconfig via configurationToUseInTestInstance
- * to disable the bodytext field globally.
+ * This test class seeds a parsed v14 Page TSconfig object for root-level
+ * schema lookups to disable selected fields globally.
  */
 class GetTableSchemaTSconfigTest extends FunctionalTestCase
 {
@@ -29,34 +31,9 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         'mcp_server',
     ];
 
-    /**
-     * Set TSconfig before TYPO3 bootstraps
-     */
-    protected array $configurationToUseInTestInstance = [
-        'BE' => [
-            'defaultPageTSconfig' => '
-                TCEFORM.tt_content.bodytext.disabled = 1
-                TCEFORM.tt_content.date.disabled = 1
-                TCEFORM.pages.abstract.disabled = 1
-            ',
-        ],
-    ];
-
     protected function setUp(): void
     {
         parent::setUp();
-
-        // TYPO3 14 removed `$GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig']`
-        // (#101799). Default page TSconfig must now be supplied via an
-        // extension's `Configuration/page.tsconfig`. This test class still
-        // depends on the legacy mechanism; skip on v14 until the schema tool
-        // is reworked to source TSconfig from a page in the rootline.
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() >= 14) {
-            self::markTestSkipped(
-                'TSconfig-based field filtering uses defaultPageTSconfig which was '
-                . 'removed in TYPO3 14. Test relies on a v13-only mechanism.'
-            );
-        }
 
         // Import base fixtures
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/pages.csv');
@@ -65,6 +42,12 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
 
         // Set up backend user for DataHandler and TableAccessService
         $this->setUpBackendUser(1);
+
+        $this->seedRootTSconfig(
+            "TCEFORM.tt_content.bodytext.disabled = 1\n"
+            . "TCEFORM.tt_content.date.disabled = 1\n"
+            . 'TCEFORM.pages.abstract.disabled = 1'
+        );
     }
 
     /**
@@ -191,5 +174,40 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
         // bodytext field definition should be hidden
         self::assertStringNotContainsString('- bodytext (', $fieldsSection);
         self::assertStringContainsString('header', $content);
+    }
+
+    /**
+     * Parse v14 Page TSconfig through the Core factory and place it in the
+     * runtime cache used by BackendUtility::getPagesTSconfig(0).
+     */
+    private function seedRootTSconfig(string $tsConfig): void
+    {
+        // TsConfigTreeBuilder ignores uid=0 rootline entries, so use a
+        // synthetic root page while caching the parsed result for pid=0.
+        $rootLine = [
+            0 => [
+                'uid' => 1,
+                'pid' => 0,
+                'TSconfig' => $tsConfig,
+                'tsconfig_includes' => '',
+                'is_siteroot' => 0,
+                't3ver_oid' => 0,
+                't3ver_wsid' => 0,
+                't3ver_state' => 0,
+                't3ver_stage' => 0,
+                'doktype' => 0,
+                'sorting' => 0,
+                'deleted' => 0,
+                'hidden' => 0,
+            ],
+        ];
+
+        $factory = GeneralUtility::makeInstance(PageTsConfigFactory::class);
+        $pageTsConfig = $factory->create($rootLine, new NullSite(), null);
+
+        $cache = GeneralUtility::makeInstance(CacheManager::class)->getCache('runtime');
+        $hash = 'mcp-schema-test-' . md5($tsConfig);
+        $cache->set('pageTsConfig-pid-to-hash-0', $hash);
+        $cache->set('pageTsConfig-hash-to-object-' . $hash, $pageTsConfig);
     }
 }
