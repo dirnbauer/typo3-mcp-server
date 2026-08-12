@@ -203,14 +203,16 @@ the TYPO3 project root). Most dedicated shortcuts are
 create a custom ``AbstractMcpToolCommand`` subclass only when a shortcut needs
 bespoke options or output formatting.
 
-Optional Abilities REST projection
-----------------------------------
+Bundled Abilities and opt-in REST projection
+---------------------------------------------
 
-The MCP endpoint does not require another API extension. Install
-``webconsulting/typo3-abilities`` and the TYPO3 v14 ``sg_apicore`` fork only
-when CLI-governed abilities, REST discovery/execution, or generated OpenAPI are
-needed. Follow :doc:`../Integration/SgApiCore`; it includes the maintained
-repositories, scopes, and post-install checks.
+``webconsulting/typo3-abilities`` and the TYPO3 v14 ``sg_apicore`` fork are
+production dependencies and install with this extension. The five governed
+abilities are therefore available to CLI after ``extension:setup``. REST and
+generated OpenAPI remain an explicit operator choice: enable
+``activateAbilitiesApi`` before exposing ``/api/abilities/v1``. Follow
+:doc:`../Integration/SgApiCore` for the root-project VCS repository requirement,
+scopes, and post-install checks.
 
 After installation
 ==================

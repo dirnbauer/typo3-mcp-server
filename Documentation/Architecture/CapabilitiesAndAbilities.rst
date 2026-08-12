@@ -29,7 +29,7 @@ Extension capability manifest
    extension also enforces tool and outbound-host policy from it at runtime.
 
 TYPO3 Abilities API
-   An optional registry of executable operations. An ability has typed input
+   The bundled registry of executable operations. An ability has typed input
    and output, scopes, risk, side effects, permission logic, and allowed
    projections such as CLI or REST.
 
@@ -76,7 +76,7 @@ MCP-specific detail does not invent values in the public subsystem enum. It
 lives under the vendor-extension key ``capabilities.x-mcp``:
 
 - stable and preview protocol revisions and transports;
-- optional Abilities and ``sg_apicore`` integrations;
+- bundled Abilities and ``sg_apicore`` integrations with opt-in REST;
 - runtime-only subsystems and prerequisite chains;
 - the exact MCP tool-to-subsystem map;
 - the exact ``mcp:*`` Symfony command inventory;
@@ -91,8 +91,8 @@ inventory. :doc:`CapabilityManifest` documents enforcement and hardening.
 Abilities API
 =============
 
-When ``webconsulting/typo3-abilities`` is installed, this extension registers
-five abilities:
+This extension ships ``webconsulting/typo3-abilities`` and registers five
+abilities:
 
 ``typo3-mcp/list-tools``
    Lists the effective MCP catalog and JSON Schemas. Scope:
@@ -145,7 +145,7 @@ The server therefore uses four explicit projections:
   ``typo3-mcp:///skills``.
 - MCP prompts expose user-invocable skills through ``prompts/list`` and
   ``prompts/get``. Hosts may render these prompt names as slash commands.
-- The optional read-only ``list-skills`` and ``get-skill`` abilities expose
+- The read-only ``list-skills`` and ``get-skill`` abilities expose
   skill metadata and Markdown to governed CLI/REST consumers. They do not
   execute the workflow or grant its referenced tools.
 

@@ -319,7 +319,7 @@ Added findings and mitigations
    ``scheduler:task`` and ``network:scheduler``. These effects are documented
    exceptions, not covered by ``network.outbound`` or DNS pinning.
 
-4. The optional ``abilities`` API inherited unrelated API Core controllers.
+4. The opt-in ``abilities`` REST API inherited unrelated API Core controllers.
 
    Status: Fixed. An outer policy middleware honors
    ``activateAbilitiesApi``, allows only ability list/describe/run and the two

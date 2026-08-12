@@ -224,11 +224,11 @@ Relationship to Schema and Abilities APIs
 =========================================
 
 The manifest describes what the extension may reach. TYPO3's Schema API
-describes table semantics. The optional Abilities registry describes typed
+describes table semantics. The bundled Abilities registry describes typed
 operations and governs their projections. They intentionally share side-
 effect vocabulary, but one is not serialized into the other.
 
 Skills and CLI commands can be inventoried under ``x-mcp`` because they are
 part of this extension's public surface. Skills remain prompts/resources, not
-permission grants; optional read abilities may list or return their documents
+permission grants; read abilities may list or return their documents
 without executing them. See :doc:`CapabilitiesAndAbilities`.

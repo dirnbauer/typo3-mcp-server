@@ -104,7 +104,8 @@ Manifest and command inventory
   capability vocabulary.
 - Moved MCP-only runtime data into the namespaced ``x-mcp`` extension block.
 - Added stable/preview protocol revisions and transport inventory.
-- Added optional Abilities and ``sg_apicore`` integration metadata.
+- Added bundled Abilities and ``sg_apicore`` integration metadata with
+  explicit opt-in REST activation.
 - Added an exact native tool-to-subsystem map and prerequisite chains.
 - Added the exact ``mcp:*`` command inventory, including prompts, resources,
   OAuth, diagnostics, server transport, and skill installation.
@@ -193,7 +194,7 @@ Abilities and ``sg_apicore``
   while preventing recursive MCP projection. Kept generic ``execute-tool`` off
   REST because the upstream trace recorder persists full arbitrary inputs;
   authenticated remote execution remains on native MCP.
-- Registered the optional ``abilities`` REST API through ``sg_apicore`` with
+- Registered the opt-in ``abilities`` REST API through ``sg_apicore`` with
   backend-user-bound tokens and explicit scopes.
 - Defaulted REST CORS to deny, rate-limited to 60 requests per minute with
   burst 10, and retained tenant, request-ID, and redacted-log support.

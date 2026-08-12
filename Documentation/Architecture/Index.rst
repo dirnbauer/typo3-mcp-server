@@ -57,7 +57,7 @@ Dual-era protocol
    ``server/discover``. See :doc:`ProtocolMigration`.
 
 Typed capabilities
-   TYPO3 Schema API facts, the extension capability manifest, the optional
+   TYPO3 Schema API facts, the extension capability manifest, the bundled
    Abilities registry, and MCP protocol capabilities are separate layers. See
    :doc:`CapabilitiesAndAbilities`.
 

@@ -141,7 +141,7 @@ Tool code delegates to TYPO3 APIs:
   authoritative.
 
 The same application service is reachable through MCP, TYPO3 ``mcp:*``
-commands, and the optional Abilities/REST projection. A projection must not
+commands, the bundled Abilities registry, and its opt-in REST projection. A projection must not
 reimplement the underlying write behavior.
 
 .. _mcp-basics-safety:

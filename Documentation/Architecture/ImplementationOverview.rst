@@ -179,11 +179,11 @@ Shared services
    pins the validated destination to prevent DNS rebinding.
 
 ``AbilityBackendUserContextService`` / ``McpCliBackendUserBootstrapService``
-   Revalidate and hydrate real TYPO3 backend-user state for optional Abilities,
+   Revalidate and hydrate real TYPO3 backend-user state for Abilities,
    REST, and CLI projections before native tools run.
 
 ``McpToolCatalogService``
-   Shares deterministic list, describe, and execute behavior with optional
+   Shares deterministic list, describe, and execute behavior with
    Abilities, CLI, and REST projections.
 
 ``LocalModeService``

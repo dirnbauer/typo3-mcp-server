@@ -193,7 +193,7 @@ adds and hardens these areas:
 - **Prompts, resources, and skills** — bundled workflows are always available
   as `typo3-mcp:///skills` resources and as standard MCP prompts. CLI mirrors
   prompt discovery and rendering.
-- **Optional Abilities + REST/OpenAPI** — five governed abilities expose native
+- **Bundled Abilities + opt-in REST/OpenAPI** — five governed abilities expose native
   tool list/describe/execute operations plus bundled-skill list/get operations;
   the four read-only abilities are REST-enabled and generic execution remains
   on native MCP/CLI so arbitrary arguments never enter the upstream REST trace.
@@ -597,11 +597,11 @@ Three APIs solve different problems:
   Backend permissions and web mounts remain separate checks.
 - The **capability manifest** declares extension reach and enforces native tool
   and outbound-host policy.
-- The optional **Abilities API** registers typed operations with scopes, risk,
+- The bundled **Abilities API** registers typed operations with scopes, risk,
   side effects, permission checks, and selected projections.
 
-This extension registers five abilities when
-`webconsulting/typo3-abilities` is installed:
+This extension ships `webconsulting/typo3-abilities` and registers five
+abilities:
 
 - `typo3-mcp/list-tools` and `typo3-mcp/describe-tool` inspect the native
   catalog.
@@ -614,7 +614,7 @@ available through CLI and REST. Generic `execute-tool` is deliberately
 CLI-only because the upstream Abilities trace recorder persists complete
 inputs; native MCP remains the secure remote execution surface.
 
-The TYPO3 v14 [`sg_apicore` fork](https://github.com/dirnbauer/sg_apicore)
+The bundled TYPO3 v14 [`sg_apicore` fork](https://github.com/dirnbauer/sg_apicore)
 (installed from `dev-main`; package metadata declares 14.1.0, PHP `^8.3`, and
 TYPO3 `^14.3`) can expose those abilities at `/api/abilities/v1`. It adds
 backend-user-bound opaque tokens, scopes, site tenants, 60/minute rate
@@ -628,6 +628,13 @@ The ability list, describe, and run routes require a backend-user-bound bearer
 token. API Core deliberately serves `/api/abilities/v1/docs.json` and
 `/api/abilities/v1/docs/ui` publicly, so treat the generated schemas as public
 metadata and do not put secrets in ability descriptions or examples.
+
+Until both maintained forks are published through Packagist, downstream TYPO3
+root projects must declare the `dirnbauer/sg_apicore` and
+`dirnbauer/typo3-abilities` VCS repositories before requiring this extension;
+Composer deliberately does not inherit repositories from dependencies. Both
+repositories are canonical and restricted to their exact integration package
+name, preventing fallback to the upstream GitLab package or another fork.
 
 Skills are not permission grants, executable workflows, or new MCP capability
 flags. They are inventoried under `x-mcp`, exposed as resources/prompts, and

@@ -29,34 +29,46 @@ native tool projection.
 
 .. _sg-apicore-installation:
 
-Installation
-============
+Installation and activation
+===========================
 
-The integrations are optional Composer suggestions. During the v14 release
-line, configure the maintained source repositories explicitly:
+Both integrations are production requirements of this extension. This source
+checkout declares the maintained v14 VCS repositories in its root
+``composer.json``. Composer does not inherit repositories from dependency
+packages, so a downstream TYPO3 root project must declare them before
+requiring this extension until both forks are published through Packagist:
 
 .. code-block:: bash
-   :caption: Install the optional TYPO3 v14 integrations
+   :caption: Configure the downstream root project
 
-   composer config repositories.sg-apicore vcs \
-       https://github.com/dirnbauer/sg_apicore
-   composer config repositories.typo3-abilities vcs \
-       https://github.com/dirnbauer/typo3-abilities
-   composer require sgalinski/sg-apicore:dev-main \
-       webconsulting/typo3-abilities:dev-main
+   composer config --json repositories.sg-apicore \
+       '{"type":"vcs","url":"https://github.com/dirnbauer/sg_apicore","canonical":true,"only":["sgalinski/sg-apicore"]}'
+   composer config --json repositories.typo3-abilities \
+       '{"type":"vcs","url":"https://github.com/dirnbauer/typo3-abilities","canonical":true,"only":["webconsulting/typo3-abilities"]}'
+
+These two repositories are the authoritative sources for the integration
+package names. The project marks them canonical and filters each repository to
+its exact package name; it never resolves these integrations from an upstream
+GitLab repository or another fork.
+
+After Composer installation, complete TYPO3 extension setup:
+
+.. code-block:: bash
+   :caption: Set up the bundled TYPO3 v14 integrations
+
    vendor/bin/typo3 extension:setup
 
-The MCP server loads its integration services only when the Abilities
-interfaces exist. A plain installation therefore has no hard dependency and
-does not fail when either package is absent.
+The Abilities registry and CLI projection are then active. The HTTP API stays
+disabled by default. Enable ``activateAbilitiesApi`` deliberately after token,
+scope, tenant, and CORS policy have been reviewed.
 
 .. _sg-apicore-registration:
 
 Registered API policy
 =====================
 
-When both packages are present **and** sg_apicore's
-``activateAbilitiesApi`` setting is enabled, ``ext_localconf.php`` registers
+When sg_apicore's ``activateAbilitiesApi`` setting is enabled,
+``ext_localconf.php`` registers
 API ID ``abilities``, version ``1``, with these defaults:
 
 - Ability list, describe, and run routes authenticate a backend-user-bound
