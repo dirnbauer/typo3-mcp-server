@@ -9,8 +9,7 @@ services:
     exclude:
       # Instantiated only via `new` in ToolRegistry — not a DI service (constructor uses `object`).
       - '../Classes/MCP/Tool/CompatibleToolAdapter.php'
-      # Optional adapter classes extend the external Abilities API and are
-      # loaded conditionally from Configuration/Services.php.
+      # Integration classes are registered from Configuration/Services.php.
       - '../Classes/Integration/Abilities/*'
       - '../Classes/Integration/ApiCore/*'
       - '../Classes/Integration/X402/*'

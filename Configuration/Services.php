@@ -9,15 +9,13 @@ use SGalinski\SgApiCore\Configuration\ExtensionConfiguration;
 use SGalinski\SgApiCore\Service\ApiRegistry;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Webconsulting\Abilities\Registry\AbilitiesRegistry;
-use Webconsulting\Abilities\Registry\AbilityInterface;
 use Webconsulting\X402Paywall\Configuration\ConfigurationProvider;
 use Webconsulting\X402Paywall\Configuration\PaywallConfiguration;
 use Webconsulting\X402Paywall\Domain\Model\PaymentRequirement;
 
 /**
- * Conditional integrations whose parent interfaces are optional Composer
- * suggestions. Keeping them out of Services.yaml preserves a clean install
- * when the integrations are absent.
+ * Integration services kept in PHP configuration because the optional x402
+ * adapter still needs class-based conditional registration.
  */
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services();
@@ -32,30 +30,20 @@ return static function (ContainerConfigurator $configurator): void {
         NullX402PaymentVerifier::class,
     );
 
-    if (
-        class_exists(ApiRegistry::class)
-        && class_exists(ExtensionConfiguration::class)
-        && class_exists(AbilitiesRegistry::class)
-    ) {
-        // The optional package may be present through Composer while its
-        // extension service configuration is not part of a focused TYPO3
-        // functional-test container. Register the two small dependencies
-        // explicitly so this conditional integration remains compilable.
-        $services->set(ApiRegistry::class)->public();
-        $services->set(ExtensionConfiguration::class);
-        $services->set(AbilitiesRegistry::class);
-        $services->load(
-            'Hn\\McpServer\\Integration\\ApiCore\\',
-            __DIR__ . '/../Classes/Integration/ApiCore/',
-        );
-    }
-
-    if (interface_exists(AbilityInterface::class)) {
-        $services->load(
-            'Hn\\McpServer\\Integration\\Abilities\\',
-            __DIR__ . '/../Classes/Integration/Abilities/',
-        );
-    }
+    // These packages are production requirements. Register their small core
+    // services explicitly as focused TYPO3 functional-test containers may not
+    // load another extension's Services.yaml.
+    $services->set(ApiRegistry::class)->public();
+    $services->set(ExtensionConfiguration::class);
+    $services->set(AbilitiesRegistry::class);
+    $services->load(
+        'Hn\\McpServer\\Integration\\ApiCore\\',
+        __DIR__ . '/../Classes/Integration/ApiCore/',
+    );
+    $services->load(
+        'Hn\\McpServer\\Integration\\Abilities\\',
+        __DIR__ . '/../Classes/Integration/Abilities/',
+    );
 
     if (
         class_exists(ConfigurationProvider::class)

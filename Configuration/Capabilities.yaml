@@ -92,8 +92,9 @@ capabilities:
     integrations:
       abilities:
         package: webconsulting/typo3-abilities
-        status: optional
-        projections: [cli, rest]
+        source: https://github.com/dirnbauer/typo3-abilities
+        status: required
+        projections: [cli, rest-opt-in]
         catalog_abilities:
           - typo3-mcp/list-tools
           - typo3-mcp/describe-tool
@@ -104,7 +105,8 @@ capabilities:
         package: sgalinski/sg-apicore
         source: https://github.com/dirnbauer/sg_apicore
         compatible: '^14.1'
-        status: optional
+        status: required
+        activation: opt-in
         api: /api/abilities/v1
         features: [openapi, scopes, backend-user-tokens, tenants, rate-limits, request-ids, redacted-logs]
 
