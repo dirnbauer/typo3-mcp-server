@@ -13,9 +13,11 @@
     "require": {
         "php": "^8.3",
         "logiscape/mcp-sdk-php": "^2.0.0-beta3",
+        "sgalinski/sg-apicore": "dev-main",
         "typo3/cms-backend": "^14.3",
         "typo3/cms-core": "^14.3",
-        "typo3/cms-workspaces": "^14.3"
+        "typo3/cms-workspaces": "^14.3",
+        "webconsulting/typo3-abilities": "dev-main"
     },
     "require-dev": {
         "brianium/paratest": "^7.8",
@@ -34,13 +36,7 @@
         "typo3/cms-frontend": "^14.3",
         "typo3/cms-install": "^14.3",
         "typo3/testing-framework": "^9.4",
-        "typo3/cms-redirects": "^14.3",
-        "sgalinski/sg-apicore": "dev-main",
-        "webconsulting/typo3-abilities": "dev-main"
-    },
-    "suggest": {
-        "sgalinski/sg-apicore": "Optional TYPO3 v14 REST/OpenAPI, scoped-token, tenant, rate-limit, and request-tracing projection.",
-        "webconsulting/typo3-abilities": "Optional installation-wide abilities registry for governed MCP, CLI, and REST projections."
+        "typo3/cms-redirects": "^14.3"
     },
     "conflict": {
         "mcp/sdk": "*"
@@ -48,11 +44,19 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/dirnbauer/sg_apicore"
+            "url": "https://github.com/dirnbauer/sg_apicore",
+            "canonical": true,
+            "only": [
+                "sgalinski/sg-apicore"
+            ]
         },
         {
             "type": "vcs",
-            "url": "https://github.com/dirnbauer/typo3-abilities"
+            "url": "https://github.com/dirnbauer/typo3-abilities",
+            "canonical": true,
+            "only": [
+                "webconsulting/typo3-abilities"
+            ]
         }
     ],
     "autoload": {
