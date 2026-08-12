@@ -312,11 +312,11 @@ tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
   (`typo3-mcp:///tca`, `typo3-mcp:///tca/{table}`)
 - **Optional: x402 monetization** — `ListPaidContent`, `GetPaidContent`,
   `GetPaymentStats`. These tools fail closed unless a compatible paywall
-  release supplies the TYPO3 x402 configuration/model APIs. Do not co-install
-  `typo3-x402-paywall` 1.0.2: it requires `mcp/sdk:^0.5`, whose `Mcp\` classes
-  collide with this server's `logiscape/mcp-sdk-php` runtime. Composer now
-  rejects that unsafe package combination until the paywall removes or
-  migrates its SDK dependency.
+  release supplies the TYPO3 x402 configuration/model APIs. Current paywall
+  releases expose SDK-neutral tagged tools and work with both the server's
+  legacy 1.x and current 2.x adapters. The server still conflicts with
+  `mcp/sdk:*` itself because that unrelated SDK owns an incompatible `Mcp\`
+  class tree.
 
 ### Frontend design-system tooling
 

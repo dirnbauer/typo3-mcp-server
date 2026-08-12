@@ -1276,15 +1276,11 @@ The following tools are only meaningful when the optional x402 paywall
 extension surface is present on the TYPO3 instance. When that surface is
 missing, the tools return configuration guidance instead of raw SQL failures.
 
-.. warning::
-
-   ``typo3-x402-paywall`` 1.0.2 cannot be Composer-coinstalled with this MCP
-   server. It requires ``mcp/sdk:^0.5`` while this server requires
-   ``logiscape/mcp-sdk-php``; both packages autoload incompatible classes in
-   the same ``Mcp\\`` namespace. The root package therefore conflicts with
-   ``mcp/sdk:*``. Keep the paywall package out of the installation until a
-   compatible release removes or migrates that SDK dependency. The MCP x402
-   tools remain fail closed in the meantime.
+Current ``typo3-x402-paywall`` releases expose SDK-neutral tagged tools. The
+server's compatibility adapter wraps their string results for both the legacy
+``logiscape/mcp-sdk-php`` 1.x runtime and the current 2.x runtime. The server's
+root package still conflicts with ``mcp/sdk:*`` because that unrelated package
+autoloads an incompatible class tree in the same ``Mcp\\`` namespace.
 
 ListPaidContent
 ---------------

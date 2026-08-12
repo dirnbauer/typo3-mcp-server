@@ -267,6 +267,9 @@ HTTP and authentication hardening
   cannot coexist safely with ``logiscape/mcp-sdk-php`` because both packages
   own incompatible ``Mcp\\`` class trees. The x402 adapter remains ready for a
   compatible paywall release that removes or migrates that dependency.
+- Removed that SDK dependency from ``typo3-x402-paywall`` itself. Its tagged
+  tools now return SDK-neutral strings, which the existing compatibility
+  adapter can wrap under both the legacy 1.x and current 2.x Logiscape SDKs.
 
 .. _modernization-2026-workspaces-cli:
 
