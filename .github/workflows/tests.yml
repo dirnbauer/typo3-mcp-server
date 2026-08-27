@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Render TYPO3 documentation
         run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log
@@ -25,12 +25,12 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.37.0
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           coverage: xdebug
 
       - name: Install Composer dependencies
@@ -50,9 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # This extension targets the modern PHP 8.3-8.5 baseline.
-          - php-version: '8.3'
-            typo3-version: '^14.3'
+          # This extension targets the PHP 8.4-8.5 baseline required by TYPO3 14.3.
           - php-version: '8.4'
             typo3-version: '^14.3'
           - php-version: '8.5'
@@ -62,10 +60,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.37.0
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
         with:
           php-version: ${{ matrix.php-version }}
           extensions: sqlite3, pdo_sqlite
@@ -81,12 +79,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.37.0
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: sqlite3, pdo_sqlite
           coverage: none
 
@@ -177,10 +175,10 @@ jobs:
     name: LLM Tests
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.37.0
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2.37.0
         with:
           php-version: '8.4'
           extensions: sqlite3, pdo_sqlite, intl

@@ -8,6 +8,7 @@ use Hn\McpServer\Service\SiteBaseUrlResolver;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\UriInterface;
+use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 
@@ -115,5 +116,69 @@ final class SiteBaseUrlResolverTest extends TestCase
         $resolver = new SiteBaseUrlResolver();
 
         self::assertSame('https://your-domain.com', $resolver->resolveConfiguredOrPlaceholder());
+    }
+
+    #[Test]
+    public function resolvesSubdirectoryUrlsAndApplicationRouteFromNormalizedParams(): void
+    {
+        unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl']);
+
+        $request = $this->createSubdirectoryRequest('/subfolder/mcp');
+        $resolver = new SiteBaseUrlResolver();
+
+        self::assertSame('https://example.com/subfolder', $resolver->resolveFromRequest($request));
+        self::assertSame('/subfolder', $resolver->resolveSitePathFromRequest($request));
+        self::assertSame('/mcp', $resolver->resolveApplicationRoutePath($request));
+        self::assertSame(
+            'https://example.com/.well-known/oauth-protected-resource/subfolder/mcp',
+            $resolver->resolveProtectedResourceMetadataUrl($request),
+        );
+        self::assertSame(
+            'https://example.com/.well-known/oauth-authorization-server/subfolder',
+            $resolver->resolveAuthorizationServerMetadataUrl($request),
+        );
+    }
+
+    #[Test]
+    public function recognizesRfcWellKnownPathsForSubdirectoryIssuerAndResource(): void
+    {
+        unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl']);
+
+        $resolver = new SiteBaseUrlResolver();
+        $resourceRequest = $this->createSubdirectoryRequest(
+            '/.well-known/oauth-protected-resource/subfolder/mcp',
+        );
+        $issuerRequest = $this->createSubdirectoryRequest(
+            '/.well-known/oauth-authorization-server/subfolder',
+        );
+
+        self::assertTrue($resolver->isProtectedResourceMetadataPath($resourceRequest));
+        self::assertTrue($resolver->isAuthorizationServerMetadataPath($issuerRequest));
+    }
+
+    private function createSubdirectoryRequest(string $requestPath): ServerRequest
+    {
+        $serverParams = [
+            'HTTP_HOST' => 'example.com',
+            'HTTPS' => 'on',
+            'SCRIPT_NAME' => '/subfolder/index.php',
+            'SCRIPT_FILENAME' => '/var/www/html/subfolder/index.php',
+            'REQUEST_URI' => $requestPath,
+        ];
+
+        $normalizedParams = new NormalizedParams(
+            $serverParams,
+            $GLOBALS['TYPO3_CONF_VARS']['SYS'],
+            '/var/www/html/subfolder/index.php',
+            '/var/www/html/subfolder',
+        );
+
+        return (new ServerRequest(
+            new Uri('https://example.com' . $requestPath),
+            'GET',
+            'php://input',
+            [],
+            $serverParams,
+        ))->withAttribute('normalizedParams', $normalizedParams);
     }
 }

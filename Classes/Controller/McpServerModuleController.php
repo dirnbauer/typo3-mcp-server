@@ -94,7 +94,7 @@ final readonly class McpServerModuleController
             'codexConfigToml' => $this->clientConfigBuilder->buildCodexTomlConfig($siteName, $localStdioConfig),
             'diagnostics' => $diagnostics,
             'mcpEndpointUrl' => $endpointUrl,
-            'oauthDiscoveryUrl' => $baseUrl . '/.well-known/oauth-authorization-server',
+            'oauthDiscoveryUrl' => $this->baseUrlResolver->resolveAuthorizationServerMetadataUrl($request),
             'hasWorkspace' => $hasWorkspace,
             'isLocalhost' => $isLocalhost,
             'createWorkspaceUrl' => $createWorkspaceUrl,

@@ -105,6 +105,8 @@ final class UploadFileTool extends AbstractTool
             $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
         } finally {
             if (file_exists($tempFile)) {
+                // $tempFile always comes from TYPO3's tempnam(), never from request input.
+                // nosemgrep: php.lang.security.unlink-use.unlink-use
                 unlink($tempFile);
             }
         }

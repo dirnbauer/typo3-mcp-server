@@ -54,13 +54,11 @@ class BrowseFolderToolTest extends FunctionalTestCase
         // Create test files using GD (1x1px PNG)
         $image = imagecreatetruecolor(1, 1);
         imagepng($image, $this->storageBasePath . '/images/logo.png');
-        imagedestroy($image);
 
         $image = imagecreatetruecolor(1, 1);
         $red = imagecolorallocate($image, 255, 0, 0);
         imagesetpixel($image, 0, 0, $red);
         imagepng($image, $this->storageBasePath . '/images/banner.png');
-        imagedestroy($image);
 
         // Create a simple text file
         file_put_contents($this->storageBasePath . '/documents/readme.txt', 'Test document');

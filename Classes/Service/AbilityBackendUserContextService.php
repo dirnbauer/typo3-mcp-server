@@ -172,6 +172,8 @@ final readonly class AbilityBackendUserContextService
         }
 
         try {
+            // TYPO3 stores backend-user UC as serialized arrays; object hydration is disabled.
+            // nosemgrep: php.lang.security.unserialize-use.unserialize-use
             $decoded = unserialize($storedUc, ['allowed_classes' => false]);
         } catch (\Throwable) {
             return [];

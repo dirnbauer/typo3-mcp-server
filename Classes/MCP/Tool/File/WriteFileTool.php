@@ -136,6 +136,8 @@ final class WriteFileTool extends AbstractTool
             $newFile = $storage->addFile($tempFile, $folder, $parsed['fileName']);
         } finally {
             if (file_exists($tempFile)) {
+                // $tempFile always comes from TYPO3's tempnam(), never from request input.
+                // nosemgrep: php.lang.security.unlink-use.unlink-use
                 unlink($tempFile);
             }
         }

@@ -11,6 +11,7 @@ use Hn\McpServer\Http\OAuthMetadataEndpoint;
 use Hn\McpServer\Http\OAuthRegisterEndpoint;
 use Hn\McpServer\Http\OAuthResourceMetadataEndpoint;
 use Hn\McpServer\Http\OAuthTokenEndpoint;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -38,11 +39,19 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
         private OAuthRegisterEndpoint $oauthRegisterEndpoint,
         private OAuthResourceMetadataEndpoint $oauthResourceMetadataEndpoint,
         private OAuthAuthServerMetadataEndpoint $oauthAuthServerMetadataEndpoint,
+        private SiteBaseUrlResolver $baseUrlResolver,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $path = $this->normalizeRoutePath($request->getUri()->getPath());
+        if ($this->baseUrlResolver->isProtectedResourceMetadataPath($request)) {
+            return ($this->oauthResourceMetadataEndpoint)($request);
+        }
+        if ($this->baseUrlResolver->isAuthorizationServerMetadataPath($request)) {
+            return ($this->oauthAuthServerMetadataEndpoint)($request);
+        }
+
+        $path = $this->baseUrlResolver->resolveApplicationRoutePath($request);
 
         return match ($path) {
             '/mcp' => ($this->mcpEndpoint)($request),
@@ -61,15 +70,6 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 
             default => $handler->handle($request),
         };
-    }
-
-    private function normalizeRoutePath(string $path): string
-    {
-        if ($path === '/') {
-            return $path;
-        }
-
-        return rtrim($path, '/');
     }
 
     /**
@@ -111,7 +111,8 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
             'scope' => $oauthData['scope'] ?? '',
         ]);
 
-        $oauthAuthorizeUrl = '/mcp_oauth/authorize?' . $queryParams;
+        $oauthAuthorizeUrl = $this->baseUrlResolver->resolveSitePathFromRequest($request)
+            . '/mcp_oauth/authorize?' . $queryParams;
 
         $stream = new Stream('php://temp', 'rw');
         $stream->write('');

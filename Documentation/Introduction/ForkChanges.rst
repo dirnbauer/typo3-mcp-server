@@ -19,8 +19,8 @@ TYPO3 v14 foundation
 
 The fork is a TYPO3 v14-only extension:
 
-- Composer requires TYPO3 ``^14.3`` and ``typo3/cms-workspaces``.
-- PHP support is PHP 8.3 through 8.5.
+- Composer requires TYPO3 ``^14.3.6`` and ``typo3/cms-workspaces``.
+- PHP support is PHP 8.4 through 8.5.
 - Tool code uses constructor dependency injection, final classes, TYPO3 v14
   TCA schema APIs, DataHandler, PageRepository, FAL, site, and language APIs.
 - Compatibility branches for older TYPO3 major versions are not part of the
@@ -41,6 +41,8 @@ entry point:
 - Remote clients authenticate with OAuth 2.1 style bearer tokens and PKCE.
 - OAuth authorization, token, registration, authorization-server metadata, and
   protected-resource metadata endpoints are implemented under ``Classes/Http``.
+- HTTP/OAuth routing and discovery URLs honor TYPO3 installations below a
+  path prefix, including the RFC 8414 and RFC 9728 well-known URI forms.
 - Token-authenticated HTTP calls initialize a backend user context and an
   in-memory backend session for the current request.
 - The MCP PHP SDK serves two eras: stable ``2025-11-25`` requests retain their

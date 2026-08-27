@@ -6,6 +6,7 @@ namespace Hn\McpServer\Http;
 
 use Hn\McpServer\MCP\McpServerFactory;
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\SiteInformationService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Server\HttpServerRunner;
@@ -44,6 +45,7 @@ final readonly class McpEndpoint
         private WorkspaceContextService $workspaceContextService,
         private LanguageServiceFactory $languageServiceFactory,
         private ExtensionConfiguration $extensionConfiguration,
+        private SiteBaseUrlResolver $baseUrlResolver,
     ) {}
 
     /**
@@ -330,7 +332,7 @@ final readonly class McpEndpoint
         $stream->rewind();
 
         // RFC 9728: resource_metadata URL must match a served protected-resource metadata document (see middleware).
-        $resourceMetadataUrl = $this->buildBaseUrl($request) . '/.well-known/oauth-protected-resource/mcp';
+        $resourceMetadataUrl = $this->baseUrlResolver->resolveProtectedResourceMetadataUrl($request);
 
         $response = new Response(
             $stream,
@@ -342,25 +344,6 @@ final readonly class McpEndpoint
         );
 
         return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
-    }
-
-    private function buildBaseUrl(ServerRequestInterface $request): string
-    {
-        $uri = $request->getUri();
-        $scheme = strtolower($uri->getScheme());
-        $host = $uri->getHost();
-        if (str_contains($host, ':') && !str_starts_with($host, '[')) {
-            $host = '[' . $host . ']';
-        }
-        $baseUrl = $scheme . '://' . $host;
-        $port = $uri->getPort();
-        $isDefaultPort = ($scheme === 'http' && $port === 80)
-            || ($scheme === 'https' && $port === 443);
-        if ($port !== null && !$isDefaultPort) {
-            $baseUrl .= ':' . $port;
-        }
-
-        return $baseUrl;
     }
 
     private function setupBackendUserContext(int $userId): bool
@@ -465,6 +448,8 @@ final readonly class McpEndpoint
         }
 
         try {
+            // TYPO3 stores backend-user UC as serialized arrays; object hydration is disabled.
+            // nosemgrep: php.lang.security.unserialize-use.unserialize-use
             $decoded = unserialize($storedUc, ['allowed_classes' => false]);
         } catch (\Throwable) {
             return [];

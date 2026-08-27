@@ -56,7 +56,8 @@ final readonly class TcaResourceFormatter
             return "# Access denied\n\nTable `{$tableName}` is not accessible to the current backend user.\n";
         }
 
-        if (!is_array($GLOBALS['TCA'] ?? null) || !is_array($GLOBALS['TCA'][$tableName] ?? null)) {
+        $globalTca = $GLOBALS['TCA'] ?? null;
+        if (!is_array($globalTca) || !is_array($globalTca[$tableName] ?? null)) {
             return "# Error\n\nTable `{$tableName}` not found in TCA.\n\nUse `typo3-mcp:///tca` to see accessible tables.";
         }
 
@@ -73,8 +74,7 @@ final readonly class TcaResourceFormatter
         $output .= $schemaText;
         $output .= "\n\n## Raw field summary\n\n";
 
-        /** @var array<string, mixed> $tca */
-        $tca = $GLOBALS['TCA'][$tableName];
+        $tca = $globalTca[$tableName];
         $columns = is_array($tca['columns'] ?? null) ? $tca['columns'] : [];
         foreach ($columns as $fieldName => $fieldConfig) {
             if (!is_string($fieldName) || !is_array($fieldConfig)) {

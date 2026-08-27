@@ -28,7 +28,7 @@ final readonly class TableTcaResolver
         $tables = [];
         foreach ($globalTca as $table => $tableConfig) {
             if (is_string($table) && is_array($tableConfig)) {
-                $tables[$table] = $tableConfig;
+                $tables[$table] = $this->stringKeyed($tableConfig);
             }
         }
 
@@ -50,7 +50,7 @@ final readonly class TableTcaResolver
     {
         $tca = $this->getTable($table);
 
-        return is_array($tca['ctrl'] ?? null) ? $tca['ctrl'] : [];
+        return is_array($tca['ctrl'] ?? null) ? $this->stringKeyed($tca['ctrl']) : [];
     }
 
     /**
@@ -66,7 +66,7 @@ final readonly class TableTcaResolver
         $normalizedColumns = [];
         foreach ($columns as $fieldName => $fieldConfig) {
             if (is_string($fieldName) && is_array($fieldConfig)) {
-                $normalizedColumns[$fieldName] = $fieldConfig;
+                $normalizedColumns[$fieldName] = $this->stringKeyed($fieldConfig);
             }
         }
 
@@ -84,6 +84,16 @@ final readonly class TableTcaResolver
     /**
      * @return array<string, mixed>
      */
+    public function getFieldConfig(string $table, string $fieldName): array
+    {
+        $config = $this->getField($table, $fieldName)['config'] ?? [];
+
+        return is_array($config) ? $this->stringKeyed($config) : [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function getTypeConfig(string $table, string $type): array
     {
         $types = $this->getTable($table)['types'] ?? [];
@@ -94,11 +104,30 @@ final readonly class TableTcaResolver
 
         $typeConfig = $types[$type] ?? [];
 
-        return is_array($typeConfig) ? $typeConfig : [];
+        return is_array($typeConfig) ? $this->stringKeyed($typeConfig) : [];
     }
 
     public function hasTable(string $table): bool
     {
         return $this->tcaSchemaFactory->has($table);
+    }
+
+    /**
+     * TCA configuration maps use string keys at the level exposed by this service.
+     * Ignore malformed numeric keys instead of leaking an inaccurate return type.
+     *
+     * @param array<mixed, mixed> $values
+     * @return array<string, mixed>
+     */
+    private function stringKeyed(array $values): array
+    {
+        $normalized = [];
+        foreach ($values as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
     }
 }

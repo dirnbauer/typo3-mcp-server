@@ -530,7 +530,7 @@ final class WriteTableTool extends AbstractRecordTool
         // Get the UID of the newly created parent record
         $parentUid = $dataHandler->substNEWwithIDs[$newId] ?? null;
 
-        if (!$parentUid) {
+        if ($parentUid === null || $parentUid === 0) {
             return $this->createErrorResult('Error creating record: No UID returned');
         }
 
@@ -680,7 +680,7 @@ final class WriteTableTool extends AbstractRecordTool
         $dataHandler->process_cmdmap();
 
         // Check for errors
-        if ($dataHandler->errorLog) {
+        if ($dataHandler->errorLog !== []) {
             return $this->createErrorResult('Error deleting record: ' . implode(', ', $dataHandler->errorLog));
         }
 
@@ -1685,7 +1685,7 @@ final class WriteTableTool extends AbstractRecordTool
                 continue;
             }
 
-            $fieldConfig = $columns[$fieldName]['config'] ?? [];
+            $fieldConfig = $this->tcaResolver->getFieldConfig($table, $fieldName);
             $authMode = $fieldConfig['authMode'] ?? null;
 
             // Only check fields with authMode configured
@@ -1709,7 +1709,7 @@ final class WriteTableTool extends AbstractRecordTool
                     $fieldLabel
                 );
 
-                if (!empty($allowedValues)) {
+                if ($allowedValues !== []) {
                     $errorMsg .= ' Allowed values for your user: ' . implode(', ', $allowedValues) . '.';
                 } else {
                     $errorMsg .= ' No values are allowed for your user group. Contact your administrator.';
@@ -1727,8 +1727,8 @@ final class WriteTableTool extends AbstractRecordTool
      *
      * @param string $table Table name
      * @param string $fieldName Field name
-     * @param array $fieldConfig Field configuration
-     * @return array List of allowed values
+     * @param array<string, mixed> $fieldConfig Field configuration
+     * @return list<string> List of allowed values
      */
     protected function getAllowedAuthModeValues(string $table, string $fieldName, array $fieldConfig): array
     {

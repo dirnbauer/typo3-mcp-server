@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Service\OAuthService;
+use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\MetaKeys;
 use PHPUnit\Framework\Attributes\Test;
@@ -286,6 +287,7 @@ final class McpEndpointProtocolTest extends FunctionalTestCase
             $container->get(WorkspaceContextService::class),
             $container->get(LanguageServiceFactory::class),
             new ExtensionConfiguration(),
+            new SiteBaseUrlResolver(),
         );
     }
 }

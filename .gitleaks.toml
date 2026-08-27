@@ -1,0 +1,14 @@
+title = "TYPO3 MCP Server secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated PHP-CS-Fixer cache hashes are not credentials"
+targetRules = ["generic-api-key"]
+paths = ['''(^|/)\.php-cs-fixer\.cache$''']
+
+[[allowlists]]
+description = "Fixed one-way token hashes used by the migration test"
+targetRules = ["generic-api-key"]
+paths = ['''^Tests/Functional/Updates/HashExistingTokensUpgradeWizardTest\.php$''']
