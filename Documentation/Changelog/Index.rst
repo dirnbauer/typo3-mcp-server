@@ -6,6 +6,12 @@
 Changelog
 =========
 
+0.6.2 - 2026-08-28
+==================
+
+- Fixed repeated ``SolrIndexQueue`` runs by forcing only the explicitly
+  selected and validated EXT:solr scheduler task.
+
 0.6.1 - 2026-08-27
 ==================
 

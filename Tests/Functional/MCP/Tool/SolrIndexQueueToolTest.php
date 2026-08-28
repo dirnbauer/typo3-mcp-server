@@ -63,6 +63,16 @@ final class SolrIndexQueueToolTest extends AbstractFunctionalTest
         self::assertStringContainsString('runs', $this->getFirstTextContent($result));
     }
 
+    public function testSchedulerRunCommandForcesTheExplicitTask(): void
+    {
+        $method = new \ReflectionMethod($this->tool, 'buildSchedulerRunCommand');
+
+        self::assertSame(
+            ['scheduler:run', '--task=42', '--force'],
+            $method->invoke($this->tool, 42),
+        );
+    }
+
     public function testRequiresAdminPrivileges(): void
     {
         $GLOBALS['BE_USER']->user['admin'] = 0;

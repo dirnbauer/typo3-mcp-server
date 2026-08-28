@@ -43,7 +43,7 @@ final class SolrIndexQueueTool extends AbstractTool
         return [
             'description' => 'List or run EXT:solr scheduler tasks, especially the Apache Solr Index Queue Worker. '
                 . 'The run action validates that the selected scheduler task looks Solr-related before invoking '
-                . '`scheduler:run --task=<uid>` and never runs all due scheduler tasks. Admin-only.',
+                . '`scheduler:run --task=<uid> --force` and never runs all due scheduler tasks. Admin-only.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -139,7 +139,7 @@ final class SolrIndexQueueTool extends AbstractTool
         $failed = false;
 
         for ($i = 1; $i <= $runs; $i++) {
-            $execution = $this->runTypo3Command(['scheduler:run', '--task=' . $selectedTaskUid], 300);
+            $execution = $this->runTypo3Command($this->buildSchedulerRunCommand($selectedTaskUid), 300);
             $execution['run'] = $i;
             $executions[] = $execution;
 
@@ -157,6 +157,14 @@ final class SolrIndexQueueTool extends AbstractTool
             'runsExecuted' => count($executions),
             'executions' => $executions,
         ], $failed);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function buildSchedulerRunCommand(int $taskUid): array
+    {
+        return ['scheduler:run', '--task=' . $taskUid, '--force'];
     }
 
     private function normalizeTaskUid(mixed $value): ?int

@@ -7,6 +7,15 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.6.2 - 2026-08-28
+
+### Fixed
+
+- Force execution of the explicitly selected EXT:solr scheduler task so
+  `SolrIndexQueue` can process more than one batch in a single `runs` request.
+  The task UID remains validated as Solr-related and no unrelated due tasks are
+  executed.
+
 ## 0.5.1 - 2026-06-15
 
 ### Changed
