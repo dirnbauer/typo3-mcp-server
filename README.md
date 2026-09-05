@@ -210,8 +210,9 @@ adds and hardens these areas:
 - **Expanded tools** — the fork adds file sandbox tools, FAL search/browse
   tools, workspace review/publish/rollback, import/audit helpers, preview and
   render verification, site configuration helpers, safe CLI execution, optional
-  x402 tools, and dev-site tools for Site Sets, ViewHelpers, TCA resources, and
-  XLF authoring.
+  x402 tools, and dev-site tools for Site Sets, compiled TypoScript, Page
+  TSconfig, middleware/events, Content Blocks, file-log errors, ViewHelpers,
+  TCA resources, and XLF authoring.
 - **Editor access on site creation** — `CreateSite` provisions a dedicated
   per-site backend editor group (mounted at the root, with content-editing
   permissions and page ownership) instead of granting the new site to every
@@ -281,7 +282,7 @@ see the internal workspace version ID.
 
 ## Capabilities at a glance
 
-The extension declares **45 bundled native MCP tools** across these groups.
+The extension declares **52 bundled native MCP tools** across these groups.
 Optional extensions can add more tagged tools at runtime. For the authoritative
 native list with parameters, see
 [`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst). The same
@@ -306,7 +307,9 @@ tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
   `SearchMedia`, `ListStorages`
 - **Diagnostics** — `ContentAudit`, `GetSystemLog`, `ManageRedirects`
 - **Admin / operations** — `CreateSite`, `SiteSet`, `SafeCli`, `SolrIndexQueue`
-- **Dev-site only (DDEV / `localUnsafeMode`)** — `SiteSettings`, `ListViewHelpers`,
+- **Dev-site only (DDEV / `localUnsafeMode`)** — `ApplicationInfo`,
+  `TypoScript`, `PageTsConfig`, `MiddlewareStack`, `ListEvents`,
+  `ContentBlocks`, `LastError`, `SiteSettings`, `ListViewHelpers`,
   `GetViewHelperDocumentation`, `CreateLocallang`, `InstallExtension`,
   `ApplyShadcnPreset`, MCP TCA resources
   (`typo3-mcp:///tca`, `typo3-mcp:///tca/{table}`)
@@ -343,6 +346,13 @@ turns all relaxations off, including dev-site tools, even inside DDEV.
 
 | Tool | Purpose |
 |------|---------|
+| `ApplicationInfo` | Compact live TYPO3/PHP/database/extension inventory; full Composer packages are opt-in |
+| `TypoScript` | Compile effective frontend TypoScript and retrieve one setup/constants/config path |
+| `PageTsConfig` | Resolve merged Page TSconfig and retrieve one path |
+| `MiddlewareStack` | Inspect frontend/backend/core PSR-15 execution order and constraints |
+| `ListEvents` | Find PSR-14 events and registered listeners, capped and filterable |
+| `ContentBlocks` | List or inspect Content Block YAML/runtime definitions when the optional package is installed |
+| `LastError` | Return the newest file-log error with a compact stack trace (`full` is opt-in) |
 | `SiteSettings` | List Site Set setting definitions; read/update `settings.yaml` |
 | `ListViewHelpers` / `GetViewHelperDocumentation` | Fluid ViewHelper reference |
 | `CreateLocallang` | Create or extend XLF files in extensions |
@@ -373,6 +383,13 @@ resources under `typo3-mcp:///skills` and prompts with the same names.
 CLI shortcuts (dev-site / DDEV):
 
 ```bash
+ddev typo3 mcp:application-info --json
+ddev typo3 mcp:typoscript --pageId=42 --section=setup --path=page.10 --json
+ddev typo3 mcp:page-tsconfig --pageId=42 --path=TCEFORM.tt_content --json
+ddev typo3 mcp:middleware-stack --stack=frontend --json
+ddev typo3 mcp:list-events --event=AfterTcaCompilation --withListenersOnly=true --json
+ddev typo3 mcp:content-blocks --json
+ddev typo3 mcp:last-error --json
 ddev typo3 mcp:site-settings --action=listDefinitions --identifier=main --json
 ddev typo3 mcp:list-viewhelpers --json
 ddev typo3 mcp:get-viewhelper-documentation --tagName=f:for --json
@@ -819,6 +836,32 @@ for details and security recommendations.
 
 ## Development
 
+### Tool-context A/B benchmark
+
+`mcp:benchmark-tools` measures the fixed `tools/list` context tax without
+calling a model. Arm A serializes the complete schemas; arm B serializes the
+schemas published after the configured optimizer. It reports per-tool bytes,
+approximate tokens, schema-budget outliers, and explicitly probed response
+payloads. Save one JSON report and compare later work against it:
+
+```bash
+mkdir -p var/reports
+ddev exec vendor/bin/typo3 mcp:benchmark-tools --json \
+  --probe='ApplicationInfo={}' \
+  --probe='ListEvents={"withListenersOnly":true}' \
+  --probe='LastError={}' \
+  > var/reports/tool-context-baseline.json
+
+ddev exec vendor/bin/typo3 mcp:benchmark-tools --json \
+  --baseline=var/reports/tool-context-baseline.json
+```
+
+Use repeatable `--probe='ToolName={...}'` arguments only for the read-only
+calls you intend to measure. `--schema-budget`, `--response-budget`, and
+`--bytes-per-token` make thresholds explicit; estimated token counts remain
+model-dependent. See the
+[benchmark guide](Documentation/Testing/ToolContextBenchmark.rst).
+
 ```bash
 ddev exec composer test            # unit + functional suites
 ddev exec composer test:protocol   # installed stable + RC stdio smoke matrix
@@ -932,6 +975,11 @@ Marco Pfeiffer for open-sourcing the original TYPO3 MCP Server: a strong,
 editor-first, workspace-safe foundation that this project builds on. The
 capability-manifest concept is adapted from
 [Kurt Dirnbauer's TYPO3-extension-security article](https://www.webconsulting.at/blog/typo3-extension-security-emdash-capability-manifests).
+
+Thank you to [Dragan Balatinac](https://github.com/balatD) for
+[balatD/typo3-dev-mcp](https://github.com/balatD/typo3-dev-mcp). Its focused
+developer-introspection tools and transparent A/B schema/payload measurements
+inspired this dev-site surface and its context benchmark.
 
 ## License
 

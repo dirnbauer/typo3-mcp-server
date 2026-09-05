@@ -44,10 +44,12 @@ In short, the changes are:
 - **Tool architecture:** tagged Symfony tools, third-party compatibility
   adapter, centralized tool errors, JSON Schema normalization, MCP annotations,
   admin-only and dev-site-only attributes.
-- **Editorial tools:** 45 bundled MCP tools for navigation, TCA/FlexForm
+- **Editorial tools:** 52 bundled MCP tools for navigation, TCA/FlexForm
   schema inspection, workspace-safe record writes, file handling, imports,
   content audit, preview/render verification, site setup, Solr indexing,
-  x402, and dev-site authoring.
+  x402, dev-site authoring, and live developer introspection (compiled
+  TypoScript/Page TSconfig, middleware/events, Content Blocks, and file-log
+  errors).
 - **Security:** hashed tokens, mandatory PKCE `S256`, header-only bearer
   authentication, exact origin checks, auth diagnostic off by default,
   redacted logs, browser-defense headers, capability-manifest enforcement,

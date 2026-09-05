@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Command;
 
 use Hn\McpServer\Command\TcaResourceCommand;
+use Hn\McpServer\Command\Tool\ApplicationInfoToolCommand;
 use Hn\McpServer\Command\Tool\CreateLocallangToolCommand;
 use Hn\McpServer\Command\Tool\GetViewHelperDocumentationToolCommand;
 use Hn\McpServer\Command\Tool\ListViewHelpersToolCommand;
@@ -42,6 +43,20 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
         self::assertTrue($payload['ok']);
         self::assertIsArray($payload['result']);
         self::assertNotEmpty($payload['result']['viewHelpers'] ?? null);
+    }
+
+    public function testApplicationInfoCliReturnsCompactRuntimeJson(): void
+    {
+        $command = $this->getContainer()->get(ApplicationInfoToolCommand::class);
+        self::assertInstanceOf(Command::class, $command);
+        $tester = new CommandTester($command);
+        $exitCode = $tester->execute(['--json' => true]);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        $payload = json_decode($tester->getDisplay(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['ok']);
+        self::assertSame(14, $payload['result']['typo3MajorVersion']);
+        self::assertArrayNotHasKey('composerPackages', $payload['result']);
     }
 
     public function testGetViewHelperDocumentationCliUsesTagFromList(): void

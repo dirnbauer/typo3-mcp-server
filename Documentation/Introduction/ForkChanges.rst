@@ -221,6 +221,11 @@ editor writes:
 - ``SiteSettings``, ``ApplyShadcnPreset``, ``ListViewHelpers``,
   ``GetViewHelperDocumentation``, and ``CreateLocallang`` are exposed only in
   dev-site mode.
+- ``ApplicationInfo``, ``TypoScript``, ``PageTsConfig``,
+  ``MiddlewareStack``, ``ListEvents``, ``ContentBlocks``, and ``LastError``
+  add a read-only developer-introspection surface in dev-site mode. Wide
+  inventories and stack traces remain opt-in or filterable to control context
+  size.
 - MCP TCA resources ``typo3-mcp:///tca`` and
   ``typo3-mcp:///tca/{tableName}`` are also dev-site only.
 
@@ -244,6 +249,9 @@ Every bundled MCP tool has a Symfony console command:
 - ``--param key=value``, repeated ``--param`` values, ``--params <json>``, and
   ``--param key=@file.json`` cover simple and structured inputs.
 - File-based CLI params are constrained to the TYPO3 project root.
+- ``mcp:benchmark-tools`` compares the full and published schema catalogs,
+  measures opt-in response probes, flags configured byte-budget outliers, and
+  can compare a report against a saved baseline.
 
 Most shortcuts are registered with ``GenericMcpToolCommand`` in
 ``Configuration/Services.yaml``. Custom command classes are used only when a

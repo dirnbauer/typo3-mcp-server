@@ -14,6 +14,16 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
 {
     use DevSiteTestTrait;
 
+    private const DEVELOPER_INTROSPECTION_TOOLS = [
+        'ApplicationInfo',
+        'TypoScript',
+        'PageTsConfig',
+        'MiddlewareStack',
+        'ListEvents',
+        'ContentBlocks',
+        'LastError',
+    ];
+
     public function testDevSiteToolsAreHiddenWhenLocalModeIsOff(): void
     {
         $this->disableDevSiteTools();
@@ -24,6 +34,9 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
         self::assertNotContains('ListViewHelpers', $names);
         self::assertNotContains('InstallExtension', $names);
         self::assertNotContains('ApplyShadcnPreset', $names);
+        foreach (self::DEVELOPER_INTROSPECTION_TOOLS as $toolName) {
+            self::assertNotContains($toolName, $names);
+        }
         self::assertContains('ReadTable', $names);
     }
 
@@ -37,6 +50,9 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
         self::assertContains('ListViewHelpers', $names);
         self::assertContains('InstallExtension', $names);
         self::assertContains('ApplyShadcnPreset', $names);
+        foreach (self::DEVELOPER_INTROSPECTION_TOOLS as $toolName) {
+            self::assertContains($toolName, $names);
+        }
     }
 
     public function testStrictSandboxHidesDevSiteToolsEvenWhenLocalUnsafeModeIsOn(): void
@@ -51,6 +67,9 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
         self::assertNotContains('ListViewHelpers', $names);
         self::assertNotContains('InstallExtension', $names);
         self::assertNotContains('ApplyShadcnPreset', $names);
+        foreach (self::DEVELOPER_INTROSPECTION_TOOLS as $toolName) {
+            self::assertNotContains($toolName, $names);
+        }
     }
 
     public function testInstallEditorSkillsCommandCopiesSkills(): void

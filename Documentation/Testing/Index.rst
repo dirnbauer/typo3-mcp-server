@@ -16,6 +16,7 @@ TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.
    E2eSuite
    E2eCiDebugging
    ProtocolCompatibility
+   ToolContextBenchmark
 
 .. seealso::
 
@@ -35,6 +36,7 @@ The project uses several layers of tests:
 - functional tests for TYPO3 database, TCA, workspace, and DataHandler
   behavior
 - LLM-oriented tests for MCP response ergonomics and model-facing workflows
+- deterministic A/B measurements for tool-schema tax and response payloads
 - Playwright E2E tests for browser-visible backend module workflows
 - code-quality checks for PHPStan, PHP CS Fixer, Rector, and Fractor
 - dual-era wire checks for MCP ``2025-11-25`` and ``2026-07-28``

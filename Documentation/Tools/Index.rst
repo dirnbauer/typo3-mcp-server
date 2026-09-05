@@ -230,6 +230,27 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
    * - ``CreateLocallang``
      - Dev / Admin
      - Create or extend XLF language files (dev-site only)
+   * - ``ApplicationInfo``
+     - Dev
+     - Compact live TYPO3/PHP/database/extension inventory; Composer packages are opt-in
+   * - ``TypoScript``
+     - Dev
+     - Compile effective frontend TypoScript and retrieve one path
+   * - ``PageTsConfig``
+     - Dev
+     - Resolve merged Page TSconfig and retrieve one path
+   * - ``MiddlewareStack``
+     - Dev
+     - Effective PSR-15 middleware execution order and constraints
+   * - ``ListEvents``
+     - Dev
+     - Capped/filterable PSR-14 event and listener inventory
+   * - ``ContentBlocks``
+     - Dev
+     - Optional Content Block runtime/YAML definitions
+   * - ``LastError``
+     - Dev
+     - Newest TYPO3 file-log error with a compact stack trace
    * - ``ListPaidContent``
      - Read
      - List pages gated by the optional x402 paywall extension
@@ -1404,6 +1425,104 @@ whether outbound HTTP is open.
 Dev-site tools
 ==============
 
+ApplicationInfo
+---------------
+
+Return live TYPO3/PHP versions, application context, database platform,
+active extensions, and the Composer package count.
+
+:Parameters:
+   - ``packages`` (boolean): include every Composer package and version;
+     default ``false`` because that inventory can be large
+
+Dev-site only. Read-only.
+
+TypoScript
+----------
+
+Compile the effective frontend TypoScript for an accessible page through
+TYPO3 v14's ``FrontendTypoScriptFactory``. The compact default returns an
+index; use ``path`` to fetch one value or subtree.
+
+:Parameters:
+   - ``pageId`` (integer): page UID; defaults to the first accessible site root
+   - ``section`` (string): ``setup`` (default), ``constants``, or ``config``
+   - ``path`` (string): dot-path such as ``page.10`` or ``plugin.tx_news``
+
+Dev-site only. Read-only. TYPO3 backend page mounts remain enforced.
+
+PageTsConfig
+------------
+
+Resolve merged Page TSconfig for an accessible page. Without ``path`` the
+tool returns only a top-level key index instead of the complete tree.
+
+:Parameters:
+   - ``pageId`` (integer): page UID; defaults to the first accessible site
+     root. ``0`` reads global Page TSconfig and requires an admin user.
+   - ``path`` (string): dot-path such as
+     ``TCEFORM.tt_content.header.disabled``
+
+Dev-site only. Read-only. TYPO3 backend page mounts remain enforced.
+
+MiddlewareStack
+---------------
+
+List an effective TYPO3 PSR-15 stack in the order it handles requests, with
+the identifier, target class, declaring package, ``before``/``after``
+constraints, and disabled declarations.
+
+:Parameters:
+   - ``stack`` (string): ``frontend`` (default), ``backend``, or ``core``
+   - ``search`` (string): identifier/class substring filter
+
+Dev-site only. Read-only.
+
+ListEvents
+----------
+
+Discover PSR-14 event classes and the listeners registered in the running
+container. Results default to 25 per page (maximum 60); matching listener
+definitions are the authoritative runtime source.
+
+:Parameters:
+   - ``event`` (string): event-class substring
+   - ``listener`` (string): service, method, or identifier substring
+   - ``withListenersOnly`` (boolean): omit unhooked event classes
+   - ``limit`` (integer): page size, default 25, maximum 60
+   - ``offset`` (integer): match offset; use the returned ``nextOffset``
+
+Dev-site only. Read-only.
+
+ContentBlocks
+-------------
+
+List registered ``friendsoftypo3/content-blocks`` definitions compactly or
+return the full YAML-derived field definition for one block. When the optional
+package is absent, the tool reports ``available: false`` instead of failing
+registration of the MCP surface.
+
+:Parameters:
+   - ``name`` (string): vendor-qualified name, for example ``myvendor/teaser``
+   - ``typeName`` (string): generated type/CType lookup
+   - ``table`` (string): table for ``typeName``; default ``tt_content``
+
+Dev-site only. Read-only.
+
+LastError
+---------
+
+Tail-read at most 256 KiB from each newest ``var/log/typo3_*.log`` file and
+return the latest error-level entry. The default response extracts exception
+class, code, file, line, message, request context, and at most five trace
+frames.
+
+:Parameters:
+   - ``full`` (boolean): return the complete raw entry and trace; default
+     ``false`` because it can be large
+
+Deprecation logs are excluded. Dev-site only. Read-only.
+
 SiteSettings
 ------------
 
@@ -1465,6 +1584,13 @@ CLI mirror:
 
    vendor/bin/typo3 mcp:tca-resource --json
    vendor/bin/typo3 mcp:tca-resource --table=pages --json
+   vendor/bin/typo3 mcp:application-info --json
+   vendor/bin/typo3 mcp:typoscript --pageId=42 --section=setup --path=page.10 --json
+   vendor/bin/typo3 mcp:page-tsconfig --pageId=42 --path=TCEFORM.tt_content --json
+   vendor/bin/typo3 mcp:middleware-stack --stack=frontend --json
+   vendor/bin/typo3 mcp:list-events --event=AfterTcaCompilation --withListenersOnly=true --json
+   vendor/bin/typo3 mcp:content-blocks --json
+   vendor/bin/typo3 mcp:last-error --json
    vendor/bin/typo3 mcp:site-settings --action=listDefinitions --identifier=main --json
    vendor/bin/typo3 mcp:list-viewhelpers --json
    vendor/bin/typo3 mcp:get-viewhelper-documentation --tagName=f:for --json

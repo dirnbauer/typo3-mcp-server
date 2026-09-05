@@ -49,6 +49,11 @@ services:
       - name: 'console.command'
         command: 'mcp:tool:list'
         description: 'List MCP tools registered in this TYPO3 instance.'
+  Hn\McpServer\Command\ToolContextBenchmarkCommand:
+    tags:
+      - name: 'console.command'
+        command: 'mcp:benchmark-tools'
+        description: 'A/B benchmark MCP tool-schema overhead and response payload sizes.'
   Hn\McpServer\Command\McpPromptListCommand:
     tags:
       - name: 'console.command'
@@ -140,6 +145,76 @@ services:
       - name: 'console.command'
         command: 'mcp:attach-image'
         description: 'Stage an image in the sandbox and attach it to a TCA file field.'
+  Hn\McpServer\Command\Tool\ApplicationInfoToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ApplicationInfo'
+      $description: 'Show compact TYPO3, PHP, database, extension, and environment information.'
+      $exposedOptions: ['packages']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:application-info'
+        description: 'Show compact runtime information for this TYPO3 installation.'
+  Hn\McpServer\Command\Tool\TypoScriptToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'TypoScript'
+      $description: 'Compile effective frontend TypoScript for a page.'
+      $exposedOptions: ['pageId', 'section', 'path']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:typoscript'
+        description: 'Compile effective frontend TypoScript for a page.'
+  Hn\McpServer\Command\Tool\PageTsConfigToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'PageTsConfig'
+      $description: 'Resolve merged Page TSconfig for a page.'
+      $exposedOptions: ['pageId', 'path']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:page-tsconfig'
+        description: 'Resolve merged Page TSconfig for a page.'
+  Hn\McpServer\Command\Tool\MiddlewareStackToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'MiddlewareStack'
+      $description: 'List an effective PSR-15 middleware stack in execution order.'
+      $exposedOptions: ['stack', 'search']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:middleware-stack'
+        description: 'List an effective PSR-15 middleware stack in execution order.'
+  Hn\McpServer\Command\Tool\ListEventsToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListEvents'
+      $description: 'Find TYPO3 PSR-14 events and registered listeners.'
+      $exposedOptions: ['event', 'listener', 'withListenersOnly', 'limit', 'offset']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:list-events'
+        description: 'Find TYPO3 PSR-14 events and registered listeners.'
+  Hn\McpServer\Command\Tool\ContentBlocksToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ContentBlocks'
+      $description: 'List or inspect optional Content Block definitions.'
+      $exposedOptions: ['name', 'typeName', 'table']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:content-blocks'
+        description: 'List or inspect optional Content Block definitions.'
+  Hn\McpServer\Command\Tool\LastErrorToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'LastError'
+      $description: 'Return the newest error from the bounded TYPO3 file-log tail.'
+      $exposedOptions: ['full']
+    tags:
+      - name: 'console.command'
+        command: 'mcp:last-error'
+        description: 'Return the newest error from the bounded TYPO3 file-log tail.'
   Hn\McpServer\Command\Tool\BrowseFilesToolCommand:
     class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
     arguments:

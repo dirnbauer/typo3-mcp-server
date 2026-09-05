@@ -339,6 +339,13 @@ license permits and preserve source, author, license, and attribution metadata.
 | 43  | `ListViewHelpers`                                  | 8 optional  |
 | 44  | `GetViewHelperDocumentation`                       | 8 optional  |
 | 45  | `CreateLocallang`                                  | 8 optional  |
+| 46  | `ApplicationInfo`                                  | 8 optional  |
+| 47  | `TypoScript`                                       | 8 optional  |
+| 48  | `PageTsConfig`                                     | 8 optional  |
+| 49  | `MiddlewareStack`                                  | 8 optional  |
+| 50  | `ListEvents`                                       | 8 optional  |
+| 51  | `ContentBlocks`                                    | 8 optional  |
+| 52  | `LastError`                                        | 8 optional  |
 
 
 ## Success criteria

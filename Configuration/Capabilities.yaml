@@ -15,6 +15,7 @@ capabilities:
     - backend:module
     - scheduler:task
     - cli:command
+    - typoscript:provider
     - site:middleware
     - auth:provider
 
@@ -144,6 +145,13 @@ capabilities:
       network:scheduler: [scheduler:task]
 
     tools:
+      ApplicationInfo:     [database:read]
+      PageTsConfig:        [typoscript:provider]
+      TypoScript:          [typoscript:provider, database:read]
+      MiddlewareStack:     [site:middleware]
+      ListEvents:          []
+      ContentBlocks:       [database:schema]
+      LastError:           [log:read]
       GetPageTree:        [database:read]
       GetPage:            [database:read]
       Search:             [database:read]
@@ -204,6 +212,14 @@ capabilities:
       mcp:oauth:                        {kind: oauth-management}
       mcp:tool:                         {kind: tool-dispatch}
       mcp:tool:list:                    {kind: tool-discovery}
+      mcp:benchmark-tools:              {kind: diagnostic}
+      mcp:application-info:             {kind: tool, tool: ApplicationInfo}
+      mcp:typoscript:                   {kind: tool, tool: TypoScript}
+      mcp:page-tsconfig:                {kind: tool, tool: PageTsConfig}
+      mcp:middleware-stack:             {kind: tool, tool: MiddlewareStack}
+      mcp:list-events:                  {kind: tool, tool: ListEvents}
+      mcp:content-blocks:               {kind: tool, tool: ContentBlocks}
+      mcp:last-error:                   {kind: tool, tool: LastError}
       mcp:prompt:list:                  {kind: prompt-discovery}
       mcp:prompt:get:                   {kind: prompt-renderer}
       mcp:read-table:                   {kind: tool, tool: ReadTable}
