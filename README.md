@@ -864,7 +864,6 @@ Classes/
 Configuration/
   Capabilities.yaml   declared subsystems + per-tool requirements + outbound policy
   Services.yaml       DI + console.command + event listener registration
-  Commands.php        legacy/explicit command map for selected shortcuts
 Documentation/        reStructuredText manual (published source)
 Resources/            templates, CSS/JS, XLIFF labels (en + de)
 Tests/                unit, functional, LLM, architecture, E2E

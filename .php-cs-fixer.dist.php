@@ -7,7 +7,6 @@ $config->getFinder()
         'config',
         'packages',
         'public',
-        'Resources/Private/PHP/vendor',
         'typo3temp',
         'var',
     ])
