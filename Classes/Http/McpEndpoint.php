@@ -46,12 +46,22 @@ final readonly class McpEndpoint
         private LanguageServiceFactory $languageServiceFactory,
         private ExtensionConfiguration $extensionConfiguration,
         private SiteBaseUrlResolver $baseUrlResolver,
+        private AuthenticationRateLimiter $authenticationRateLimiter,
     ) {}
 
     /**
      * eID entry point via __invoke method
      */
     public function __invoke(ServerRequestInterface $request): ResponseInterface
+    {
+        return $this->authenticationRateLimiter->handle(
+            $request,
+            AuthenticationRateLimiter::BEARER,
+            fn(): ResponseInterface => $this->handleRequest($request),
+        );
+    }
+
+    private function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         try {
             $corsRejection = $this->rejectDisallowedCorsRequest($request);

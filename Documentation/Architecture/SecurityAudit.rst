@@ -273,12 +273,13 @@ Accepted risks (added)
    until that family expiry and then removed by normal OAuth cleanup; after
    expiry there is no active successor token to protect.
 
-3. No rate limiting on ``/mcp``, ``/mcp_oauth/token``, or
-   ``/mcp_oauth/authorize``. Bearer-token brute force is unbounded
-   (32-byte random tokens make this impractical, but a defense-in-depth
-   limiter is appropriate). Recommend adding an upstream HTTP-tier limit
-   (nginx ``limit_req``, Apache ``mod_qos``, or a TYPO3 PSR-15
-   middleware that calls ``Symfony\\Component\\RateLimiter``).
+3. Resolved for failed bearer authentication and token exchange (2026-09-05):
+   ``/mcp`` and ``/mcp_oauth/token`` now use independent per-IP failure budgets
+   through TYPO3's cache-backed rate limiter. Exhausted budgets return 429 and
+   ``Retry-After`` before credential validation. Successful requests do not
+   clear previous failures. HTTP-tier limits remain appropriate for general
+   request floods and public discovery/registration endpoints. See
+   :ref:`configuration-authentication-rate-limits`.
 
 2026-05-03 (capability manifest + DDEV-aware local mode)
 ========================================================

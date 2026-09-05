@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Http;
 
+use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\OAuthTokenEndpoint;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class OAuthTokenEndpointTest extends AbstractFunctionalTest
@@ -104,7 +107,34 @@ final class OAuthTokenEndpointTest extends AbstractFunctionalTest
         return new OAuthTokenEndpoint(
             GeneralUtility::makeInstance(LogManager::class)->getLogger(OAuthTokenEndpoint::class),
             $this->oauthService,
+            authenticationRateLimiter: new AuthenticationRateLimiter(
+                $this->getContainer()->get(RateLimiterFactory::class),
+                new NullLogger(),
+            ),
         );
+    }
+
+    public function testInvalidRefreshRequestsAreRateLimited(): void
+    {
+        $request = new ServerRequest(
+            'https://example.com/mcp_oauth/token',
+            'POST',
+            serverParams: ['REMOTE_ADDR' => '198.51.100.81'],
+        );
+        $request = $request->withParsedBody([
+            'grant_type' => 'refresh_token',
+            'client_id' => 'typo3-mcp-server',
+            'resource' => self::RESOURCE,
+            'refresh_token' => 'invalid-test-refresh-token',
+        ]);
+        $endpoint = $this->createEndpoint();
+        for ($attempt = 0; $attempt < 20; ++$attempt) {
+            self::assertSame(400, $endpoint($request)->getStatusCode());
+        }
+        $response = $endpoint($request);
+        self::assertSame(429, $response->getStatusCode());
+        self::assertSame('temporarily_unavailable', $this->decodeJsonResponse($response)['error']);
+        self::assertGreaterThan(0, (int)$response->getHeaderLine('Retry-After'));
     }
 
     /**

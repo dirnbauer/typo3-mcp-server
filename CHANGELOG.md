@@ -7,6 +7,21 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## Unreleased
+
+### Added
+
+- Cache-backed authentication failure limits for `/mcp` and `/mcp_oauth/token`,
+  using TYPO3's rate limiter with independent per-IP budgets and HTTP 429 /
+  `Retry-After` responses. Defaults: 20 failures per 15 minutes per endpoint.
+- `GetCapabilities` now summarizes the connected user's identity, current
+  workspace, page mounts, and common table permissions through existing guards.
+  It does not change workspace context or disclose credentials.
+
+These features take inspiration from in2mcp's rate-limiting and caller-context
+ideas. They use this extension's architecture and `logiscape/mcp-sdk-php`;
+in2mcp and `mcp/sdk` are not dependencies.
+
 ## 0.6.2 - 2026-08-28
 
 ### Fixed

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Http;
 
+use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
@@ -12,6 +13,7 @@ use Mcp\Types\MetaKeys;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -19,6 +21,7 @@ use TYPO3\CMS\Core\Http\ServerRequestFactory;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -288,6 +291,10 @@ final class McpEndpointProtocolTest extends FunctionalTestCase
             $container->get(LanguageServiceFactory::class),
             new ExtensionConfiguration(),
             new SiteBaseUrlResolver(),
+            authenticationRateLimiter: new AuthenticationRateLimiter(
+                $this->getContainer()->get(RateLimiterFactory::class),
+                new NullLogger(),
+            ),
         );
     }
 }

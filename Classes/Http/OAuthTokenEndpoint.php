@@ -23,9 +23,19 @@ final readonly class OAuthTokenEndpoint
     public function __construct(
         private LoggerInterface $logger,
         private OAuthService $oauthService,
+        private AuthenticationRateLimiter $authenticationRateLimiter,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
+    {
+        return $this->authenticationRateLimiter->handle(
+            $request,
+            AuthenticationRateLimiter::TOKEN,
+            fn(): ResponseInterface => $this->handleRequest($request),
+        );
+    }
+
+    private function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         $corsRejection = $this->rejectDisallowedCorsRequest($request);
         if ($corsRejection instanceof ResponseInterface) {

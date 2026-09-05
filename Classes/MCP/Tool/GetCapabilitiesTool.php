@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool;
 
 use Hn\McpServer\MCP\ToolRegistry;
+use Hn\McpServer\Service\BackendUserSummaryService;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\DevSiteToolService;
 use Hn\McpServer\Service\LocalModeService;
@@ -28,6 +29,7 @@ final class GetCapabilitiesTool extends AbstractTool
         private readonly CapabilityManifestService $manifest,
         private readonly LocalModeService $localMode,
         private readonly DevSiteToolService $devSiteTools,
+        private readonly BackendUserSummaryService $backendUserSummary,
     ) {}
 
     /**
@@ -36,7 +38,7 @@ final class GetCapabilitiesTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Return the MCP server capability manifest (Configuration/Capabilities.yaml) plus runtime mode. '
+            'description' => 'Return the MCP capability manifest, runtime mode, and current user identity, workspace, page mounts and table permissions. '
                 . 'Call this once at session start to learn which tools are available, which subsystems are declared, and whether '
                 . 'DDEV/local-mode is unlocking live writes / unrestricted file access. '
                 . 'Pass "tool" to fetch a single tool\'s full, untrimmed schema/description — useful when the concise tools/list '
@@ -74,6 +76,7 @@ final class GetCapabilitiesTool extends AbstractTool
             'enforced' => $this->manifest->isEnforced(),
             'localMode' => $this->localMode->describe(),
             'devSiteTools' => $this->devSiteTools->describe(),
+            'user' => $this->backendUserSummary->describe(),
         ];
 
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

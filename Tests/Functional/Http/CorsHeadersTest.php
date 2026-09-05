@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Http;
 
+use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\OAuthResourceMetadataEndpoint;
 use Hn\McpServer\Http\OAuthTokenEndpoint;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class CorsHeadersTest extends AbstractFunctionalTest
@@ -42,6 +45,10 @@ final class CorsHeadersTest extends AbstractFunctionalTest
         return new OAuthTokenEndpoint(
             GeneralUtility::makeInstance(LogManager::class)->getLogger(OAuthTokenEndpoint::class),
             $this->getContainer()->get(OAuthService::class),
+            authenticationRateLimiter: new AuthenticationRateLimiter(
+                $this->getContainer()->get(RateLimiterFactory::class),
+                new NullLogger(),
+            ),
         );
     }
 

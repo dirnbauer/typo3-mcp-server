@@ -770,6 +770,13 @@ ungated shell.
 
 ## Authentication and clients
 
+Failed bearer authentication and OAuth token requests have independent per-IP
+rate limits (20 failures per 15 minutes by default), backed by TYPO3's cache.
+Exhausted budgets return HTTP 429 with `Retry-After`. See the
+[rate-limit configuration](Documentation/Configuration/Index.rst#configuration-authentication-rate-limits).
+`GetCapabilities` also reports the connected user's current workspace, page
+mounts, and common table permissions without changing the workspace.
+
 Two connection models:
 
 - **Remote HTTP** at `/mcp`, protected by OAuth 2.1 + PKCE.

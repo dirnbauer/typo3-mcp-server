@@ -30,6 +30,7 @@ trait CorsHeadersTrait
 
     /** @var list<string> */
     private const CORS_EXPOSED_RESPONSE_HEADERS = [
+        'Retry-After',
         'Mcp-Session-Id',
         'MCP-Protocol-Version',
         'Mcp-Method',

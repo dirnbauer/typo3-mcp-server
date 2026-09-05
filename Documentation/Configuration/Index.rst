@@ -35,6 +35,51 @@ or an exact origin configured in ``allowedOrigins``. Malformed, ``null``, and
 unlisted origins receive 403 before token validation. Non-browser clients may
 omit ``Origin``.
 
+.. _configuration-authentication-rate-limits:
+
+Authentication rate limits
+==========================
+
+Unsuccessful HTTP authentication attempts use TYPO3's cache-backed rate
+limiter, including in DDEV. Each client IP has two independent sliding-window
+budgets, both defaulting to 20 failures per 15 minutes:
+
+- ``mcp-server-bearer`` counts 401 responses from ``/mcp``, including missing,
+  expired, invalid, or inactive-user tokens.
+- ``mcp-server-token`` counts 400/401 responses from POST requests to
+  ``/mcp_oauth/token``, including invalid authorization codes, PKCE verifiers,
+  refresh tokens, and malformed grant requests.
+
+Once a budget is exhausted, requests receive HTTP 429 with ``Retry-After``
+before credentials are validated or authorization codes are consumed. Browser
+clients can read that header through CORS. Successful requests do not consume
+the budget or clear previous failures. Preflights, origin rejections, MCP
+protocol errors, and the optional auth-header diagnostic do not count.
+
+Configure each budget in ``config/system/additional.php``:
+
+.. code-block:: php
+
+   $GLOBALS['TYPO3_CONF_VARS']['SYS']['rateLimiter']['mcp-server-bearer'] = [
+       'limit' => 30,
+       'interval' => '15 minutes',
+   ];
+   $GLOBALS['TYPO3_CONF_VARS']['SYS']['rateLimiter']['mcp-server-token'] = [
+       'limit' => 10,
+       'interval' => '15 minutes',
+   ];
+
+TYPO3's ``NormalizedParams`` determines the client IP; configure trusted
+reverse proxies correctly. Clients behind the same public address share a
+budget. Multiple application nodes must share TYPO3's ``ratelimiter`` cache
+backend for a common budget. Cache or configuration failures return a generic
+503 instead of silently disabling protection.
+
+These budgets cover bearer authentication and token exchange, not all incoming
+HTTP traffic. Keep HTTP-tier request limits for volumetric abuse and public
+OAuth discovery/registration traffic. Backend login remains governed by TYPO3's
+own login limits. No MCP SDK or authentication mechanism was replaced.
+
 .. _configuration-workspaces:
 
 Workspace policy

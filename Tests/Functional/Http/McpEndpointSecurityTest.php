@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Functional\Http;
 
+use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Middleware\McpServerMiddleware;
 use Hn\McpServer\Service\OAuthService;
@@ -16,6 +17,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -24,6 +26,7 @@ use TYPO3\CMS\Core\Http\ServerRequestFactory;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -89,7 +92,26 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
             $languageServiceFactory,
             $extensionConfiguration,
             new SiteBaseUrlResolver(),
+            authenticationRateLimiter: new AuthenticationRateLimiter(
+                $this->getContainer()->get(RateLimiterFactory::class),
+                new NullLogger(),
+            ),
         );
+    }
+
+    public function testInvalidBearerRequestsAreRateLimitedWhilePreflightStillWorks(): void
+    {
+        $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
+        $request = $factory->createServerRequest('POST', 'https://example.org/mcp', ['REMOTE_ADDR' => '198.51.100.80'])
+            ->withHeader('Authorization', 'Bearer invalid-test-token');
+        $endpoint = $this->createEndpoint();
+        for ($attempt = 0; $attempt < 20; ++$attempt) {
+            self::assertSame(401, $endpoint($request)->getStatusCode());
+        }
+        $response = $endpoint($request);
+        self::assertSame(429, $response->getStatusCode());
+        self::assertTrue($response->hasHeader('Retry-After'));
+        self::assertSame(200, $endpoint($request->withMethod('OPTIONS'))->getStatusCode());
     }
 
     #[Test]

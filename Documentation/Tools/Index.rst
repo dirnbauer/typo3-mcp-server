@@ -1374,12 +1374,27 @@ certs).
 GetCapabilities
 ---------------
 
-Return the active capability manifest plus runtime mode (DDEV/local-mode
-detection results, enforcement on/off).
+Return the active capability manifest, runtime mode, and a compact summary of
+the connected backend user. Always callable: bypasses the manifest gate so a
+fresh client can inspect restrictions before attempting other calls.
 
-No parameters. Always callable — bypasses the manifest gate so a fresh
-client can introspect what is and isn't allowed before attempting other
-calls.
+:Parameters:
+   - ``tool`` (string, optional): return one tool's full schema instead of the
+     manifest and user summary
+
+The default response includes ``user.uid``, ``username``, ``isAdmin``, the
+current ``workspaceId``, accessible mount page IDs, and table-level read/write
+permissions for ``pages``, ``tt_content``, and ``sys_file_reference``. The
+``pageAccess.scope`` value distinguishes ``all`` (admin), ``mounted``, and
+``none``. An empty mount list never grants full-tree access to a non-admin.
+Passwords, tokens, email addresses, and group configuration are not included.
+
+This summary uses the same page and table guards as the record tools. It does
+not select or create a workspace. Table-level permissions are guidance, not a
+promise that an individual operation will succeed: page, field, file,
+workspace, and capability checks still apply. Use ``ListTables`` for the wider
+table inventory. Without an authenticated user context, the summary contains
+only ``authenticated: false``.
 
 Useful as the first call of an MCP session: the LLM learns which tools
 are available, which subsystems are declared, whether live writes are
