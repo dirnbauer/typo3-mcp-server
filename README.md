@@ -848,16 +848,25 @@ cd Build && TYPO3_BASE_URL=https://my.ddev.site npx playwright test
 
 This fork tracks
 [hauptsacheNet/typo3-mcp-server](https://github.com/hauptsacheNet/typo3-mcp-server).
-To pull in new upstream changes:
+Review upstream changes individually before adapting them to this fork:
 
 ```bash
 git fetch upstream
-git merge upstream/main
-ddev exec composer php-cs-fixer:fix && ddev exec composer phpstan && ddev exec composer test
+git log --oneline HEAD..upstream/main
+git show <upstream-commit>
 ```
 
-Resolve conflicts by keeping TYPO3 v14 patterns (`final class`, constructor
-DI, `getToolSchema()`).
+Check whether the behavior already exists here: adapted fixes can have different
+commit IDs. Port missing behavior into the current TYPO3 v14 services and tool
+contracts, preserving workspace selection, permission checks, capability gates,
+file sandboxing, and HTTP/OAuth security. Review dependency and configuration
+changes separately; do not replace fork files wholesale or merge upstream
+without reviewing the resulting behavior.
+
+Add regression coverage for the affected behavior, then run the relevant tests,
+PHPStan, formatting checks, and protocol smoke tests for transport changes.
+See the [upstream review](Documentation/Reviews/2026-09-05-upstream-status.md)
+for the checked baseline and remaining differences.
 
 ### Repository layout
 
@@ -910,6 +919,13 @@ service entries in `Configuration/Services.yaml`; use a custom command class
 only when a shortcut needs specialized behavior.
 
 ## Acknowledgements
+
+Thank you to [in2code](https://github.com/in2code-de) for
+[in2mcp](https://extensions.typo3.org/extension/in2mcp), which inspired two
+features in this extension: authentication rate limiting and a connected-user
+identity/permissions summary in `GetCapabilities`. We implemented these ideas
+using TYPO3's native rate limiter and our existing permission services, while
+retaining `logiscape/mcp-sdk-php`. Neither in2mcp nor `mcp/sdk` is a dependency.
 
 Thank you to [hauptsacheNet](https://github.com/hauptsacheNet) and
 Marco Pfeiffer for open-sourcing the original TYPO3 MCP Server: a strong,
