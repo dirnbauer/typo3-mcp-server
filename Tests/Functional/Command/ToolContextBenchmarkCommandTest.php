@@ -43,4 +43,34 @@ final class ToolContextBenchmarkCommandTest extends AbstractFunctionalTest
         self::assertTrue($payload['responses'][0]['oversized']);
         self::assertNotEmpty($payload['oversizedSchemas']);
     }
+
+    public function testWriteProbesAreRejectedBeforeExecution(): void
+    {
+        $tester = new CommandTester($this->getService(ToolContextBenchmarkCommand::class));
+        $exitCode = $tester->execute(['--json' => true, '--probe' => ['WriteTable={}']]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('readOnlyHint=true', $tester->getDisplay());
+    }
+
+    public function testDuplicateProbesCannotOverwriteBaselineMeasurements(): void
+    {
+        $tester = new CommandTester($this->getService(ToolContextBenchmarkCommand::class));
+        $exitCode = $tester->execute(['--json' => true, '--probe' => [
+            'ApplicationInfo={}', 'ApplicationInfo={"packages":true}',
+        ]]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('one probe per tool', $tester->getDisplay());
+    }
+
+    public function testFailedToolProbeReturnsFailureAlongsideTheReport(): void
+    {
+        $tester = new CommandTester($this->getService(ToolContextBenchmarkCommand::class));
+        $exitCode = $tester->execute(['--json' => true, '--probe' => ['ReadTable={}']]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        $payload = json_decode($tester->getDisplay(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertTrue($payload['responses'][0]['isError']);
+    }
 }

@@ -4,20 +4,9 @@ This is the most accessible way to manually verify the MCP server end-to-end:
 connect Cursor's chat to your TYPO3 instance and have the LLM exercise the
 tools while you watch the workspace fill up.
 
-## Why Cursor?
-
-- The local stdio connection starts this extension's MCP server directly, so
-  there is no OAuth ceremony during development.
-- DDEV projects can be launched by project name, so Cursor does not need to
-  know the container path.
-- The chat panel shows every tool call and response, so you can see exactly
-  which arguments the LLM picked.
-- You can ask Claude or GPT, side by side, against the same MCP — useful
-  when chasing model-specific quirks.
-
 ## 1. Connect Cursor
 
-1. Open the **MCP Server backend module** (TYPO3 backend → System → MCP
+1. Open the **MCP Server backend module** (TYPO3 backend → User → MCP
    Server).
 2. Click the "Install in Cursor" button. Cursor opens, asks for permission,
    and stores a local stdio MCP config. DDEV projects use `ddev exec -p
@@ -87,66 +76,19 @@ Redirect deletion is `ManageRedirects` with `action: "delete"`; it has no
 environment, and only where workspace-safe redirects or trusted local mode make
 the write available.
 
-## 5. Local-only testing without OAuth
+## 5. Choose the transport
 
-The backend module's Cursor card already uses this mode. For manual setup,
-there are two useful variants:
+Use the backend module's generated Cursor configuration for local stdio. It
+includes the DDEV project name or the absolute TYPO3 binary path and working
+directory. Local stdio runs as its launching OS user without OAuth; TYPO3
+permissions and capability checks still apply.
 
-### Option A — `mcp-remote` proxy
+To test OAuth and HTTP, choose the remote configuration in the module. A
+stdio-to-HTTP proxy such as `mcp-remote` still authenticates through HTTP.
+Connection examples and the host-security boundary are maintained in the
+[installation manual](../Installation/Index.rst).
 
-The MCP backend module still shows the JSON for this. It runs `npx mcp-remote
-https://your-site/mcp` from your machine, exposing it to Cursor via stdio.
-This keeps the HTTP transport and therefore still needs a token, but it can
-help with clients that only understand stdio.
-
-### Option B — `vendor/bin/typo3 mcp:server` over stdio
-
-For everything-local-on-one-machine, skip OAuth entirely:
-
-```json
-// ~/.cursor/mcp.json
-{
-  "mcpServers": {
-    "typo3-local": {
-      "command": "ddev",
-      "args": ["exec", "-p", "your-ddev-project", "--", "php", "vendor/bin/typo3", "mcp:server"]
-    }
-  }
-}
-```
-
-This bypasses HTTP completely and runs the MCP server inside DDEV via
-stdio. The generated backend-module config uses `ddev exec -p <project>` so
-it does not depend on Cursor's working directory.
-
-For non-DDEV installs, use the project-local TYPO3 binary with `cwd` set:
-
-```json
-{
-  "mcpServers": {
-    "typo3-local": {
-      "command": "php",
-      "args": ["/absolute/path/to/your/typo3-project/vendor/bin/typo3", "mcp:server"],
-      "cwd": "/absolute/path/to/your/typo3-project"
-    }
-  }
-}
-```
-
-In stdio mode, the server runs as the OS user that starts it, or inside the
-DDEV web container when launched through `ddev exec`. Capability-manifest
-enforcement and TYPO3 permissions still apply, but there is no OAuth
-ceremony.
-
-## 6. Comparing model behavior
-
-A nice debugging trick: open two Cursor chats side by side, one set to
-Claude (Opus or Sonnet) and one to GPT-4 / GPT-5, and ask them the same
-question. Differences in tool selection or argument shapes usually point
-at unclear schemas in the tool definition — fix them in
-`Tool->getSchema()` and both models converge.
-
-## 7. What to file when something is wrong
+## 6. What to file when something is wrong
 
 When opening a bug report against the MCP server, include:
 
@@ -157,6 +99,7 @@ When opening a bug report against the MCP server, include:
 - The TYPO3 reports module's "Workspaces" entry so reviewers can see what
   ended up staged.
 
-The MCP HTTP middleware redacts Authorization headers, cookies, and the
-`token` query parameter from logs by default — so attaching `var/log` is
-safe. (See [`Architecture/SecurityAudit.rst`](../Architecture/SecurityAudit.rst).)
+Share only the relevant log excerpt after reviewing it for credentials,
+personal data, and content. MCP HTTP logging redacts sensitive headers and
+token-shaped query values, but that does not sanitize all TYPO3 or third-party
+logs. See the [security audit](../Architecture/SecurityAudit.rst).

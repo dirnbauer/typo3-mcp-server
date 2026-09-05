@@ -11,19 +11,8 @@ final class DeveloperLogReader
 {
     private const TAIL_BYTES = 262144;
 
-    private const LEVEL_RANKS = [
-        'EMERGENCY' => 0,
-        'ALERT' => 1,
-        'CRITICAL' => 2,
-        'ERROR' => 3,
-        'WARNING' => 4,
-        'NOTICE' => 5,
-        'INFO' => 6,
-        'DEBUG' => 7,
-    ];
-
     /** @return list<string> */
-    public function listLogFiles(bool $includeDeprecations = false): array
+    private function listLogFiles(): array
     {
         $logDirectory = Environment::getVarPath() . '/log';
         $realLogDirectory = realpath($logDirectory);
@@ -32,43 +21,38 @@ final class DeveloperLogReader
         }
         $files = glob($logDirectory . '/typo3_*.log');
         $files = $files !== false ? $files : [];
-        $files = array_values(array_filter($files, static function (string $file) use ($includeDeprecations, $realLogDirectory): bool {
+        $files = array_values(array_filter($files, static function (string $file) use ($realLogDirectory): bool {
             $realFile = realpath($file);
             return $realFile !== false
                 && str_starts_with($realFile, $realLogDirectory . DIRECTORY_SEPARATOR)
                 && is_file($realFile)
                 && is_readable($realFile)
-                && (str_contains(basename($realFile), 'deprecations') === $includeDeprecations);
+                && !str_contains(basename($realFile), 'deprecations');
         }));
-        usort($files, static fn(string $left, string $right): int => self::modificationTime($right) <=> self::modificationTime($left));
 
         return $files;
     }
 
-    /**
-     * @param list<string> $files
-     * @return list<array{timestamp: ?string, level: string, message: string, file: string}>
-     */
-    public function readEntries(array $files, int $limit, ?string $minimumLevel = null): array
+    /** @return array{timestamp: ?string, level: string, message: string, file: string}|null */
+    public function readLatestError(): ?array
     {
-        $maximumRank = $minimumLevel !== null
-            ? (self::LEVEL_RANKS[strtoupper($minimumLevel)] ?? 7)
-            : 7;
-        $entries = [];
-        foreach ($files as $file) {
-            foreach (array_reverse($this->parseFile($file)) as $entry) {
-                if ((self::LEVEL_RANKS[$entry['level']] ?? 7) > $maximumRank) {
+        $latest = null;
+        $latestTimestamp = 0;
+        foreach ($this->listLogFiles() as $file) {
+            foreach ($this->parseFile($file) as $entry) {
+                if (!in_array($entry['level'], ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR'], true)) {
                     continue;
                 }
-                $entry['file'] = basename($file);
-                $entries[] = $entry;
-                if (count($entries) >= max(1, $limit)) {
-                    return $entries;
+                $parsedTimestamp = strtotime($entry['timestamp'] ?? '');
+                $timestamp = $parsedTimestamp !== false ? $parsedTimestamp : 0;
+                if ($latest === null || $timestamp >= $latestTimestamp) {
+                    $latest = $entry + ['file' => basename($file)];
+                    $latestTimestamp = $timestamp;
                 }
             }
         }
 
-        return $entries;
+        return $latest;
     }
 
     /** @return list<array{timestamp: ?string, level: string, message: string}> */
@@ -117,10 +101,4 @@ final class DeveloperLogReader
         }
     }
 
-    private static function modificationTime(string $file): int
-    {
-        $time = filemtime($file);
-
-        return $time !== false ? $time : 0;
-    }
 }

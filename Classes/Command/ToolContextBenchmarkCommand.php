@@ -81,11 +81,22 @@ final class ToolContextBenchmarkCommand extends Command
             /** @var list<string> $oversizedResponses */
             $oversizedResponses = [];
             $probes = $input->getOption('probe');
+            $probeRequests = [];
             foreach (is_array($probes) ? $probes : [] as $probe) {
                 if (!is_string($probe)) {
                     continue;
                 }
                 [$toolName, $arguments] = $this->parseProbe($probe);
+                $annotations = $rawSchemas[$toolName]['annotations'] ?? [];
+                if (!is_array($annotations) || ($annotations['readOnlyHint'] ?? false) !== true) {
+                    throw new \InvalidArgumentException('A probe must name an available tool with readOnlyHint=true: ' . $toolName);
+                }
+                if (isset($probeRequests[$toolName])) {
+                    throw new \InvalidArgumentException('Use one probe per tool in each report: ' . $toolName);
+                }
+                $probeRequests[$toolName] = $arguments;
+            }
+            foreach ($probeRequests as $toolName => $arguments) {
                 $result = $this->toolCatalog->execute($toolName, $arguments);
                 $measurement = $this->benchmarkService->measureResponse(
                     $toolName,
@@ -122,13 +133,15 @@ final class ToolContextBenchmarkCommand extends Command
             return Command::FAILURE;
         }
 
+        $exitCode = array_any($responses, static fn(array $response): bool => $response['isError'])
+            ? Command::FAILURE : Command::SUCCESS;
         if ($input->getOption('json') === true) {
             $output->writeln(json_encode(
                 $report,
                 JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
             ));
 
-            return Command::SUCCESS;
+            return $exitCode;
         }
 
         $armA = $report['schema']['armAFull'];
@@ -155,7 +168,7 @@ final class ToolContextBenchmarkCommand extends Command
             ));
         }
 
-        return Command::SUCCESS;
+        return $exitCode;
     }
 
     /** @return array{string, array<string, mixed>} */

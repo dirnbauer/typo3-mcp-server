@@ -172,7 +172,7 @@ Supported versions
 
 - TYPO3 v14
 - PHP 8.3 or higher
-- MCP ``2025-11-25`` stable and ``2026-07-28`` release-candidate wire formats
+- MCP ``2025-11-25`` stable and ``2026-07-28`` stateless wire formats
 
 The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
 clients evolve: tool names, parameters, and behavior **may change** between

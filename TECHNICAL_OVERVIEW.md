@@ -1,477 +1,77 @@
 # TYPO3 MCP Server — Technical Overview
 
-Long-form companion to the [README](README.md) and the
-[reStructuredText manual](Documentation/Index.rst). Focus is on design
-rationale, architecture, and practical AI-workflow scenarios, not a full
-tool reference (see
-[`Documentation/Tools/Index.rst`](Documentation/Tools/Index.rst) for that).
-
----
-
-## Table of contents
-
-- [Project lineage](#project-lineage)
-- [Current fork changes](#current-fork-changes)
-- [What problem this solves](#what-problem-this-solves)
-- [Design principles](#design-principles)
-- [MCP ergonomics (mcp-builder alignment)](#mcp-ergonomics-mcp-builder-alignment)
-- [Real-world scenarios](#real-world-scenarios)
-- [Implementation architecture](#implementation-architecture)
-- [Known limitations](#known-limitations)
-- [Skills vs MCP tools](#skills-vs-mcp-tools)
-- [Best practices for editors](#best-practices-for-editors)
-
-## Project lineage
-
-This repository builds on the original TYPO3 MCP Server work by Marco
-Pfeiffer and [hauptsacheNet](https://github.com/hauptsacheNet). That
-foundation was strong in exactly the right places: TYPO3-native,
-editor-first, workspace-safe, practical. The current v14-focused line keeps
-that direction while tightening security, clarifying MCP ergonomics, and
-expanding the tool surface.
-
-## Current fork changes
-
-Compared with `upstream/main`, this fork is now a TYPO3 v14-only maintained
-line with a much larger live surface. The source-of-truth manual page is
-[`Documentation/Introduction/ForkChanges.rst`](Documentation/Introduction/ForkChanges.rst).
-In short, the changes are:
-
-- **Runtime and transport:** OAuth 2.1 + PKCE HTTP endpoint, protected
-  resource metadata, local stdio, backend-user context setup, a stable
-  `2025-11-25` session path, stateless `2026-07-28` requests, and a backend
-  setup module.
-- **Tool architecture:** tagged Symfony tools, third-party compatibility
-  adapter, centralized tool errors, JSON Schema normalization, MCP annotations,
-  admin-only and dev-site-only attributes.
-- **Editorial tools:** 52 bundled MCP tools for navigation, TCA/FlexForm
-  schema inspection, workspace-safe record writes, file handling, imports,
-  content audit, preview/render verification, site setup, Solr indexing,
-  x402, dev-site authoring, and live developer introspection (compiled
-  TypoScript/Page TSconfig, middleware/events, Content Blocks, and file-log
-  errors).
-- **Security:** hashed tokens, mandatory PKCE `S256`, header-only bearer
-  authentication, exact origin checks, auth diagnostic off by default,
-  redacted logs, browser-defense headers, capability-manifest enforcement,
-  outbound host policy, SSRF checks, and SafeCli allowlisting.
-- **Development ergonomics:** DDEV/local-mode relaxations, CLI mirror for every
-  bundled tool, standard prompts/resources for editor skills, optional
-  Abilities + `sg_apicore` projections, Playwright E2E, deterministic
-  functional tests, LLM workflow tests, PHPStan, CS Fixer, Rector, Fractor,
-  and docs render checks.
-
-This overview intentionally describes only current code paths. Obsolete
-experiments and generated documentation output are not part of the public
-contract.
-
-## What problem this solves
-
-TYPO3 backends are designed for people using forms, trees, and list modules.
-LLMs need something different: structured tools, stable identifiers, and
-machine-readable responses. This extension provides that layer while:
-
-- routing record writes through TYPO3 workspaces in strict/production mode,
-  while trusted local mode deliberately defaults omitted workspace IDs to live,
-- respecting TCA, DataHandler, permissions, and language overlays,
-- keeping editors in charge of publishing.
-
-```
-┌──────────────┐     OAuth/HTTP      ┌─────────────────┐
-│  MCP Client  │ ◄──────────────────►│   MCP Server    │
-│ Cursor/Claude│     stdin/stdout    │  (TYPO3 ext)    │
-└──────────────┘                     └────────┬────────┘
-                                              │
-                                              ▼
-                                     ┌─────────────────┐
-                                     │  TYPO3 Core     │
-                                     │  DataHandler    │
-                                     │  Workspaces     │
-                                     │  TCA / FAL      │
-                                     └─────────────────┘
-```
+This is the architecture entry point for contributors. The canonical manual
+owns the detailed contracts so tool parameters, configuration, and examples do
+not have to be maintained twice.
 
 ## Design principles
 
-### 1. Workspace transparency
+- **TYPO3 remains authoritative.** Use DataHandler for record writes, FAL for
+  files, `PageRepository` for language overlays, and the Schema API for table
+  semantics. TCA and the authenticated backend user's permissions determine
+  what a tool may access.
+- **Workspace internals stay transparent.** Strict mode selects or creates a
+  writable draft. Trusted local mode defaults an omitted `workspace_id` to
+  live workspace `0`; an explicit draft still stages local changes. Clients
+  use stable live-facing UIDs.
+- **Files have different semantics.** Physical writes take effect immediately.
+  The MCP sandbox limits write locations in strict mode; backend file mounts
+  apply in every mode. Only file references are workspace-versioned.
+- **Schemas follow the instance.** Language parameters appear only when
+  meaningful site languages exist. Optional extension data is discovered at
+  runtime. Tool contracts may evolve within TYPO3 v14 to improve usability.
+- **Policy is shared.** Native MCP, CLI, and Abilities projections execute the
+  same governed tools. Local mode relaxes documented workspace, file, and
+  outbound restrictions, never authentication or backend-user permissions.
 
-Record-backed writes stage in a TYPO3 workspace by default. Clients see stable
-live-facing UIDs; internal version rows never leak into tool output. If the
-user has no active workspace, the extension picks a writable draft or creates
-an "MCP" workspace automatically. In local mode (DDEV / Development /
-`localUnsafeMode=on`), omitted `workspace_id` defaults to live (`0`); pass an
-explicit draft `workspace_id` to stage changes locally.
+## Request path
 
-### 2. TCA-first
+1. HTTP requests enter `/mcp` through `McpServerMiddleware`.
+2. `AuthenticationRateLimiter` applies TYPO3's per-IP failure budget;
+   `McpEndpoint` validates the bearer token and initializes backend-user context.
+3. `McpServerFactory` builds the `logiscape/mcp-sdk-php` server. The SDK handles
+   the supported session-based and stateless protocol versions.
+4. `ToolRegistry` discovers tagged tools. `AbstractTool` enforces the capability
+   manifest and normalizes errors; record tools select workspace context.
+5. Shared services enforce page, table, field, language, file, and network
+   policy before TYPO3 Core performs the operation.
+6. `ToolResultNormalizer` retains readable text and adds structured JSON where
+   applicable.
 
-Tool schemas are derived from TYPO3 TCA, not from handwritten per-table
-adapters. That means field labels, palettes, FlexForms, relations, record
-types, and third-party extensions (e.g. `georgringer/news`) work without any
-MCP-specific code. `TableAccessService` uses TYPO3 v14's `TcaSchemaFactory`
-and `TcaSchemaCapability` for table semantics, while retaining explicit
-permission and web-mount checks.
+Local `mcp:server` starts at the factory after CLI backend-user bootstrap.
+`GetCapabilities` exposes runtime policy and a compact user/permission summary
+without switching workspace. Its summary guides discovery; each operation
+still performs its own authorization checks.
 
-### 3. Familiar patterns
+## Local stdio and the host OS boundary
 
-MCP tools resemble what TYPO3 editors already know: page-tree,
-list-module-style reads, schema-driven writes. Better TCA labels and
-descriptions instantly improve the AI experience too.
+`vendor/bin/typo3 mcp:server` runs as the OS user that starts it, or inside the
+DDEV container when launched through `ddev exec`. TYPO3 permissions do not
+isolate that PHP process from the rest of the host. A client with additional
+shell access can act with those OS privileges. Use local stdio on trusted
+hosts with suitable OS accounts and credentials; see the
+[installation guidance](Documentation/Installation/Index.rst).
 
-### 4. User context
+## Canonical references
 
-MCP calls run with the authenticated backend user's permissions and
-workspace. The AI can only do what the user could do through the backend.
-
-### 5. Safety by default
-
-Writes go through DataHandler. Publishes and rollbacks default to dry-run.
-File tools are sandboxed. Admin-only tools (`CreateSite`, `SiteSet`,
-`InstallExtension`, `ApplyShadcnPreset`, `SiteSettings`, `CreateLocallang`)
-are clearly gated; the two package-manager tools are also hidden outside
-dev-site mode.
-
-A **capability manifest** (`Configuration/Capabilities.yaml`) declares
-which subsystems each tool needs and gates direct outbound HTTP. Production
-operators harden by removing subsystems (e.g. delete `database:write` to
-make MCP read-only) or constraining `network.outbound` to specific
-domains. Package-manager subprocesses and the configured Solr scheduler task
-have separate, explicit indirect-network subsystems. See
-[`Documentation/Architecture/CapabilityManifest.rst`](Documentation/Architecture/CapabilityManifest.rst).
-
-A **DDEV / local-mode service** (`LocalModeService`) detects developer
-environments and relaxes the workspace-staging, non-workspace-table,
-outbound HTTP, and file-sandbox safety nets — never authentication, backend
-user permissions, or per-tool subsystem checks. Production stays strict by
-default, and strict sandbox mode can be forced via TYPO3 feature flag or User
-TSconfig.
-
-### 6. Language-awareness, conditional
-
-Translation parameters are only exposed when the site actually has more than
-one language configured. `WriteTable` accepts ISO codes (`de`, `fr`, ...).
-Page overlays use TYPO3's `PageRepository`; workspace overlays use custom
-transparency logic. See
-[`Documentation/Architecture/LanguageOverlays.rst`](Documentation/Architecture/LanguageOverlays.rst).
-
-### 7. Versioning and evolution
-
-The extension targets TYPO3 v14 strictly. MCP tool contracts are treated as
-**editor/product ergonomics, not as a legacy API**. Tool names, parameters,
-and defaults may change within v14 when that improves LLM usability or TYPO3
-correctness. Pin Composer versions and read release notes before upgrades.
-The server deliberately supports both MCP `2025-11-25` and the locked
-`2026-07-28` release candidate. Codex, Cursor, and Claude do not currently
-publish a dependable dated RC-support matrix, so compatibility is detected
-from the actual lifecycle used by each connection.
-
-## MCP ergonomics (mcp-builder alignment)
-
-This extension is reviewed against the public
-[mcp-builder skill](https://github.com/anthropics/skills/blob/main/skills/mcp-builder/SKILL.md).
-
-**What matches the guide**
-
-- **Schemas** — Each tool has a top-level `description`, JSON Schema
-  `inputSchema` with per-field descriptions, and `required` where useful.
-  Record-backed tools share an optional `workspace_id` (see
-  `AbstractRecordTool`).
-- **Annotations** — All four hints are set on every tool: `readOnlyHint`,
-  `destructiveHint`, `idempotentHint`, `openWorldHint`.
-- **Actionable errors** — `AbstractTool` + `ExceptionHandlerTrait` map
-  exceptions to `CallToolResult` errors with editor-oriented text. Server
-  internals stay in logs. Unknown tool names use a typed Invalid Params
-  protocol error.
-- **Pagination** — `ReadTable` returns `total`, `count`, `limit`, `offset`,
-  `nextOffset`, `hasMore`. `Search` enforces per-table limits and reports
-  both totals and returned matches when a table was truncated. Tree tools
-  warn about depth vs. site size.
-- **Transport** — Remote HTTP + OAuth for hosted use; local stdio for
-  trusted environments.
-
-**Intentional differences**
-
-- **Naming** — PascalCase (`ReadTable`, `WriteTable`) matches TYPO3 vocabulary
-  instead of the `service_action` prefix style.
-- **Structured output** — The v2 PHP SDK supports `outputSchema` and
-  `structuredContent`. Existing JSON text is retained for stable clients and
-  mirrored into structured content for modern consumers.
-
-### Local stdio and the host OS boundary
-
-`vendor/bin/typo3 mcp:server` runs as the OS user that launched it. TYPO3
-constrains editorial rules; it does **not** isolate the PHP process from the
-rest of the machine. If the MCP client exposes a shell — or you wrap startup
-in `bash` — effective risk includes arbitrary host commands at the user's
-privilege level. Treat that combination like interactive shell access: use
-only on trusted local / non-production hosts; prefer dedicated OS accounts;
-do not pair with production credentials.
-
-## Real-world scenarios
-
-### "Translate that page"
-
-**Prompt:** *"Translate the /about-us page to German."*
-
-```jsonc
-GetPage    { "url": "/about-us" }
-ReadTable  { "table": "tt_content", "pid": 123 }
-
-WriteTable {
-  "table": "tt_content",
-  "action": "translate",
-  "uid": 456,
-  "data": {
-    "sys_language_uid": "de",
-    "header":   "Über uns",
-    "bodytext": "[translated content]",
-    "slug":     "/ueber-uns"
-  }
-}
-// Response includes translationUid (live), targetLanguage ("de" — resolved
-// per-site, not first-wins across all sites), siteIdentifier, slug, and
-// hidden=false. Translations are visible by default — pass hidden: true to
-// keep them in review.
-```
-
-### "Create a news article from this draft"
-
-```jsonc
-GetPageTree      { "startPage": 0, "depth": 3 }
-GetTableSchema   { "table": "tx_news_domain_model_news" }
-ReadTable        { "table": "tx_news_domain_model_category", "pid": 789 }
-
-WriteTable {
-  "table": "tx_news_domain_model_news",
-  "action": "create",
-  "pid": 789,
-  "data": {
-    "title":      "Annual Report 2026 Released",
-    "teaser":     "Our latest financial results …",
-    "bodytext":   "[full article content]",
-    "categories": [12, 15],
-    "datetime":   "2026-01-15T10:00:00"
-  }
-}
-```
-
-### "Fill in missing SEO descriptions"
-
-```jsonc
-ContentAudit { "rootPageId": 1, "depth": 4, "checks": ["missing_meta_description"] }
-// iterate results, then for each hit:
-WriteTable   { "table": "pages", "action": "update", "uid": …, "data": { "description": "…" } }
-```
-
-### "Add alt text to all product images"
-
-```jsonc
-BrowseFiles       { "path": "products/" }
-ReadFileMetadata  { "identifier": "products/widget-pro.jpg" }
-WriteFile         {
-  "path": "products/widget-pro.jpg",
-  "metadata": {
-    "alternative": "Widget Pro — ergonomic design in brushed aluminium",
-    "title":       "Widget Pro product photo"
-  }
-}
-```
-
-### "Generate a small text asset"
-
-```jsonc
-WriteFile {
-  "path": "notes/campaign-copy.md",
-  "content": "# Contact block\n\nUse a concise call to action here.",
-  "metadata": {
-    "title":       "Campaign copy notes",
-    "description": "Draft notes generated during MCP content editing"
-  }
-}
-```
-
-`WriteFile` intentionally excludes SVG from its default text-file allowlist
-because SVG can carry inline scripts when served from `fileadmin/`. Operators
-who need SVG generation must opt in through TYPO3's `SYS.textfile_ext` and
-sanitize content before serving it.
-
-### Workflow: draft → review → publish
-
-```jsonc
-ListWorkspaces    {}
-WorkspaceReview   { "workspace_id": 3 }
-PublishWorkspace  { "workspace_id": 3, "dryRun": true  }  // preview
-PublishWorkspace  { "workspace_id": 3, "dryRun": false }  // execute
-```
-
-### Workflow: translations-only rollout
-
-```jsonc
-// Ship only the translation rows, leaving source-language drafts in place.
-PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": true }
-PublishWorkspace  { "workspace_id": 3, "onlyTranslations": true, "dryRun": false }
-```
-
-### Workflow: add a site configuration
-
-```jsonc
-// 1. Use an existing live root page prepared for the site. Site YAML is not
-// workspace-versioned, so CreateSite must point at a page that TYPO3 can
-// resolve outside a draft-only workspace row.
-CreateSite { "action": "create",
-             "identifier": "launch-2026",
-             "rootPageId": 474,
-             "base": "https://example.com/",
-             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
-// No warning — the Site Set is attached, so the frontend will render.
-// If no theme/site-package-like Site Set is installed and no sys_template
-// exists, CreateSite writes a minimal setup.typoscript fallback in the active
-// TYPO3 site configuration path.
-
-// 2. Already created a site without a theme? Attach one in place.
-CreateSite { "action": "update",
-             "identifier": "launch-2026",
-             "dependencies": ["webconsulting/desiderio-preset-corporate"] }
-```
-
-## Implementation architecture
-
-The runtime is intentionally thin; TYPO3 does most of the work.
-
-### Request path
-
-1. **Remote client** authenticates via OAuth, then calls `/mcp`.
-   `McpEndpoint` validates the token, bootstraps a backend user context, and
-   hands the request to the SDK's `HttpServerRunner::handleRequest()`.
-   Stable session state persists to `var/mcp_sessions/`; `2026-07-28`
-   requests use an ephemeral context and no protocol session.
-2. **Local client** starts `vendor/bin/typo3 mcp:server` over stdio.
-3. `McpServerFactory` builds typed tools, prompts, and resources. The SDK
-   supplies `server/discover` and adapts results to the negotiated era.
-4. `ToolRegistry` collects every DI service tagged `mcp.tool`. Native
-   `ToolInterface` implementations are used directly; other objects exposing
-   `getName()`/`execute()` are wrapped by `CompatibleToolAdapter`.
-5. Tools call shared services for workspace, TCA, language, sandbox, URL,
-   and OAuth logic.
-6. TYPO3 core APIs (`DataHandler`, `PageRepository`, `TcaSchemaFactory`,
-   FAL) perform the actual CMS work.
-
-### Shared services
-
-| Service | Responsibility |
+| Topic | Maintained source |
 |---|---|
-| `WorkspaceContextService` | Pick/keep/create the workspace; switch context safely |
-| `TableAccessService` | Schema API facade + table/field, web-mount, and TSconfig gates |
-| `LanguageService` | Map ISO ↔ TYPO3 language UIDs; hide params when monolingual |
-| `McpFileSandboxService` | Enforce sandbox root; compute workspace upload folders |
-| `SiteInformationService` | Resolve site URLs, domains, and base paths |
-| `FileReferenceAttachmentService` | Workspace-safe `sys_file_reference` creation via DataHandler |
-| `OAuthService` | Hashed auth codes/tokens, exact OAuth bindings, PKCE, refresh-family rotation/replay revocation |
-| `SelectItemResolver` | FormEngine-style select resolution (itemsProcFunc, TSconfig) |
-| `LocalModeService` | Detect DDEV / Development context; gate live writes, unrestricted files/outbound HTTP, and dev-site tools |
-| `CapabilityManifestService` | Read `Capabilities.yaml`; refuse undeclared tools and out-of-policy outbound HTTP |
-| `OutboundUrlGuardService` | Validate all A/AAAA answers, block private/reserved targets, pin DNS for outbound HTTP |
-| `AbilityBackendUserContextService` | Revalidate/hydrate TYPO3 backend users for Abilities and REST |
-| `McpCliBackendUserBootstrapService` | Authenticate TYPO3's real `_cli_` user before CLI tool execution |
-| `McpToolCatalogService` | Share list/describe/execute across MCP, Abilities, CLI, and REST |
-| `SkillRegistry` / `PromptRegistry` | Validate skills and project user workflows as MCP prompts/resources |
+| Project lineage and fork changes | [Fork changes](Documentation/Introduction/ForkChanges.rst) |
+| Runtime layers and shared services | [Implementation overview](Documentation/Architecture/ImplementationOverview.rst) |
+| Workspace selection and stable UIDs | [Workspace transparency](Documentation/Architecture/WorkspaceTransparency.rst) |
+| Page language overlays | [Language overlays](Documentation/Architecture/LanguageOverlays.rst) |
+| Inline relations and DataHandler | [Inline relations](Documentation/Architecture/InlineRelations.rst) |
+| Per-tool subsystem and network policy | [Capability manifest](Documentation/Architecture/CapabilityManifest.rst) |
+| Schema, manifest, Abilities, and skills | [Capabilities and Abilities](Documentation/Architecture/CapabilitiesAndAbilities.rst) |
+| SDK and tested wire protocols | [Protocol compatibility](Documentation/Architecture/ProtocolMigration.rst) |
+| Security decisions and accepted risks | [Security audit](Documentation/Architecture/SecurityAudit.rst) |
+| Tool parameters and limits | [Tool reference](Documentation/Tools/Index.rst) |
+| Local live editing and strict mode | [Local-mode configuration](Documentation/Configuration/LiveEditsOnDevelopment.rst) |
+| Executable workflows and quality gates | [Testing](Documentation/Testing/Index.rst) |
+| End-to-end editing scenarios | [Chatbot test script](Documentation/Testing/FullFeatureChatbotScript.md) |
 
-### HTTP transport hardening
-
-- **Redacted logs** (`McpHttpLogRedactor`) — sensitive headers and query
-  tokens are not logged.
-- **Header-only bearer authentication** — `?token=…` never authenticates a
-  request. Fix proxies so they forward `Authorization`.
-- **Exact origin validation** — malformed, `null`, and unlisted browser origins
-  receive 403 before token processing.
-- **Bound authorization** — consent uses TYPO3 form protection; codes are
-  hashed and bound to client, redirect, resource, scope, and `S256`; responses
-  include an HTTPS issuer; refresh replay revokes the token family.
-- **Bounded bodies** — OAuth, MCP, import, render, and upload paths enforce
-  explicit streaming size limits.
-- **Minimal auth diagnostic** — `?test=auth` is disabled by default. When
-  enabled via `enableMcpAuthHeaderDiagnostic`, it reports only whether the
-  `Authorization` header arrived and does not reveal server fingerprint data.
-
-See [`Documentation/Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst)
-for the full audit snapshot.
-
-### Testing strategy
-
-- **Unit tests** for focused pure logic (OAuth hashing, sandbox paths).
-- **Functional TYPO3 tests** for workspaces, language overlays, TCA-driven
-  tool behavior, file sandbox, non-admin permissions, and extension
-  compatibility.
-- **LLM tests** (opt-in, needs `OPENROUTER_API_KEY`) that exercise tool
-  ergonomics in multi-step conversations with real models.
-
-## Known limitations
-
-- **Physical files are not workspace-versioned.** The sandbox and optional
-  workspace subfolders reduce risk, but `WriteFile` / `UploadFile` changes
-  are immediate across all workspaces. Only file *references* are versioned.
-- **`PublishWorkspace` is irreversible.** It defaults to dry-run; always
-  review before executing.
-- **`BulkWrite` is capped at 50 operations** per call. Split larger batches
-  into multiple calls.
-- **Redirects (`sys_redirect`) are usually outside TYPO3 workspaces.**
-  `ManageRedirects` lists them everywhere. Create/delete only runs when
-  `sys_redirect` is workspace-capable, or as an explicit live write in trusted
-  local mode (DDEV / Development / `localUnsafeMode=on` with strict sandbox
-  off).
-- **Context-window limits.** Operations like "translate the entire page"
-  may hit client model limits; process in chunks for very large pages.
-
-## Skills vs MCP tools
-
-Not everything should be an MCP tool. Runtime data operations (read/write
-records, files, workspaces) are MCP tools. Domain knowledge and workflow
-templates live as **AI skills** that drive the same tools. Bundled skills are
-available as original Markdown resources under `typo3-mcp:///skills` and as
-user-invocable MCP prompts. `mcp:prompt:list` renders their slash-style names;
-`mcp:prompt:get` renders a workflow for CLI use.
-
-| MCP tools (runtime) | Skills (knowledge) |
-|---|---|
-| Read/write records, files, configurations | Content modeling (Content Blocks, TCA patterns) |
-| Navigate page tree, search, audit content | Frontend templates (shadcn, design systems) |
-| Manage workspaces, publish, rollback | Form creation (Powermail) |
-| Install extensions, run safe CLI | Legal pages (Impressum, Datenschutz) |
-| Redirects, system log, site config | SEO audit, accessibility audit |
-
-**Example workflow — "Add a contact form to the about page"**
-
-1. LLM loads the `typo3-powermail` skill (form structure, best practices).
-2. `GetPage` → find the about page.
-3. `GetTableSchema` → understand
-   `tx_powermail_domain_model_form` fields.
-4. `WriteTable` → create the form, page, and fields.
-5. `WriteTable` → add a `list` content element with the form plugin.
-
-This separation keeps MCP tools generic and reusable; skills evolve
-independently. A skill is not a permission or a new MCP capability type. Every
-step still goes through a native tool's manifest, TYPO3 permission, workspace,
-and input-validation gates.
-
-## Best practices for editors
-
-**Use full URLs.** `https://example.com/about-us` resolves cleanly through
-`GetPage` across languages and domains.
-
-**Be specific about scope.** "Update meta descriptions under /products"
-beats "update all pages". Helps avoid context-window issues and focuses the
-assistant.
-
-**Review before publishing.** In strict/production mode, record changes land in
-a workspace first and the TYPO3 backend (`Workspaces` module) is the final
-authority. On trusted local mode, omitted `workspace_id` writes are live; pass
-an explicit draft ID when review-before-publish is required.
-
-**Provide context.** "We're a law firm — keep the tone professional" or
-"summer campaign, make it cheerful" dramatically improves output quality.
-
-**Work incrementally.** Analyze → change → review in small steps. For big
-projects, use multiple chat sessions in parallel; each maintains its own
-context.
-
-**Use controlled environments first.** `CreateSite`, `InstallExtension`,
-`SafeCli`, and `PublishWorkspace` are powerful. Try them on staging first
-and narrow the tool surface you expose to production clients.
+Runtime operations belong in tools; reusable editorial instructions belong in
+skills. Bundled skills are exposed as MCP prompts and Markdown resources, and
+all their operations still pass through the same permission and policy gates.
+See the [intended behavior](Documentation/Introduction/IntendedBehavior.rst)
+before changing a public contract.

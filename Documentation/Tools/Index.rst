@@ -249,7 +249,7 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Dev
      - Optional Content Block runtime/YAML definitions
    * - ``LastError``
-     - Dev
+     - Dev / Admin
      - Newest TYPO3 file-log error with a compact stack trace
    * - ``ListPaidContent``
      - Read
@@ -1521,7 +1521,8 @@ frames.
    - ``full`` (boolean): return the complete raw entry and trace; default
      ``false`` because it can be large
 
-Deprecation logs are excluded. Dev-site only. Read-only.
+Deprecation logs are excluded. The newest error is selected by entry timestamp
+across the bounded log tails. Dev-site only, admin-only, and read-only.
 
 SiteSettings
 ------------

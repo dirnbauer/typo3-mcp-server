@@ -65,71 +65,138 @@ services:
         command: 'mcp:prompt:get'
         description: 'Render one MCP prompt / slash-command workflow.'
   Hn\McpServer\Command\Tool\ReadTableToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ReadTable'
+      $description: 'Read records from a TCA table (workspace-aware, language-aware).'
+      $exposedOptions: ['table', 'pid', 'uid', 'limit', 'offset', 'language']
     tags:
       - name: 'console.command'
         command: 'mcp:read-table'
         description: 'Read records from a TCA table (workspace-aware, language-aware).'
   Hn\McpServer\Command\Tool\WriteTableToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'WriteTable'
+      $description: 'Create / update / move / translate / delete a TCA record (workspace-staged).'
+      $exposedOptions: ['action', 'table', 'pid', 'uid', 'position']
     tags:
       - name: 'console.command'
         command: 'mcp:write-table'
         description: 'Create / update / move / translate / delete a TCA record (workspace-staged).'
   Hn\McpServer\Command\Tool\GetPageToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetPage'
+      $description: 'Fetch a TYPO3 page including content elements (workspace-aware).'
+      $exposedOptions: ['id', 'pageId', 'url', 'language']
     tags:
       - name: 'console.command'
         command: 'mcp:get-page'
         description: 'Fetch a TYPO3 page including content elements (workspace-aware).'
   Hn\McpServer\Command\Tool\GetPageTreeToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetPageTree'
+      $description: 'Print the page tree as text (workspace-aware).'
+      $exposedOptions: ['rootId', 'depth', 'language']
     tags:
       - name: 'console.command'
         command: 'mcp:get-page-tree'
         description: 'Print the page tree as text (workspace-aware).'
   Hn\McpServer\Command\Tool\SearchToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'Search'
+      $description: 'Full-text search across workspace-capable TCA tables.'
+      $exposedOptions: ['query', 'table', 'pageId', 'language', 'limit']
     tags:
       - name: 'console.command'
         command: 'mcp:search'
         description: 'Full-text search across workspace-capable TCA tables.'
   Hn\McpServer\Command\Tool\ListTablesToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListTables'
+      $description: 'List MCP-accessible TCA tables and their access info.'
     tags:
       - name: 'console.command'
         command: 'mcp:list-tables'
         description: 'List MCP-accessible TCA tables and their access info.'
   Hn\McpServer\Command\Tool\GetTableSchemaToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetTableSchema'
+      $description: 'Return the TCA-derived schema for a table (fields, types, validation).'
+      $exposedOptions: ['table', 'type']
     tags:
       - name: 'console.command'
         command: 'mcp:get-table-schema'
         description: 'Return the TCA-derived schema for a table (fields, types, validation).'
   Hn\McpServer\Command\Tool\ListWorkspacesToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListWorkspaces'
+      $description: 'List workspaces accessible to the current backend user.'
     tags:
       - name: 'console.command'
         command: 'mcp:list-workspaces'
         description: 'List workspaces accessible to the current backend user.'
   Hn\McpServer\Command\Tool\PublishWorkspaceToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'PublishWorkspace'
+      $description: 'Publish workspace changes to live (defaults to dryRun=true).'
+      $exposedOptions: ['table', 'dryRun', 'workspace_id']
     tags:
       - name: 'console.command'
         command: 'mcp:publish-workspace'
         description: 'Publish workspace changes to live (defaults to dryRun=true).'
   Hn\McpServer\Command\Tool\GetCapabilitiesToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetCapabilities'
+      $description: 'Show the active capability manifest + runtime mode (DDEV/local-mode).'
     tags:
       - name: 'console.command'
         command: 'mcp:get-capabilities'
         description: 'Show the active capability manifest + runtime mode.'
   Hn\McpServer\Command\Tool\RenderRecordToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'RenderRecord'
+      $description: 'Render a page (or single content element) through the FE in workspace context.'
+      $exposedOptions: ['pageId', 'contentUid', 'mode', 'language', 'maxLength']
     tags:
       - name: 'console.command'
         command: 'mcp:render-record'
         description: 'Render a page (or single content element) through the FE in workspace context.'
   Hn\McpServer\Command\Tool\GetPreviewUrlToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetPreviewUrl'
+      $description: 'Build a workspace preview URL for a page or content element.'
+      $exposedOptions: ['table', 'uid', 'language']
     tags:
       - name: 'console.command'
         command: 'mcp:get-preview-url'
         description: 'Build a workspace preview URL for a page or content element.'
   Hn\McpServer\Command\Tool\SiteSetToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SiteSet'
+      $description: 'Find, add, or remove TYPO3 Site Sets on an existing site.'
+      $exposedOptions: ['action', 'identifier', 'siteSet', 'query', 'includeHidden']
     tags:
       - name: 'console.command'
         command: 'mcp:site-set'
         description: 'Find, add, or remove TYPO3 Site Sets on an existing site.'
   Hn\McpServer\Command\Tool\ApplyShadcnPresetToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ApplyShadcnPreset'
+      $description: 'Apply a shadcn/ui preset to an existing frontend project.'
+      $exposedOptions: ['preset', 'only', 'cwd', 'packageManager']
     tags:
       - name: 'console.command'
         command: 'mcp:apply-shadcn-preset'
@@ -482,21 +549,40 @@ services:
         command: 'mcp:tca-resource'
         description: 'Read TYPO3 TCA reference markdown (dev-site only). Mirrors MCP resources typo3-mcp://tca.'
   Hn\McpServer\Command\Tool\SiteSettingsToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'SiteSettings'
+      $description: 'List, read, or update TYPO3 site settings (dev-site only).'
+      $exposedOptions: ['action', 'identifier']
     tags:
       - name: 'console.command'
         command: 'mcp:site-settings'
         description: 'List, read, or update TYPO3 site settings (dev-site only).'
   Hn\McpServer\Command\Tool\ListViewHelpersToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'ListViewHelpers'
+      $description: 'List Fluid ViewHelpers (dev-site only).'
     tags:
       - name: 'console.command'
         command: 'mcp:list-viewhelpers'
         description: 'List Fluid ViewHelpers (dev-site only).'
   Hn\McpServer\Command\Tool\GetViewHelperDocumentationToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'GetViewHelperDocumentation'
+      $description: 'Get Fluid ViewHelper documentation (dev-site only).'
+      $exposedOptions: ['tagName']
     tags:
       - name: 'console.command'
         command: 'mcp:get-viewhelper-documentation'
         description: 'Get Fluid ViewHelper documentation (dev-site only).'
   Hn\McpServer\Command\Tool\CreateLocallangToolCommand:
+    class: Hn\McpServer\Command\Tool\GenericMcpToolCommand
+    arguments:
+      $toolName: 'CreateLocallang'
+      $description: 'Create or extend XLF language files (dev-site only).'
+      $exposedOptions: ['extensionKey', 'fileName', 'extensionBasePath']
     tags:
       - name: 'console.command'
         command: 'mcp:create-locallang'

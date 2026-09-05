@@ -59,6 +59,13 @@ Fixed findings
    JSON response is minimal (header presence only; no ``server_software`` or
    similar fingerprint fields).
 
+7. Developer file-log diagnostics were available to non-admin local users.
+
+   Status: Fixed (2026-09-05). ``LastError`` requires both dev-site availability
+   and administrator privileges. Its bounded log tails can contain sensitive
+   application data; review output before sharing it. A missing dev-site guard
+   service now fails the call rather than bypassing the availability check.
+
 Accepted risks
 --------------
 

@@ -7,8 +7,8 @@ LLM clients (Cursor, Claude Desktop, …) and over the TYPO3 CLI for shell
 scripts and CI.
 
 The server is dual-era: it serves the published MCP `2025-11-25` lifecycle
-and the locked `2026-07-28` release candidate from the same stdio or HTTP
-endpoint. Stable clients keep working while RC-capable clients can use
+and the stateless `2026-07-28` protocol from the same stdio or HTTP
+endpoint. Session-based clients keep working while compatible clients can use
 stateless requests and `server/discover`.
 
 **Built on** the editor-first design of
@@ -141,7 +141,7 @@ TCA, page mounts, workspaces, the file sandbox, and the capability manifest
 still decide what can run. A minimal PHP server and a detailed explanation are
 in [`Documentation/Introduction/McpBasics.rst`](Documentation/Introduction/McpBasics.rst).
 
-| Area | Stable `2025-11-25` | RC `2026-07-28` |
+| Area | Session-based `2025-11-25` | Stateless `2026-07-28` |
 |---|---|---|
 | Start | `initialize` + `initialized` | Optional `server/discover`; no handshake |
 | State | `Mcp-Session-Id` and optional session GET/SSE | Stateless, self-contained requests |
@@ -150,15 +150,11 @@ in [`Documentation/Introduction/McpBasics.rst`](Documentation/Introduction/McpBa
 | Results | Stable result shape | `resultType`, `ttlMs`, `cacheScope`; MRTR/extension results |
 | Schema | Earlier constrained tool schema | Full JSON Schema 2020-12 |
 
-The project requires `logiscape/mcp-sdk-php:^2.0.0-beta3`; the lock file
-currently fixes beta3 while allowing a tested final 2.0 update later.
-
-As of **2026-07-11**, Codex, Cursor, Claude Desktop, and Claude Code do not
-publish a dependable dated matrix confirming the locked RC wire format in
-their generally available builds. This is not evidence that they cannot
-support it: inspect whether the installed client sends `server/discover` or
-`initialize`. Stable fallback remains enabled. See the
-[full migration table](Documentation/Architecture/ProtocolMigration.rst).
+The project uses `logiscape/mcp-sdk-php` v2. `composer.lock` records the
+version tested here; consuming TYPO3 projects resolve their own lock file.
+Verify both protocol tracks after an SDK update. Client compatibility is
+established by its actual `initialize` or stateless request lifecycle; see the
+[protocol reference](Documentation/Architecture/ProtocolMigration.rst).
 
 ## What changed in this fork
 
@@ -170,7 +166,7 @@ adds and hardens these areas:
   workspaces, DataHandler calls, and tests are aligned with TYPO3 v14 only.
   There are no v12/v13 compatibility paths documented for this fork.
 - **Dual-era MCP v2 runtime** — one endpoint serves stable `2025-11-25`
-  initialization/session clients and stateless `2026-07-28` release-candidate
+  initialization/session clients and stateless `2026-07-28`
   clients. Typed catalogs carry modern cache hints, and JSON tool results gain
   `structuredContent` without losing stable text.
 - **Workspace-aware editorial tool surface** — strict/production writes select
@@ -807,7 +803,7 @@ Two connection models:
 The **User → MCP Server** backend module handles token creation, per-client
 instructions, and endpoint health checks.
 
-The MCP RC path is protocol-stateless; stable clients can still use an MCP
+The `2026-07-28` path is protocol-stateless; stable clients can still use an MCP
 session. In both cases the extension creates only an in-memory TYPO3 backend
 user session for the current request so `DataHandler` internals work without a
 persistent backend login.
@@ -864,7 +860,7 @@ model-dependent. See the
 
 ```bash
 ddev exec composer test            # unit + functional suites
-ddev exec composer test:protocol   # installed stable + RC stdio smoke matrix
+ddev exec composer test:protocol   # installed session + stateless stdio smoke matrix
 ddev exec composer test:llm        # LLM-assisted ergonomics tests (needs OPENROUTER_API_KEY)
 ddev exec composer phpstan         # PHPStan level max + saschaegerer/phpstan-typo3
                                    # + phpstan-strict-rules + phpstan-deprecation-rules
@@ -943,7 +939,7 @@ reading order:
 | Module, OAuth, sandbox, manifest, local mode | [`Configuration/Index.rst`](Documentation/Configuration/Index.rst) |
 | Full MCP tool reference | [`Tools/Index.rst`](Documentation/Tools/Index.rst) |
 | Architecture deep-dives | [`Architecture/Index.rst`](Documentation/Architecture/Index.rst) |
-| Stable-to-RC protocol diff | [`Architecture/ProtocolMigration.rst`](Documentation/Architecture/ProtocolMigration.rst) |
+| Supported protocol differences | [`Architecture/ProtocolMigration.rst`](Documentation/Architecture/ProtocolMigration.rst) |
 | Schema, manifest, Abilities, skills | [`Architecture/CapabilitiesAndAbilities.rst`](Documentation/Architecture/CapabilitiesAndAbilities.rst) |
 | Security audit | [`Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst) |
 | `sg_apicore` REST/OpenAPI | [`Integration/SgApiCore.rst`](Documentation/Integration/SgApiCore.rst) |
@@ -954,7 +950,7 @@ reading order:
 | E2E test suite | [`Testing/E2eSuite.rst`](Documentation/Testing/E2eSuite.rst) |
 | Troubleshooting | [`Troubleshooting/Index.rst`](Documentation/Troubleshooting/Index.rst) |
 
-Long-form design rationale and real-world scenarios:
+Contributor architecture entry point:
 [`TECHNICAL_OVERVIEW.md`](TECHNICAL_OVERVIEW.md).
 
 New dedicated CLI shortcuts can be added through `GenericMcpToolCommand`

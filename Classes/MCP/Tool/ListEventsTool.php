@@ -86,7 +86,7 @@ final class ListEventsTool extends AbstractTool
         }
 
         $listeners = $this->collectListeners();
-        $discoveredEvents = $listenerFilter === '' ? $this->collectEventClasses() : [];
+        $discoveredEvents = !$withListenersOnly && $listenerFilter === '' ? $this->collectEventClasses() : [];
         $eventClasses = array_values(array_unique([...array_keys($listeners), ...$discoveredEvents]));
         sort($eventClasses, SORT_STRING);
 
@@ -153,7 +153,7 @@ final class ListEventsTool extends AbstractTool
                 if (!is_array($listener)) {
                     continue;
                 }
-                $identifier = is_string($identifier) ? $identifier : (string)$identifier;
+                $identifier = (string)$identifier;
                 $service = is_string($listener['service'] ?? null) ? $listener['service'] : $identifier;
                 $method = $listener['method'] ?? null;
                 $listeners[$eventClass][] = array_filter([
@@ -189,7 +189,7 @@ final class ListEventsTool extends AbstractTool
                     continue;
                 }
                 $relativePath = substr($file->getPathname(), strlen($classesPath), -4);
-                if (!str_contains($relativePath, 'Event') || !str_ends_with($relativePath, 'Event')) {
+                if (!str_ends_with($relativePath, 'Event')) {
                     continue;
                 }
                 $events[] = $namespace . str_replace('/', '\\', $relativePath);

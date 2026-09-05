@@ -111,18 +111,13 @@ final class PageTsConfigTool extends AbstractTool
     {
         $value = $configuration;
         foreach (explode('.', $path) as $segment) {
-            if (is_array($value) && array_key_exists($segment . '.', $value)) {
-                $value = $value[$segment . '.'];
-                continue;
+            $key = is_array($value) && array_key_exists($segment . '.', $value) ? $segment . '.' : $segment;
+            if (!is_array($value) || !array_key_exists($key, $value)) {
+                throw new ValidationException([
+                    sprintf('Path "%s" was not found in Page TSconfig for page %d at segment "%s".', $path, $pageId, $segment),
+                ]);
             }
-            if (is_array($value) && array_key_exists($segment, $value)) {
-                $value = $value[$segment];
-                continue;
-            }
-
-            throw new ValidationException([
-                sprintf('Path "%s" was not found in Page TSconfig for page %d at segment "%s".', $path, $pageId, $segment),
-            ]);
+            $value = $value[$key];
         }
 
         return $value;

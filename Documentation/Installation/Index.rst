@@ -45,10 +45,10 @@ Activate the extension:
 
 The backend module will then be available under :guilabel:`User > MCP Server`.
 
-The project requires ``logiscape/mcp-sdk-php:^2.0.0-beta3`` and the committed
-lock file currently selects ``2.0.0-beta3`` while the locked ``2026-07-28``
-protocol release candidate is validated. Test both protocol eras before
-updating that lock.
+The project uses ``logiscape/mcp-sdk-php`` v2. The repository's
+``composer.lock`` records its tested SDK version; an installation consuming
+this extension resolves its own lock file. Test both supported protocol
+versions before updating the SDK; see :doc:`../Testing/ProtocolCompatibility`.
 
 First backend check
 ===================

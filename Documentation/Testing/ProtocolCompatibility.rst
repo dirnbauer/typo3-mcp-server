@@ -13,7 +13,7 @@ Goal
 
 Every change to the MCP SDK, factory, HTTP endpoint, prompts, resources, or
 OAuth must be checked against both supported eras. A passing stable test does
-not prove the stateless release-candidate path, and the reverse is also true.
+not prove the stateless protocol path, and the reverse is also true.
 
 .. _testing-protocol-quality-gates:
 
@@ -39,16 +39,19 @@ Installed TYPO3 smoke test
 ==========================
 
 .. code-block:: bash
-   :caption: Prepare and inspect the DDEV installation
+   :caption: Inspect an existing DDEV installation
 
    ddev start
-   ddev exec composer setup
-   ddev exec vendor/bin/typo3 extension:setup
+   ddev exec vendor/bin/typo3 cache:flush
    ddev exec vendor/bin/typo3 mcp:tool:list
    ddev exec vendor/bin/typo3 mcp:prompt:list --json
    ddev exec vendor/bin/typo3 mcp:get-capabilities --json
 
-Confirm that the generated TYPO3 site URL and ``trustedHostsPattern`` match
+Use ``composer setup`` only to initialize a disposable installation: its
+setup script runs TYPO3 setup with ``--force``. It is not a routine smoke-test
+or update command for an existing local site.
+
+Confirm that the configured TYPO3 site URL and ``trustedHostsPattern`` match
 the DDEV host. Do not weaken the pattern to ``.*`` to make a smoke test pass.
 
 .. _testing-protocol-stable:
@@ -64,13 +67,13 @@ Use an MCP client or raw JSON-RPC harness that explicitly selects
 3. Send ``notifications/initialized``.
 4. Call ``tools/list``, ``prompts/list``, and ``resources/list``.
 5. Call a read-only tool such as ``GetCapabilities``.
-6. Assert that release-candidate-only ``resultType``, ``ttlMs``, and
+6. Assert that stateless-only ``resultType``, ``ttlMs``, and
    ``cacheScope`` are not leaked to the legacy response.
 7. Close the client and confirm the server exits cleanly on stdio EOF.
 
 .. _testing-protocol-modern:
 
-Release-candidate ``2026-07-28`` track
+Stateless ``2026-07-28`` track
 ======================================
 
 Use a client that explicitly opts into the modern era:
@@ -113,10 +116,10 @@ HTTP security track
 Abilities and ``sg_apicore`` track
 ==================================
 
-With both optional packages installed:
+With the bundled Abilities and API Core packages installed:
 
 .. code-block:: bash
-   :caption: Verify the optional projections
+   :caption: Verify the Abilities projections
 
    ddev exec vendor/bin/typo3 abilities:list --json
    ddev exec vendor/bin/typo3 abilities:describe typo3-mcp/execute-tool
@@ -159,10 +162,8 @@ Use the `official MCP conformance suite
 <https://github.com/modelcontextprotocol/conformance>`__ for wire-level
 scenarios and `MCP Inspector
 <https://github.com/modelcontextprotocol/inspector>`__ for interactive
-inspection. Pin the conformance version in CI during the release-candidate
-window; moving ``main`` can change expected behavior without a Composer lock
-change.
+inspection. Pin the conformance version in CI; moving ``main`` can change
+expected behavior without a Composer lock change.
 
-Client testing is still required. Codex, Cursor, and Claude releases do not
-currently publish a reliable dated revision matrix, so record the exact host
-version and the lifecycle it negotiated with every manual report.
+Client testing is still required. Record the exact host version and the
+lifecycle it negotiated with every manual report.

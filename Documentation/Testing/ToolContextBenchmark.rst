@@ -39,9 +39,11 @@ The command is dev-site-only. In DDEV:
      --probe='LastError={}' \
      > var/reports/tool-context-baseline.json
 
-Probes are opt-in because they execute the named tool. Use only read-only tools
-whose runtime behavior belongs in the measurement. The developer introspection
-tools above are read-only and carry MCP ``readOnlyHint`` annotations.
+Probes are opt-in because they execute the named tool. Before executing any
+probe, the command validates the entire set: each tool must be available and
+declare ``readOnlyHint=true``. Each tool may appear only once per report so
+baseline measurements cannot overwrite each other. Annotations describe the
+tool contract; ordinary permission and capability checks still apply.
 
 Compare a later change
 ======================
@@ -76,10 +78,13 @@ are estimates: model tokenizers and MCP host framing differ. The default
 not present it as universal precision.
 
 Read ``tools`` from the top down to find the largest optimized schemas.
-``oversizedSchemas`` and ``oversizedResponses`` are threshold failures, not
+``oversizedSchemas`` and ``oversizedResponses`` report budget overages, not
 automatic proof that a tool is badly designed. A large result may be justified
 when the caller explicitly asks for full detail; the preferred pattern is a
 compact default plus a narrow path/filter or explicit ``full`` option.
+
+A failed tool probe returns a nonzero exit status alongside the JSON report.
+Budget overages alone do not change the exit status.
 
 For changes that affect agent behavior, follow this deterministic check with
 the existing ``composer test:llm`` suite or a paired multi-run task benchmark.

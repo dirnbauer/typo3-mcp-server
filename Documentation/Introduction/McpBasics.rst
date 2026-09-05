@@ -72,8 +72,8 @@ This extension supports two transports:
   must be sent in the ``Authorization: Bearer`` header.
 
 The server is dual-era. Stable clients can negotiate MCP ``2025-11-25`` with
-the ``initialize`` handshake and a session. Preview clients can use the locked
-``2026-07-28`` release candidate with ``server/discover`` and independent,
+the ``initialize`` handshake and a session. Stateless clients can use the
+``2026-07-28`` protocol with ``server/discover`` and independent,
 stateless requests. See :doc:`../Architecture/ProtocolMigration` for the exact
 differences.
 
@@ -106,9 +106,9 @@ workspaces, permissions, prompts, resources, and runtime policy.
 Install the same SDK generation used by this project:
 
 .. code-block:: bash
-   :caption: Install the PHP MCP SDK release candidate
+   :caption: Install the PHP MCP SDK v2
 
-   composer require logiscape/mcp-sdk-php:2.0.0-beta3
+   composer require 'logiscape/mcp-sdk-php:^2.0'
 
 Save this file next to that project's ``vendor/`` directory:
 

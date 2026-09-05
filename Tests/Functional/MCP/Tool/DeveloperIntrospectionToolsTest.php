@@ -17,6 +17,9 @@ use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
+use TYPO3\CMS\Core\Package\PackageInterface;
+use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Site\Entity\NullSite;
 use TYPO3\CMS\Core\TypoScript\PageTsConfigFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -48,7 +51,7 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
 
     public function testPageTsConfigReturnsOneResolvedBranchInsteadOfTheWholeTree(): void
     {
-        $this->seedRootTsConfig('TCEFORM.tt_content.header.disabled = 1');
+        $this->seedRootTsConfig("TCEFORM.tt_content.header = header value\nTCEFORM.tt_content.header.disabled = 1");
         $tool = $this->getService(PageTsConfigTool::class);
 
         $payload = $this->extractJsonFromResult($tool->execute([
@@ -59,6 +62,13 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
         self::assertSame(0, $payload['pageId']);
         self::assertSame('TCEFORM.tt_content.header.disabled', $payload['path']);
         self::assertSame('1', $payload['value']);
+
+        $branch = $this->extractJsonFromResult($tool->execute(['pageId' => 0, 'path' => 'TCEFORM.tt_content.header']));
+        self::assertSame(['disabled' => '1'], $branch['value']);
+        $this->assertToolError(
+            $tool->execute(['pageId' => 0, 'path' => 'TCEFORM.tt_content.header.missing']),
+            'at segment "missing"',
+        );
     }
 
     public function testTypoScriptReturnsACompiledSubtreeForTheRequestedPage(): void
@@ -69,7 +79,8 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
             'title' => 'Developer introspection test',
             'root' => 1,
             'clear' => 1,
-            'config' => "page = PAGE\npage.10 = TEXT\npage.10.value = MCP compiled value",
+            'constants' => 'mcp.label = MCP compiled value',
+            'config' => "page = PAGE\npage.10 = TEXT\npage.10.value = {\$mcp.label}\nconfig.no_cache = 1",
         ]);
         $tool = $this->getService(TypoScriptTool::class);
 
@@ -82,6 +93,22 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
         self::assertSame(1, $payload['pageId']);
         self::assertSame('test-site', $payload['site']);
         self::assertSame('MCP compiled value', $payload['value']);
+
+        $constants = $this->extractJsonFromResult($tool->execute([
+            'pageId' => 1,
+            'section' => 'constants',
+            'path' => 'mcp.label',
+        ]));
+        self::assertSame('MCP compiled value', $constants['value']);
+        $config = $this->extractJsonFromResult($tool->execute([
+            'pageId' => 1,
+            'section' => 'config',
+            'path' => 'no_cache',
+        ]));
+        self::assertSame('1', $config['value']);
+        $branch = $this->extractJsonFromResult($tool->execute(['pageId' => 1, 'path' => 'page.10']));
+        self::assertSame(['value' => 'MCP compiled value'], $branch['value']);
+        $this->assertToolError($tool->execute(['pageId' => 1, 'path' => 'page.10.missing']), 'at segment "missing"');
     }
 
     public function testMiddlewareStackReportsResolvedExecutionOrder(): void
@@ -116,6 +143,25 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
         self::assertStringContainsString('SysFile', $event['listeners'][0]['service']);
     }
 
+    public function testRegisteredEventQueriesDoNotScanPackageDirectories(): void
+    {
+        $package = $this->createMock(PackageInterface::class);
+        $package->expects($this->never())->method('getPackagePath');
+        $package->method('getPackageKey')->willReturn('mcp_server');
+        $package->method('getValueFromComposerManifest')->willReturn((object)[
+            'psr-4' => (object)['Hn\\McpServer\\' => 'Classes/'],
+        ]);
+        $packageManager = self::createStub(PackageManager::class);
+        $packageManager->method('getActivePackages')->willReturn(['mcp_server' => $package]);
+        $tool = new ListEventsTool($this->getService(ListenerProvider::class), $packageManager);
+
+        foreach ([['withListenersOnly' => true], ['listener' => 'SysFile']] as $filter) {
+            $payload = $this->extractJsonFromResult($tool->execute($filter + ['event' => 'BeforeRecordReadEvent']));
+            self::assertSame(1, $payload['eventCount']);
+            self::assertSame('mcp_server', $payload['events'][BeforeRecordReadEvent::class]['package']);
+        }
+    }
+
     public function testListEventsPaginatesBroadInventories(): void
     {
         $tool = $this->getService(ListEventsTool::class);
@@ -145,6 +191,7 @@ final class DeveloperIntrospectionToolsTest extends AbstractFunctionalTest
     public function testLastErrorReturnsACompactStructuredFileLogEntry(): void
     {
         $logDirectory = Environment::getVarPath() . '/log';
+        GeneralUtility::rmdir($logDirectory, true);
         GeneralUtility::mkdir_deep($logDirectory);
         $context = json_encode([
             'exception_class' => \RuntimeException::class,

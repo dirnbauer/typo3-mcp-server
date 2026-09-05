@@ -88,16 +88,18 @@ final class TypoScriptTool extends AbstractTool
                 [],
                 null,
             );
-            $frontendTypoScript = $this->frontendTypoScriptFactory->createSetupConfigOrFullSetup(
-                true,
-                $frontendTypoScript,
-                $site,
-                $templateRows,
-                [],
-                '0',
-                null,
-                null,
-            );
+            if ($section !== 'constants') {
+                $frontendTypoScript = $this->frontendTypoScriptFactory->createSetupConfigOrFullSetup(
+                    true,
+                    $frontendTypoScript,
+                    $site,
+                    $templateRows,
+                    [],
+                    '0',
+                    null,
+                    null,
+                );
+            }
             $data = match ($section) {
                 'constants' => $frontendTypoScript->getFlatSettings(),
                 'config' => $frontendTypoScript->getConfigArray(),
@@ -174,17 +176,13 @@ final class TypoScriptTool extends AbstractTool
     {
         $value = $data;
         foreach (explode('.', $path) as $segment) {
-            if (is_array($value) && array_key_exists($segment . '.', $value)) {
-                $value = $value[$segment . '.'];
-                continue;
+            $key = is_array($value) && array_key_exists($segment . '.', $value) ? $segment . '.' : $segment;
+            if (!is_array($value) || !array_key_exists($key, $value)) {
+                throw new ValidationException([
+                    sprintf('Path "%s" was not found in compiled %s at segment "%s".', $path, $section, $segment),
+                ]);
             }
-            if (is_array($value) && array_key_exists($segment, $value)) {
-                $value = $value[$segment];
-                continue;
-            }
-            throw new ValidationException([
-                sprintf('Path "%s" was not found in compiled %s at segment "%s".', $path, $section, $segment),
-            ]);
+            $value = $value[$key];
         }
 
         return $value;

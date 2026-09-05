@@ -58,8 +58,8 @@ Highlights
 - Harden tool execution with a capability manifest and outbound host policy
 - Mirror the MCP tool surface through TYPO3 CLI commands
 - Connect remote MCP clients using OAuth 2.1 with PKCE
-- Serve stable MCP ``2025-11-25`` and the locked ``2026-07-28`` release
-  candidate from one dual-era endpoint
+- Serve session-based MCP ``2025-11-25`` and stateless ``2026-07-28``
+  requests from one dual-era endpoint
 - Publish bundled workflows as standard MCP prompts and resources
 - Optionally project the governed tool catalog and bundled skill documents
   through TYPO3 Abilities and ``sg_apicore`` REST/OpenAPI
@@ -102,7 +102,7 @@ Further reading
 ===============
 
 - :file:`README.md` for the GitHub-facing project overview
-- :file:`TECHNICAL_OVERVIEW.md` for the long-form architecture and scenarios
+- :file:`TECHNICAL_OVERVIEW.md` for the contributor architecture entry point
 
 .. toctree::
    :maxdepth: 2

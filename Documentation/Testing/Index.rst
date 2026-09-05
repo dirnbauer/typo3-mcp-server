@@ -46,6 +46,16 @@ The project uses several layers of tests:
 The E2E suite is intentionally narrow. It verifies the TYPO3 backend module as
 an editor sees it, while deeper MCP tool contracts stay in PHP tests.
 
+Developer-tool coverage limits
+==============================
+
+The Content Blocks fixture currently covers package absence; an installed
+package must be tested before claiming complete integration coverage.
+TypoScript introspection compiles using an empty condition-variable context;
+request-, language-, and user-dependent conditions can differ from a frontend
+request. Schema benchmarks measure bytes and estimate tokens, not model task
+success. Use the LLM suite for the latter.
+
 .. _testing-primary-commands:
 
 Primary commands

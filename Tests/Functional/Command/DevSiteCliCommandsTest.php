@@ -5,11 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Command;
 
 use Hn\McpServer\Command\TcaResourceCommand;
-use Hn\McpServer\Command\Tool\ApplicationInfoToolCommand;
-use Hn\McpServer\Command\Tool\CreateLocallangToolCommand;
-use Hn\McpServer\Command\Tool\GetViewHelperDocumentationToolCommand;
-use Hn\McpServer\Command\Tool\ListViewHelpersToolCommand;
-use Hn\McpServer\Command\Tool\SiteSettingsToolCommand;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\DevSiteTestTrait;
 use Symfony\Component\Console\Command\Command;
@@ -34,7 +29,7 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
 
     public function testListViewHelpersCliReturnsJson(): void
     {
-        $tester = new CommandTester($this->getService(ListViewHelpersToolCommand::class));
+        $tester = new CommandTester($this->getToolCommand('ListViewHelpersToolCommand'));
         $exitCode = $tester->execute(['--json' => true]);
 
         self::assertSame(Command::SUCCESS, $exitCode);
@@ -47,7 +42,7 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
 
     public function testApplicationInfoCliReturnsCompactRuntimeJson(): void
     {
-        $command = $this->getContainer()->get(ApplicationInfoToolCommand::class);
+        $command = $this->getToolCommand('ApplicationInfoToolCommand');
         self::assertInstanceOf(Command::class, $command);
         $tester = new CommandTester($command);
         $exitCode = $tester->execute(['--json' => true]);
@@ -61,14 +56,14 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
 
     public function testGetViewHelperDocumentationCliUsesTagFromList(): void
     {
-        $listTester = new CommandTester($this->getService(ListViewHelpersToolCommand::class));
+        $listTester = new CommandTester($this->getToolCommand('ListViewHelpersToolCommand'));
         $listTester->execute(['--json' => true]);
         $listPayload = json_decode($listTester->getDisplay(), true);
         self::assertIsArray($listPayload);
         $tagName = $listPayload['result']['viewHelpers'][0]['tagName'] ?? '';
         self::assertNotSame('', $tagName);
 
-        $docTester = new CommandTester($this->getService(GetViewHelperDocumentationToolCommand::class));
+        $docTester = new CommandTester($this->getToolCommand('GetViewHelperDocumentationToolCommand'));
         $exitCode = $docTester->execute(['--tagName' => $tagName, '--json' => true]);
 
         self::assertSame(Command::SUCCESS, $exitCode);
@@ -100,7 +95,7 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
         $fileName = 'locallang_cli_test_' . bin2hex(random_bytes(4)) . '.xlf';
         $targetFile = ExtensionManagementUtility::extPath('mcp_server') . 'Resources/Private/Language/' . $fileName;
 
-        $tester = new CommandTester($this->getService(CreateLocallangToolCommand::class));
+        $tester = new CommandTester($this->getToolCommand('CreateLocallangToolCommand'));
         $exitCode = $tester->execute([
             '--json' => true,
             '--extensionKey' => 'mcp_server',
@@ -121,7 +116,7 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
     public function testSiteSettingsCliIsBlockedOutsideDevSiteMode(): void
     {
         $this->disableDevSiteTools();
-        $tester = new CommandTester($this->getService(SiteSettingsToolCommand::class));
+        $tester = new CommandTester($this->getToolCommand('SiteSettingsToolCommand'));
         $exitCode = $tester->execute([
             '--json' => true,
             '--action' => 'listDefinitions',
@@ -131,6 +126,14 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
         self::assertSame(Command::FAILURE, $exitCode);
         $payload = json_decode($tester->getDisplay(), true);
         self::assertFalse($payload['ok']);
+    }
+
+    private function getToolCommand(string $serviceName): Command
+    {
+        $command = $this->getContainer()->get('Hn\\McpServer\\Command\\Tool\\' . $serviceName);
+        self::assertInstanceOf(Command::class, $command);
+
+        return $command;
     }
 
     protected function tearDown(): void

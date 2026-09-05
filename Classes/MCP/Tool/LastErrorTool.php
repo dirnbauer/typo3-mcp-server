@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool;
 
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\Service\DeveloperLogEntryParser;
 use Hn\McpServer\Service\DeveloperLogReader;
@@ -11,6 +12,7 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 
 /** Return the newest error from TYPO3's bounded file-log tail. */
+#[AdminOnly]
 #[DevSiteOnly]
 final class LastErrorTool extends AbstractTool
 {
@@ -22,7 +24,7 @@ final class LastErrorTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Return the newest error-level TYPO3 file-log entry with exception details and a short stack trace.',
+            'description' => 'Admin-only: return the newest error-level TYPO3 file-log entry with exception details and a short stack trace.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -45,10 +47,10 @@ final class LastErrorTool extends AbstractTool
 
     protected function doExecute(array $params): CallToolResult
     {
-        $entries = $this->logReader->readEntries($this->logReader->listLogFiles(), 1, 'error');
-        $payload = $entries === []
+        $entry = $this->logReader->readLatestError();
+        $payload = $entry === null
             ? ['error' => null, 'hint' => 'No error-level entries found in var/log/typo3_*.log.']
-            : ['error' => $this->logEntryParser->parse($entries[0], ($params['full'] ?? false) === true)];
+            : ['error' => $this->logEntryParser->parse($entry, ($params['full'] ?? false) === true)];
         $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
         return new CallToolResult([new TextContent($json !== false ? $json : '{}')]);

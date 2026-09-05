@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\Context\WorkspaceAspect;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
@@ -183,27 +184,15 @@ final readonly class McpEndpoint
             return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
         } catch (\LengthException $e) {
             $this->logger->warning('MCP request payload rejected', ['reason' => $e->getMessage()]);
-            $stream = new Stream('php://temp', 'rw');
-            $stream->write($this->encodeJson(['error' => 'Payload Too Large']));
-            $stream->rewind();
-
-            return $this->addSecurityHeaders($this->addCorsHeaders(new Response(
-                $stream,
+            return $this->addSecurityHeaders($this->addCorsHeaders(new JsonResponse(
+                ['error' => 'Payload Too Large'],
                 413,
-                ['Content-Type' => 'application/json'],
             ), $request));
         } catch (\Throwable $e) {
             $this->logger->error('MCP request failed', ['exception' => $e]);
-            $stream = new Stream('php://temp', 'rw');
-            $stream->write($this->encodeJson([
-                'error' => 'Internal Server Error',
-            ]));
-            $stream->rewind();
-
-            return $this->addSecurityHeaders($this->addCorsHeaders(new Response(
-                $stream,
+            return $this->addSecurityHeaders($this->addCorsHeaders(new JsonResponse(
+                ['error' => 'Internal Server Error'],
                 500,
-                ['Content-Type' => 'application/json'],
             ), $request));
         }
     }
@@ -334,18 +323,11 @@ final readonly class McpEndpoint
 
     private function createUnauthorizedResponse(ServerRequestInterface $request, string $message): ResponseInterface
     {
-        $stream = new Stream('php://temp', 'rw');
-        $stream->write($this->encodeJson([
-            'error' => 'Unauthorized',
-            'message' => $message,
-        ]));
-        $stream->rewind();
-
         // RFC 9728: resource_metadata URL must match a served protected-resource metadata document (see middleware).
         $resourceMetadataUrl = $this->baseUrlResolver->resolveProtectedResourceMetadataUrl($request);
 
-        $response = new Response(
-            $stream,
+        $response = new JsonResponse(
+            ['error' => 'Unauthorized', 'message' => $message],
             401,
             [
                 'Content-Type' => 'application/json',
@@ -518,17 +500,10 @@ final readonly class McpEndpoint
     private function handleAuthHeaderTest(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->isAuthHeaderDiagnosticEnabled()) {
-            $stream = new Stream('php://temp', 'rw');
-            $stream->write($this->encodeJson([
+            $response = new JsonResponse([
                 'error' => 'forbidden',
                 'message' => 'Auth header diagnostic is disabled (see extension setting enableMcpAuthHeaderDiagnostic).',
-            ]));
-            $stream->rewind();
-
-            $response = GeneralUtility::makeInstance(Response::class)
-                ->withStatus(403)
-                ->withHeader('Content-Type', 'application/json; charset=utf-8')
-                ->withBody($stream);
+            ], 403, ['Content-Type' => 'application/json; charset=utf-8']);
 
             return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
         }
@@ -560,13 +535,7 @@ final readonly class McpEndpoint
                 : 'Authorization header received successfully.',
         ];
 
-        $body = GeneralUtility::makeInstance(Stream::class, 'php://temp', 'rw');
-        $body->write($this->encodeJson($responseData, JSON_PRETTY_PRINT));
-
-        $response = GeneralUtility::makeInstance(Response::class)
-            ->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withStatus(200)
-            ->withBody($body);
+        $response = new JsonResponse($responseData, headers: ['Content-Type' => 'application/json; charset=utf-8']);
 
         return $this->addSecurityHeaders($this->addCorsHeaders($response, $request));
     }
@@ -582,15 +551,6 @@ final readonly class McpEndpoint
             && is_int($tokenInfo['be_user_uid'])
             && is_string($tokenInfo['client_name'])
             && is_int($tokenInfo['token_uid']);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function encodeJson(array $data, int $flags = 0): string
-    {
-        $json = json_encode($data, $flags);
-        return is_string($json) ? $json : '{}';
     }
 
 }

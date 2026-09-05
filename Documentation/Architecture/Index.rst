@@ -53,7 +53,7 @@ MCP tool ergonomics
 
 Dual-era protocol
    Stable MCP clients use the ``2025-11-25`` handshake and sessions, while
-   release-candidate ``2026-07-28`` clients use stateless requests and
+   ``2026-07-28`` clients use stateless requests and
    ``server/discover``. See :doc:`ProtocolMigration`.
 
 Typed capabilities

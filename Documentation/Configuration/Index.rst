@@ -155,9 +155,9 @@ Rollout checklist
 - Review the file sandbox and outbound host list.
 - Keep browser origins empty unless a named frontend requires CORS.
 - Test OAuth discovery and a real tool call through the target client.
-- Test both stable and release-candidate wire tracks when changing the SDK.
-- Install Abilities and ``sg_apicore`` only when their additional REST/CLI
-  projection is required.
+- Test both session-based and stateless wire tracks when changing the SDK.
+- Abilities and ``sg_apicore`` are bundled dependencies. Enable their REST
+  projection only when required; see :doc:`../Integration/SgApiCore`.
 
 .. toctree::
    :maxdepth: 1

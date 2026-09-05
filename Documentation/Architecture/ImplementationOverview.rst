@@ -76,6 +76,8 @@ HTTP and backend module layer
   ``FileSessionStore``. ``2026-07-28`` has no protocol session. TYPO3
   backend-user state for token calls stays request-local.
 - OAuth authorization, token, metadata, and registration endpoints
+- ``AuthenticationRateLimiter``, using TYPO3 Core failure budgets for bearer
+  authentication and token exchange; see :ref:`configuration-authentication-rate-limits`
 - shared CORS helpers
 
 ``Classes/Controller/McpServerModuleController.php`` powers the backend module
@@ -193,6 +195,10 @@ Shared services
 
 ``DevSiteToolService``
    Provides the shared gate for dev-site-only tools and MCP resources.
+
+``BackendUserSummaryService``
+   Supplies ``GetCapabilities`` with authenticated identity, workspace, page
+   mounts, and table permissions without changing workspace context.
 
 ``FileReferenceAttachmentService``
    Handles FAL reference creation for image and file fields while preserving

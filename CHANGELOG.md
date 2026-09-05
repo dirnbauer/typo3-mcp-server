@@ -9,6 +9,28 @@ SemVer once it leaves the experimental surface.
 
 ## Unreleased
 
+### Changed
+
+- Verified TYPO3 14.3.6 remains the latest available TYPO3 14 release; all Core
+  packages stay on that patch. Require stable `logiscape/mcp-sdk-php` 2.x,
+  retaining the installed 2.0.1 release.
+- Replace 18 constant-only CLI wrapper classes with existing generic command
+  registrations, preserving command names and options.
+- Use TYPO3 JSON responses for HTTP errors and diagnostics. Simplify developer
+  tool traversal and skip unnecessary event scans and TypoScript setup builds.
+- Consolidate duplicated documentation, remove the superseded local cleanup
+  report, and document current protocol support and testing limits.
+
+### Fixed
+
+- `LastError` selects the newest error by entry timestamp across bounded log
+  tails and requires an administrator, including in development mode.
+- Benchmark probes validate the entire set before execution, require declared
+  read-only tools, and reject duplicate tool names. Failed probes return a
+  failure exit status; budget overages remain report-only.
+- A missing dev-site guard service now fails the tool call instead of bypassing
+  the guard.
+
 ### Added
 
 - Cache-backed authentication failure limits for `/mcp` and `/mcp_oauth/token`,

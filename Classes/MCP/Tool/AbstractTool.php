@@ -109,13 +109,7 @@ abstract class AbstractTool implements ToolInterface
             return;
         }
 
-        try {
-            $devSiteTools = GeneralUtility::makeInstance(DevSiteToolService::class);
-        } catch (\Throwable) {
-            return;
-        }
-
-        $devSiteTools->assertAvailable();
+        GeneralUtility::makeInstance(DevSiteToolService::class)->assertAvailable();
     }
 
     /**

@@ -3,34 +3,33 @@
 .. _protocol-migration:
 
 ================================
-MCP 2026 protocol migration
+MCP protocol compatibility
 ================================
 
 .. _protocol-migration-status:
 
-Release status
-==============
+Supported implementation
+========================
 
-MCP ``2025-11-25`` is the current published stable revision. MCP
-``2026-07-28`` is a locked release candidate as of 2026-07-11; the final
-specification is scheduled for 2026-07-28. The release candidate contains
-breaking lifecycle and transport changes.
+The installed ``logiscape/mcp-sdk-php`` v2 runtime serves both tested wire
+versions concurrently:
 
-This extension requires ``logiscape/mcp-sdk-php:^2.0.0-beta3``; the committed
-lock file currently selects ``2.0.0-beta3``. It serves both eras concurrently:
+- ``2025-11-25`` clients use initialization and the session lifecycle.
+- ``2026-07-28`` clients use stateless, self-contained requests and optional
+  ``server/discover`` discovery.
 
-- Stable clients keep the initialization and session lifecycle.
-- Release-candidate clients use stateless, self-contained requests.
-- An RC-capable client can use ``server/discover`` and a stable client can
-  continue to send ``initialize`` to the same endpoint.
+``composer.lock`` records the SDK version tested in this repository. Consumer
+projects resolve their own lock file. Run both protocol tracks when updating
+the SDK; package versions and protocol versions are separate contracts.
 
-Treat the locked SDK version as intentional. Update the lock only after
-running both protocol tracks, because a pre-release SDK can still change
-before the final specification.
+This page describes the implemented wire behavior. Consult the
+`MCP specification <https://modelcontextprotocol.io/specification/>`__ for
+external release status rather than inferring it from a client product name
+or the dates recorded in older project changelogs.
 
 .. _protocol-migration-diff:
 
-Stable-to-RC differences
+Protocol differences
 ========================
 
 .. list-table:: MCP ``2025-11-25`` compared with ``2026-07-28``
@@ -39,7 +38,7 @@ Stable-to-RC differences
 
    * - Area
      - ``2025-11-25``
-     - ``2026-07-28`` release candidate
+     - ``2026-07-28`` stateless protocol
    * - Lifecycle
      - ``initialize`` followed by ``notifications/initialized``.
      - No handshake. ``server/discover`` returns identity, versions, and
@@ -91,12 +90,6 @@ Stable-to-RC differences
      - Adds authorization-response issuer validation, client application type,
        and authorization-server binding for registered credentials.
 
-The official `release-candidate announcement
-<https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/>`__
-and `draft specification
-<https://modelcontextprotocol.io/specification/draft>`__ remain authoritative
-until the final release.
-
 .. _protocol-migration-this-server:
 
 How this server adapts
@@ -126,59 +119,21 @@ application features until a TYPO3 workflow needs them and has tests.
 
 .. _protocol-migration-client-status:
 
-Codex, Cursor, and Claude status
-================================
+Client compatibility
+====================
 
-Product names are not protocol-version declarations. As of 2026-07-11, no
-public support matrix from Codex, Cursor, Claude Desktop, or Claude Code
-confirms that their generally available builds send the locked
-``2026-07-28`` wire format.
-
-.. list-table:: Deployment interpretation on 2026-07-11
-   :header-rows: 1
-   :widths: 22 36 42
-
-   * - Host
-     - Public evidence
-     - Guidance
-   * - OpenAI Codex
-     - The public `Codex source
-       <https://github.com/openai/codex>`__ documents MCP and uses the Rust
-       ``rmcp`` client line, but does not promise the dated RC revision.
-     - Treat support as stable-era until the actual connection negotiates the
-       RC. Keep server fallback enabled.
-   * - Cursor
-     - The public `Cursor MCP documentation
-       <https://docs.cursor.com/context/model-context-protocol>`__ has no dated
-       protocol-revision matrix.
-     - Test the installed build. Do not infer RC support from “Streamable
-       HTTP” alone.
-   * - Claude Desktop / Claude Code
-     - Anthropic's public `MCP documentation
-       <https://docs.anthropic.com/en/docs/mcp>`__ has no dated RC commitment.
-     - Expect stable compatibility and verify discovery before relying on RC
-       fields such as cache hints.
-
-This is deliberately a compatibility statement, not a claim that these hosts
-cannot support the RC. Client releases move quickly. Observe whether a client
-sends ``server/discover`` or ``initialize`` and test the specific version used
-in production.
-
-The development machine was also inspected on 2026-07-11. Codex CLI
-``0.139.0`` contains the stable ``2025-11-25`` client revision but no
-``2026-07-28`` or ``server/discover`` marker; Cursor ``3.11.13`` sets its
-bundled MCP client's current revision to ``2025-11-25``; and Claude Code
-``2.1.170`` likewise sets its MCP revision constant to ``2025-11-25``. Those
-specific installed builds must therefore use this server's stable path. This
-binary/source inspection says nothing about a separately deployed ChatGPT or
-Claude hosted connector, and it must be repeated after client upgrades.
+Check the installed client's actual lifecycle: ``initialize`` selects the
+session path; a ``2026-07-28`` request with the required metadata selects the
+stateless path. “Streamable HTTP” alone does not establish which revision a
+client uses. Keep both paths enabled and record the client version and
+negotiated protocol in manual test reports.
 
 .. _protocol-migration-rollout:
 
 Rollout checklist
 =================
 
-1. Keep the tested SDK lock during the release-candidate window.
+1. Install from the tested SDK lock before checking client compatibility.
 2. Run a stable ``initialize`` → ``tools/list`` → ``tools/call`` sequence.
 3. Run a modern ``server/discover`` → ``tools/list`` → ``tools/call``
    sequence over stdio and HTTP.
@@ -187,7 +142,6 @@ Rollout checklist
    they do not understand.
 6. Verify prompts, resources, structured output, unknown-tool errors, and
    origin rejection on both tracks.
-7. Re-run the official MCP conformance suite when the final specification or
-   SDK pin changes.
+7. Re-run the applicable MCP conformance suite when the SDK pin changes.
 
 See :doc:`../Testing/ProtocolCompatibility` for executable checks.

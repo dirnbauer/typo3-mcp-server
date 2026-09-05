@@ -23,7 +23,7 @@ The extension is intended to behave like this:
   also expose ``structuredContent`` through the v2 SDK
 - validation and recoverable workflow mistakes should return actionable tool
   errors instead of generic internal failures
-- stable clients use the ``2025-11-25`` handshake while release-candidate
+- stable clients use the ``2025-11-25`` handshake while stateless
   clients can use stateless ``2026-07-28`` requests against the same server
 
 .. _intended-behavior-prompts:
