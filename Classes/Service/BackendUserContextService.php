@@ -14,10 +14,10 @@ use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Establishes the TYPO3 backend-user state required by optional Ability
- * projections without trusting the globals prepared by a transport adapter.
+ * Establishes backend-user state for HTTP, CLI, and Ability execution.
+ * Revalidates database permissions without persisting backend preferences.
  */
-final readonly class AbilityBackendUserContextService
+final readonly class BackendUserContextService
 {
     public function __construct(
         private ConnectionPool $connectionPool,
@@ -26,8 +26,24 @@ final readonly class AbilityBackendUserContextService
         private LanguageServiceFactory $languageServiceFactory,
     ) {}
 
+    /** Initialize stateless bearer authentication; null means the user is inactive. */
+    public function initializeFromUserId(int $userId): ?int
+    {
+        unset($GLOBALS['BE_USER']);
+        $activeUser = $this->loadActiveBackendUser($userId);
+        if ($activeUser === null) {
+            return null;
+        }
+
+        return $this->hydrate(
+            GeneralUtility::makeInstance(BackendUserAuthentication::class),
+            $activeUser,
+            true,
+        );
+    }
+
     /**
-     * Revalidate and hydrate a backend user before an MCP Ability runs.
+     * Revalidate and hydrate a backend user supplied by a transport adapter.
      *
      * REST bearer authentication is stateless, so it needs an anonymous
      * in-memory UserSession for DataHandler-adjacent code. A read workspace
@@ -43,9 +59,18 @@ final readonly class AbilityBackendUserContextService
         $uid = $this->backendUserId($backendUser);
         $activeUser = $this->loadActiveBackendUser($uid);
         if ($activeUser === null) {
-            throw new AccessDeniedException('active TYPO3 backend user', 'execute ability');
+            throw new AccessDeniedException('active TYPO3 backend user', 'initialize context');
         }
 
+        return $this->hydrate($backendUser, $activeUser, $initializeAnonymousSession);
+    }
+
+    /** @param array<string, mixed> $activeUser */
+    private function hydrate(
+        BackendUserAuthentication $backendUser,
+        array $activeUser,
+        bool $initializeAnonymousSession,
+    ): int {
         // Preserve an upstream workspace request only as an untrusted hint.
         // fetchGroupData() restores the persisted/default workspace first;
         // setTemporaryWorkspace() then accepts the hint only when TYPO3 grants it.
@@ -74,7 +99,7 @@ final readonly class AbilityBackendUserContextService
     {
         $uid = $backendUser->user['uid'] ?? 0;
         if (!is_numeric($uid) || (int)$uid <= 0) {
-            throw new AccessDeniedException('active TYPO3 backend user', 'execute ability');
+            throw new AccessDeniedException('active TYPO3 backend user', 'initialize context');
         }
 
         return (int)$uid;
@@ -130,7 +155,7 @@ final readonly class AbilityBackendUserContextService
 
     /**
      * Mirror TYPO3's backendSetUC() merge without persisting defaults during
-     * a stateless REST request.
+     * a stateless request.
      *
      * @param array<string, mixed> $userData
      */

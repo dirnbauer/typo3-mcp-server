@@ -5,29 +5,22 @@ declare(strict_types=1);
 namespace Hn\McpServer\Http;
 
 use Hn\McpServer\MCP\McpServerFactory;
+use Hn\McpServer\Service\BackendUserContextService;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\SiteInformationService;
-use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Server\HttpServerRunner;
 use Mcp\Server\Transport\Http\FileSessionStore;
 use Mcp\Server\Transport\Http\HttpMessage;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Configuration\Tca\TcaFactory;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\UserAspect;
-use TYPO3\CMS\Core\Context\WorkspaceAspect;
 use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Database\Connection;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -42,9 +35,7 @@ final readonly class McpEndpoint
     public function __construct(
         private LoggerInterface $logger,
         private OAuthService $oauthService,
-        private ConnectionPool $connectionPool,
-        private WorkspaceContextService $workspaceContextService,
-        private LanguageServiceFactory $languageServiceFactory,
+        private BackendUserContextService $backendUserContext,
         private ExtensionConfiguration $extensionConfiguration,
         private SiteBaseUrlResolver $baseUrlResolver,
         private AuthenticationRateLimiter $authenticationRateLimiter,
@@ -340,61 +331,10 @@ final readonly class McpEndpoint
 
     private function setupBackendUserContext(int $userId): bool
     {
-        unset($GLOBALS['BE_USER']);
-        $beUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
-
-        $connection = $this->connectionPool
-            ->getConnectionForTable('be_users');
-
-        $now = time();
-        $queryBuilder = $connection->createQueryBuilder();
-        $userData = $queryBuilder
-            ->select('*')
-            ->from('be_users')
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($userId, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('deleted', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('disable', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('starttime', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                    $queryBuilder->expr()->lte('starttime', $queryBuilder->createNamedParameter($now, Connection::PARAM_INT)),
-                ),
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('endtime', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
-                    $queryBuilder->expr()->gt('endtime', $queryBuilder->createNamedParameter($now, Connection::PARAM_INT)),
-                ),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        if (!is_array($userData)) {
+        $workspaceId = $this->backendUserContext->initializeFromUserId($userId);
+        if ($workspaceId === null) {
             return false;
         }
-
-        $beUser->user = $userData;
-        $GLOBALS['BE_USER'] = $beUser;
-
-        // CRITICAL: Initialize an (anonymous) user session.
-        // Normal TYPO3 requests go through BackendUserAuthenticator middleware which wires
-        // up a real UserSession. Token auth bypasses that, so DataHandler write paths
-        // that touch $beUser->setAndSaveSessionData() (FlashMessageQueue, BackendFormProtection)
-        // crash with "Call to a member function set() on null" on UPDATE operations.
-        // An anonymous in-memory session is discarded at request end — sufficient for stateless MCP.
-        $beUser->initializeUserSessionManager();
-
-        // CRITICAL: Fetch group data to populate permissions
-        // This computes tables_select, tables_modify, non_exclude_fields, webmounts, etc.
-        // Without this, non-admin users have no permissions computed from their groups
-        $beUser->fetchGroupData();
-        $this->hydrateUserConfiguration($beUser, $userData);
-
-        $this->initializeLanguageService($beUser);
-
-        $workspaceId = $this->workspaceContextService->switchToReadWorkspace($beUser);
-
-        $context = GeneralUtility::makeInstance(Context::class);
-        $context->setAspect('backend.user', new UserAspect($beUser));
-        $context->setAspect('workspace', new WorkspaceAspect($workspaceId));
 
         $this->logger->debug('Workspace selected', ['userId' => $userId, 'workspaceId' => $workspaceId]);
 
@@ -404,93 +344,6 @@ final readonly class McpEndpoint
         }
 
         return true;
-    }
-
-    /**
-     * Mirror TYPO3's backendSetUC() initialization for synthetic token-authenticated users,
-     * but keep it in-memory so MCP requests do not overwrite persisted backend preferences.
-     *
-     * @param array<string, mixed> $userData
-     */
-    private function hydrateUserConfiguration(BackendUserAuthentication $beUser, array $userData): void
-    {
-        $storedUc = $this->decodeStoredUserConfiguration($userData['uc'] ?? null);
-        $defaultUc = $this->getBackendDefaultUserConfiguration();
-        $tsConfigDefaults = GeneralUtility::removeDotsFromTS((array)($beUser->getTSConfig()['setup.']['default.'] ?? []));
-
-        $beUser->uc = array_merge(
-            $beUser->uc_default,
-            $defaultUc,
-            $tsConfigDefaults,
-            $storedUc,
-        );
-        $beUser->overrideUC();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeStoredUserConfiguration(mixed $storedUc): array
-    {
-        if (is_array($storedUc)) {
-            return $this->normalizeStringKeyedArray($storedUc);
-        }
-        if (!is_string($storedUc) || $storedUc === '') {
-            return [];
-        }
-
-        try {
-            // TYPO3 stores backend-user UC as serialized arrays; object hydration is disabled.
-            // nosemgrep: php.lang.security.unserialize-use.unserialize-use
-            $decoded = unserialize($storedUc, ['allowed_classes' => false]);
-        } catch (\Throwable) {
-            return [];
-        }
-
-        return $this->normalizeStringKeyedArray($decoded);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getBackendDefaultUserConfiguration(): array
-    {
-        $typo3Configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        if (!is_array($typo3Configuration)) {
-            return [];
-        }
-
-        $backendConfiguration = $typo3Configuration['BE'] ?? null;
-        if (!is_array($backendConfiguration)) {
-            return [];
-        }
-
-        return $this->normalizeStringKeyedArray($backendConfiguration['defaultUC'] ?? null);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function normalizeStringKeyedArray(mixed $value): array
-    {
-        if (!is_array($value)) {
-            return [];
-        }
-
-        $normalized = [];
-        foreach ($value as $key => $item) {
-            if (is_string($key)) {
-                $normalized[$key] = $item;
-            }
-        }
-
-        return $normalized;
-    }
-
-    private function initializeLanguageService(BackendUserAuthentication $beUser): void
-    {
-        $languageService = $this->languageServiceFactory->createFromUserPreferences($beUser);
-        $GLOBALS['LANG'] = $languageService;
     }
 
     /**

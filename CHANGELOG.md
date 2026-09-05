@@ -11,6 +11,9 @@ SemVer once it leaves the experimental surface.
 
 ### Changed
 
+- Share backend-user initialization across MCP HTTP, CLI, and Abilities, removing
+  duplicated permission, preference, language, and workspace setup.
+
 - Verified TYPO3 14.3.6 remains the latest available TYPO3 14 release; all Core
   packages stay on that patch. Require stable `logiscape/mcp-sdk-php` 2.x,
   retaining the installed 2.0.1 release.
@@ -22,6 +25,9 @@ SemVer once it leaves the experimental surface.
   report, and document current protocol support and testing limits.
 
 ### Fixed
+
+- Benchmark commands reject unreadable baselines and non-finite token ratios
+  before executing any response probes.
 
 - `LastError` selects the newest error by entry timestamp across bounded log
   tails and requires an administrator, including in development mode.

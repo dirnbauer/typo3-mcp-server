@@ -180,9 +180,10 @@ Shared services
    Resolves all A and AAAA addresses, rejects private or reserved targets, and
    pins the validated destination to prevent DNS rebinding.
 
-``AbilityBackendUserContextService`` / ``McpCliBackendUserBootstrapService``
-   Revalidate and hydrate real TYPO3 backend-user state for Abilities,
-   REST, and CLI projections before native tools run.
+``BackendUserContextService`` / ``McpCliBackendUserBootstrapService``
+   Revalidate and hydrate real TYPO3 backend-user state for MCP HTTP,
+   Abilities, REST, and CLI before native tools run. Preferences stay in memory;
+   read initialization does not create a workspace.
 
 ``McpToolCatalogService``
    Shares deterministic list, describe, and execute behavior with

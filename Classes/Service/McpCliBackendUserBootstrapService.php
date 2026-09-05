@@ -16,7 +16,7 @@ use TYPO3\CMS\Core\Core\Environment;
 final readonly class McpCliBackendUserBootstrapService
 {
     public function __construct(
-        private AbilityBackendUserContextService $backendUserContext,
+        private BackendUserContextService $backendUserContext,
     ) {}
 
     public function initialize(): BackendUserAuthentication

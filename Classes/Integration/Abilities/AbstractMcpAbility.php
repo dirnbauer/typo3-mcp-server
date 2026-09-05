@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Integration\Abilities;
 
 use Hn\McpServer\Exception\AccessDeniedException;
-use Hn\McpServer\Service\AbilityBackendUserContextService;
+use Hn\McpServer\Service\BackendUserContextService;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use Webconsulting\Abilities\Domain\ExecutionContext;
 use Webconsulting\Abilities\Registry\AbstractAbility;
@@ -14,7 +14,7 @@ use Webconsulting\Abilities\Registry\AbstractAbility;
 abstract class AbstractMcpAbility extends AbstractAbility
 {
     public function __construct(
-        private readonly ?AbilityBackendUserContextService $backendUserContext = null,
+        private readonly ?BackendUserContextService $backendUserContext = null,
     ) {}
 
     public function checkPermission(array $input, ExecutionContext $context): bool|string

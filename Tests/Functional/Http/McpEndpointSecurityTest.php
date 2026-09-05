@@ -7,10 +7,12 @@ namespace Hn\McpServer\Tests\Functional\Http;
 use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Middleware\McpServerMiddleware;
+use Hn\McpServer\Service\BackendUserContextService;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Server\Transport\Http\HttpMessage;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,6 +22,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
@@ -87,9 +90,12 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         return new McpEndpoint(
             $logger,
             $oauthService,
-            $connectionPool,
-            $workspaceContextService,
-            $languageServiceFactory,
+            new BackendUserContextService(
+                $connectionPool,
+                GeneralUtility::makeInstance(Context::class),
+                $workspaceContextService,
+                $languageServiceFactory,
+            ),
             $extensionConfiguration,
             new SiteBaseUrlResolver(),
             authenticationRateLimiter: new AuthenticationRateLimiter(
@@ -515,6 +521,10 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         self::assertSame('de', $backendUser->uc['lang'] ?? null);
         self::assertSame(50, $backendUser->uc['titleLen'] ?? null);
         self::assertSame([], $backendUser->uc['moduleData'] ?? null);
+        $backendUser->setAndSaveSessionData('mcp-http-context-test', 'ready');
+        self::assertSame('ready', $backendUser->getSessionData('mcp-http-context-test'));
+        self::assertSame(1, GeneralUtility::makeInstance(Context::class)->getPropertyFromAspect('backend.user', 'id'));
+        self::assertSame($backendUser->workspace, GeneralUtility::makeInstance(Context::class)->getPropertyFromAspect('workspace', 'id'));
 
         $storedUc = $connectionPool
             ->getConnectionForTable('be_users')
@@ -577,5 +587,26 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
         self::assertSame(0, $backendUser->workspace);
+    }
+
+    #[DataProvider('inactiveUserProvider')]
+    public function testStatelessInitializationRejectsInactiveUsersAndClearsPreviousUser(string $field, int $value): void
+    {
+        $this->getContainer()->get(ConnectionPool::class)->getConnectionForTable('be_users')
+            ->update('be_users', [$field => $value], ['uid' => 1]);
+        $endpoint = $this->createEndpoint();
+        $method = new \ReflectionMethod($endpoint, 'setupBackendUserContext');
+
+        self::assertFalse($method->invoke($endpoint, 1));
+        self::assertArrayNotHasKey('BE_USER', $GLOBALS);
+    }
+
+    /** @return iterable<string, array{string, int}> */
+    public static function inactiveUserProvider(): iterable
+    {
+        yield 'disabled' => ['disable', 1];
+        yield 'deleted' => ['deleted', 1];
+        yield 'not yet active' => ['starttime', time() + 3600];
+        yield 'expired' => ['endtime', 1];
     }
 }

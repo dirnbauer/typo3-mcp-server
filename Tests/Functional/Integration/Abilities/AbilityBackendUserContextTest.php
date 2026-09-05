@@ -8,7 +8,7 @@ use Hn\McpServer\Integration\Abilities\ExecuteMcpToolAbility;
 use Hn\McpServer\Integration\Abilities\ListMcpSkillsAbility;
 use Hn\McpServer\MCP\SkillRegistry;
 use Hn\McpServer\MCP\ToolRegistry;
-use Hn\McpServer\Service\AbilityBackendUserContextService;
+use Hn\McpServer\Service\BackendUserContextService;
 use Hn\McpServer\Service\McpToolCatalogService;
 use Hn\McpServer\Service\ToolResultNormalizer;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -35,7 +35,7 @@ final class AbilityBackendUserContextTest extends FunctionalTestCase
     ];
 
     private ConnectionPool $connectionPool;
-    private AbilityBackendUserContextService $backendUserContext;
+    private BackendUserContextService $backendUserContext;
 
     protected function setUp(): void
     {
@@ -43,7 +43,7 @@ final class AbilityBackendUserContextTest extends FunctionalTestCase
 
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->backendUserContext = new AbilityBackendUserContextService(
+        $this->backendUserContext = new BackendUserContextService(
             $this->connectionPool,
             GeneralUtility::makeInstance(Context::class),
             GeneralUtility::makeInstance(WorkspaceContextService::class),

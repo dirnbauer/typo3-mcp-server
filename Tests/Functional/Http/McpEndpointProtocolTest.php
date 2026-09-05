@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\AuthenticationRateLimiter;
 use Hn\McpServer\Http\McpEndpoint;
+use Hn\McpServer\Service\BackendUserContextService;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -16,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
 use TYPO3\CMS\Core\Http\Stream;
@@ -286,9 +288,12 @@ final class McpEndpointProtocolTest extends FunctionalTestCase
         return new McpEndpoint(
             $logger,
             $container->get(OAuthService::class),
-            $container->get(ConnectionPool::class),
-            $container->get(WorkspaceContextService::class),
-            $container->get(LanguageServiceFactory::class),
+            new BackendUserContextService(
+                $container->get(ConnectionPool::class),
+                GeneralUtility::makeInstance(Context::class),
+                $container->get(WorkspaceContextService::class),
+                $container->get(LanguageServiceFactory::class),
+            ),
             new ExtensionConfiguration(),
             new SiteBaseUrlResolver(),
             authenticationRateLimiter: new AuthenticationRateLimiter(

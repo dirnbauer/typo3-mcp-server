@@ -199,12 +199,6 @@ parameters:
 			path: Classes/Exception/McpException.php
 
 		-
-			message: '#^Cannot access offset ''default\.'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Http/McpEndpoint.php
-
-		-
 			message: '#^Only booleans are allowed in a negated boolean, string\|null given\.$#'
 			identifier: booleanNot.exprNotBoolean
 			count: 1

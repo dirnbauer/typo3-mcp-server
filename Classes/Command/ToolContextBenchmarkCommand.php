@@ -59,6 +59,9 @@ final class ToolContextBenchmarkCommand extends Command
             $schemaBudget = $this->positiveInt($input->getOption('schema-budget'), 'schema-budget');
             $responseBudget = $this->positiveInt($input->getOption('response-budget'), 'response-budget');
             $bytesPerToken = $this->positiveFloat($input->getOption('bytes-per-token'), 'bytes-per-token');
+            $baseline = $input->getOption('baseline');
+            $baselineReport = is_string($baseline) && trim($baseline) !== ''
+                ? $this->readBaseline($baseline) : null;
 
             /** @var array<string, array<string, mixed>> $rawSchemas */
             $rawSchemas = [];
@@ -113,9 +116,7 @@ final class ToolContextBenchmarkCommand extends Command
             $report['responses'] = $responses;
             $report['oversizedResponses'] = $oversizedResponses;
 
-            $baseline = $input->getOption('baseline');
-            if (is_string($baseline) && trim($baseline) !== '') {
-                $baselineReport = $this->readBaseline($baseline);
+            if ($baselineReport !== null) {
                 $report['baselineComparison'] = $this->benchmarkService->compareWithBaseline($report, $baselineReport);
             }
             $report['hint'] = $report['responses'] === []
@@ -231,8 +232,8 @@ final class ToolContextBenchmarkCommand extends Command
 
     private function positiveFloat(mixed $value, string $name): float
     {
-        if (!is_numeric($value) || (float)$value <= 0) {
-            throw new \InvalidArgumentException(sprintf('--%s must be greater than zero.', $name));
+        if (!is_numeric($value) || !is_finite((float)$value) || (float)$value <= 0) {
+            throw new \InvalidArgumentException(sprintf('--%s must be finite and greater than zero.', $name));
         }
 
         return (float)$value;

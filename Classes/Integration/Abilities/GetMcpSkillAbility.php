@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Integration\Abilities;
 
 use Hn\McpServer\MCP\SkillRegistry;
-use Hn\McpServer\Service\AbilityBackendUserContextService;
+use Hn\McpServer\Service\BackendUserContextService;
 use Webconsulting\Abilities\Attribute\AsAbility;
 use Webconsulting\Abilities\Domain\ExecutionContext;
 use Webconsulting\Abilities\Domain\RiskTier;
@@ -25,7 +25,7 @@ final class GetMcpSkillAbility extends AbstractMcpAbility
 {
     public function __construct(
         private readonly SkillRegistry $skillRegistry,
-        ?AbilityBackendUserContextService $backendUserContext = null,
+        ?BackendUserContextService $backendUserContext = null,
     ) {
         parent::__construct($backendUserContext);
     }

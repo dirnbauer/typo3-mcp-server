@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
-use Hn\McpServer\Service\AbilityBackendUserContextService;
+use Hn\McpServer\Service\BackendUserContextService;
 use Hn\McpServer\Service\McpCliBackendUserBootstrapService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use PHPUnit\Framework\Attributes\Test;
@@ -39,7 +39,7 @@ final class McpCliBackendUserBootstrapServiceTest extends FunctionalTestCase
 
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'off';
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $abilityContext = new AbilityBackendUserContextService(
+        $abilityContext = new BackendUserContextService(
             $this->connectionPool,
             GeneralUtility::makeInstance(Context::class),
             GeneralUtility::makeInstance(WorkspaceContextService::class),
