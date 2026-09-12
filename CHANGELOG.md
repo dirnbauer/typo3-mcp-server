@@ -7,6 +7,13 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.7.1 - 2026-09-12
+
+### Changed
+
+- Require `webconsulting/typo3-abilities` `^1.0` now that the abilities registry is released;
+  the 0.7.0 requirement on `dev-main` is gone.
+
 ## 0.7.0 - 2026-09-12
 
 Upstream `v0.6.2` is merged into this fork; the entries previously listed as

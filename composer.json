@@ -1,133 +1,133 @@
 {
-    "name": "hn/typo3-mcp-server",
-    "type": "typo3-cms-extension",
-    "description": "TYPO3 extension that provides a Model Context Protocol (MCP) server for interacting with TYPO3 pages and records",
-    "license": "GPL-2.0-or-later",
-    "homepage": "https://github.com/dirnbauer/typo3-mcp-server",
-    "authors": [
-        {
-            "name": "Marco Pfeiffer",
-            "email": "marco@hauptsache.net"
-        }
-    ],
-    "require": {
-        "php": "^8.4",
-        "logiscape/mcp-sdk-php": "^2.0",
-        "typo3/cms-backend": "^14.3.6",
-        "typo3/cms-core": "^14.3.6",
-        "typo3/cms-workspaces": "^14.3.6",
-        "webconsulting/typo3-abilities": "dev-main"
-    },
-    "require-dev": {
-        "brianium/paratest": "^7.8",
-        "a9f/typo3-fractor": "^1.0",
-        "friendsofphp/php-cs-fixer": "^3.94",
-        "georgringer/news": "^14.0",
-        "phpat/phpat": "^0.12.3",
-        "phpstan/phpstan": "^2.1.33",
-        "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-strict-rules": "^2.0",
-        "rector/rector": "2.6.3",
-        "saschaegerer/phpstan-typo3": "^3.0",
-        "ssch/typo3-rector": "^3.0",
-        "typo3/coding-standards": "dev-main",
-        "typo3/cms-extbase": "^14.3.6",
-        "typo3/cms-fluid": "^14.3.6",
-        "typo3/cms-frontend": "^14.3.6",
-        "typo3/cms-install": "^14.3.6",
-        "typo3/testing-framework": "^9.4",
-        "typo3/cms-redirects": "^14.3.6"
-    },
-    "conflict": {
-        "mcp/sdk": "*"
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/dirnbauer/typo3-abilities",
-            "canonical": true,
-            "only": [
-                "webconsulting/typo3-abilities"
-            ]
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "Hn\\McpServer\\": "Classes/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Hn\\McpServer\\Tests\\": "Tests/"
-        }
-    },
-    "extra": {
-        "typo3/cms": {
-            "extension-key": "mcp_server"
-        }
-    },
-    "scripts": {
-        "setup": [
-            "bash Build/setup-typo3.sh"
-        ],
-        "post-install-cmd": [
-            "@setup"
-        ],
-        "post-update-cmd": [
-            "@setup"
-        ],
-        "test": [
-            "@test:unit",
-            "@test:functional"
-        ],
-        "test:unit": [
-            "phpunit -c Tests/UnitTests.xml --fail-on-phpunit-notice"
-        ],
-        "test:functional": [
-            "paratest -c phpunit.xml.dist -p 4 --fail-on-phpunit-notice"
-        ],
-        "test:protocol": [
-            "php Build/protocol-smoke.php"
-        ],
-        "test:llm": [
-            "rm -rf .Build/llm-stats",
-            "rm -f .Build/llm-retries.log",
-            "paratest -c Tests/Llm/phpunit-llm.xml --testdox --no-progress -p 5 --log-junit .Build/llm-results.xml || true",
-            "php Build/check-llm-results.php --min-pass=3"
-        ],
-        "docs:check": [
-            "docker run --rm --pull always -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log"
-        ],
-        "phpstan": [
-            "phpstan analyse --no-progress --memory-limit=1G"
-        ],
-        "php-cs-fixer": [
-            "php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff"
-        ],
-        "php-cs-fixer:fix": [
-            "php-cs-fixer fix --config=.php-cs-fixer.dist.php"
-        ],
-        "rector": [
-            "rector process --dry-run"
-        ],
-        "rector:fix": [
-            "rector process"
-        ],
-        "fractor": [
-            "fractor process --dry-run"
-        ],
-        "fractor:fix": [
-            "fractor process"
-        ]
-    },
-    "config": {
-        "allow-plugins": {
-            "a9f/fractor-extension-installer": true,
-            "typo3/class-alias-loader": true,
-            "typo3/cms-composer-installers": true
-        },
-        "platform": {
-            "php": "8.4.0"
-        }
-    }
+	"name": "hn/typo3-mcp-server",
+	"type": "typo3-cms-extension",
+	"description": "TYPO3 extension that provides a Model Context Protocol (MCP) server for interacting with TYPO3 pages and records",
+	"license": "GPL-2.0-or-later",
+	"homepage": "https://github.com/dirnbauer/typo3-mcp-server",
+	"authors": [
+		{
+			"name": "Marco Pfeiffer",
+			"email": "marco@hauptsache.net"
+		}
+	],
+	"require": {
+		"php": "^8.4",
+		"logiscape/mcp-sdk-php": "^2.0",
+		"typo3/cms-backend": "^14.3.6",
+		"typo3/cms-core": "^14.3.6",
+		"typo3/cms-workspaces": "^14.3.6",
+		"webconsulting/typo3-abilities": "^1.0"
+	},
+	"require-dev": {
+		"brianium/paratest": "^7.8",
+		"a9f/typo3-fractor": "^1.0",
+		"friendsofphp/php-cs-fixer": "^3.94",
+		"georgringer/news": "^14.0",
+		"phpat/phpat": "^0.12.3",
+		"phpstan/phpstan": "^2.1.33",
+		"phpstan/phpstan-deprecation-rules": "^2.0",
+		"phpstan/phpstan-strict-rules": "^2.0",
+		"rector/rector": "2.6.3",
+		"saschaegerer/phpstan-typo3": "^3.0",
+		"ssch/typo3-rector": "^3.0",
+		"typo3/coding-standards": "dev-main",
+		"typo3/cms-extbase": "^14.3.6",
+		"typo3/cms-fluid": "^14.3.6",
+		"typo3/cms-frontend": "^14.3.6",
+		"typo3/cms-install": "^14.3.6",
+		"typo3/testing-framework": "^9.4",
+		"typo3/cms-redirects": "^14.3.6"
+	},
+	"conflict": {
+		"mcp/sdk": "*"
+	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/dirnbauer/typo3-abilities",
+			"canonical": true,
+			"only": [
+				"webconsulting/typo3-abilities"
+			]
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Hn\\McpServer\\": "Classes/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Hn\\McpServer\\Tests\\": "Tests/"
+		}
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "mcp_server"
+		}
+	},
+	"scripts": {
+		"setup": [
+			"bash Build/setup-typo3.sh"
+		],
+		"post-install-cmd": [
+			"@setup"
+		],
+		"post-update-cmd": [
+			"@setup"
+		],
+		"test": [
+			"@test:unit",
+			"@test:functional"
+		],
+		"test:unit": [
+			"phpunit -c Tests/UnitTests.xml --fail-on-phpunit-notice"
+		],
+		"test:functional": [
+			"paratest -c phpunit.xml.dist -p 4 --fail-on-phpunit-notice"
+		],
+		"test:protocol": [
+			"php Build/protocol-smoke.php"
+		],
+		"test:llm": [
+			"rm -rf .Build/llm-stats",
+			"rm -f .Build/llm-retries.log",
+			"paratest -c Tests/Llm/phpunit-llm.xml --testdox --no-progress -p 5 --log-junit .Build/llm-results.xml || true",
+			"php Build/check-llm-results.php --min-pass=3"
+		],
+		"docs:check": [
+			"docker run --rm --pull always -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log"
+		],
+		"phpstan": [
+			"phpstan analyse --no-progress --memory-limit=1G"
+		],
+		"php-cs-fixer": [
+			"php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff"
+		],
+		"php-cs-fixer:fix": [
+			"php-cs-fixer fix --config=.php-cs-fixer.dist.php"
+		],
+		"rector": [
+			"rector process --dry-run"
+		],
+		"rector:fix": [
+			"rector process"
+		],
+		"fractor": [
+			"fractor process --dry-run"
+		],
+		"fractor:fix": [
+			"fractor process"
+		]
+	},
+	"config": {
+		"allow-plugins": {
+			"a9f/fractor-extension-installer": true,
+			"typo3/class-alias-loader": true,
+			"typo3/cms-composer-installers": true
+		},
+		"platform": {
+			"php": "8.4.0"
+		}
+	}
 }
