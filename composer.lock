@@ -6394,16 +6394,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/dirnbauer/typo3-abilities.git",
-                "reference": "b88164866b76fb262c40e0242d93754199938f52"
+                "reference": "ac14a8f7a432154e30e9249039d3640ab3dfb612"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/b88164866b76fb262c40e0242d93754199938f52",
-                "reference": "b88164866b76fb262c40e0242d93754199938f52",
+                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/ac14a8f7a432154e30e9249039d3640ab3dfb612",
+                "reference": "ac14a8f7a432154e30e9249039d3640ab3dfb612",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.4",
+                "psr/http-message": "^1.1 || ^2.0",
+                "psr/http-server-middleware": "^1.0",
                 "symfony/console": "^7.0",
                 "symfony/yaml": "^7.0",
                 "typo3/cms-backend": "^14.3",
@@ -6412,17 +6414,25 @@
             },
             "require-dev": {
                 "phpstan/phpstan": "^2.0",
-                "phpunit/phpunit": "^11.0"
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpunit/phpunit": "^12.4 || ^13.0",
+                "saschaegerer/phpstan-typo3": "^3.0",
+                "typo3/testing-framework": "^9.5"
             },
             "suggest": {
-                "hn/typo3-mcp-server": "Registered abilities are projected as MCP tools automatically",
-                "webconsulting/typo3-capability-manifest": "Shares the side-effect subsystem vocabulary and policy semantics"
+                "hn/typo3-mcp-server": "MCP projection bridge: exposes McpProjection descriptors as MCP tools",
+                "sgalinski/sg-apicore": "OpenAPI augmenter for the REST projection",
+                "webconsulting/skillflow": "Skills contract: skills declare the abilities they need"
             },
             "default-branch": true,
             "type": "typo3-cms-extension",
             "extra": {
                 "typo3/cms": {
-                    "extension-key": "abilities"
+                    "extension-key": "abilities",
+                    "version": "1.0.0",
+                    "Package": {
+                        "providesPackages": []
+                    }
                 }
             },
             "autoload": {
@@ -6440,7 +6450,14 @@
                     "php -d memory_limit=1G vendor/bin/phpstan analyse"
                 ],
                 "test": [
-                    "phpunit"
+                    "@test:unit",
+                    "@test:functional"
+                ],
+                "test:functional": [
+                    "php -d memory_limit=1G vendor/bin/phpunit -c Build/phpunit/FunctionalTests.xml"
+                ],
+                "test:unit": [
+                    "vendor/bin/phpunit -c Build/phpunit/UnitTests.xml"
                 ]
             },
             "license": [
@@ -6453,20 +6470,21 @@
                     "role": "Developer"
                 }
             ],
-            "description": "Abilities registry for TYPO3 — one typed, permissioned registry of what the installation can do; MCP tools, CLI commands and REST routes become projections of it.",
+            "description": "Abilities registry for TYPO3 — one typed, permissioned registry of what the installation can do; MCP tools, CLI commands, REST routes and the backend module become projections of it.",
             "keywords": [
                 "abilities",
                 "agents",
                 "capability",
                 "mcp",
                 "registry",
+                "rest",
                 "typo3"
             ],
             "support": {
                 "source": "https://github.com/dirnbauer/typo3-abilities/tree/main",
                 "issues": "https://github.com/dirnbauer/typo3-abilities/issues"
             },
-            "time": "2026-08-06T22:11:57+00:00"
+            "time": "2026-09-12T16:00:47+00:00"
         },
         {
             "name": "webmozart/assert",
