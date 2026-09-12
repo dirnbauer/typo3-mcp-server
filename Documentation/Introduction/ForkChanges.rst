@@ -295,11 +295,11 @@ The public capability declaration now stays compatible with the archived
 version 1.0 proposal, while exact tools, commands, skills, protocol revisions,
 and optional integrations live in ``x-mcp`` and are checked for consistency.
 
-The bundled Abilities and ``sg_apicore`` packages expose tool list, describe,
-and execute abilities plus skill list and get abilities through governed CLI
-and opt-in REST projections. Native MCP tools and the bundled skill registry
-remain the single implementations and retain their permission and workspace
-gates.
+The bundled Abilities package exposes tool list, describe, and execute
+abilities plus skill list and get abilities through governed CLI projections,
+and the abilities registry is projected back into the MCP catalog as
+``ability_*`` tools. Native MCP tools and the bundled skill registry remain the
+single implementations and retain their permission and workspace gates.
 
 Operators can harden further by removing subsystems from
 ``Configuration/Capabilities.yaml`` or by keeping ``localUnsafeMode`` pinned to

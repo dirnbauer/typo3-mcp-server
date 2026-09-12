@@ -73,7 +73,7 @@ relying on this in production.
 - [Capabilities at a glance](#capabilities-at-a-glance)
 - [CLI: every tool, every shell](#cli-every-tool-every-shell)
 - [Capability manifest (security model)](#capability-manifest-security-model)
-- [Schema API, Abilities, and sg_apicore](#schema-api-abilities-and-sg_apicore)
+- [Schema API and Abilities](#schema-api-and-abilities)
 - [DDEV / local-development mode](#ddev--local-development-mode)
 - [Authentication and clients](#authentication-and-clients)
 - [Configuration](#configuration)
@@ -189,13 +189,11 @@ adds and hardens these areas:
 - **Prompts, resources, and skills** — bundled workflows are always available
   as `typo3-mcp:///skills` resources and as standard MCP prompts. CLI mirrors
   prompt discovery and rendering.
-- **Bundled Abilities + opt-in REST/OpenAPI** — five governed abilities expose native
-  tool list/describe/execute operations plus bundled-skill list/get operations;
-  the four read-only abilities are REST-enabled and generic execution remains
-  on native MCP/CLI so arbitrary arguments never enter the upstream REST trace.
-  The TYPO3 v14 `sg_apicore` fork can expose them with backend-user tokens,
-  scopes, tenants, rate limits, request IDs, redacted logs, and generated
-  OpenAPI.
+- **Abilities registry, both directions** — five governed abilities expose native
+  tool list/describe/execute operations plus bundled-skill list/get operations,
+  and `AbilityToolBridge` projects the whole abilities registry back into the
+  MCP catalog as `ability_*` tools. Generic tool execution stays on native
+  MCP/CLI so arbitrary arguments never enter an ability trace.
 - **DDEV/local mode** — `LocalModeService` detects DDEV or TYPO3 Development
   context and can relax workspace-only writes, non-workspace-table writes, FAL
   sandbox limits, and outbound-network gates for local work. Production stays
@@ -627,7 +625,7 @@ the same drift checks. To inspect the resolved policy:
 ddev exec ./vendor/bin/typo3 mcp:get-capabilities --json
 ```
 
-## Schema API, Abilities, and sg_apicore
+## Schema API and Abilities
 
 Three APIs solve different problems:
 
@@ -650,38 +648,52 @@ abilities:
   workflow documents used by MCP prompts and resources.
 
 They delegate to the same native registries. The four read-only abilities are
-available through CLI and REST. Generic `execute-tool` is deliberately
-CLI-only because the upstream Abilities trace recorder persists complete
-inputs; native MCP remains the secure remote execution surface.
+available through CLI, REST, and — since 0.7.0 — the MCP catalog itself.
+Generic `execute-tool` is deliberately CLI-only because the Abilities trace
+recorder persists complete inputs, and because projecting it into the catalog
+it executes would duplicate every native tool; native MCP remains the secure
+remote execution surface.
 
-The bundled TYPO3 v14 [`sg_apicore` fork](https://github.com/dirnbauer/sg_apicore)
-(installed from `dev-main`; package metadata declares 14.1.0, PHP `^8.3`, and
-TYPO3 `^14.3`) can expose those abilities at `/api/abilities/v1`. It adds
-backend-user-bound opaque tokens, scopes, site tenants, 60/minute rate
-limiting with burst 10, request IDs, redacted logs, and OpenAPI when
-`activateAbilitiesApi=1`. A strict path allowlist blocks inherited auth,
-demo, health, and sg_apicore MCP routes; `/mcp` remains authoritative even if
-API Core's global MCP option is enabled. OpenAPI is filtered to the allowed
-surface and augmented with exact input/output components for the four
-REST-exposed MCP abilities.
-The ability list, describe, and run routes require a backend-user-bound bearer
-token. API Core deliberately serves `/api/abilities/v1/docs.json` and
-`/api/abilities/v1/docs/ui` publicly, so treat the generated schemas as public
-metadata and do not put secrets in ability descriptions or examples.
+### Abilities as MCP tools
 
-Until both maintained forks are published through Packagist, downstream TYPO3
-root projects must declare the `dirnbauer/sg_apicore` and
-`dirnbauer/typo3-abilities` VCS repositories before requiring this extension;
-Composer deliberately does not inherit repositories from dependencies. Both
-repositories are canonical and restricted to their exact integration package
-name, preventing fallback to the upstream GitLab package or another fork.
+`AbilityToolBridge` asks the registry's `McpProjection` for every ability
+exposed to the `mcp` surface and registers one `AbilityTool` per descriptor,
+so ability `system/site-info` appears as the MCP tool
+`ability_system_site-info` with annotations derived from its registry
+metadata. The bridge is a lazy `mcp.tool_provider`, because this extension's
+own catalog abilities read the very registry that lists them.
+
+```sh
+ddev exec ./vendor/bin/typo3 mcp:tool:list --plain | grep ability_
+ddev exec ./vendor/bin/typo3 mcp:tool ability_system_site-info --json
+```
+
+Bridged tools are gated by the side effects their ability declares, in the
+capability manifest's own subsystem vocabulary: read-only abilities need
+nothing, `database:write` must be an effective subsystem, and
+`network:outbound` needs at least one `network.outbound` host. An explicit
+`x-mcp.tools` / `x-mcp.external_tools` entry pins a stricter requirement, and
+`x-mcp.integrations.abilities.mcp_bridge: false` removes the bridged catalog
+entirely.
+
+The REST projection of those abilities ships with the Abilities package
+itself at `/abilities/v1`, authenticated with abilities tokens or a
+same-origin backend session. Releases before 0.7.0 routed it through a fork of
+a separate API framework; that dependency and this extension's policy layer
+for it are gone.
+
+Until the package is published through Packagist, downstream TYPO3 root
+projects must declare the `dirnbauer/typo3-abilities` VCS repository before
+requiring this extension; Composer deliberately does not inherit repositories
+from dependencies. The repository is canonical and restricted to that exact
+package name, preventing fallback to another fork.
 
 Skills are not permission grants, executable workflows, or new MCP capability
 flags. They are inventoried under `x-mcp`, exposed as resources/prompts, and
 can be listed or read through the two read-only skill abilities. Their steps
-run only when a client calls the native permitted tools. Installation, token
-scopes, REST routes, and curl examples are in
-[`Documentation/Integration/SgApiCore.rst`](Documentation/Integration/SgApiCore.rst).
+run only when a client calls the native permitted tools. The bridge, its
+execution context, and the policy rules are documented in
+[`Documentation/Integration/Abilities.rst`](Documentation/Integration/Abilities.rst).
 
 ## DDEV / local-development mode
 
@@ -985,7 +997,7 @@ reading order:
 | Supported protocol differences | [`Architecture/ProtocolMigration.rst`](Documentation/Architecture/ProtocolMigration.rst) |
 | Schema, manifest, Abilities, skills | [`Architecture/CapabilitiesAndAbilities.rst`](Documentation/Architecture/CapabilitiesAndAbilities.rst) |
 | Security audit | [`Architecture/SecurityAudit.rst`](Documentation/Architecture/SecurityAudit.rst) |
-| `sg_apicore` REST/OpenAPI | [`Integration/SgApiCore.rst`](Documentation/Integration/SgApiCore.rst) |
+| Abilities registry and MCP bridge | [`Integration/Abilities.rst`](Documentation/Integration/Abilities.rst) |
 | Dual-era test matrix | [`Testing/ProtocolCompatibility.rst`](Documentation/Testing/ProtocolCompatibility.rst) |
 | Complete 2026 changes | [`Changelog/Modernization2026.rst`](Documentation/Changelog/Modernization2026.rst) |
 | Testing with Cursor | [`Testing/CursorTesting.md`](Documentation/Testing/CursorTesting.md) |

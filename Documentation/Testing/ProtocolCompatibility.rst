@@ -113,10 +113,10 @@ HTTP security track
 
 .. _testing-protocol-abilities:
 
-Abilities and ``sg_apicore`` track
-==================================
+Abilities track
+===============
 
-With the bundled Abilities and API Core packages installed:
+With the bundled Abilities package installed:
 
 .. code-block:: bash
    :caption: Verify the Abilities projections
@@ -126,17 +126,22 @@ With the bundled Abilities and API Core packages installed:
    ddev exec vendor/bin/typo3 abilities:run typo3-mcp/list-tools --input '{}'
    ddev exec vendor/bin/typo3 abilities:run typo3-mcp/list-skills --input '{}'
 
-Then verify the REST projection:
+Then verify the MCP bridge:
 
-- unauthenticated discovery returns 401;
-- the OpenAPI document contains list, describe, and run routes and all five
-  MCP abilities;
-- a backend-user-bound read token can list and describe;
-- a token with ``mcp:skills:read`` can list and retrieve bundled skills;
-- a token without ``mcp:tools:execute`` cannot execute;
-- an execution token still respects TYPO3 permissions and workspace rules;
-- response request IDs and rate-limit headers are present;
-- temporary smoke-test tokens are revoked or deleted after the test.
+- ``mcp:tool:list`` shows one ``ability_*`` tool per ability exposed to the
+  ``mcp`` surface, including ``ability_system_site-info``,
+  ``ability_abilities_list`` and ``ability_abilities_describe``;
+- ``ability_typo3-mcp_execute-tool`` is absent — generic tool execution stays
+  off the MCP surface;
+- ``mcp:tool ability_system_site-info`` returns the site inventory, and the
+  same call over ``/mcp`` returns it as structured content;
+- a bridged tool whose ability declares an undeclared subsystem is refused by
+  the capability manifest;
+- ``x-mcp.integrations.abilities.mcp_bridge: false`` removes every ``ability_*``
+  tool from ``tools/list``.
+
+``composer test:protocol`` asserts the first three points against a live
+stdio server in all three protocol modes.
 
 .. _testing-protocol-manifest:
 

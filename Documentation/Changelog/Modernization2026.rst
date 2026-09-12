@@ -33,9 +33,10 @@ Platform and dependencies
 - Made unit and functional Composer test gates fail on PHPUnit notices and
   converted passive test doubles to stubs, keeping interaction mocks only where
   an expectation is asserted.
-- Added source repositories for the TYPO3 v14 ``sg_apicore`` fork and the
-  Abilities registry to development/test installation.
-- Kept both integration packages optional for consumers; conditional service
+- Added the source repository for the Abilities registry to development/test
+  installation, alongside a REST/API-framework fork that release 0.7.0 removed
+  again.
+- Kept the integration packages optional for consumers; conditional service
   loading preserves a minimal MCP-only installation.
 - Removed the archived capability-manifest package from Composer suggestions.
   Its v1.0 schema and article remain design references; local runtime code and
@@ -104,8 +105,8 @@ Manifest and command inventory
   capability vocabulary.
 - Moved MCP-only runtime data into the namespaced ``x-mcp`` extension block.
 - Added stable/preview protocol revisions and transport inventory.
-- Added bundled Abilities and ``sg_apicore`` integration metadata with
-  explicit opt-in REST activation.
+- Added bundled Abilities integration metadata. Release 0.7.0 replaced the
+  REST activation flag recorded here with the MCP bridge switch.
 - Added an exact native tool-to-subsystem map and prerequisite chains.
 - Added the exact ``mcp:*`` command inventory, including prompts, resources,
   OAuth, diagnostics, server transport, and skill installation.
@@ -179,8 +180,15 @@ Permission-bound read surfaces
 
 .. _modernization-2026-abilities:
 
-Abilities and ``sg_apicore``
-============================
+Abilities
+=========
+
+.. note::
+
+   Release 0.7.0 removed the REST/API-framework integration described in the
+   second half of this section. The abilities registry now serves its own REST
+   projection, and this extension projects the registry into the MCP catalog
+   instead. See :doc:`../Integration/Abilities`.
 
 - Added one shared ``McpToolCatalogService`` for list, describe, and execute.
 - Registered ``typo3-mcp/list-tools`` and
@@ -194,24 +202,10 @@ Abilities and ``sg_apicore``
   while preventing recursive MCP projection. Kept generic ``execute-tool`` off
   REST because the upstream trace recorder persists full arbitrary inputs;
   authenticated remote execution remains on native MCP.
-- Registered the opt-in ``abilities`` REST API through ``sg_apicore`` with
-  backend-user-bound tokens and explicit scopes.
-- Defaulted REST CORS to deny, rate-limited to 60 requests per minute with
-  burst 10, and retained tenant, request-ID, and redacted-log support.
-- Made the ``abilities`` API policy registration-order independent by
-  reasserting its backend-token provider, safe origins, rate limit, and
-  disabled MCP projection before HTTP and console consumers.
-- Honored ``activateAbilitiesApi`` instead of implicitly exposing REST merely
-  because both optional packages are installed.
-- Added a strict abilities-API path allowlist. Inherited API Core auth, demo,
-  health, and MCP routes return 404; the native MCP endpoint remains
-  authoritative even when API Core's global MCP switch is enabled.
-- Filtered generated OpenAPI to the allowed routes and added exact run
-  operations, named component schemas, and ``x-typo3-abilities`` metadata from
-  the same live registry used for execution.
-- Documented that API Core's generated ``docs.json`` and ``docs/ui`` routes are
-  public metadata even though ability list, describe, and run routes require a
-  backend-user-bound bearer token.
+- Registered the opt-in abilities REST API through an API-framework fork with
+  backend-user-bound tokens, explicit scopes, deny-by-default CORS, rate
+  limits, a strict route allowlist, and a filtered generated API description.
+  Removed in 0.7.0 together with that dependency.
 
 .. _modernization-2026-http:
 
@@ -298,15 +292,10 @@ Installation and operations
 - Updated the setup script to derive the site URL from ``DDEV_PRIMARY_URL``.
 - Generated an anchored, escaped ``trustedHostsPattern`` from actual DDEV
   hostnames instead of using localhost or a broad wildcard.
-- Verified extension setup creates MCP, Abilities, and API Core tables in the
+- Verified extension setup creates the MCP and Abilities tables in the
   development installation.
-- Verified native CLI discovery, catalog abilities, generated OpenAPI,
-  unauthenticated rejection on protected ability routes, scoped REST
-  discovery/description/execution, public documentation routes, request IDs,
-  and rate-limit headers.
-- Added tests that reject every non-allowlisted abilities-API route, prove the
-  API kill switch, remove API Core MCP/auth/demo/health paths from OpenAPI, and
-  expose registry-derived ability schemas.
+- Verified native CLI discovery, catalog abilities, and the REST checks of the
+  API-framework integration that 0.7.0 removed.
 - Verified an installed strict-mode write creates only a workspace overlay,
   leaves the live row unchanged, and can be rolled back by explicit workspace
   ID; the temporary draft, workspace, and smoke tokens are removed afterward.
@@ -324,7 +313,8 @@ Documentation
 - Added the stable-to-RC protocol diff and client-support caveat.
 - Separated MCP, Schema API, manifest, and Abilities meanings of capability.
 - Documented skills as prompts/resources and slash-style CLI discovery.
-- Added complete ``sg_apicore`` installation, scopes, routes, and checks.
+- Added complete REST installation, scopes, routes, and checks for the
+  API-framework integration of the time.
 - Removed all query-string-token recommendations.
 - Corrected obsolete claims that the PHP SDK lacks structured results.
 - Added dual-era, HTTP-security, manifest, and optional-integration test plans.

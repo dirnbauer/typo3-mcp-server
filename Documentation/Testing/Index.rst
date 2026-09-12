@@ -40,8 +40,8 @@ The project uses several layers of tests:
 - Playwright E2E tests for browser-visible backend module workflows
 - code-quality checks for PHPStan, PHP CS Fixer, Rector, and Fractor
 - dual-era wire checks for MCP ``2025-11-25`` and ``2026-07-28``
-- bundled Abilities/``sg_apicore`` CLI plus opt-in REST, OpenAPI, scope, and rate-limit
-  checks
+- bundled Abilities CLI plus the MCP bridge that projects the registry into
+  the tool catalog
 
 The E2E suite is intentionally narrow. It verifies the TYPO3 backend module as
 an editor sees it, while deeper MCP tool contracts stay in PHP tests.

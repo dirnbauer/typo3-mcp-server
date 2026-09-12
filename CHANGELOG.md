@@ -7,9 +7,83 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
-## Unreleased
+## 0.7.0 - unreleased
+
+Upstream `v0.6.2` is merged into this fork; the entries previously listed as
+unreleased ship with this version and are folded in below.
+
+### Added
+
+- **Abilities are MCP tools again, through the new `McpProjection` API.**
+  `webconsulting/typo3-abilities` 1.0 removed `Projection\Mcp\AbilityMcpTool`
+  and the compiler pass that tagged one `mcp.tool` service per ability; the
+  registry now exposes the protocol-neutral
+  `Projection\Mcp\McpProjection` instead, and this extension owns the bridge:
+  - `Integration\Abilities\AbilityToolBridge` returns one
+    `Integration\Abilities\AbilityTool` per `McpProjection::descriptors()`
+    entry, so ability `system/site-info` is the MCP tool
+    `ability_system_site-info`. Descriptor name, description, input schema and
+    annotations become the tool schema; `AbilityResult::toArray()` is returned
+    as JSON text content with `isError` mirroring a failed result.
+  - Execution uses `ExecutionContext::mcp($backendUserUid)` for the
+    authenticated backend user. MCP is a trusted abilities surface, so scope
+    checks are skipped while the abilities policy, the ability's own permission
+    check, schema validation and traces still run. No backend user, no
+    execution.
+  - `MCP\ToolRegistry` gained a lazy `mcp.tool_provider` tag
+    (`MCP\Tool\ToolProviderInterface`), resolved on first catalog access
+    rather than in the constructor — this extension's catalog abilities read
+    the registry that lists them, which would otherwise be circular.
+  - The four read-only `typo3-mcp/*` catalog abilities are exposed to `mcp`
+    again. `typo3-mcp/execute-tool` deliberately is not: projecting it into the
+    catalog it executes would duplicate every native tool.
+- **Manifest policy for bridged tools.** Ability tools are gated by the side
+  effects they declare in the registry, mapped onto the manifest's own
+  subsystem vocabulary (`CapabilityManifestService::assertAbilityToolAllowed()`).
+  Read-only abilities need no subsystem, `network:outbound` requires a
+  `network.outbound` host rule, and an explicit `x-mcp.tools` /
+  `x-mcp.external_tools` entry pins a stricter requirement. The new
+  `x-mcp.integrations.abilities.mcp_bridge` flag (default on) removes every
+  bridged ability when disabled.
+- Unit and functional coverage for the bridge, plus `composer test:protocol`
+  assertions that count native and bridged tools separately, require the seven
+  bridged tools, refuse `ability_typo3-mcp_execute-tool`, and call
+  `ability_system_site-info` over the wire.
+
+### Removed
+
+- **The `sg_apicore` integration.** `Classes/Integration/ApiCore/*`
+  (`AbilitiesApiPolicyEnforcer`, `AbilitiesApiPolicyMiddleware`,
+  `AbilitiesOpenApiAugmenter`), their unit tests, the conditional
+  `ext_localconf.php` and `Configuration/RequestMiddlewares.php` wiring, the
+  manifest integration entry, and `Documentation/Integration/SgApiCore.rst` are
+  gone. The REST projection of the abilities registry now ships natively with
+  `webconsulting/typo3-abilities` at `/abilities/v1`, and the lab moves to the
+  upstream `sgalinski/sg-apicore` 3.1 line without this fork's abilities
+  controller.
+- `capabilities.x-mcp.external_tools` no longer needs an
+  `ability_system_site-info` entry and ships empty; it remains available to pin
+  requirements for third-party `mcp.tool` services and bridged abilities.
 
 ### Changed
+
+- `MCP\Tool\AbstractTool` gained the `assertAllowedByManifest()` hook so
+  bridged tools can carry their own requirement metadata while the fail-closed
+  manifest-service lookup stays shared.
+- `Integration\Abilities\AbstractMcpAbility` no longer re-hydrates the backend
+  user on the MCP surface; the endpoint or CLI bootstrap already did, and
+  repeating it would reset the session's read-workspace selection.
+
+### Requirements
+
+- Removed `sgalinski/sg-apicore` from `require` and its Composer repository
+  entry.
+- `webconsulting/typo3-abilities` stays on `dev-main` for now.
+  <!-- TODO: switch to "^1.0" once the 1.0.0 tag is published. -->
+
+### Also in this release
+
+#### Changed
 
 - Share backend-user initialization across MCP HTTP, CLI, and Abilities, removing
   duplicated permission, preference, language, and workspace setup.
@@ -24,7 +98,7 @@ SemVer once it leaves the experimental surface.
 - Consolidate duplicated documentation, remove the superseded local cleanup
   report, and document current protocol support and testing limits.
 
-### Fixed
+#### Fixed
 
 - Benchmark commands reject unreadable baselines and non-finite token ratios
   before executing any response probes.
@@ -37,7 +111,7 @@ SemVer once it leaves the experimental surface.
 - A missing dev-site guard service now fails the tool call instead of bypassing
   the guard.
 
-### Added
+#### Added
 
 - Cache-backed authentication failure limits for `/mcp` and `/mcp_oauth/token`,
   using TYPO3's rate limiter with independent per-IP budgets and HTTP 429 /

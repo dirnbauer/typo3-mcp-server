@@ -156,8 +156,9 @@ Rollout checklist
 - Keep browser origins empty unless a named frontend requires CORS.
 - Test OAuth discovery and a real tool call through the target client.
 - Test both session-based and stateless wire tracks when changing the SDK.
-- Abilities and ``sg_apicore`` are bundled dependencies. Enable their REST
-  projection only when required; see :doc:`../Integration/SgApiCore`.
+- Abilities is a bundled dependency and its abilities appear as
+  ``ability_*`` MCP tools. Review them like native tools, and see
+  :doc:`../Integration/Abilities` to restrict or disable the bridge.
 
 .. toctree::
    :maxdepth: 1

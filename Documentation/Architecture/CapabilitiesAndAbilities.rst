@@ -76,7 +76,7 @@ MCP-specific detail does not invent values in the public subsystem enum. It
 lives under the vendor-extension key ``capabilities.x-mcp``:
 
 - stable and preview protocol revisions and transports;
-- bundled Abilities and ``sg_apicore`` integrations with opt-in REST;
+- the bundled Abilities integration and its MCP bridge switch;
 - runtime-only subsystems and prerequisite chains;
 - the exact MCP tool-to-subsystem map;
 - the exact ``mcp:*`` Symfony command inventory;

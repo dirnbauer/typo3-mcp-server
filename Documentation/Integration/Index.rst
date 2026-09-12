@@ -8,14 +8,14 @@ Integrations
 
 .. _integrations-overview:
 
-Optional projections
-====================
+Projections of the same operations
+==================================
 
-The MCP server works without an API framework. Optional packages can project
-the same governed operations into other TYPO3 surfaces without creating a
-second implementation.
+The MCP server works without an API framework. The bundled Abilities registry
+projects the same governed operations into other TYPO3 surfaces — CLI, REST
+and the MCP catalog itself — without creating a second implementation.
 
 .. toctree::
    :maxdepth: 1
 
-   SgApiCore
+   Abilities

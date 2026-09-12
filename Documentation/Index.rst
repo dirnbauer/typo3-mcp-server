@@ -61,8 +61,8 @@ Highlights
 - Serve session-based MCP ``2025-11-25`` and stateless ``2026-07-28``
   requests from one dual-era endpoint
 - Publish bundled workflows as standard MCP prompts and resources
-- Optionally project the governed tool catalog and bundled skill documents
-  through TYPO3 Abilities and ``sg_apicore`` REST/OpenAPI
+- Project the TYPO3 Abilities registry into the same MCP tool catalog, and
+  the governed tool catalog and bundled skill documents back into Abilities
 
 The public tool surface adapts to the current TYPO3 instance. For example,
 language parameters are only exposed when multiple site languages exist. Record
@@ -94,7 +94,7 @@ Start here depending on your role:
 - :doc:`Testing/Index` for the E2E test suite and CI test workflow
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
   deeper architecture notes
-- :doc:`Integration/Index` for bundled Abilities and opt-in REST/OpenAPI projections
+- :doc:`Integration/Index` for the bundled Abilities registry and its projections
 - :doc:`Changelog/Index` for the complete 2026 modernization record
 - :doc:`Troubleshooting/Index` when something is not working
 

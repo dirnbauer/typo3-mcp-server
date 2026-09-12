@@ -203,16 +203,16 @@ the TYPO3 project root). Most dedicated shortcuts are
 create a custom ``AbstractMcpToolCommand`` subclass only when a shortcut needs
 bespoke options or output formatting.
 
-Bundled Abilities and opt-in REST projection
----------------------------------------------
+Bundled Abilities registry
+--------------------------
 
-``webconsulting/typo3-abilities`` and the TYPO3 v14 ``sg_apicore`` fork are
-production dependencies and install with this extension. The five governed
-abilities are therefore available to CLI after ``extension:setup``. REST and
-generated OpenAPI remain an explicit operator choice: enable
-``activateAbilitiesApi`` before exposing ``/api/abilities/v1``. Follow
-:doc:`../Integration/SgApiCore` for the root-project VCS repository requirement,
-scopes, and post-install checks.
+``webconsulting/typo3-abilities`` is a production dependency and installs with
+this extension. After ``extension:setup`` its abilities are available through
+``abilities:*`` CLI commands and appear in the MCP catalog as ``ability_*``
+tools. Until the package is published through Packagist, downstream TYPO3 root
+projects must declare its VCS repository before requiring this extension;
+Composer deliberately does not inherit repositories from dependencies. See
+:doc:`../Integration/Abilities`.
 
 After installation
 ==================

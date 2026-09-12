@@ -327,14 +327,14 @@ Added findings and mitigations
    ``scheduler:task`` and ``network:scheduler``. These effects are documented
    exceptions, not covered by ``network.outbound`` or DNS pinning.
 
-4. The opt-in ``abilities`` REST API inherited unrelated API Core controllers.
+4. The opt-in abilities REST API inherited unrelated controllers from the
+   API framework it was routed through.
 
-   Status: Fixed. An outer policy middleware honors
-   ``activateAbilitiesApi``, allows only ability list/describe/run and the two
-   public documentation paths, and returns 404 for inherited auth, demo,
-   health, and MCP routes. It blocks API Core's POST MCP handler independently
-   of the global MCP switch. The same layer filters OpenAPI and adds exact
-   registry-derived contracts for the five ``typo3-mcp/*`` abilities.
+   Status: Resolved by removal in 0.7.0. That dependency and its policy layer
+   are gone; the abilities registry serves its own REST projection, and this
+   extension only projects the registry into the MCP catalog. Bridged ability
+   tools pass the capability manifest like native tools and execute with the
+   authenticated backend user — see :doc:`../Integration/Abilities`.
 
 5. CLI ``@path`` parameter file loader.
 

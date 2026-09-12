@@ -21,8 +21,10 @@ not have to be maintained twice.
   meaningful site languages exist. Optional extension data is discovered at
   runtime. Tool contracts may evolve within TYPO3 v14 to improve usability.
 - **Policy is shared.** Native MCP, CLI, and Abilities projections execute the
-  same governed tools. Local mode relaxes documented workspace, file, and
-  outbound restrictions, never authentication or backend-user permissions.
+  same governed tools, and abilities projected back into the MCP catalog keep
+  their registry contracts, policy gate, and capability requirements. Local
+  mode relaxes documented workspace, file, and outbound restrictions, never
+  authentication or backend-user permissions.
 
 ## Request path
 
@@ -31,8 +33,10 @@ not have to be maintained twice.
    `McpEndpoint` validates the bearer token and initializes backend-user context.
 3. `McpServerFactory` builds the `logiscape/mcp-sdk-php` server. The SDK handles
    the supported session-based and stateless protocol versions.
-4. `ToolRegistry` discovers tagged tools. `AbstractTool` enforces the capability
-   manifest and normalizes errors; record tools select workspace context.
+4. `ToolRegistry` discovers `mcp.tool` services eagerly and `mcp.tool_provider`
+   services lazily — `AbilityToolBridge` turns each `McpProjection` descriptor
+   into an `AbilityTool`. `AbstractTool` enforces the capability manifest and
+   normalizes errors; record tools select workspace context.
 5. Shared services enforce page, table, field, language, file, and network
    policy before TYPO3 Core performs the operation.
 6. `ToolResultNormalizer` retains readable text and adds structured JSON where
@@ -88,6 +92,7 @@ doors that share `FileUploadService`:
 | Inline relations and DataHandler | [Inline relations](Documentation/Architecture/InlineRelations.rst) |
 | Per-tool subsystem and network policy | [Capability manifest](Documentation/Architecture/CapabilityManifest.rst) |
 | Schema, manifest, Abilities, and skills | [Capabilities and Abilities](Documentation/Architecture/CapabilitiesAndAbilities.rst) |
+| Abilities registry projected as MCP tools | [Abilities integration](Documentation/Integration/Abilities.rst) |
 | SDK and tested wire protocols | [Protocol compatibility](Documentation/Architecture/ProtocolMigration.rst) |
 | Security decisions and accepted risks | [Security audit](Documentation/Architecture/SecurityAudit.rst) |
 | Tool parameters and limits | [Tool reference](Documentation/Tools/Index.rst) |
