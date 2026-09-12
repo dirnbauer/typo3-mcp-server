@@ -81,6 +81,16 @@ abstract class AbstractTool implements ToolInterface
                 $exception,
             );
         }
+        $this->assertAllowedByManifest($manifest);
+    }
+
+    /**
+     * Native tools are looked up by name in `x-mcp.tools` / `external_tools`.
+     * Bridged tools that carry their own requirement metadata (abilities)
+     * override this hook; the fail-closed service lookup above stays shared.
+     */
+    protected function assertAllowedByManifest(CapabilityManifestService $manifest): void
+    {
         $manifest->assertToolAllowed($this->getName());
     }
 

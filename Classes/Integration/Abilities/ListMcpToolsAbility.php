@@ -17,7 +17,7 @@ use Webconsulting\Abilities\Domain\RiskTier;
     riskTier: RiskTier::Low,
     sideEffects: [],
     idempotent: true,
-    expose: ['cli', 'rest'],
+    expose: ['mcp', 'cli', 'rest'],
 )]
 final class ListMcpToolsAbility extends AbstractMcpCatalogAbility
 {

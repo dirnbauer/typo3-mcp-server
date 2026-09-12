@@ -96,7 +96,15 @@ capabilities:
         package: webconsulting/typo3-abilities
         source: https://github.com/dirnbauer/typo3-abilities
         status: required
-        projections: [cli, rest-opt-in]
+        projections: [mcp, cli, rest]
+        # AbilityToolBridge lists every ability exposed to the "mcp" surface
+        # as one `ability_<namespace>_<name>` tool (McpProjection). Required
+        # subsystems derive from the ability's declared sideEffects (same
+        # vocabulary): read-only abilities need none, `network:outbound` needs
+        # at least one network.outbound host. An explicit `tools` or
+        # `external_tools` entry for the tool name pins the requirement
+        # instead. `mcp_bridge: false` removes every bridged ability.
+        mcp_bridge: true
         catalog_abilities:
           - typo3-mcp/list-tools
           - typo3-mcp/describe-tool
@@ -191,11 +199,11 @@ capabilities:
       GetViewHelperDocumentation: []
       CreateLocallang:    [project:write]
 
-    # CompatibleToolAdapter rejects every third-party tool unless its exact
-    # runtime name is declared here. This optional read-only tool is supplied
-    # by webconsulting/typo3-abilities when that integration is installed.
-    external_tools:
-      ability_system_site-info: [database:read]
+    # CompatibleToolAdapter rejects every third-party `mcp.tool` service unless
+    # its exact runtime name is declared here. Bridged abilities need no entry
+    # (see integrations.abilities); add one only to pin a stricter requirement
+    # than the ability's declared side effects.
+    external_tools: {}
 
     # Exact Symfony command inventory. Tool projections identify the MCP tool
     # they invoke; infrastructure commands declare their role instead.

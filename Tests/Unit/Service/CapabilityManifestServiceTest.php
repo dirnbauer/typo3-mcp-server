@@ -80,15 +80,100 @@ final class CapabilityManifestServiceTest extends TestCase
     }
 
     #[Test]
-    public function explicitlyDeclaredExternalToolUsesItsOwnPolicy(): void
+    public function bridgedAbilityToolsDeriveRequirementsFromTheirSideEffects(): void
     {
         $service = $this->createSubject();
 
+        self::assertTrue($service->isAbilityBridgeEnabled());
+        self::assertSame([], $service->getRequiredSubsystemsForAbilityTool('ability_system_site-info', []));
+        $service->assertAbilityToolAllowed('ability_system_site-info', []);
+
         self::assertSame(
-            ['database:read'],
-            $service->getRequiredSubsystemsForTool('ability_system_site-info'),
+            ['database:write', 'file:write'],
+            $service->getRequiredSubsystemsForAbilityTool(
+                'ability_demo_write',
+                ['database:write', 'file:write', 'network:outbound', 'database:write'],
+            ),
         );
-        $service->assertToolAllowed('ability_system_site-info');
+        // The shipped manifest lists `self` as outbound host, which satisfies network:outbound.
+        $service->assertAbilityToolAllowed('ability_demo_write', ['database:write', 'network:outbound']);
+    }
+
+    #[Test]
+    public function bridgedAbilityToolIsDeniedWhenASideEffectIsNotAnEffectiveSubsystem(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read'],
+            'x-mcp' => ['tools' => [], 'requires' => []],
+        ]);
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessage('manifest is missing subsystems: database:write');
+        $service->assertAbilityToolAllowed('ability_demo_write', ['database:write']);
+    }
+
+    #[Test]
+    public function pinnedAbilityToolUsesTheManifestEntryInsteadOfItsSideEffects(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read'],
+            'x-mcp' => [
+                'tools' => [],
+                'external_tools' => ['ability_system_site-info' => ['database:write']],
+                'requires' => [],
+            ],
+        ]);
+
+        self::assertSame(
+            ['database:write'],
+            $service->getRequiredSubsystemsForAbilityTool('ability_system_site-info', []),
+        );
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessage('manifest is missing subsystems: database:write');
+        $service->assertAbilityToolAllowed('ability_system_site-info', []);
+    }
+
+    #[Test]
+    public function networkOutboundSideEffectRequiresAnOutboundHostRule(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read'],
+            'network' => ['outbound' => []],
+            'x-mcp' => ['tools' => [], 'requires' => []],
+        ]);
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessage('no network.outbound hosts');
+        $service->assertAbilityToolAllowed('ability_demo_fetch', ['network:outbound']);
+    }
+
+    #[Test]
+    public function disabledBridgeBlocksEveryAbilityTool(): void
+    {
+        $service = $this->createSubjectWithManifest([
+            'subsystems' => ['database:read'],
+            'x-mcp' => [
+                'integrations' => ['abilities' => ['mcp_bridge' => false]],
+                'tools' => [],
+                'requires' => [],
+            ],
+        ]);
+
+        self::assertFalse($service->isAbilityBridgeEnabled());
+
+        $this->expectException(AccessDeniedException::class);
+        $this->expectExceptionMessage('abilities bridge disabled');
+        $service->assertAbilityToolAllowed('ability_system_site-info', []);
+    }
+
+    #[Test]
+    public function abilityGatesAreBypassedWhenEnforcementIsOff(): void
+    {
+        $service = $this->createSubject(['enforceCapabilityManifest' => '0']);
+
+        $service->assertAbilityToolAllowed('ability_demo_write', ['database:write', 'email:send']);
+        $this->addToAssertionCount(1);
     }
 
     #[Test]

@@ -133,7 +133,10 @@ final class CapabilityManifestConsistencyTest extends TestCase
         self::assertIsArray($commands);
         self::assertIsArray($tools);
         self::assertIsArray($externalTools);
-        self::assertArrayHasKey('ability_system_site-info', $externalTools);
+        // Abilities are bridged with requirements derived from their registry
+        // metadata; the allowlist only carries deliberately pinned entries.
+        self::assertTrue($mcp['integrations']['abilities']['mcp_bridge'] ?? null);
+        self::assertContains('mcp', $mcp['integrations']['abilities']['projections'] ?? []);
         self::assertSame([], array_intersect_key($tools, $externalTools), 'Native and external tool names must not collide.');
 
         $servicesFile = Yaml::parseFile($this->projectRoot() . '/Configuration/Services.yaml');

@@ -21,8 +21,9 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
  * runtime enforcement.
  *
  * The flow:
- *   1. ToolRegistry::getTool() asks `assertToolAllowed($name)` before handing
- *      a tool to a caller.
+ *   1. AbstractTool::execute() asks `assertToolAllowed($name)` before a native
+ *      tool runs; bridged abilities ask `assertAbilityToolAllowed()` with the
+ *      side effects they declare in the registry instead.
  *   2. Outbound HTTP code paths (UploadFileFromUrl, RenderRecord) ask
  *      `assertUrlAllowed($url)` before opening a socket.
  *
@@ -33,6 +34,12 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 final class CapabilityManifestService
 {
     private const MANIFEST_PATH = 'Configuration/Capabilities.yaml';
+
+    /**
+     * Abilities declare direct HTTP in the same vocabulary; the manifest
+     * expresses it as `network.outbound` host rules rather than a subsystem.
+     */
+    private const SIDE_EFFECT_NETWORK_OUTBOUND = 'network:outbound';
 
     /**
      * @var array<string, mixed>|null
@@ -221,42 +228,131 @@ final class CapabilityManifestService
         if (!$this->isEnforced()) {
             return;
         }
-        $tools = $this->getToolPolicyDefinitions();
-        if (!array_key_exists($toolName, $tools) || !is_array($tools[$toolName])) {
+        if (!$this->isToolDeclared($toolName)) {
             throw new AccessDeniedException(
                 sprintf('tool "%s" (not declared in capability manifest)', $toolName),
                 'execute',
             );
         }
-        $required = $this->getRequiredSubsystemsForTool($toolName);
-        $effective = $this->getEffectiveSubsystems();
-        $missing = array_values(array_diff($required, $effective));
-        if ($missing !== []) {
-            // Distinguish "subsystem not declared" from "subsystem declared but
-            // its prerequisites are missing" so the operator knows where to
-            // look in Capabilities.yaml.
-            $declared = $this->getDeclaredSubsystems();
-            $rules = $this->getRequiresMap();
-            $details = [];
-            foreach ($missing as $subsystem) {
-                if (!in_array($subsystem, $declared, true)) {
-                    $details[] = $subsystem;
-                    continue;
-                }
-                $unmet = array_values(array_diff($rules[$subsystem] ?? [], $declared));
-                $details[] = $unmet === []
-                    ? $subsystem
-                    : sprintf('%s (needs: %s)', $subsystem, implode(', ', $unmet));
-            }
+        $this->assertSubsystemsEffective($toolName, $this->getRequiredSubsystemsForTool($toolName));
+    }
+
+    /**
+     * Whether abilities from webconsulting/typo3-abilities are projected as
+     * MCP tools at all (`x-mcp.integrations.abilities.mcp_bridge`, default
+     * on). Unlike enforcement this is a catalog switch: a disabled bridge
+     * lists no ability tools.
+     */
+    public function isAbilityBridgeEnabled(): bool
+    {
+        $integrations = $this->getMcpExtension()['integrations'] ?? null;
+        $abilities = is_array($integrations) ? ($integrations['abilities'] ?? null) : null;
+
+        return $this->normalizeBool(is_array($abilities) ? ($abilities['mcp_bridge'] ?? null) : null, true);
+    }
+
+    /**
+     * Required subsystems of a bridged ability tool. An explicit manifest
+     * entry under `x-mcp.tools` or `external_tools` pins the requirement and
+     * wins; otherwise the side effects the ability declares are the
+     * requirement. Both use the manifest's subsystem vocabulary, except that
+     * `network:outbound` is checked against the `network.outbound` host rules
+     * in assertAbilityToolAllowed() instead of the subsystem list.
+     *
+     * @param list<string> $sideEffects
+     * @return list<string>
+     */
+    public function getRequiredSubsystemsForAbilityTool(string $toolName, array $sideEffects): array
+    {
+        if ($this->isToolDeclared($toolName)) {
+            return $this->getRequiredSubsystemsForTool($toolName);
+        }
+
+        return array_values(array_unique(array_filter(
+            $this->normalizeStringList($sideEffects),
+            static fn(string $subsystem): bool => $subsystem !== self::SIDE_EFFECT_NETWORK_OUTBOUND,
+        )));
+    }
+
+    /**
+     * @param list<string> $sideEffects the ability's declared side effects
+     * @throws AccessDeniedException when enforcement is on and the bridge is disabled, a declared
+     *                               side effect is not an effective subsystem, or `network:outbound`
+     *                               is declared while the manifest lists no outbound host
+     */
+    public function assertAbilityToolAllowed(string $toolName, array $sideEffects): void
+    {
+        if (!$this->isEnforced()) {
+            return;
+        }
+        if (!$this->isAbilityBridgeEnabled()) {
+            throw new AccessDeniedException(
+                sprintf('tool "%s" (abilities bridge disabled in capability manifest)', $toolName),
+                'execute',
+            );
+        }
+        if (
+            !$this->isToolDeclared($toolName)
+            && in_array(self::SIDE_EFFECT_NETWORK_OUTBOUND, $sideEffects, true)
+            && $this->getNetworkOutboundRules() === []
+            && !($this->localMode !== null && $this->localMode->allowsUnrestrictedOutbound())
+        ) {
             throw new AccessDeniedException(
                 sprintf(
-                    'tool "%s" (manifest is missing subsystems: %s)',
+                    'tool "%s" (ability declares network:outbound but the manifest lists no network.outbound hosts)',
                     $toolName,
-                    implode(', ', $details),
                 ),
                 'execute',
             );
         }
+        $this->assertSubsystemsEffective(
+            $toolName,
+            $this->getRequiredSubsystemsForAbilityTool($toolName, $sideEffects),
+        );
+    }
+
+    private function isToolDeclared(string $toolName): bool
+    {
+        $tools = $this->getToolPolicyDefinitions();
+
+        return array_key_exists($toolName, $tools) && is_array($tools[$toolName]);
+    }
+
+    /**
+     * @param list<string> $required
+     * @throws AccessDeniedException when a required subsystem is not effective
+     */
+    private function assertSubsystemsEffective(string $toolName, array $required): void
+    {
+        $effective = $this->getEffectiveSubsystems();
+        $missing = array_values(array_diff($required, $effective));
+        if ($missing === []) {
+            return;
+        }
+        // Distinguish "subsystem not declared" from "subsystem declared but
+        // its prerequisites are missing" so the operator knows where to
+        // look in Capabilities.yaml.
+        $declared = $this->getDeclaredSubsystems();
+        $rules = $this->getRequiresMap();
+        $details = [];
+        foreach ($missing as $subsystem) {
+            if (!in_array($subsystem, $declared, true)) {
+                $details[] = $subsystem;
+                continue;
+            }
+            $unmet = array_values(array_diff($rules[$subsystem] ?? [], $declared));
+            $details[] = $unmet === []
+                ? $subsystem
+                : sprintf('%s (needs: %s)', $subsystem, implode(', ', $unmet));
+        }
+        throw new AccessDeniedException(
+            sprintf(
+                'tool "%s" (manifest is missing subsystems: %s)',
+                $toolName,
+                implode(', ', $details),
+            ),
+            'execute',
+        );
     }
 
     /**
@@ -481,9 +577,16 @@ final class CapabilityManifestService
         } catch (\Throwable) {
             return true;
         }
-        $value = is_array($config) ? ($config['enforceCapabilityManifest'] ?? null) : null;
+        return $this->normalizeBool(
+            is_array($config) ? ($config['enforceCapabilityManifest'] ?? null) : null,
+            true,
+        );
+    }
+
+    private function normalizeBool(mixed $value, bool $default): bool
+    {
         if ($value === null) {
-            return true;
+            return $default;
         }
         if (is_bool($value)) {
             return $value;
@@ -494,7 +597,7 @@ final class CapabilityManifestService
         if (is_string($value)) {
             return !in_array(strtolower(trim($value)), ['0', 'false', 'no', 'off'], true);
         }
-        return true;
+        return $default;
     }
 
     private function matchesAnySiteHost(string $hostLower): bool

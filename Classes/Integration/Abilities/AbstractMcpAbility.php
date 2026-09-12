@@ -27,6 +27,12 @@ abstract class AbstractMcpAbility extends AbstractAbility
         if (!is_numeric($uid) || (int)$uid <= 0) {
             return 'A real active TYPO3 backend user is required.';
         }
+        if ($context->surface === ExecutionContext::SURFACE_MCP) {
+            // The MCP endpoint or CLI bootstrap already hydrated this user
+            // through BackendUserContextService; hydrating again here would
+            // reset the session's read-workspace selection mid-request.
+            return true;
+        }
         if ($this->backendUserContext === null) {
             return 'The TYPO3 backend-user context bootstrap is unavailable.';
         }
