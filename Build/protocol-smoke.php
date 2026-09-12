@@ -51,14 +51,52 @@ function runProtocolSmoke(string $mode, string $serverCommand): array
         $toolResult = $session->listTools();
         $toolNames = array_map(static fn($tool): string => $tool->name, $toolResult->tools);
         // Six bundled project-authoring/package-management tools are
-        // intentionally hidden in a production context; optional Abilities
-        // projections may add more. The base production catalog has 39 tools.
-        if (count($toolNames) < 39 || !in_array('GetCapabilities', $toolNames, true)) {
+        // intentionally hidden in a production context. The base production
+        // catalog has 39 native tools.
+        $nativeNames = array_values(array_filter(
+            $toolNames,
+            static fn(string $name): bool => !str_starts_with($name, 'ability_'),
+        ));
+        if (count($nativeNames) < 39 || !in_array('GetCapabilities', $toolNames, true)) {
             throw new RuntimeException(sprintf(
-                'The installed MCP tool catalog is incomplete (%d tools: %s).',
-                count($toolNames),
-                implode(', ', $toolNames),
+                'The installed MCP tool catalog is incomplete (%d native tools: %s).',
+                count($nativeNames),
+                implode(', ', $nativeNames),
             ));
+        }
+
+        // AbilityToolBridge projects the abilities registry into the same
+        // catalog: the registry's own abilities plus this extension's MCP
+        // catalog abilities, and never generic tool execution.
+        $abilityNames = array_values(array_filter(
+            $toolNames,
+            static fn(string $name): bool => str_starts_with($name, 'ability_'),
+        ));
+        $requiredAbilityTools = [
+            'ability_system_site-info',
+            'ability_abilities_list',
+            'ability_abilities_describe',
+            'ability_typo3-mcp_list-tools',
+            'ability_typo3-mcp_describe-tool',
+            'ability_typo3-mcp_list-skills',
+            'ability_typo3-mcp_get-skill',
+        ];
+        foreach ($requiredAbilityTools as $requiredAbilityTool) {
+            if (!in_array($requiredAbilityTool, $abilityNames, true)) {
+                throw new RuntimeException(sprintf(
+                    'Missing bridged ability tool %s (bridged: %s).',
+                    $requiredAbilityTool,
+                    $abilityNames === [] ? 'none' : implode(', ', $abilityNames),
+                ));
+            }
+        }
+        if (in_array('ability_typo3-mcp_execute-tool', $abilityNames, true)) {
+            throw new RuntimeException('Generic ability tool execution must stay off the MCP surface.');
+        }
+
+        $abilityResult = $session->callTool('ability_system_site-info', []);
+        if ($abilityResult->isError) {
+            throw new RuntimeException('The bridged ability_system_site-info tool returned an MCP tool error.');
         }
 
         $promptResult = $session->listPrompts();
@@ -107,6 +145,8 @@ function runProtocolSmoke(string $mode, string $serverCommand): array
             'protocolVersion' => $version,
             'wireVersion' => $modern ? $session->getModernWireVersion() : null,
             'tools' => count($toolNames),
+            'nativeTools' => count($nativeNames),
+            'abilityTools' => count($abilityNames),
             'prompts' => count($promptNames),
             'resources' => count($resourceUris),
             'structuredContent' => true,

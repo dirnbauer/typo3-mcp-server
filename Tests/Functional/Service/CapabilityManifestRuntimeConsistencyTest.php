@@ -36,6 +36,14 @@ final class CapabilityManifestRuntimeConsistencyTest extends AbstractFunctionalT
         sort($nativeNames);
         sort($allowlistedNames);
 
+        // Bridged abilities are governed by their registry metadata instead of
+        // a per-name manifest entry (see AbilityToolBridge); they are checked
+        // in Tests/Functional/Integration/Abilities.
+        $bridgedNames = array_values(array_filter(
+            $registeredNames,
+            static fn(string $name): bool => str_starts_with($name, 'ability_'),
+        ));
+
         self::assertSame(
             [],
             array_values(array_diff($nativeNames, $registeredNames)),
@@ -43,8 +51,8 @@ final class CapabilityManifestRuntimeConsistencyTest extends AbstractFunctionalT
         );
         self::assertSame(
             [],
-            array_values(array_diff($registeredNames, [...$nativeNames, ...$allowlistedNames])),
-            'Every booted tool must be native or explicitly allowlisted as external.',
+            array_values(array_diff($registeredNames, [...$nativeNames, ...$allowlistedNames, ...$bridgedNames])),
+            'Every booted tool must be native, explicitly allowlisted, or a bridged ability.',
         );
     }
 }
