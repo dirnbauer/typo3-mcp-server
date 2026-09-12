@@ -7,7 +7,7 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
-## 0.7.0 - unreleased
+## 0.7.0 - 2026-09-12
 
 Upstream `v0.6.2` is merged into this fork; the entries previously listed as
 unreleased ship with this version and are folded in below.
