@@ -13,7 +13,6 @@
     "require": {
         "php": "^8.4",
         "logiscape/mcp-sdk-php": "^2.0",
-        "sgalinski/sg-apicore": "dev-main",
         "typo3/cms-backend": "^14.3.6",
         "typo3/cms-core": "^14.3.6",
         "typo3/cms-workspaces": "^14.3.6",

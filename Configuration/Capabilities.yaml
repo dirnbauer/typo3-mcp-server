@@ -103,14 +103,6 @@ capabilities:
           - typo3-mcp/execute-tool
           - typo3-mcp/list-skills
           - typo3-mcp/get-skill
-      sg_apicore:
-        package: sgalinski/sg-apicore
-        source: https://github.com/dirnbauer/sg_apicore
-        compatible: '^14.1'
-        status: required
-        activation: opt-in
-        api: /api/abilities/v1
-        features: [openapi, scopes, backend-user-tokens, tenants, rate-limits, request-ids, redacted-logs]
 
     runtime_subsystems:
       - workspace:read

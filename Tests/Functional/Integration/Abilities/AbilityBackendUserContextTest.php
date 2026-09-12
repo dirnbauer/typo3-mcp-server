@@ -68,7 +68,7 @@ final class AbilityBackendUserContextTest extends FunctionalTestCase
         self::assertSame('web_layout', $backendUser->uc['startModule'] ?? null);
 
         // This is the session operation that crashes DataHandler-adjacent paths
-        // when sg_apicore token authentication leaves userSession uninitialized.
+        // when stateless REST token authentication leaves userSession uninitialized.
         $backendUser->setAndSaveSessionData('mcp-ability-test', 'ready');
         self::assertSame('ready', $backendUser->getSessionData('mcp-ability-test'));
 

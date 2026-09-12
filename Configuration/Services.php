@@ -5,10 +5,7 @@ declare(strict_types=1);
 use Hn\McpServer\Integration\X402\X402PaymentVerifierAdapter;
 use Hn\McpServer\Service\X402\NullX402PaymentVerifier;
 use Hn\McpServer\Service\X402\X402PaymentVerifierInterface;
-use SGalinski\SgApiCore\Configuration\ExtensionConfiguration;
-use SGalinski\SgApiCore\Service\ApiRegistry;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Webconsulting\Abilities\Registry\AbilitiesRegistry;
 use Webconsulting\X402Paywall\Configuration\ConfigurationProvider;
 use Webconsulting\X402Paywall\Configuration\PaywallConfiguration;
 use Webconsulting\X402Paywall\Domain\Model\PaymentRequirement;
@@ -30,20 +27,17 @@ return static function (ContainerConfigurator $configurator): void {
         NullX402PaymentVerifier::class,
     );
 
-    // These packages are production requirements. Register their small core
-    // services explicitly as focused TYPO3 functional-test containers may not
-    // load another extension's Services.yaml.
-    $services->set(ApiRegistry::class)->public();
-    $services->set(ExtensionConfiguration::class);
-    $services->set(AbilitiesRegistry::class);
-    $services->load(
-        'Hn\\McpServer\\Integration\\ApiCore\\',
-        __DIR__ . '/../Classes/Integration/ApiCore/',
-    );
+    // webconsulting/typo3-abilities is a production requirement: the catalog
+    // abilities below are collected by its registry through the
+    // "abilities.ability" tag, and AbilityToolBridge projects every
+    // MCP-exposed ability back into the ToolRegistry. AbilityTool instances
+    // are created by the bridge, never by the container.
     $services->load(
         'Hn\\McpServer\\Integration\\Abilities\\',
         __DIR__ . '/../Classes/Integration/Abilities/',
-    );
+    )->exclude([
+        __DIR__ . '/../Classes/Integration/Abilities/AbilityTool.php',
+    ]);
 
     if (
         class_exists(ConfigurationProvider::class)

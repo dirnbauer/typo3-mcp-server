@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e9dbe71cafde86c5978efee34957acf0",
+    "content-hash": "5584cf3084bd1d590193a216a9d2dad9",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1379,56 +1379,6 @@
             "time": "2026-08-18T06:18:41+00:00"
         },
         {
-            "name": "nikic/fast-route",
-            "version": "1.3.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/nikic/FastRoute.git",
-                "reference": "7476684f39bb9124b3be69ed3d84b66723920298"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/nikic/FastRoute/zipball/7476684f39bb9124b3be69ed3d84b66723920298",
-                "reference": "7476684f39bb9124b3be69ed3d84b66723920298",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^4.8.35|~5.7"
-            },
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "src/functions.php"
-                ],
-                "psr-4": {
-                    "FastRoute\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Nikita Popov",
-                    "email": "nikic@php.net"
-                }
-            ],
-            "description": "Fast request router for PHP",
-            "keywords": [
-                "router",
-                "routing"
-            ],
-            "support": {
-                "issues": "https://github.com/nikic/FastRoute/issues",
-                "source": "https://github.com/nikic/FastRoute/tree/1.3.1"
-            },
-            "time": "2026-07-09T19:38:47+00:00"
-        },
-        {
             "name": "phpdocumentor/reflection-common",
             "version": "2.2.0",
             "source": {
@@ -2217,93 +2167,6 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
-        },
-        {
-            "name": "sgalinski/sg-apicore",
-            "version": "dev-main",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/dirnbauer/sg_apicore.git",
-                "reference": "bb2c5edb0a5c72d9e7d3b71b1ee929459b67119d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/dirnbauer/sg_apicore/zipball/bb2c5edb0a5c72d9e7d3b71b1ee929459b67119d",
-                "reference": "bb2c5edb0a5c72d9e7d3b71b1ee929459b67119d",
-                "shasum": ""
-            },
-            "require": {
-                "nikic/fast-route": "^1.3",
-                "php": "^8.3",
-                "typo3/cms-core": "^14.3",
-                "typo3/cms-workspaces": "^14.3"
-            },
-            "replace": {
-                "sgalinski/sg_apicore": "self.version"
-            },
-            "require-dev": {
-                "bnf/phpstan-psr-container": "^1.1",
-                "phpstan/phpstan": "^2.1",
-                "phpstan/phpstan-phpunit": "^2.0",
-                "phpunit/phpunit": "^12.1",
-                "typo3/testing-framework": "^9.5 || ^10.0",
-                "webconsulting/typo3-abilities": "dev-main"
-            },
-            "default-branch": true,
-            "type": "typo3-cms-extension",
-            "extra": {
-                "typo3/cms": {
-                    "extension-key": "sg_apicore"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "SGalinski\\SgApiCore\\": "Classes/"
-                }
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "SGalinski\\SgApiCore\\Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "phpstan": [
-                    "phpstan analyse --configuration=Build/phpstan/phpstan.neon --memory-limit=-1"
-                ],
-                "test": [
-                    "phpunit --configuration=phpunit.xml"
-                ]
-            },
-            "license": [
-                "GPL-2.0-or-later"
-            ],
-            "description": "Modern, performance-driven TYPO3 API framework with attribute-based routing and endpoint metadata, multi-API/multi-version setup, tenant-aware request context, OpenAPI 3 generation with Swagger UI and CLI export, MCP/Model Context Protocol tool exposure over JSON-RPC and Streamable HTTP, token/user/backend authentication (opaque bearer + JWT + FE/BE contexts), scope enforcement, auto-CRUD resource registration via TCA/DataHandler, built-in response caching, rate limiting, structured request/response logging with redaction, backend dashboards for APIs/tokens/endpoints/rate-limits/logs, and optional legacy sg_rest compatibility.",
-            "homepage": "https://www.sgalinski.de",
-            "keywords": [
-                "api",
-                "api-caching",
-                "authentication",
-                "auto-crud",
-                "bearer-token",
-                "json-rpc",
-                "jwt",
-                "mcp",
-                "model-context-protocol",
-                "multi-tenant",
-                "openapi",
-                "rate-limiting",
-                "rest",
-                "routing",
-                "swagger",
-                "tca",
-                "typo3",
-                "typo3-extension"
-            ],
-            "support": {
-                "source": "https://github.com/dirnbauer/sg_apicore/tree/main",
-                "issues": "https://github.com/dirnbauer/sg_apicore/issues"
-            },
-            "time": "2026-07-07T07:50:15+00:00"
         },
         {
             "name": "symfony/cache",
@@ -11859,7 +11722,6 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "sgalinski/sg-apicore": 20,
         "typo3/coding-standards": 20,
         "webconsulting/typo3-abilities": 20
     },
