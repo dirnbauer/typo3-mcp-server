@@ -221,15 +221,13 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
      */
     private function mockOEmbedLookups(string $title): void
     {
-        $GLOBALS['TYPO3_CONF_VARS']['HTTP']['handler']['mcp_test_oembed'] = static function (callable $handler) use ($title): callable {
-            return static function (RequestInterface $request, array $options) use ($handler, $title) {
-                if (str_contains((string)$request->getUri(), 'oembed')) {
-                    return new FulfilledPromise(new GuzzleResponse(200, ['Content-Type' => 'application/json'], (string)json_encode(['title' => $title])));
-                }
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP']['handler']['mcp_test_oembed'] = (static fn(callable $handler): callable => static function (RequestInterface $request, array $options) use ($handler, $title) {
+            if (str_contains((string)$request->getUri(), 'oembed')) {
+                return new FulfilledPromise(new GuzzleResponse(200, ['Content-Type' => 'application/json'], (string)json_encode(['title' => $title])));
+            }
 
-                return $handler($request, $options);
-            };
-        };
+            return $handler($request, $options);
+        });
     }
 
     private function createToolWithRequestFactory(RequestFactory $requestFactory): UploadFileFromUrlTool

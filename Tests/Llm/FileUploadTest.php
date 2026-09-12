@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Llm;
 
+use Doctrine\DBAL\ParameterType;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Psr7\Response;
 use Hn\McpServer\Tests\Llm\Client\LlmResponse;
@@ -100,17 +101,15 @@ class FileUploadTest extends LlmTestCase
         ];
 
         $GLOBALS['TYPO3_CONF_VARS']['HTTP']['handler'] = [
-            'mcp_llm_upload_mock' => function (callable $handler) use ($mocked) {
-                return function ($request, array $options) use ($handler, $mocked) {
-                    $url = (string)$request->getUri();
-                    foreach ($mocked as $prefix => $response) {
-                        if (str_starts_with($url, $prefix)) {
-                            return new FulfilledPromise($response);
-                        }
+            'mcp_llm_upload_mock' => fn(callable $handler) => function ($request, array $options) use ($handler, $mocked) {
+                $url = (string)$request->getUri();
+                foreach ($mocked as $prefix => $response) {
+                    if (str_starts_with($url, $prefix)) {
+                        return new FulfilledPromise($response);
                     }
-                    // Everything else keeps working, including the LLM API itself
-                    return $handler($request, $options);
-                };
+                }
+                // Everything else keeps working, including the LLM API itself
+                return $handler($request, $options);
             },
         ];
     }
@@ -476,7 +475,7 @@ class FileUploadTest extends LlmTestCase
         $row = $qb->select('uid_foreign')
             ->from('sys_file_reference')
             ->where(
-                $qb->expr()->eq('uid_local', $qb->createNamedParameter($fileUid, \Doctrine\DBAL\ParameterType::INTEGER)),
+                $qb->expr()->eq('uid_local', $qb->createNamedParameter($fileUid, ParameterType::INTEGER)),
                 $qb->expr()->eq('tablenames', $qb->createNamedParameter('tt_content')),
                 $qb->expr()->eq('deleted', 0)
             )

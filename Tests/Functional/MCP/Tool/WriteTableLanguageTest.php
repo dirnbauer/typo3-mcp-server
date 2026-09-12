@@ -8,6 +8,7 @@ use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\Traits\GetServiceTrait;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -41,7 +42,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         // "[Translate to ...]" prefix). In full-suite runs another test class
         // happens to leave it behind; set it explicitly so this class also
         // works in isolation.
-        $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class)
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)
             ->create('default');
     }
 
@@ -314,7 +315,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testTranslateAppliesProvidedFieldValues(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $createResult = $tool->execute([
             'action' => 'create',
@@ -343,7 +344,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
         self::assertIsInt($translationUid);
 
-        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid);
+        $translation = BackendUtility::getRecord('tt_content', $translationUid);
         self::assertEquals('Deutscher Titel', $translation['header']);
         self::assertEquals('Das ist der übersetzte Inhalt', $translation['bodytext']);
         self::assertEquals(1, $translation['sys_language_uid']);
@@ -359,7 +360,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file_metadata.csv');
 
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
         $translateResult = $tool->execute([
             'action' => 'translate',
             'table' => 'sys_file_metadata',
@@ -374,7 +375,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
         self::assertIsInt($translationUid);
 
-        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('sys_file_metadata', $translationUid);
+        $translation = BackendUtility::getRecord('sys_file_metadata', $translationUid);
         self::assertEquals('Personenfoto', $translation['title']);
         self::assertEquals('Foto vom Teamleiter', $translation['alternative']);
         self::assertEquals(1, $translation['sys_language_uid']);
@@ -388,7 +389,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
      */
     public function testTranslateWithInvalidFieldCreatesNoOrphanTranslation(): void
     {
-        $tool = new WriteTableTool();
+        $tool = $this->getService(WriteTableTool::class);
 
         $createResult = $tool->execute([
             'action' => 'create',
@@ -425,7 +426,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         $translationUid = json_decode($retryResult->content[0]->text, true)['translationUid'];
         self::assertIsInt($translationUid);
 
-        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid);
+        $translation = BackendUtility::getRecord('tt_content', $translationUid);
         self::assertEquals('Deutscher Titel', $translation['header']);
     }
 

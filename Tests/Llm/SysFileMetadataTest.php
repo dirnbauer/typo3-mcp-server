@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Llm;
 use Doctrine\DBAL\ParameterType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestDox;
+use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -69,7 +70,7 @@ class SysFileMetadataTest extends LlmTestCase
         GeneralUtility::mkdir_deep($configPath);
         GeneralUtility::writeFile(
             $configPath . '/config.yaml',
-            \Symfony\Component\Yaml\Yaml::dump($siteConfiguration, 99, 2),
+            Yaml::dump($siteConfiguration, 99, 2),
             true
         );
     }
