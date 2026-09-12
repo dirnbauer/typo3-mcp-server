@@ -44,14 +44,6 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/dirnbauer/sg_apicore",
-            "canonical": true,
-            "only": [
-                "sgalinski/sg-apicore"
-            ]
-        },
-        {
-            "type": "vcs",
             "url": "https://github.com/dirnbauer/typo3-abilities",
             "canonical": true,
             "only": [
