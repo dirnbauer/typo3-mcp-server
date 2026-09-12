@@ -25,6 +25,7 @@ capabilities:
       - tx_mcpserver_oauth_refresh_replay
       - tx_mcpserver_oauth_codes
       - tx_mcpserver_access_tokens
+      - tx_mcpserver_upload_tokens
     # MCP intentionally operates on arbitrary TCA tables, subject to TYPO3
     # permissions, workspace rules, and the tool-level policy below.
     reads: '*'

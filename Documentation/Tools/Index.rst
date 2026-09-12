@@ -160,10 +160,10 @@ Use this overview for discoverability (aligned with MCP tool-naming guidance):
      - Metadata for a file in the sandbox
    * - ``UploadFile``
      - Write
-     - Upload via base64 into sandbox
+     - Upload via base64 into sandbox, or mint a pre-signed single-use upload URL
    * - ``UploadFileFromUrl``
      - Write
-     - Fetch URL server-side into sandbox (SSRF-protected)
+     - Fetch URL server-side into sandbox (SSRF-protected); YouTube/Vimeo become online media
    * - ``WriteFile``
      - Write
      - Create/replace text file in sandbox
@@ -694,38 +694,78 @@ This tool supports TYPO3 text file extensions such as ``.txt``, ``.html``,
 UploadFile
 ----------
 
-Upload a binary or text file into the MCP file sandbox via base64.
+Upload a binary or text file into the MCP file sandbox via base64, or request
+a pre-signed upload URL for a file on the client machine.
 
 :Parameters:
-   - ``path`` (string, required): requested target path inside the sandbox
-   - ``content_base64`` (string, required): base64 payload or data URL
-   - ``metadata`` (object): optional file metadata
+   - ``path`` (string, required): requested target path inside the sandbox; a
+     folder path ending with ``/`` is accepted for the pre-signed flow
+   - ``content_base64`` (string): base64 payload or data URL. When omitted, the
+     tool returns a single-use upload URL instead of storing anything
+   - ``metadata`` (object): optional file metadata (not applied to pre-signed
+     uploads or deduplicated files)
 
 Upload behavior:
 
 - the requested folder path is respected
 - the stored filename is randomized
-- existing files are never overwritten
+- existing files are never overwritten; identical content that already exists
+  in the sandbox is returned instead of a duplicate (``deduplicated: true``)
+- executable files (``.php``, ``.phtml``, ``.sh``, ...), browser-executable
+  documents (``.html``, ``.js``, ...), inner executable extensions
+  (``evil.php.jpg``) and server configuration files (``.user.ini``,
+  ``.htaccess``, ``web.config``) are refused independently of TYPO3's
+  ``fileDenyPattern``
+- payloads above :confval:`maxFileSizeMb <ext-mcp-server-maxFileSizeMb>` are
+  rejected
 - uploads can be routed into workspace-specific folders inside the sandbox
+
+Pre-signed uploads (``/mcp_upload``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Calling ``UploadFile`` without ``content_base64`` validates the target against
+the sandbox, binds it to a single-use token (15 minute lifetime, bound to the
+backend user, the target folder and - when given - the exact file name) and
+returns ``uploadUrl``, ``uploadToken`` and a ready-to-run ``curl`` command. The
+MCP client then sends the raw bytes with ``HTTP PUT`` (or ``POST``, multipart
+accepted) to ``<base-url>/mcp_upload`` with ``Authorization: Bearer
+<uploadToken>``; the token is consumed by the attempt, so a failed upload needs
+a fresh URL. The endpoint applies the same file-name rules, size limit,
+randomized naming and deduplication as the tool, restores the backend user's
+stored preferences (``uc``) while impersonating, shares the failed
+authentication budget of the other MCP endpoints, and answers with the stored
+``sys_file`` as JSON (``uid``, ``identifier``, ``storedFilename``, ...). The
+URL is built from the current request (including a site path prefix) or
+``SYS.reverseProxyBaseUrl``; without an absolute base URL (stdio mode without
+a site) the tool refuses to mint a token.
 
 UploadFileFromUrl
 -----------------
 
 Download a public HTTP or HTTPS URL server-side and store the result in the MCP
-file sandbox.
+file sandbox. YouTube and Vimeo page URLs are not downloaded: they become TYPO3
+online media assets (a small ``.youtube`` / ``.vimeo`` placeholder file) via
+the core ``OnlineMediaHelperRegistry``.
 
 :Parameters:
-   - ``url`` (string, required): public file URL
-   - ``path`` (string): target path inside the sandbox, derived from the URL if
-     omitted
+   - ``url`` (string, required): public file URL or YouTube/Vimeo video URL
+   - ``path`` (string): target path inside the sandbox, derived from the
+     ``Content-Disposition`` header or the URL if omitted; for online media only
+     the folder part is used
    - ``metadata`` (object): optional file metadata
 
 Security measures include:
 
-- allow-listing only ``http`` and ``https``
+- allow-listing only ``http`` and ``https`` and the capability manifest's
+  ``network.outbound`` policy (YouTube/Vimeo hosts must be allowed there too)
 - rejecting private and reserved network targets after DNS resolution
-- streaming downloads with a 20 MB size limit
+- streaming downloads with the configurable
+  :confval:`maxFileSizeMb <ext-mcp-server-maxFileSizeMb>` size limit
 - disabling redirects and limiting request duration
+- rejecting web pages (HTML documents) with an actionable message, even when
+  they are served under an image file name
+- the same executable/server-configuration refusal and content deduplication
+  as ``UploadFile``
 - relying on TYPO3 file validation when the file is stored
 
 Media search

@@ -317,6 +317,33 @@ tool-to-subsystem map is also exposed by the `GetCapabilities` tool, gated by
   `mcp/sdk:*` itself because that unrelated SDK owns an incompatible `Mcp\`
   class tree.
 
+### Files and images
+
+Your assistant can bring new files into TYPO3 in four ways, and it picks the
+right one from the tool descriptions:
+
+- **From a URL** — `UploadFileFromUrl` downloads the file server-side into the
+  MCP sandbox, so the file never passes through the model context.
+- **From YouTube or Vimeo** — the same tool turns those links into proper TYPO3
+  online media assets; the video itself stays where it is.
+- **Directly as content** — small or generated files (an SVG chart, a CSV)
+  go through `UploadFile` with `content_base64`.
+- **From your own computer** — `UploadFile` without a payload hands out a
+  single-use pre-signed upload URL; the MCP client PUTs the raw bytes to
+  `/mcp_upload` with the token as bearer header. Binary data never travels
+  through the AI's context, which keeps large photos both cheap and private.
+
+Uploading is deliberately **create-only**: stored names are randomized inside
+the sandbox, nothing is overwritten or deleted, and uploading content that
+already exists returns the existing file instead of a duplicate. Files that
+could be executed by the server or a visitor's browser, inner executable
+extensions (`evil.php.jpg`), and files that reconfigure the web server
+(`.user.ini`, `.htaccess`) are refused regardless of TYPO3's `fileDenyPattern`;
+web pages are rejected with an actionable message; `maxFileSizeMb` caps
+every path. Physical files are not workspace-versioned, so an upload lands in
+the storage right away — it only becomes visible once a record references it,
+and that reference *is* workspace-staged.
+
 ### Frontend design-system tooling
 
 `ApplyShadcnPreset` is a dev-site/admin-only helper for applying a copied
@@ -808,6 +835,21 @@ session. In both cases the extension creates only an in-memory TYPO3 backend
 user session for the current request so `DataHandler` internals work without a
 persistent backend login.
 
+### Static tokens without OAuth discovery
+
+Scripted clients, CI jobs, and MCP clients without OAuth support can use a
+static bearer token minted on the command line:
+
+```bash
+vendor/bin/typo3 mcp:oauth create <backend-username> --client-name "CI runner" --ttl-days 30
+# DDEV: ddev typo3 mcp:oauth create <backend-username>
+```
+
+Only a hash of the token is stored, so copy it immediately. The token is
+bound to the site's `/mcp` resource when `SYS.reverseProxyBaseUrl` is
+configured, expires after 30 days by default, and can be revoked with
+`mcp:oauth revoke`.
+
 ## Configuration
 
 All settings live in **Extension Configuration → `mcp_server`**.
@@ -818,6 +860,7 @@ All settings live in **Extension Configuration → `mcp_server`**.
 | `additionalStandaloneTables`   | `sys_file_metadata` | Hidden TCA tables exposed as standalone read targets instead of embedded child-only tables |
 | `fileSandboxRoot`              | `1:/mcp/` | FAL folder root where file tools operate                                         |
 | `workspaceUploadSubfolders`    | `1`     | Route uploads into workspace-specific folders                                      |
+| `maxFileSizeMb`                | `500`   | Upper limit (MiB) for base64 payloads, URL downloads, and pre-signed uploads        |
 | `allowedOrigins`               | empty   | Additional exact HTTP(S) browser origins; same-origin is always accepted            |
 | `enableMcpAuthHeaderDiagnostic`| `0`     | Enable minimal `?test=auth` diagnostic on `/mcp` (off-by-default since 2026-05)    |
 | `localUnsafeMode`              | `auto`  | DDEV/Development -> live writes, unrestricted file/outbound access, and dev-site tools. `on`/`off`/`auto`; can be overridden by User TSconfig. |

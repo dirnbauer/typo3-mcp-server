@@ -17,6 +17,7 @@ final readonly class AuthenticationRateLimiter
 
     public const BEARER = 'mcp-server-bearer';
     public const TOKEN = 'mcp-server-token';
+    public const UPLOAD = 'mcp-server-upload';
 
     public function __construct(
         private RateLimiterFactoryInterface $rateLimiterFactory,
@@ -34,6 +35,7 @@ final readonly class AuthenticationRateLimiter
         if ($request->getMethod() === 'OPTIONS'
             || ($scope === self::BEARER && ($request->getQueryParams()['test'] ?? null) === 'auth')
             || ($scope === self::TOKEN && $request->getMethod() !== 'POST')
+            || ($scope === self::UPLOAD && !in_array($request->getMethod(), ['PUT', 'POST'], true))
         ) {
             return $handler();
         }

@@ -625,6 +625,13 @@ services:
   Hn\McpServer\Service\OAuthService:
     public: true
     
+  # Pre-signed upload flow: public for functional tests
+  Hn\McpServer\Service\FileUploadService:
+    public: true
+
+  Hn\McpServer\Http\FileUploadEndpoint:
+    public: true
+
   # Make SiteInformationService public for eID access
   Hn\McpServer\Service\SiteInformationService:
     public: true

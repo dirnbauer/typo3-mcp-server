@@ -30,6 +30,13 @@ class SysFileMetadataTest extends LlmTestCase
     {
         parent::setUp();
 
+        // A site configuration with a German language. Without it, TYPO3 has no
+        // language support at all, and WriteTable's translate action can never
+        // succeed on the pid-0 metadata records ("Language ID 1 not found for
+        // page 0") - the translation test would then only pass for models that
+        // avoid the canonical translate path and hand-create the l10n row.
+        $this->createSiteWithGerman();
+
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/pages.csv');
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/backend_layout.csv');
         $this->importCSVDataSet(__DIR__ . '/../Functional/Fixtures/sys_file.csv');
@@ -43,6 +50,28 @@ class SysFileMetadataTest extends LlmTestCase
         $this->insertMetadata(3, 'Person Photo', 'Original alt for person');
         $this->insertMetadata(4, 'Company Logo', '');
         $this->insertMetadata(5, 'Team Group Photo', '');
+    }
+
+    private function createSiteWithGerman(): void
+    {
+        $siteConfiguration = [
+            'rootPageId' => 1,
+            'base' => 'https://example.com/',
+            'websiteTitle' => 'Test Site',
+            'languages' => [
+                0 => ['title' => 'English', 'enabled' => true, 'languageId' => 0, 'base' => '/', 'locale' => 'en_US.UTF-8', 'iso-639-1' => 'en', 'hreflang' => 'en-us', 'direction' => 'ltr', 'flag' => 'us', 'navigationTitle' => 'English'],
+                1 => ['title' => 'German', 'enabled' => true, 'languageId' => 1, 'base' => '/de/', 'locale' => 'de_DE.UTF-8', 'iso-639-1' => 'de', 'hreflang' => 'de-de', 'direction' => 'ltr', 'flag' => 'de', 'navigationTitle' => 'Deutsch'],
+            ],
+            'routes' => [],
+            'errorHandling' => [],
+        ];
+        $configPath = $this->instancePath . '/typo3conf/sites/test-site';
+        GeneralUtility::mkdir_deep($configPath);
+        GeneralUtility::writeFile(
+            $configPath . '/config.yaml',
+            \Symfony\Component\Yaml\Yaml::dump($siteConfiguration, 99, 2),
+            true
+        );
     }
 
     private function insertMetadata(int $fileUid, string $title, string $alternative, string $description = ''): int

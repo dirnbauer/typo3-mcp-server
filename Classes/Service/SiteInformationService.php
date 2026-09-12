@@ -74,7 +74,10 @@ final class SiteInformationService
             $host = $uri->getHost() ?: $this->currentRequest->getHeaderLine('Host');
             $scheme = $uri->getScheme() ?: 'https';
             if (!empty($host)) {
-                return $scheme . '://' . $host;
+                $port = $uri->getPort();
+                $isDefaultPort = ($scheme === 'http' && $port === 80) || ($scheme === 'https' && $port === 443);
+
+                return $scheme . '://' . $host . ($port !== null && !$isDefaultPort ? ':' . $port : '');
             }
 
             // PSR-7 attribute set by NormalizedParamsAttribute middleware.
@@ -89,7 +92,9 @@ final class SiteInformationService
                 $siteBase = $site->getBase();
                 if ($siteBase->getHost() !== '') {
                     $scheme = $siteBase->getScheme() ?: 'https';
-                    return $scheme . '://' . $siteBase->getHost();
+                    $port = $siteBase->getPort();
+
+                    return $scheme . '://' . $siteBase->getHost() . ($port !== null ? ':' . $port : '');
                 }
             }
         } catch (\Throwable) {

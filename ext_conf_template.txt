@@ -10,6 +10,9 @@ fileSandboxRoot = 1:/mcp/
 # cat=paths//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.workspaceUploadSubfolders
 workspaceUploadSubfolders = 1
 
+# cat=paths//c; type=int+; label=Maximum file size (MiB): Upper limit for base64 payloads, files fetched from URLs, and pre-signed uploads via the UploadFile / UploadFileFromUrl tools. Default: 500
+maxFileSizeMb = 500
+
 # cat=security//a; type=string; label=Allowed browser origins (comma-separated exact http(s) origins; same-origin is always allowed)
 allowedOrigins =
 

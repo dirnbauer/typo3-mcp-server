@@ -20,6 +20,7 @@ trait CorsHeadersTrait
         'Accept',
         'Authorization',
         'Content-Type',
+        'Content-Disposition',
         'X-Requested-With',
         'Mcp-Session-Id',
         'MCP-Protocol-Version',
@@ -77,7 +78,7 @@ trait CorsHeadersTrait
 
         return $response
             ->withHeader('Access-Control-Allow-Origin', $origin)
-            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE')
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS, DELETE')
             ->withHeader('Access-Control-Allow-Headers', implode(', ', $allowedHeaders))
             ->withHeader('Access-Control-Expose-Headers', implode(', ', $exposedHeaders))
             ->withHeader('Access-Control-Allow-Credentials', 'true')

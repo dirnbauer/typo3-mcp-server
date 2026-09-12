@@ -371,7 +371,7 @@ class NonAdminWriteTest extends AbstractFunctionalTest
     }
 
     /**
-     * Test read operation for non-admin (should work with basic permissions)
+     * Read operation for non-admin (should work with basic permissions)
      */
     public function testNonAdminCanRead(): void
     {

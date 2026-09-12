@@ -358,3 +358,26 @@ The fork adds source documentation and verification around the tool surface:
 
 When a tool contract changes, update the implementation, deterministic tests,
 LLM-facing descriptions, README, and manual together.
+
+.. _fork-changes-uploads:
+
+File uploads
+============
+
+The sandboxed ``UploadFile`` and ``UploadFileFromUrl`` tools were kept as the
+single upload surface when the upstream ``v0.6.2`` line was merged
+(2026-09-12); upstream's unified ``UploadFile`` tool was folded into them:
+
+- ``FileUploadService`` centralizes the rules for all upload doors: refusal of
+  executable, browser-executable, inner-extension and server-configuration
+  file names, the configurable ``maxFileSizeMb`` limit, randomized stored
+  names, and content deduplication that respects file mounts and the sandbox.
+- ``UploadFile`` without ``content_base64`` mints a single-use upload token
+  and returns the absolute ``/mcp_upload`` URL; ``FileUploadEndpoint``
+  (``McpServerMiddleware`` route ``/mcp_upload``) consumes it, impersonates the
+  bound backend user through ``BackendUserContextService`` and stores the
+  PUT/POST body with the same rules.
+- ``UploadFileFromUrl`` rejects HTML documents with an actionable message and
+  turns YouTube/Vimeo URLs into TYPO3 online media assets.
+- ``mcp:oauth create`` mints static bearer tokens for clients without OAuth
+  discovery on the fork's hashed-token, resource and scope model.

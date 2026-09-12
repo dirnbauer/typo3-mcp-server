@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Middleware;
 
+use Hn\McpServer\Http\FileUploadEndpoint;
 use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Http\OAuthAuthorizeEndpoint;
 use Hn\McpServer\Http\OAuthAuthServerMetadataEndpoint;
@@ -33,6 +34,7 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
         private Context $context,
         private HashService $hashService,
         private McpEndpoint $mcpEndpoint,
+        private FileUploadEndpoint $fileUploadEndpoint,
         private OAuthAuthorizeEndpoint $oauthAuthorizeEndpoint,
         private OAuthTokenEndpoint $oauthTokenEndpoint,
         private OAuthMetadataEndpoint $oauthMetadataEndpoint,
@@ -55,6 +57,9 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 
         return match ($path) {
             '/mcp' => ($this->mcpEndpoint)($request),
+
+            // Pre-signed file upload target (UploadFile tool)
+            '/mcp_upload' => ($this->fileUploadEndpoint)($request),
 
             '/mcp_oauth/authorize' => ($this->oauthAuthorizeEndpoint)($request),
             '/mcp_oauth/token' => ($this->oauthTokenEndpoint)($request),

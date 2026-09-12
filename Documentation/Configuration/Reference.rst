@@ -51,6 +51,17 @@ Files
    Stores uploads below workspace-specific folders such as
    ``1:/mcp/workspaces/ws-3/``. Physical files still take effect immediately.
 
+.. confval:: maxFileSizeMb
+   :name: ext-mcp-server-maxFileSizeMb
+   :type: int
+   :default: 500
+   :required: false
+
+   Upper limit in MiB for base64 payloads sent to ``UploadFile``, files fetched
+   by ``UploadFileFromUrl``, and pre-signed uploads received on
+   ``/mcp_upload``. Downloads and uploads are streamed and aborted as soon as
+   the limit is exceeded.
+
 .. _configuration-reference-security:
 
 HTTP and security

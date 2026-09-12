@@ -36,6 +36,13 @@ class WriteTableLanguageTest extends FunctionalTestCase
 
         // Set up backend user
         $this->setUpBackendUser(1);
+
+        // DataHandler's localize path needs $GLOBALS['LANG'] (for the
+        // "[Translate to ...]" prefix). In full-suite runs another test class
+        // happens to leave it behind; set it explicitly so this class also
+        // works in isolation.
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Localization\LanguageServiceFactory::class)
+            ->create('default');
     }
 
     /**
@@ -298,6 +305,128 @@ class WriteTableLanguageTest extends FunctionalTestCase
         self::assertStringContainsString('Translate requires translated field values', $errorMessage);
         self::assertStringContainsString('header', $errorMessage);
         self::assertStringContainsString('bodytext', $errorMessage);
+    }
+
+    /**
+     * Translate with field values in data: the schema documents `data` as
+     * required for translate, so the provided translations must actually land
+     * on the new record instead of the "[Translate to ...]" placeholders.
+     */
+    public function testTranslateAppliesProvidedFieldValues(): void
+    {
+        $tool = new WriteTableTool();
+
+        $createResult = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'text',
+                'header' => 'Original English Content',
+                'bodytext' => 'This is the original content',
+            ],
+        ]);
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        $originalUid = json_decode($createResult->content[0]->text, true)['uid'];
+
+        $translateResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => $originalUid,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'header' => 'Deutscher Titel',
+                'bodytext' => 'Das ist der übersetzte Inhalt',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
+        self::assertIsInt($translationUid);
+
+        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid);
+        self::assertEquals('Deutscher Titel', $translation['header']);
+        self::assertEquals('Das ist der übersetzte Inhalt', $translation['bodytext']);
+        self::assertEquals(1, $translation['sys_language_uid']);
+    }
+
+    /**
+     * Same for pid-0 records (sys_file_metadata is the LLM benchmark's case):
+     * translate with data must create the sys_language_uid=1 row carrying the
+     * provided values in one call.
+     */
+    public function testTranslateSysFileMetadataAppliesProvidedFieldValues(): void
+    {
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file_metadata.csv');
+
+        $tool = new WriteTableTool();
+        $translateResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'sys_file_metadata',
+            'uid' => 1,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'title' => 'Personenfoto',
+                'alternative' => 'Foto vom Teamleiter',
+            ],
+        ]);
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
+        self::assertIsInt($translationUid);
+
+        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('sys_file_metadata', $translationUid);
+        self::assertEquals('Personenfoto', $translation['title']);
+        self::assertEquals('Foto vom Teamleiter', $translation['alternative']);
+        self::assertEquals(1, $translation['sys_language_uid']);
+        self::assertEquals(1, $translation['l10n_parent']);
+    }
+
+    /**
+     * A validation error in the provided field values must be reported BEFORE
+     * the translation is created - otherwise a corrected retry would fail with
+     * "Translation already exists" because of the leftover placeholder record.
+     */
+    public function testTranslateWithInvalidFieldCreatesNoOrphanTranslation(): void
+    {
+        $tool = new WriteTableTool();
+
+        $createResult = $tool->execute([
+            'action' => 'create',
+            'table' => 'tt_content',
+            'pid' => 1,
+            'data' => ['CType' => 'text', 'header' => 'Original'],
+        ]);
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        $originalUid = json_decode($createResult->content[0]->text, true)['uid'];
+
+        $translateResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => $originalUid,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'no_such_field' => 'boom',
+            ],
+        ]);
+        self::assertTrue($translateResult->isError, 'Invalid field must produce an error');
+
+        // No translation row may exist - a retry with corrected data must succeed
+        $retryResult = $tool->execute([
+            'action' => 'translate',
+            'table' => 'tt_content',
+            'uid' => $originalUid,
+            'data' => [
+                'sys_language_uid' => 'de',
+                'header' => 'Deutscher Titel',
+            ],
+        ]);
+        self::assertFalse($retryResult->isError, 'Retry after a validation error must succeed: '
+            . json_encode($retryResult->jsonSerialize()));
+        $translationUid = json_decode($retryResult->content[0]->text, true)['translationUid'];
+        self::assertIsInt($translationUid);
+
+        $translation = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecord('tt_content', $translationUid);
+        self::assertEquals('Deutscher Titel', $translation['header']);
     }
 
     /**

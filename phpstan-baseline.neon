@@ -409,36 +409,6 @@ parameters:
 			path: Classes/MCP/Tool/File/SearchMediaTool.php
 
 		-
-			message: '#^Casting to int something that''s already int\.$#'
-			identifier: cast.useless
-			count: 1
-			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/MCP/Tool/File/UploadFileFromUrlTool.php
-
-		-
-			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
-			identifier: empty.notAllowed
-			count: 2
-			path: Classes/MCP/Tool/File/UploadFileTool.php
-
-		-
-			message: '#^Short ternary operator is not allowed\. Use null coalesce operator if applicable or consider using long ternary\.$#'
-			identifier: ternary.shortNotAllowed
-			count: 1
-			path: Classes/MCP/Tool/File/UploadFileTool.php
-
-		-
 			message: '#^Construct empty\(\) is not allowed\. Use more strict comparison\.$#'
 			identifier: empty.notAllowed
 			count: 4

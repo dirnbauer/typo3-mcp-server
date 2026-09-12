@@ -52,6 +52,31 @@ shell access can act with those OS privileges. Use local stdio on trusted
 hosts with suitable OS accounts and credentials; see the
 [installation guidance](Documentation/Installation/Index.rst).
 
+## File uploads
+
+Files reach the sandbox (`fileSandboxRoot`, default `1:/mcp/`) through three
+doors that share `FileUploadService`:
+
+- `UploadFile` with `content_base64` — the payload is decoded, size-checked
+  (`maxFileSizeMb`), the file name is vetted (executable, browser-executable,
+  inner-extension and server-configuration names are refused independently of
+  `fileDenyPattern`), the stored name is randomized, and identical content
+  already in the storage is returned instead of a copy (also re-checked after
+  TYPO3 rewrote the content, e.g. the SVG sanitizer).
+- `UploadFileFromUrl` — same rules after a streamed, redirect-free download
+  that is gated by the capability manifest and the SSRF guard; HTML documents
+  are rejected; YouTube/Vimeo URLs become online media placeholders without a
+  download.
+- `UploadFile` without a payload — mints a single-use token
+  (`tx_mcpserver_upload_tokens`, SHA-256 hashed, 15 minutes, bound to the
+  backend user, the sandbox-validated target folder and optionally the exact
+  file name) and returns the absolute `/mcp_upload` URL. `FileUploadEndpoint`
+  consumes the token atomically before doing anything else, impersonates the
+  user through `BackendUserContextService` (stored `uc` preserved), buffers
+  the PUT/POST/multipart body under the size limit, and stores the file with
+  the rules above. Failed attempts burn the token; unauthenticated attempts
+  count against the shared `AuthenticationRateLimiter` budget.
+
 ## Canonical references
 
 | Topic | Maintained source |

@@ -1,5 +1,33 @@
 # Upstream integration status
 
+## 2026-09-12 update: upstream `main` (v0.6.2 line) merged
+
+`upstream/main` `74e8188` was merged into the fork (branch
+`merge/upstream-v0.6.2-20260912`). Resolution followed the rule below: every
+fork implementation listed under "Behavior already present" was kept, and only
+missing behavior was adapted:
+
+- **Upload workflow**: kept the sandboxed `UploadFile` / `UploadFileFromUrl`
+  tools and folded upstream's hardening into the new `FileUploadService`
+  (executable/server-config refusal, cross-folder deduplication incl. the
+  rewritten-content re-check, HTML rejection, `maxFileSizeMb`). The pre-signed
+  flow (`UploadFile` without payload → `/mcp_upload`, `FileUploadEndpoint`,
+  `tx_mcpserver_upload_tokens`) and YouTube/Vimeo online media were ported onto
+  the fork's DI, sandbox, rate limiter, and `BackendUserContextService`.
+- **Static-token CLI creation**: `mcp:oauth create` ported onto
+  `createDirectAccessToken()` (hashed token, resource binding, `--ttl-days`).
+- **Shared backend impersonation**: not imported; the fork's
+  `BackendUserContextService` already consolidates HTTP, CLI, Abilities and
+  now the upload endpoint. Upstream's uc-preservation and auth endpoint tests
+  were adapted to it (`McpEndpointUcPreservationTest`); the stateless/legacy
+  wire tests are covered by `McpEndpointProtocolTest`.
+- **OAuth**: upstream's confidential-client schema (`client_secret`,
+  `client_uid`, seeded well-known client wizard, loopback redirect wildcards)
+  was not taken; the fork keeps public-client DCR with PKCE and refresh tokens.
+- **Not re-added**: `Build/deploy-classic.sh`, `Build/build-ter.sh`, the
+  bundled `Resources/Private/PHP` SDK, `b13/container` dev dependency and its
+  container select-item test, `^13.4` TYPO3 constraints.
+
 Checked on 2026-09-05 against freshly fetched remotes:
 
 - Fork `origin/main`: `f4aca8a`; included in the local branch.

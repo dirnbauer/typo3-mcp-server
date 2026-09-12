@@ -8,43 +8,42 @@ use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\FileMetadataIndexService;
+use Hn\McpServer\Service\FileUploadService;
 use Hn\McpServer\Service\LocalModeService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Hn\McpServer\Service\OutboundUrlGuardService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Http\RequestFactory;
-use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
-use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
+use TYPO3\CMS\Core\Resource\Exception\OnlineMediaAlreadyExistsException;
 use TYPO3\CMS\Core\Resource\File;
-use TYPO3\CMS\Core\Resource\Folder;
-use TYPO3\CMS\Core\Resource\ResourceStorage;
-use TYPO3\CMS\Core\Resource\Security\FileNameValidator;
-use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Fetches a file from a remote URL and stores it in the MCP file sandbox.
  *
- * This bypasses the base64 size limit of UploadFile by downloading
- * the file server-side. Useful for images, documents, and other
- * binary files that are publicly accessible via HTTP(S).
+ * This bypasses the base64 size limit of UploadFile by downloading the file
+ * server-side. YouTube and Vimeo page URLs are not downloaded at all: they
+ * become TYPO3 online media assets (a small placeholder file referencing the
+ * video) via the core OnlineMediaHelperRegistry.
  */
 final class UploadFileFromUrlTool extends AbstractTool
 {
     private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
-    private const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
     private const ALLOWED_SCHEMES = ['http', 'https'];
     private const REQUEST_TIMEOUT = 30;
+    private const ONLINE_MEDIA_HOST_PATTERN = '#^https?://(?:[a-z0-9-]+\.)*(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)(?:[/?\#]|$)#i';
 
     public function __construct(
-        private readonly StorageRepository $storageRepository,
         private readonly McpFileSandboxService $fileSandboxService,
         private readonly RequestFactory $requestFactory,
         private readonly CapabilityManifestService $capabilityManifest,
         private readonly LocalModeService $localMode,
         private readonly FileMetadataIndexService $fileMetadataIndexService,
         private readonly OutboundUrlGuardService $outboundUrlGuard,
+        private readonly FileUploadService $fileUploadService,
+        private readonly OnlineMediaHelperRegistry $onlineMediaHelperRegistry,
     ) {}
 
     /**
@@ -56,26 +55,33 @@ final class UploadFileFromUrlTool extends AbstractTool
             'description' => 'Download a file from a public URL and store it in the MCP file sandbox. '
                 . 'Use this instead of UploadFile when the file is available via HTTP/HTTPS, '
                 . 'which avoids base64 encoding size limits. '
+                . 'YouTube and Vimeo video URLs are recognized and stored as TYPO3 online media assets '
+                . '(the video itself is not downloaded). '
+                . 'Pass a direct link to the file itself - a web page (HTML) is rejected. '
+                . 'Identical content that already exists is returned instead of creating a duplicate; '
+                . 'executable and server-configuration files are refused. '
                 . 'In local mode (DDEV / localUnsafeMode=on), combined path identifiers may target any accessible FAL folder. '
-                . 'Maximum file size: 20 MB. Only http:// and https:// URLs are allowed.',
+                . sprintf('Maximum file size: %d MiB (extension setting maxFileSizeMb). ', $this->fileUploadService->getMaxFileSizeMb())
+                . 'Only http:// and https:// URLs are allowed.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'url' => [
                         'type' => 'string',
-                        'description' => 'The public HTTP or HTTPS URL to download the file from.',
+                        'description' => 'The public HTTP or HTTPS URL to download the file from, or a YouTube/Vimeo video URL.',
                     ],
                     'path' => [
                         'type' => 'string',
                         'description' => 'Target file path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/photo.jpg" or "documents/report.pdf". '
                             . 'In local mode, combined identifiers may point outside the sandbox. '
-                            . 'If omitted, the filename is derived from the URL. '
-                            . 'The stored filename is randomized for security.',
+                            . 'If omitted, the filename is derived from the Content-Disposition header or the URL. '
+                            . 'The stored filename is randomized for security. '
+                            . 'For online media only the folder part is used; the placeholder file is named after the video.',
                     ],
                     'metadata' => [
                         'type' => 'object',
-                        'description' => 'Optional metadata to set on the uploaded file.',
+                        'description' => 'Optional metadata to set on the uploaded file (ignored for deduplicated files).',
                         'properties' => [
                             'title' => ['type' => 'string', 'description' => 'File title'],
                             'description' => ['type' => 'string', 'description' => 'File description'],
@@ -88,7 +94,7 @@ final class UploadFileFromUrlTool extends AbstractTool
             ],
             'annotations' => [
                 'readOnlyHint' => false,
-                'destructiveHint' => true,
+                'destructiveHint' => false,
                 'idempotentHint' => false,
                 'openWorldHint' => true,
             ],
@@ -108,23 +114,48 @@ final class UploadFileFromUrlTool extends AbstractTool
             throw new ValidationException(['Parameter "url" is required.']);
         }
 
-        $curlResolveEntry = $this->validateUrl($url);
+        $this->assertUrlFormat($url);
+
+        // Online media (YouTube/Vimeo) never hits the download path: the URL is
+        // recognized by its pattern and stored as a placeholder file via the
+        // core API, so the SSRF guard (which pins the download connection) is
+        // not needed for it - the manifest gate above still applies.
+        if (preg_match(self::ONLINE_MEDIA_HOST_PATTERN, $url) === 1) {
+            $onlineMediaResult = $this->tryCreateOnlineMedia($url, $path, $metadata);
+            if ($onlineMediaResult !== null) {
+                return $onlineMediaResult;
+            }
+        }
+
+        $curlResolveEntry = $this->createOutboundResolveEntry($url);
 
         $tempFile = GeneralUtility::tempnam('mcp_url_download_');
         try {
             $downloadInfo = $this->downloadToTempFile($url, $tempFile, $curlResolveEntry);
 
-            if ($path === '') {
-                $path = $this->derivePathFromUrl($url, $downloadInfo['contentType']);
+            // A web page is not a file. Without this, the download would be
+            // rejected further down with a message about file extensions or
+            // mismatching content, which sends the caller hunting for the
+            // wrong problem.
+            if ($this->fileUploadService->looksLikeHtmlDocument($tempFile)) {
+                throw new ValidationException([
+                    'The URL returned a web page (HTML), not a file. Pass a direct link to the file itself '
+                    . '(e.g. the image address from the page, usually ending in .jpg/.png/.pdf). '
+                    . 'YouTube and Vimeo page URLs are the exception - those are recognized and embedded as videos.',
+                ]);
+            }
+
+            if ($path === '' || str_ends_with($path, '/')) {
+                $path .= $this->deriveFileName($url, $downloadInfo['contentType'], $downloadInfo['contentDisposition']);
             }
 
             $target = $this->fileSandboxService->resolveUploadTarget($path);
-            $storage = $this->resolveStorage($target['storageUid']);
-            $folder = $this->ensureFolder($storage, $target['folderPath']);
-            $storedFileName = $this->createUniqueStoredFileName($folder, $target['fileName']);
+            $this->fileUploadService->assertFileNameIsAllowed($target['fileName']);
+            $storage = $this->fileUploadService->resolveStorage($target['storageUid']);
+            $folder = $this->fileUploadService->ensureFolder($storage, $target['folderPath']);
+            $storedFileName = $this->fileUploadService->reserveStoredFileName($folder, $target['fileName']);
 
-            $newFile = $storage->addFile($tempFile, $folder, $storedFileName);
-            $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
+            $stored = $this->fileUploadService->storeFile($tempFile, $storedFileName, $folder);
         } finally {
             if (file_exists($tempFile)) {
                 // $tempFile always comes from TYPO3's tempnam(), never from request input.
@@ -133,34 +164,35 @@ final class UploadFileFromUrlTool extends AbstractTool
             }
         }
 
-        if (!empty($metadata)) {
-            $this->applyMetadata($newFile, $metadata);
+        $newFile = $stored['file'];
+        if (!$stored['deduplicated']) {
+            $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
+            if ($metadata !== []) {
+                $this->applyMetadata($newFile, $metadata);
+            }
         }
 
-        $result = [
-            'action' => 'uploaded_from_url',
-            'sourceUrl' => $url,
-            'identifier' => $newFile->getCombinedIdentifier(),
-            'uid' => $newFile->getUid(),
-            'size' => $newFile->getSize(),
-            'mimeType' => $newFile->getMimeType(),
-            'originalFilename' => $target['fileName'],
-            'storedFilename' => $storedFileName,
-            'baseFolder' => $target['baseFolder'],
-            'uploadFolder' => $target['uploadFolder'],
-            'workspaceId' => $target['workspaceId'],
-        ];
+        $result = ['action' => 'uploaded_from_url', 'sourceUrl' => $url]
+            + $this->fileUploadService->describeFile($newFile, $target['fileName'], $stored['deduplicated'])
+            + [
+                'baseFolder' => $target['baseFolder'],
+                'uploadFolder' => $target['uploadFolder'],
+                'workspaceId' => $target['workspaceId'],
+            ];
 
-        if (!empty($metadata)) {
+        if ($metadata !== [] && !$stored['deduplicated']) {
             $result['metadata'] = $metadata;
         }
 
-        return new CallToolResult([
-            new TextContent(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}'),
-        ]);
+        return $this->createJsonResult($result);
     }
 
-    private function validateUrl(string $url): ?string
+    /**
+     * Scheme and capability-manifest gate. Refuses hosts not in
+     * network.outbound; the default manifest permits only configured TYPO3
+     * site hosts through the `self` sentinel.
+     */
+    private function assertUrlFormat(string $url): void
     {
         $parsed = parse_url($url);
         if ($parsed === false || !isset($parsed['scheme'], $parsed['host'])) {
@@ -174,11 +206,11 @@ final class UploadFileFromUrlTool extends AbstractTool
             ]);
         }
 
-        // Capability-manifest enforcement: refuse hosts not in
-        // network.outbound. The default manifest permits only configured
-        // TYPO3 site hosts through the `self` sentinel.
         $this->capabilityManifest->assertUrlAllowed($url);
+    }
 
+    private function createOutboundResolveEntry(string $url): ?string
+    {
         // Local-mode (DDEV / localUnsafeMode=on) escape hatch: skip the
         // private-IP filter so workflows like "fetch from my local NAS" or
         // "fetch from a *.ddev.site URL that resolves to 127.0.0.1" work
@@ -192,7 +224,52 @@ final class UploadFileFromUrlTool extends AbstractTool
     }
 
     /**
-     * @return array{contentType: string, size: int}
+     * Store a YouTube/Vimeo URL as an online media asset via the core helper.
+     * Returns null when no helper recognizes the URL.
+     *
+     * @param array<string, string> $metadata
+     */
+    private function tryCreateOnlineMedia(string $url, string $path, array $metadata): ?CallToolResult
+    {
+        // Only the folder part of the path matters: the helper names the
+        // placeholder file after the video itself.
+        $folderPath = $path === '' || str_ends_with($path, '/') ? $path : dirname($path) . '/';
+        $folderPath = in_array($folderPath, ['./', '.\\/'], true) ? '' : $folderPath;
+        $target = $this->fileSandboxService->resolveUploadTarget($folderPath . 'online-media.tmp');
+        $storage = $this->fileUploadService->resolveStorage($target['storageUid']);
+        $folder = $this->fileUploadService->ensureFolder($storage, $target['folderPath']);
+
+        $deduplicated = false;
+        try {
+            $file = $this->onlineMediaHelperRegistry->transformUrlToFile($url, $folder);
+        } catch (OnlineMediaAlreadyExistsException $e) {
+            $file = $e->getOnlineMedia();
+            $deduplicated = true;
+        }
+        if (!$file instanceof File) {
+            return null;
+        }
+
+        if (!$deduplicated && $metadata !== []) {
+            $this->applyMetadata($file, $metadata);
+        }
+
+        $result = ['action' => 'online_media_created', 'onlineMedia' => true, 'sourceUrl' => $url]
+            + $this->fileUploadService->describeFile($file, $file->getName(), $deduplicated)
+            + [
+                'baseFolder' => $target['baseFolder'],
+                'uploadFolder' => $target['uploadFolder'],
+                'workspaceId' => $target['workspaceId'],
+            ];
+        if ($metadata !== [] && !$deduplicated) {
+            $result['metadata'] = $metadata;
+        }
+
+        return $this->createJsonResult($result);
+    }
+
+    /**
+     * @return array{contentType: string, contentDisposition: string, size: int}
      */
     private function downloadToTempFile(string $url, string $tempFile, ?string $curlResolveEntry): array
     {
@@ -219,9 +296,9 @@ final class UploadFileFromUrlTool extends AbstractTool
             ]);
         }
 
-        $contentType = $response->getHeaderLine('Content-Type');
-        $contentType = explode(';', $contentType)[0] ?? 'application/octet-stream';
-        $contentType = trim($contentType);
+        $contentType = trim(explode(';', $response->getHeaderLine('Content-Type'))[0]);
+        $contentType = $contentType !== '' ? $contentType : 'application/octet-stream';
+        $maxBytes = $this->fileUploadService->getMaxFileBytes();
 
         $body = $response->getBody();
         $fileHandle = fopen($tempFile, 'wb');
@@ -233,15 +310,13 @@ final class UploadFileFromUrlTool extends AbstractTool
         try {
             while (!$body->eof()) {
                 $chunk = $body->read(65536);
+                if ($chunk === '') {
+                    break;
+                }
                 $totalBytes += strlen($chunk);
 
-                if ($totalBytes > self::MAX_FILE_SIZE) {
-                    throw new ValidationException([
-                        sprintf(
-                            'File exceeds maximum size of %d MB. Download aborted.',
-                            (int)(self::MAX_FILE_SIZE / 1024 / 1024),
-                        ),
-                    ]);
+                if ($totalBytes > $maxBytes) {
+                    throw new ValidationException([$this->fileUploadService->buildSizeLimitMessage() . ' Download aborted.']);
                 }
 
                 fwrite($fileHandle, $chunk);
@@ -256,15 +331,22 @@ final class UploadFileFromUrlTool extends AbstractTool
 
         return [
             'contentType' => $contentType,
+            'contentDisposition' => $response->getHeaderLine('Content-Disposition'),
             'size' => $totalBytes,
         ];
     }
 
-    private function derivePathFromUrl(string $url, string $contentType): string
+    /**
+     * Derive the file name: Content-Disposition beats the URL path, the
+     * Content-Type based extension is the last resort.
+     */
+    private function deriveFileName(string $url, string $contentType, string $contentDisposition): string
     {
-        $parsed = parse_url($url);
-        $urlPath = $parsed['path'] ?? '';
-        $fileName = basename($urlPath);
+        $fileName = $this->fileUploadService->extractFileNameFromContentDisposition($contentDisposition);
+        if ($fileName === null) {
+            $urlPath = parse_url($url, PHP_URL_PATH);
+            $fileName = basename(rawurldecode(is_string($urlPath) ? $urlPath : ''));
+        }
 
         $fileName = preg_replace('/[^A-Za-z0-9._-]+/', '-', $fileName) ?? 'download';
         $fileName = trim($fileName, '-_.');
@@ -284,67 +366,17 @@ final class UploadFileFromUrlTool extends AbstractTool
             'image/png' => 'png',
             'image/gif' => 'gif',
             'image/webp' => 'webp',
+            'image/svg+xml' => 'svg',
             'application/pdf' => 'pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
             'text/plain' => 'txt',
+            'text/csv' => 'csv',
             'application/zip' => 'zip',
         ];
 
         return $map[strtolower($mimeType)] ?? 'bin';
-    }
-
-    private function resolveStorage(int $storageUid): ResourceStorage
-    {
-        $storage = $this->storageRepository->findByUid($storageUid);
-        if ($storage === null || !$storage->isOnline()) {
-            throw new ValidationException(["Storage {$storageUid} not found or offline."]);
-        }
-        if (!$storage->isWritable()) {
-            throw new ValidationException(["Storage {$storageUid} ({$storage->getName()}) is read-only."]);
-        }
-
-        return $storage;
-    }
-
-    private function ensureFolder(ResourceStorage $storage, string $folderPath): Folder
-    {
-        if ($storage->hasFolder($folderPath)) {
-            return $storage->getFolder($folderPath);
-        }
-
-        try {
-            return $storage->createFolder($folderPath);
-        } catch (InsufficientFolderAccessPermissionsException) {
-            throw new ValidationException(["Permission denied: Cannot create folder \"{$folderPath}\"."]);
-        } catch (ExistingTargetFolderException) {
-            return $storage->getFolder($folderPath);
-        }
-    }
-
-    private function createUniqueStoredFileName(Folder $folder, string $requestedFileName): string
-    {
-        $extension = strtolower(pathinfo($requestedFileName, PATHINFO_EXTENSION));
-        if ($extension === '') {
-            throw new ValidationException(['Uploaded files must include a filename extension.']);
-        }
-
-        $fileNameValidator = GeneralUtility::makeInstance(FileNameValidator::class);
-        if (!$fileNameValidator->isValid($requestedFileName)) {
-            throw new ValidationException([
-                sprintf('File extension "%s" is not allowed.', $extension),
-            ]);
-        }
-
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $candidate = $this->fileSandboxService->buildStoredUploadFileName($requestedFileName);
-            if (!$folder->hasFile($candidate)) {
-                return $candidate;
-            }
-        }
-
-        throw new ValidationException(['Could not reserve a unique upload filename. Please try again.']);
     }
 
     /**
@@ -373,5 +405,15 @@ final class UploadFileFromUrlTool extends AbstractTool
         }
 
         return $clean;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function createJsonResult(array $data): CallToolResult
+    {
+        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return new CallToolResult([new TextContent($json !== false ? $json : '{}')]);
     }
 }

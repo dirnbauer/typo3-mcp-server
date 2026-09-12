@@ -909,12 +909,16 @@ final readonly class OAuthService
         string $clientName,
         ?ServerRequestInterface $request = null,
         string $resource = '',
+        ?int $ttlSeconds = null,
     ): string {
         if (!$this->isBackendUserActive($beUserId)) {
             throw new \InvalidArgumentException('Cannot issue an access token for an inactive backend user');
         }
+        if ($ttlSeconds !== null && $ttlSeconds <= 0) {
+            throw new \InvalidArgumentException('The access token lifetime must be a positive number of seconds');
+        }
         $accessToken = $this->generateSecureToken();
-        $expires = time() + self::TOKEN_EXPIRY_SECONDS;
+        $expires = time() + ($ttlSeconds ?? self::TOKEN_EXPIRY_SECONDS);
 
         if ($resource === '' && $request !== null) {
             $resource = $this->canonicalMcpResourceFromRequest($request);
