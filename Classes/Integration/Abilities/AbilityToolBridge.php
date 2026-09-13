@@ -19,11 +19,11 @@ use Webconsulting\Abilities\Projection\Mcp\McpProjection;
  * extension (focused functional tests) still boots; production installs
  * always carry it because the package is a runtime requirement.
  */
-final class AbilityToolBridge implements ToolProviderInterface
+final readonly class AbilityToolBridge implements ToolProviderInterface
 {
     public function __construct(
-        private readonly ?McpProjection $projection = null,
-        private readonly ?CapabilityManifestService $manifest = null,
+        private ?McpProjection $projection = null,
+        private ?CapabilityManifestService $manifest = null,
     ) {}
 
     public function isAvailable(): bool
