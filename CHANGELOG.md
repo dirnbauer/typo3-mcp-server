@@ -7,6 +7,14 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.7.2 - 2026-09-13
+
+### Fixed
+
+- Register the `mcp` ability category. All five catalog abilities named it, but
+  nothing declared it, so the registry logged five warnings on every boot and
+  the category was missing from the REST and backend listings that group by it.
+
 ## 0.7.1 - 2026-09-12
 
 ### Changed
