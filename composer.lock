@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "838f1f57d06a45bc5c00f5a908910211",
+    "content-hash": "d428ceed71a93bb67def67e90187e798",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -6390,16 +6390,16 @@
         },
         {
             "name": "webconsulting/typo3-abilities",
-            "version": "dev-main",
+            "version": "v1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dirnbauer/typo3-abilities.git",
-                "reference": "ac14a8f7a432154e30e9249039d3640ab3dfb612"
+                "reference": "5160da9b8e3207855b7929a44b4a11459e3265e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/ac14a8f7a432154e30e9249039d3640ab3dfb612",
-                "reference": "ac14a8f7a432154e30e9249039d3640ab3dfb612",
+                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/5160da9b8e3207855b7929a44b4a11459e3265e5",
+                "reference": "5160da9b8e3207855b7929a44b4a11459e3265e5",
                 "shasum": ""
             },
             "require": {
@@ -6417,6 +6417,8 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpunit/phpunit": "^12.4 || ^13.0",
                 "saschaegerer/phpstan-typo3": "^3.0",
+                "typo3/cms-workspaces": "^14.3",
+                "typo3/coding-standards": "^0.9",
                 "typo3/testing-framework": "^9.5"
             },
             "suggest": {
@@ -6424,7 +6426,6 @@
                 "sgalinski/sg-apicore": "OpenAPI augmenter for the REST projection",
                 "webconsulting/skillflow": "Skills contract: skills declare the abilities they need"
             },
-            "default-branch": true,
             "type": "typo3-cms-extension",
             "extra": {
                 "typo3/cms": {
@@ -6442,7 +6443,8 @@
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Webconsulting\\Abilities\\Tests\\": "Tests/"
+                    "Webconsulting\\Abilities\\Tests\\": "Tests/",
+                    "Webconsulting\\AbilitiesTestListener\\": "Tests/Functional/Fixtures/Extensions/abilities_test_listener/Classes/"
                 }
             },
             "scripts": {
@@ -6480,11 +6482,7 @@
                 "rest",
                 "typo3"
             ],
-            "support": {
-                "source": "https://github.com/dirnbauer/typo3-abilities/tree/main",
-                "issues": "https://github.com/dirnbauer/typo3-abilities/issues"
-            },
-            "time": "2026-09-12T16:00:47+00:00"
+            "time": "2026-09-12T21:09:45+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -11740,8 +11738,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "typo3/coding-standards": 20,
-        "webconsulting/typo3-abilities": 20
+        "typo3/coding-standards": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
