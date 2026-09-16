@@ -49,7 +49,7 @@ final readonly class RecordRelationReadService
 
             match ($fieldType) {
                 'select', 'category' => $this->includeSelectRelations($result['records'], $fieldName, $fieldConfig, $table),
-                'inline', 'file' => $this->includeInlineRelations($result['records'], $fieldName, $fieldConfig, $recordUids),
+                'inline', 'file' => $this->includeInlineRelations($result['records'], $fieldName, $fieldConfig, $recordUids, $table),
                 default => null,
             };
         }
@@ -160,7 +160,7 @@ final readonly class RecordRelationReadService
         }
     }
 
-    public function includeInlineRelations(array &$records, string $fieldName, array $fieldConfig, array $recordUids): void
+    public function includeInlineRelations(array &$records, string $fieldName, array $fieldConfig, array $recordUids, string $parentTable): void
     {
         if (empty($fieldConfig['config']['foreign_table'])) {
             return;
@@ -181,6 +181,12 @@ final readonly class RecordRelationReadService
         // (e.g., sys_file_reference uses tablenames/fieldname to distinguish which field owns each reference)
         $foreignSortBy = $fieldConfig['config']['foreign_sortby'] ?? '';
         $foreignMatchFields = $fieldConfig['config']['foreign_match_fields'] ?? [];
+        $config = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
+        $foreignTableField = $config['foreign_table_field'] ?? null;
+        if (is_string($foreignTableField) && $foreignTableField !== '') {
+            $foreignMatchFields = is_array($foreignMatchFields) ? $foreignMatchFields : [];
+            $foreignMatchFields[$foreignTableField] = $parentTable;
+        }
         $relatedRecords = $this->getInlineRelatedRecords($foreignTable, $foreignField, $recordUids, $foreignSortBy, $foreignMatchFields, $isHiddenTable);
 
         // Allow listeners to enrich or redact inline children (e.g. attach file metadata)

@@ -14,8 +14,9 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 /**
  * Extracts, validates, and maps inline/file relations for WriteTableTool DataHandler calls.
  *
- * @phpstan-type InlineRelation array{config: array<string, mixed>, value: mixed}
- * @phpstan-type InlineRelations array<string, InlineRelation>
+ * @phpstan-type InlineRelation array{config: array<array-key, mixed>, value: mixed}
+ * @phpstan-type InlineRelations array<array-key, InlineRelation>
+ * @phpstan-type RecordMap array<string, array<int|string, array<array-key, mixed>>>
  */
 final readonly class RecordInlineRelationWriteService
 {
@@ -25,6 +26,11 @@ final readonly class RecordInlineRelationWriteService
         private FileMetadataIndexService $fileMetadataIndexService,
         private RecordDataWriteConverter $dataWriteConverter,
     ) {}
+    /**
+     * @template TField of array-key
+     * @param array<TField, mixed> $data
+     * @return array<TField, InlineRelation>
+     */
     public function extractFromData(string $table, array &$data): array
     {
         $inlineRelations = [];
@@ -38,7 +44,7 @@ final readonly class RecordInlineRelationWriteService
             $fieldType = is_array($fieldConfig) ? ($fieldConfig['config']['type'] ?? '') : '';
             // Handle both inline and file fields (file is inline to sys_file_reference)
             if ($fieldConfig && in_array($fieldType, ['inline', 'file'], true)) {
-                $config = $fieldConfig['config'];
+                $config = is_array($fieldConfig['config'] ?? null) ? $fieldConfig['config'] : [];
                 // For file fields, ensure foreign_table defaults to sys_file_reference
                 if ($fieldType === 'file' && empty($config['foreign_table'])) {
                     $config['foreign_table'] = 'sys_file_reference';
@@ -58,12 +64,18 @@ final readonly class RecordInlineRelationWriteService
         return $inlineRelations;
     }
 
+    /**
+     * @param RecordMap $dataMap
+     * @param InlineRelations $inlineRelations
+     * @param RecordMap $cmdMap
+     */
     public function buildDataMap(
         array &$dataMap,
         string $parentTable,
         $parentId,
         int $pid,
-        array $inlineRelations
+        array $inlineRelations,
+        array &$cmdMap,
     ): void {
         foreach ($inlineRelations as $fieldName => $relationData) {
             $config = $relationData['config'];
@@ -71,7 +83,7 @@ final readonly class RecordInlineRelationWriteService
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
 
-            if (empty($foreignTable) || empty($foreignField)) {
+            if (!is_string($foreignTable) || $foreignTable === '' || empty($foreignField)) {
                 continue;
             }
 
@@ -179,11 +191,9 @@ final readonly class RecordInlineRelationWriteService
                     if (isset($config['foreign_sortby'])) {
                         $item[$config['foreign_sortby']] = ($index + 1) * 256;
                     }
-                    $item = $this->dataWriteConverter->convert($foreignTable, $item);
-
                     // If additional fields provided, add as update to dataMap
                     if (!empty($item)) {
-                        $dataMap[$foreignTable][$existingUid] = $item;
+                        $this->addChildToDataMap($dataMap, $cmdMap, $foreignTable, $existingUid, $pid, $item);
                     }
 
                     $childIdentifiers[] = $existingUid;
@@ -197,9 +207,7 @@ final readonly class RecordInlineRelationWriteService
                     if (isset($config['foreign_sortby'])) {
                         $item[$config['foreign_sortby']] = ($index + 1) * 256;
                     }
-                    $item = $this->dataWriteConverter->convert($foreignTable, $item);
-
-                    $dataMap[$foreignTable][$childNewId] = $item;
+                    $this->addChildToDataMap($dataMap, $cmdMap, $foreignTable, $childNewId, $pid, $item);
                     $childIdentifiers[] = $childNewId;
                 } elseif (is_numeric($item) && (int)$item > 0) {
                     // Plain UID — reference an existing independent inline child directly
@@ -217,12 +225,59 @@ final readonly class RecordInlineRelationWriteService
         }
     }
 
+    /**
+     * @param RecordMap $dataMap
+     * @param RecordMap $cmdMap
+     * @param array<array-key, mixed> $data
+     */
+    private function addChildToDataMap(
+        array &$dataMap,
+        array &$cmdMap,
+        string $table,
+        int|string $uid,
+        int $pid,
+        array $data,
+    ): void {
+        $childData = [];
+        foreach ($data as $field => $value) {
+            if (!is_string($field)) {
+                throw new ValidationException(['Embedded record data must be an object with field names as keys.']);
+            }
+            $childData[$field] = $value;
+        }
+        $inlineRelations = $this->extractFromData($table, $childData);
+        foreach ($inlineRelations as $field => $relation) {
+            $error = $this->validateField(['config' => $relation['config']], $relation['value']);
+            if ($error !== null) {
+                throw new ValidationException([sprintf('Field %s.%s: %s', $table, $field, $error)]);
+            }
+        }
+
+        $dataMap[$table][$uid] = $this->dataWriteConverter->convert($table, $childData);
+        if ($inlineRelations === []) {
+            return;
+        }
+
+        // Keep all descendants in the same DataHandler run so Core resolves NEW
+        // keys, relation ownership, sorting and workspace versions at every level.
+        $this->buildDataMap($dataMap, $table, $uid, $pid, $inlineRelations, $cmdMap);
+        if (is_int($uid)) {
+            $this->syncRelations($dataMap, $cmdMap, $table, $uid, $inlineRelations);
+        }
+    }
+
+    /**
+     * @param RecordMap $dataMap
+     * @param RecordMap $cmdMap
+     * @param InlineRelations $inlineRelations
+     */
     public function syncRelations(
         array &$dataMap,
         array &$cmdMap,
         string $parentTable,
         int $parentLiveUid,
-        array $inlineRelations
+        array $inlineRelations,
+        int|string|null $parentDataMapId = null,
     ): void {
         foreach ($inlineRelations as $fieldName => $relationData) {
             $config = $relationData['config'];
@@ -230,28 +285,26 @@ final readonly class RecordInlineRelationWriteService
             $foreignTable = $config['foreign_table'] ?? '';
             $foreignField = $config['foreign_field'] ?? '';
 
-            if (empty($foreignTable) || empty($foreignField)) {
+            if (!is_string($foreignTable) || $foreignTable === '' || empty($foreignField)) {
                 continue;
             }
 
             $newChildUids = [];
-            foreach ($dataMap[$parentTable] as $parentData) {
-                if (!isset($parentData[$fieldName])) {
-                    continue;
-                }
-                $csv = (string)$parentData[$fieldName];
-                if ($csv === '') {
-                    continue;
-                }
-                foreach (explode(',', $csv) as $identifier) {
-                    if (is_numeric($identifier)) {
-                        $newChildUids[] = (int)$identifier;
-                    }
+            $identifiers = $dataMap[$parentTable][$parentDataMapId ?? $parentLiveUid][$fieldName] ?? '';
+            $csv = is_string($identifiers) ? $identifiers : '';
+            foreach (explode(',', $csv) as $identifier) {
+                if (is_numeric($identifier)) {
+                    $newChildUids[] = (int)$identifier;
                 }
             }
             $newChildUids = array_values(array_unique($newChildUids));
 
             $foreignMatchFields = $config['foreign_match_fields'] ?? [];
+            $foreignMatchFields = is_array($foreignMatchFields) ? $foreignMatchFields : [];
+            $foreignTableField = $config['foreign_table_field'] ?? null;
+            if (is_string($foreignTableField) && $foreignTableField !== '') {
+                $foreignMatchFields[$foreignTableField] = $parentTable;
+            }
             $queryBuilder = $this->connectionPool
                 ->getQueryBuilderForTable($foreignTable);
             $queryBuilder->getRestrictions()

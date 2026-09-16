@@ -55,6 +55,23 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         self::assertSame([], $this->references($itemUid));
     }
 
+    public function testFilesResolveAndCanBeRemovedMoreThanOneLevelDeep(): void
+    {
+        $uid = $this->createElement([['title' => 'Parent item', 'children' => [
+            ['title' => 'Nested item', 'file' => [1]],
+        ]]]);
+        $itemUid = (int)$this->items($uid)[0]['uid'];
+        $children = $this->effectiveChildren(self::ITEM_TABLE, 'parent_item', $itemUid, 'sorting');
+        self::assertCount(1, $children);
+        $nestedUid = (int)$children[0]['uid'];
+        $this->assertReference($nestedUid, 1);
+
+        $this->updateItems($uid, [['uid' => $itemUid, 'children' => [
+            ['uid' => $nestedUid, 'file' => []],
+        ]]]);
+        self::assertSame([], $this->references($nestedUid));
+    }
+
     public function testNestedReferenceCannotBeTakenFromAnotherChild(): void
     {
         $uid = $this->createElement([
@@ -113,11 +130,23 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         $this->updateItems(100, [['uid' => 100, 'file' => [['uid' => 100, 'alternative' => 'Draft only']]]]);
         $this->assertReference(100, 1, 'Draft only');
         $live = $this->getConnectionForTable('sys_file_reference')->select(
-            ['alternative', 'deleted', 't3ver_wsid'], 'sys_file_reference', ['uid' => 100],
+            ['alternative', 'deleted', 't3ver_wsid'],
+            'sys_file_reference',
+            ['uid' => 100],
         )->fetchAssociative();
         self::assertSame('Live alternative', $live['alternative']);
         self::assertSame(0, (int)$live['deleted']);
         self::assertSame(0, (int)$live['t3ver_wsid']);
+
+        $this->updateItems(100, [['uid' => 100, 'file' => [2]]]);
+        $this->assertReference(100, 2);
+        $live = $this->getConnectionForTable('sys_file_reference')->select(
+            ['uid_local', 'deleted'],
+            'sys_file_reference',
+            ['uid' => 100],
+        )->fetchAssociative();
+        self::assertSame(1, (int)$live['uid_local']);
+        self::assertSame(0, (int)$live['deleted']);
     }
 
     private function createElement(array $items): int
@@ -169,7 +198,7 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         $children = [];
         foreach ($rows as $row) {
             BackendUtility::workspaceOL($table, $row);
-            if (is_array($row) && !(bool)$row['deleted'] && (int)$row[$foreignField] === $parentUid) {
+            if (is_array($row) && !(bool)$row['deleted'] && (int)$row['t3ver_state'] !== 2 && (int)$row[$foreignField] === $parentUid) {
                 $children[] = $row;
             }
         }

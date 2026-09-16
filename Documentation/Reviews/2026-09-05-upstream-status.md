@@ -1,5 +1,9 @@
 # Upstream integration status
 
+For the latest review of upstream main and open pull requests, see
+[2026-09-16 upstream status](2026-09-16-upstream-status.md). The September 5
+sections below describe the historical state before the September 12 merge.
+
 ## 2026-09-12 update: upstream `main` (v0.6.2 line) merged
 
 `upstream/main` `74e8188` was merged into the fork (branch

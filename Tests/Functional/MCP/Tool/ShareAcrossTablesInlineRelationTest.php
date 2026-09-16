@@ -6,9 +6,10 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 
 /**
  * Covers embedded inline relations that use TCA's `foreign_table_field` to record
@@ -20,6 +21,14 @@ use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
  */
 class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
 {
+    protected array $coreExtensionsToLoad = [
+        'workspaces',
+    ];
+
+    protected array $testExtensionsToLoad = [
+        __DIR__ . '/../../Fixtures/Extensions/test_share_across_tables',
+        'mcp_server',
+    ];
     public function testReadsExcludeChildrenOwnedByAnotherTableWithTheSameParentUid(): void
     {
         $this->seedSharedChildren();
@@ -37,7 +46,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             'data' => ['tx_testsat_items' => []],
         ]);
         self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $foreignChild = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL('tx_testsat_item', 2);
+        $foreignChild = BackendUtility::getRecordWSOL('tx_testsat_item', 2);
         self::assertIsArray($foreignChild);
         self::assertSame('Page child', $foreignChild['title']);
         self::assertNotSame(2, (int)$foreignChild['t3ver_state'], 'Another table\'s child must not have a delete placeholder.');
@@ -53,7 +62,9 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
         self::assertTrue($result->isError);
         self::assertStringContainsString('does not belong', $result->content[0]->text);
         self::assertSame('Page child', $this->getConnectionForTable('tx_testsat_item')->select(
-            ['title'], 'tx_testsat_item', ['uid' => 2],
+            ['title'],
+            'tx_testsat_item',
+            ['uid' => 2],
         )->fetchOne());
     }
 
@@ -67,15 +78,6 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             ]);
         }
     }
-
-    protected array $coreExtensionsToLoad = [
-        'workspaces',
-    ];
-
-    protected array $testExtensionsToLoad = [
-        __DIR__ . '/../../Fixtures/Extensions/test_share_across_tables',
-        'mcp_server',
-    ];
 
     public function testCreatingChildRecordsSetsTheOwningParentTable(): void
     {
@@ -96,7 +98,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -109,10 +111,10 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertCount(2, $children, 'Both child records should have been written.');
+        self::assertCount(2, $children, 'Both child records should have been written.');
 
         foreach ($children as $child) {
-            $this->assertSame(
+            self::assertSame(
                 'tt_content',
                 $child['tablenames'],
                 sprintf(
@@ -123,8 +125,8 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
                     $child['uid']
                 )
             );
-            $this->assertSame('tx_testsat_items', $child['fieldname']);
-            $this->assertSame($contentUid, $child['foreign_table_parent_uid']);
+            self::assertSame('tx_testsat_items', $child['fieldname']);
+            self::assertSame($contentUid, $child['foreign_table_parent_uid']);
         }
 
         // With tablenames correctly set, TYPO3's own relation resolution (as used by
@@ -134,9 +136,9 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $record = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertArrayHasKey('tx_testsat_items', $record);
-        $this->assertCount(2, $record['tx_testsat_items']);
+        self::assertArrayHasKey('tx_testsat_items', $record);
+        self::assertCount(2, $record['tx_testsat_items']);
     }
 }

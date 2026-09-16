@@ -80,6 +80,22 @@ HTTP traffic. Keep HTTP-tier request limits for volumetric abuse and public
 OAuth discovery/registration traffic. Backend login remains governed by TYPO3's
 own login limits. No MCP SDK or authentication mechanism was replaced.
 
+.. _configuration-session-timeout:
+
+MCP session timeout
+===================
+
+The ``sessionTimeout`` extension setting controls how long an idle HTTP MCP
+session remains available. The default is ``14400`` seconds (four hours).
+Set it to ``1800`` to restore the previous thirty-minute timeout. Missing,
+invalid, or non-positive values use the default.
+
+This setting applies to session-based clients such as protocol ``2025-11-25``.
+Once a session expires, its next request receives HTTP 404 and the client must
+initialize a new session. Protocol ``2026-07-28`` uses stateless requests and
+is unaffected. Access-token expiry and authentication checks still apply on
+every request.
+
 .. _configuration-workspaces:
 
 Workspace policy

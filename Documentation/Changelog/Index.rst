@@ -6,8 +6,22 @@
 Changelog
 =========
 
-Unreleased - 2026-09-12
+Unreleased - 2026-09-16
 =======================
+
+- Adapted relevant fixes from open upstream pull requests. Upstream ``main``
+  was already included; no additional main-branch merge was needed.
+- Resolved file fields on nested inline children through the shared DataHandler
+  map, including replacement, metadata updates, deletion, and deeper nesting.
+- Scoped shared inline children by their owning table for reads and writes.
+- Resolved field visibility at the record's actual page and prevented circular
+  page moves using the staged workspace tree before applying record changes.
+- Isolated failing online media helpers without logging their URLs or messages.
+- Made the idle HTTP session timeout configurable through ``sessionTimeout``,
+  defaulting to four hours for session-based MCP clients.
+
+Upstream integration - 2026-09-12
+=================================
 
 - Merged the upstream ``hauptsacheNet/typo3-mcp-server`` main branch
   (``v0.6.2`` line, 38 commits) into the fork on top of the TYPO3 v14 rewrite.

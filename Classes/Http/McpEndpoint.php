@@ -31,6 +31,7 @@ final readonly class McpEndpoint
     use CorsHeadersTrait;
 
     private const MAX_MCP_REQUEST_BODY_BYTES = 25 * 1024 * 1024;
+    private const DEFAULT_SESSION_TIMEOUT = 14400;
 
     public function __construct(
         private LoggerInterface $logger,
@@ -124,7 +125,7 @@ final readonly class McpEndpoint
             $server = $serverFactory->createServer();
 
             $httpOptions = [
-                'session_timeout' => 1800,
+                'session_timeout' => $this->getSessionTimeout(),
                 'max_queue_size' => 500,
                 'enable_sse' => false,
                 'shared_hosting' => false,
@@ -186,6 +187,18 @@ final readonly class McpEndpoint
                 500,
             ), $request));
         }
+    }
+
+    private function getSessionTimeout(): int
+    {
+        try {
+            $configured = $this->extensionConfiguration->get('mcp_server', 'sessionTimeout');
+        } catch (\Exception) {
+            return self::DEFAULT_SESSION_TIMEOUT;
+        }
+
+        $timeout = is_scalar($configured) ? filter_var($configured, FILTER_VALIDATE_INT) : false;
+        return is_int($timeout) && $timeout > 0 ? $timeout : self::DEFAULT_SESSION_TIMEOUT;
     }
 
     private function isAuthHeaderDiagnosticEnabled(): bool

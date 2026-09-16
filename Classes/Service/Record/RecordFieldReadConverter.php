@@ -37,7 +37,9 @@ final readonly class RecordFieldReadConverter
         $essentialFields = $this->tableAccessService->getEssentialFields($table);
         $typeField = $this->tableAccessService->getTypeFieldName($table);
         $recordType = ($typeField && isset($record[$typeField])) ? (string)$record[$typeField] : '';
-        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType);
+        $pageId = $record[$table === 'pages' ? 'uid' : 'pid'] ?? 0;
+        $tsConfigPid = is_numeric($pageId) ? (int)$pageId : 0;
+        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType, $tsConfigPid);
         $allowedFields = array_unique(array_merge(array_keys($availableFields), $essentialFields));
 
         // Process each field

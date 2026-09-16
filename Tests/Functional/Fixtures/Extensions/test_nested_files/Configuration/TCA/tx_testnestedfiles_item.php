@@ -43,8 +43,20 @@ return [
                 'type' => 'passthrough',
             ],
         ],
+        'parent_item' => [
+            'config' => ['type' => 'passthrough'],
+        ],
+        'children' => [
+            'label' => 'Nested items',
+            'config' => [
+                'type' => 'inline',
+                'foreign_table' => 'tx_testnestedfiles_item',
+                'foreign_field' => 'parent_item',
+                'foreign_sortby' => 'sorting',
+            ],
+        ],
     ],
     'types' => [
-        '1' => ['showitem' => 'title, file'],
+        '1' => ['showitem' => 'title, file, children'],
     ],
 ];

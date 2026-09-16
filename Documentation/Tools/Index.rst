@@ -483,7 +483,10 @@ Important behavior:
   UID that the owning site assigns to Hungarian, even when another site uses
   the same UID for a different language)
 - file fields can receive ``sys_file`` UIDs or objects with UID and metadata,
-  which creates ``sys_file_reference`` rows
+  which creates ``sys_file_reference`` rows; this also works on nested embedded
+  children, including collections inside other collections
+- embedded children follow the input array order; updates replace each supplied
+  relation list, so include existing child UIDs to retain them
 - update payloads can use structured search-and-replace operations for text
   fields
 - translation creates language overlays from default-language source records
@@ -767,6 +770,10 @@ Security measures include:
 - the same executable/server-configuration refusal and content deduplication
   as ``UploadFile``
 - relying on TYPO3 file validation when the file is stored
+
+A failing third-party online media helper is skipped so later helpers can
+still recognize a YouTube or Vimeo URL. Diagnostics record the helper extension
+and exception class without logging the URL or the helper's exception message.
 
 Media search
 ============

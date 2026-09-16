@@ -6,10 +6,13 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
+use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\MCP\Tool\File\UploadFileFromUrlTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\RequestInterface;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
@@ -205,13 +208,38 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
     {
         $helpers = $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'];
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = [
-            'broken' => \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::class,
+            'broken' => ThrowingOnlineMediaHelper::class,
         ] + $helpers;
-        \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::$calls = 0;
+        ThrowingOnlineMediaHelper::$calls = 0;
 
         try {
             $this->youtubeUrlBecomesAnOnlineMediaAssetWithoutDownloading();
-            self::assertSame(2, \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::$calls);
+            self::assertSame(2, ThrowingOnlineMediaHelper::$calls);
+        } finally {
+            $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = $helpers;
+        }
+    }
+
+    #[Test]
+    public function helperWarningOmitsUrlsAndExceptionMessages(): void
+    {
+        $helpers = $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = [
+            'broken' => ThrowingOnlineMediaHelper::class,
+        ] + $helpers;
+        try {
+            $this->mockOEmbedLookups('Safe warning');
+            $requestFactory = $this->createMock(RequestFactory::class);
+            $requestFactory->expects($this->never())->method('request');
+            $tool = $this->createToolWithRequestFactory($requestFactory);
+            $logger = $this->createMock(LoggerInterface::class);
+            $logger->expects($this->once())->method('warning')->with(
+                'Online media helper failed and was skipped',
+                ['extension' => 'broken', 'exceptionClass' => \Exception::class],
+            );
+            (new \ReflectionProperty(AbstractTool::class, 'logger'))->setValue($tool, $logger);
+            $result = $tool->execute(['url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&access_token=test-only']);
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         } finally {
             $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = $helpers;
         }

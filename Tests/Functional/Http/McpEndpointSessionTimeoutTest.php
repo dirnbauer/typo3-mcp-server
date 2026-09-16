@@ -5,30 +5,25 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\Http;
 
 use Hn\McpServer\Http\AuthenticationRateLimiter;
+use Hn\McpServer\Http\McpEndpoint;
 use Hn\McpServer\Service\BackendUserContextService;
+use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
-use Mcp\Types\MetaKeys;
-use PHPUnit\Framework\Attributes\Test;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Http\ServerRequestFactory;
-use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
-use TYPO3\CMS\Core\Log\LogManager;
-use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
-use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use Hn\McpServer\Http\McpEndpoint;
-use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\RateLimiter\RateLimiterFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -99,7 +94,7 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
             ['Mcp-Session-Id' => $sessionId]
         );
 
-        $this->assertSame(404, $response->getStatusCode());
+        self::assertSame(404, $response->getStatusCode());
     }
 
     public function testNonPositiveTimeoutFallsBackToTheDefault(): void
@@ -127,12 +122,12 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
     private function assertToolsListSucceeded(ResponseInterface $response): void
     {
         $raw = (string)$response->getBody();
-        $this->assertSame(200, $response->getStatusCode(), $raw);
+        self::assertSame(200, $response->getStatusCode(), $raw);
 
         $body = json_decode($raw, true);
-        $this->assertIsArray($body, $raw);
-        $this->assertArrayNotHasKey('error', $body, $raw);
-        $this->assertNotEmpty($body['result']['tools'] ?? [], $raw);
+        self::assertIsArray($body, $raw);
+        self::assertArrayNotHasKey('error', $body, $raw);
+        self::assertNotEmpty($body['result']['tools'] ?? [], $raw);
     }
 
     /**
@@ -152,9 +147,9 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
             ],
         ], $token);
 
-        $this->assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
         $sessionId = $response->getHeaderLine('mcp-session-id');
-        $this->assertNotSame('', $sessionId, 'initialize must hand out a session id');
+        self::assertNotSame('', $sessionId, 'initialize must hand out a session id');
 
         $this->dispatch(
             ['jsonrpc' => '2.0', 'method' => 'notifications/initialized'],
@@ -171,10 +166,10 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
     private function ageSession(string $sessionId, int $seconds): void
     {
         $path = Environment::getVarPath() . '/mcp_sessions/session-' . $sessionId . '.json';
-        $this->assertFileExists($path);
+        self::assertFileExists($path);
 
         $data = json_decode((string)file_get_contents($path), true);
-        $this->assertIsArray($data, 'Session file must contain a JSON object');
+        self::assertIsArray($data, 'Session file must contain a JSON object');
         $data['last_activity'] -= $seconds;
         file_put_contents($path, json_encode($data));
     }

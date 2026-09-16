@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -42,7 +43,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
         // Root page 1 disables the field for the whole tree.
         $connection->update(
             'pages',
-            ['TSconfig' => "TCEFORM.pages.nav_title.disabled = 1\n"],
+            ['TSconfig' => "TCEFORM.pages.nav_title.disabled = 1\nTCEFORM.tt_content.header.disabled = 1\n"],
             ['uid' => 1]
         );
 
@@ -50,7 +51,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
         // sibling, keeps the inherited disable.
         $connection->update(
             'pages',
-            ['TSconfig' => "TCEFORM.pages.nav_title.disabled = 0\n"],
+            ['TSconfig' => "TCEFORM.pages.nav_title.disabled = 0\nTCEFORM.tt_content.header.disabled = 0\n"],
             ['uid' => 2]
         );
     }
@@ -62,10 +63,10 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
      */
     public function testTheFallbackPageResolvesToTheSiteRoot(): void
     {
-        $tableAccessService = GeneralUtility::makeInstance(\Hn\McpServer\Service\TableAccessService::class);
+        $tableAccessService = GeneralUtility::makeInstance(TableAccessService::class);
 
-        $this->assertSame(1, $tableAccessService->resolveTSconfigPid(null));
-        $this->assertArrayNotHasKey(
+        self::assertSame(1, $tableAccessService->resolveTSconfigPid(null));
+        self::assertArrayNotHasKey(
             'nav_title',
             $tableAccessService->getAvailableFields('pages', '1'),
             'The site root disables nav_title, so the pid-less field set must not carry it.'
@@ -88,7 +89,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
 
         // The write itself is staged in a workspace, so assert on the tool result
         // rather than on the live row.
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -104,8 +105,8 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             'data' => ['nav_title' => 'should not be written'],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('nav_title', $result->content[0]->text);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('nav_title', $result->content[0]->text);
     }
 
     /**
@@ -123,9 +124,9 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             'fields' => ['uid', 'nav_title'],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('nav_title', $result->content[0]->text);
-        $this->assertStringContainsString('About us', $result->content[0]->text);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('nav_title', $result->content[0]->text);
+        self::assertStringContainsString('About us', $result->content[0]->text);
     }
 
     protected function writeSiteConfigurationForRootPage(int $rootPageId): void
@@ -143,5 +144,19 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             '    locale: en_US.UTF-8',
             '',
         ]));
+    }
+
+    public function testContentFieldsUseTheContainingPageForReadsAndUpdates(): void
+    {
+        $write = $this->getService(WriteTableTool::class)->execute([
+            'table' => 'tt_content', 'action' => 'update', 'uid' => 102,
+            'data' => ['header' => 'Enabled on About'],
+        ]);
+        self::assertFalse($write->isError, json_encode($write->jsonSerialize()));
+        $read = $this->getService(ReadTableTool::class)->execute([
+            'table' => 'tt_content', 'uid' => 102, 'fields' => ['header'],
+        ]);
+        self::assertFalse($read->isError, json_encode($read->jsonSerialize()));
+        self::assertSame('Enabled on About', $this->extractJsonFromResult($read)['records'][0]['header']);
     }
 }

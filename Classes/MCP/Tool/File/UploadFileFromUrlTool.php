@@ -240,11 +240,25 @@ final class UploadFileFromUrlTool extends AbstractTool
         $folder = $this->fileUploadService->ensureFolder($storage, $target['folderPath']);
 
         $deduplicated = false;
-        try {
-            $file = $this->onlineMediaHelperRegistry->transformUrlToFile($url, $folder);
-        } catch (OnlineMediaAlreadyExistsException $e) {
-            $file = $e->getOnlineMedia();
-            $deduplicated = true;
+        $file = null;
+        foreach ($this->onlineMediaHelperRegistry->getSupportedFileExtensions() as $extension) {
+            try {
+                $file = $this->onlineMediaHelperRegistry->transformUrlToFile($url, $folder, [$extension]);
+            } catch (OnlineMediaAlreadyExistsException $e) {
+                $file = $e->getOnlineMedia();
+                $deduplicated = true;
+            } catch (\Throwable $e) {
+                // Helper messages can contain signed URLs or credentials. Log only
+                // the adapter and exception class, then try the remaining helpers.
+                $this->getLogger()->warning('Online media helper failed and was skipped', [
+                    'extension' => $extension,
+                    'exceptionClass' => $e::class,
+                ]);
+                continue;
+            }
+            if ($file instanceof File) {
+                break;
+            }
         }
         if (!$file instanceof File) {
             return null;

@@ -510,17 +510,21 @@ final class WriteTableTool extends AbstractRecordTool
         // versioning atomically in a single process_datamap() call.
         $dataMap = [];
         $dataMap[$table][$newId] = $newRecordData;
+        $cmdMap = [];
 
         // Add inline children to the same dataMap and set CSV references on parent
         if (!empty($inlineRelations)) {
-            $this->inlineRelationService->buildDataMap($dataMap, $table, $newId, $pid, $inlineRelations);
+            $this->inlineRelationService->buildDataMap($dataMap, $table, $newId, $pid, $inlineRelations, $cmdMap);
         }
 
         // Process everything in a single DataHandler call
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-        $dataHandler->start($dataMap, []);
+        $dataHandler->start($dataMap, $cmdMap);
         $dataHandler->process_datamap();
+        if ($cmdMap !== []) {
+            $dataHandler->process_cmdmap();
+        }
 
         // Check for errors
         if (!empty($dataHandler->errorLog)) {
@@ -591,6 +595,12 @@ final class WriteTableTool extends AbstractRecordTool
         if ($table === 'pages' && $targetPid === $uid) {
             return $this->createErrorResult('Validation error: Page cannot be moved below itself');
         }
+        if ($table === 'pages' && ($targetPid !== null || $position !== null)) {
+            $moveError = $this->validatePageMove($uid, $targetPid, $position ?? 'top');
+            if ($moveError !== null) {
+                return $this->createErrorResult('Error moving record: ' . $moveError);
+            }
+        }
 
         // Validate the data
         $validationResult = $this->validateRecordData($table, $data, 'update', $uid, $targetPid ?? 0);
@@ -620,12 +630,12 @@ final class WriteTableTool extends AbstractRecordTool
             $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
             $pid = $record['pid'] ?? 0;
 
-            $this->inlineRelationService->buildDataMap($dataMap, $table, $workspaceUid, $pid, $inlineRelations);
+            $this->inlineRelationService->buildDataMap($dataMap, $table, $workspaceUid, $pid, $inlineRelations, $cmdMap);
 
             // Sync inline relations: remove children that are no longer in the new list.
             // DataHandler's raw dataMap processing does not automatically delete absent
             // children (that's FormEngine's job), so we handle it explicitly via cmdMap.
-            $this->inlineRelationService->syncRelations($dataMap, $cmdMap, $table, $uid, $inlineRelations);
+            $this->inlineRelationService->syncRelations($dataMap, $cmdMap, $table, $uid, $inlineRelations, $workspaceUid);
         }
 
         if (!empty($dataMap) || !empty($cmdMap)) {
@@ -700,6 +710,13 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function moveRecord(string $table, int $uid, string $position, ?int $targetPid = null): CallToolResult
     {
+        if ($table === 'pages') {
+            $moveError = $this->validatePageMove($uid, $targetPid, $position);
+            if ($moveError !== null) {
+                return $this->createErrorResult('Error moving record: ' . $moveError);
+            }
+        }
+
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
         $record = BackendUtility::getRecord($table, $workspaceUid, 'pid');
         if (!$record) {
@@ -720,6 +737,42 @@ final class WriteTableTool extends AbstractRecordTool
             'uid' => $uid,
             'pid' => $pid,
         ]);
+    }
+
+    /** Reject cycles using the staged page tree before DataHandler changes any rows. */
+    private function validatePageMove(int $uid, ?int $targetPid, string $position): ?string
+    {
+        $liveUid = $this->getLiveUid('pages', $uid);
+        if (preg_match('/^(?:after|before):(\d+)$/', $position, $matches) === 1) {
+            $pageId = $this->resolveParentPageId((int)$matches[1]);
+        } else {
+            $pageId = $targetPid ?? $this->resolveParentPageId($liveUid);
+        }
+
+        $seen = [];
+        while ($pageId !== null && $pageId > 0) {
+            $pageId = $this->getLiveUid('pages', $pageId);
+            if ($pageId === $liveUid) {
+                return sprintf('cannot move pages:%d into itself or one of its own subpages', $liveUid);
+            }
+            if (isset($seen[$pageId])) {
+                return sprintf('the rootline of destination pages:%d is circular', $pageId);
+            }
+            $seen[$pageId] = true;
+            $pageId = $this->resolveParentPageId($pageId);
+        }
+
+        return null;
+    }
+
+    private function resolveParentPageId(int $pageId): ?int
+    {
+        $row = BackendUtility::getRecord('pages', $this->getLiveUid('pages', $pageId), 'uid,pid,t3ver_oid,t3ver_state');
+        if ($row === null) {
+            return null;
+        }
+        BackendUtility::workspaceOL('pages', $row);
+        return is_array($row) && is_numeric($row['pid'] ?? null) ? (int)$row['pid'] : null;
     }
 
     /**
@@ -1248,10 +1301,19 @@ final class WriteTableTool extends AbstractRecordTool
         // Build merged record context for dynamic select item resolution (itemsProcFunc, TSconfig)
         if ($action === 'update' && $uid) {
             $existingRecord = BackendUtility::getRecord($table, $uid) ?? [];
-            $mergedRecord = array_merge($existingRecord, $data);
+            if ($existingRecord !== []) {
+                BackendUtility::workspaceOL($table, $existingRecord);
+            }
+            $mergedRecord = array_merge(is_array($existingRecord) ? $existingRecord : [], $data);
         } else {
             $mergedRecord = array_merge($data, ['pid' => $pid]);
         }
+
+        // Page fields use the page itself; other records use their containing page.
+        $recordPid = $mergedRecord['pid'] ?? 0;
+        $tsConfigPid = $table === 'pages' && $action === 'update' && $uid !== null
+            ? $this->getLiveUid($table, $uid)
+            : ($pid > 0 ? $pid : (is_numeric($recordPid) ? (int)$recordPid : 0));
 
         // Validate and convert field values
         foreach ($data as $fieldName => $value) {
@@ -1261,7 +1323,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
             $typeField = $this->tableAccessService->getTypeFieldName($table);
             if ($typeField !== null && $fieldName === $typeField) {
-                $allowedTypes = $this->tableAccessService->getAvailableTypes($table, $pid > 0 ? $pid : null);
+                $allowedTypes = $this->tableAccessService->getAvailableTypes($table, $tsConfigPid);
                 $rawConfig = $fieldConfig['config'] ?? [];
                 $rawItems = isset($rawConfig['items']) && is_array($rawConfig['items'])
                     ? $this->tableAccessService->parseSelectItems($rawConfig['items'])
@@ -1276,7 +1338,7 @@ final class WriteTableTool extends AbstractRecordTool
             }
 
             // Check if field is accessible (filters out inaccessible inline relations)
-            if (!$this->tableAccessService->canAccessField($table, $fieldName, '', $pid > 0 ? $pid : null)) {
+            if (!$this->tableAccessService->canAccessField($table, $fieldName, '', $tsConfigPid)) {
                 return "Field '{$fieldName}' is not accessible";
             }
 
@@ -1345,7 +1407,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Get available fields for this record type
-        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType, $pid > 0 ? $pid : null);
+        $availableFields = $this->tableAccessService->getAvailableFields($table, $recordType, $tsConfigPid);
 
         // The type field itself should always be available if it exists
         if ($typeField) {

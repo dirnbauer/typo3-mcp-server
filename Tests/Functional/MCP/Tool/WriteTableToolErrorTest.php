@@ -226,9 +226,9 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         $result = $this->tool->execute([
             'action' => 'update',
             'table' => 'pages',
-            'uid' => 1,
+            'uid' => 6,
             'data' => [
-                'pid' => 2, // Cannot modify pid in update
+                'pid' => 2, // Move Contact below About, without creating a page-tree cycle.
                 'title' => 'Test',
             ],
         ]);

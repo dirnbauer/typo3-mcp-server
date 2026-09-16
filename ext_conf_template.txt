@@ -4,6 +4,9 @@ additionalReadOnlyTables = sys_file
 # cat=mcp/tables; type=string; label=Additional standalone hidden tables
 additionalStandaloneTables = sys_file_metadata
 
+# cat=mcp/http; type=int+; label=Session timeout (seconds): Idle lifetime for session-based MCP clients. Expired sessions return HTTP 404 and require a new handshake. Stateless clients are unaffected. Default: 14400 (4 hours)
+sessionTimeout = 14400
+
 # cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileSandboxRoot
 fileSandboxRoot = 1:/mcp/
 

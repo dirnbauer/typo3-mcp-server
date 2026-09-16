@@ -6,6 +6,8 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use PHPUnit\Framework\Attributes\DataProvider;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 final class WorkspacePageMoveTest extends AbstractFunctionalTest
 {
@@ -27,7 +29,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'uid' => 6,
             'data' => ['pid' => 2],
         ]);
-        $this->assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
+        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
 
         // Moving 2 below 6 now closes the cycle 2 -> 6 -> 2, visible only in the
         // workspace.
@@ -35,16 +37,34 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'action' => 'update',
             'table' => 'pages',
             'uid' => 2,
-            'data' => ['pid' => 6],
+            'data' => ['pid' => 6, 'title' => 'Must not be changed'],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
-        $this->assertStringContainsString('Error moving record', $result->content[0]->text);
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertStringContainsString('Error moving record', $result->content[0]->text);
 
         $versionsBelowSix = $this->getConnectionForTable('pages')->fetchAllAssociative(
             'SELECT uid FROM pages WHERE pid = 6 AND t3ver_oid = 2'
         );
-        $this->assertSame([], $versionsBelowSix, 'A version of page 2 was moved below page 6.');
+        self::assertSame([], $versionsBelowSix, 'A version of page 2 was moved below page 6.');
+        self::assertSame('About', BackendUtility::getRecordWSOL('pages', 2)['title']);
+    }
+
+    #[DataProvider('circularMovePositions')]
+    public function testMoveActionRejectsCyclesBeforeCreatingAVersion(string $position, int $pid): void
+    {
+        $result = $this->writeTool->execute([
+            'action' => 'move', 'table' => 'pages', 'uid' => 2,
+            'pid' => $pid, 'position' => $position,
+        ]);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('into itself or one of its own subpages', $result->content[0]->text);
+        self::assertSame(0, $this->getConnectionForTable('pages')->count('*', 'pages', ['t3ver_oid' => 2]));
+    }
+
+    public static function circularMovePositions(): array
+    {
+        return [['top', 4], ['bottom', 2], ['after:5', 1], ['before:4', 1]];
     }
 
     /**
@@ -60,7 +80,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'uid' => 4,
             'data' => ['pid' => 7],
         ]);
-        $this->assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
+        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
 
         $result = $this->writeTool->execute([
             'action' => 'update',
@@ -69,7 +89,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'data' => ['pid' => 4],
         ]);
 
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
     }
 
     /**
@@ -94,13 +114,13 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'data' => ['pid' => 4],
         ]);
 
-        $this->assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
 
         // Assert the guard's own message, not just that some error came back.
         // Without the guard the move is let through and DataHandler raises a
         // rootline exception a few frames deeper, which also produces an
         // "Error moving record" result, naming a page the caller never mentioned.
-        $this->assertStringContainsString(
+        self::assertStringContainsString(
             'rootline of destination pages:4 is circular',
             $result->content[0]->text
         );

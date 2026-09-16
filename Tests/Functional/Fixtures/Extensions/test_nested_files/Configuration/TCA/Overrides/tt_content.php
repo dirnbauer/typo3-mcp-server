@@ -14,5 +14,5 @@ $GLOBALS['TCA']['tt_content']['columns']['tx_testnestedfiles_items'] = [
     ],
 ];
 
-$GLOBALS['TCA']['tt_content']['types']['textmedia']['showitem'] =
-    ($GLOBALS['TCA']['tt_content']['types']['textmedia']['showitem'] ?? '') . ',tx_testnestedfiles_items';
+$GLOBALS['TCA']['tt_content']['types']['textmedia']['showitem']
+    = ($GLOBALS['TCA']['tt_content']['types']['textmedia']['showitem'] ?? '') . ',tx_testnestedfiles_items';

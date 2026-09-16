@@ -41,11 +41,17 @@ Independent relations can be handled in two useful ways:
 Embedded relations
 ------------------
 
-Embedded child creation works through a two-step approach:
+The parent and its embedded descendants are submitted in one ``DataHandler``
+run. The extension builds relation lists using temporary ``NEW`` identifiers;
+Core resolves their UIDs, foreign fields, array ordering, and workspace versions.
+Nested inline children can themselves carry file fields or more inline children.
 
-- ``DataHandler`` creates the child records
-- The extension applies the necessary foreign-field update afterwards when TYPO3
-  does not manage that relation field directly through TCA columns
+On update, each supplied relation list replaces that parent's current list.
+Include existing child UIDs to keep or patch those children; omitted embedded
+children are deleted through the same ``DataHandler`` command map. Invalid
+nested payloads and references to another parent's children are rejected before
+the record write runs. Shared child tables using ``foreign_table_field`` are
+scoped to the owning parent table for reads, ownership checks, and cleanup.
 
 File references
 ===============

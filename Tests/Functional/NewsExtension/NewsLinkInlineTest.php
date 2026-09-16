@@ -6,6 +6,7 @@ namespace Hn\McpServer\Tests\Functional\NewsExtension;
 
 use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -236,11 +237,11 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'related_links' => [
                     ['title' => 'First link', 'uri' => 'https://first.com'],
                     ['title' => 'Second link', 'uri' => 'https://second.com'],
-                    ['title' => 'Third link', 'uri' => 'https://third.com']
-                ]
+                    ['title' => 'Third link', 'uri' => 'https://third.com'],
+                ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read and verify order
@@ -251,10 +252,10 @@ class NewsLinkInlineTest extends FunctionalTestCase
         ]);
 
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(3, $news['related_links']);
+        self::assertCount(3, $news['related_links']);
 
         $titles = array_column($news['related_links'], 'title');
-        $this->assertSame(
+        self::assertSame(
             ['First link', 'Second link', 'Third link'],
             $titles,
             'Embedded links must be returned in the order they were passed in. Actual order: ' . json_encode($titles)
@@ -263,7 +264,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
         // The underlying "sorting" column (tx_news_domain_model_link.ctrl.sortby) must
         // itself be ascending in array order, not just however ReadTableTool happens to
         // return rows.
-        $queryBuilder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Database\ConnectionPool::class)
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tx_news_domain_model_link');
         $queryBuilder->getRestrictions()->removeAll();
         $rows = $queryBuilder->select('title', 'sorting')
@@ -272,7 +273,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAllAssociative();
 
-        $this->assertSame(
+        self::assertSame(
             ['First link', 'Second link', 'Third link'],
             array_column($rows, 'title'),
             'Sorting values must ascend in array order. Rows: ' . json_encode($rows)
@@ -305,11 +306,11 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         $result = $readTool->execute(['table' => 'tx_news_domain_model_news', 'uid' => $newsUid]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $news = json_decode($result->content[0]->text, true)['records'][0];
         $byTitle = [];
         foreach ($news['related_links'] as $link) {
@@ -330,24 +331,24 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
 
         $result = $readTool->execute(['table' => 'tx_news_domain_model_news', 'uid' => $newsUid]);
-        $this->assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
         $news = json_decode($result->content[0]->text, true)['records'][0];
-        $this->assertCount(3, $news['related_links'], 'No links should be lost during reorder');
+        self::assertCount(3, $news['related_links'], 'No links should be lost during reorder');
 
         // Assert the uids themselves, not just the titles — a delete-and-recreate
         // implementation could pass a title-only check while discarding the
         // original child records.
-        $this->assertSame(
+        self::assertSame(
             [$byTitle['Third link'], $byTitle['First link'], $byTitle['Second link']],
-            array_map('intval', array_column($news['related_links'], 'uid')),
+            array_map(intval(...), array_column($news['related_links'], 'uid')),
             'Reordering must retain the existing child records, not delete and recreate them.'
         );
 
         $titles = array_column($news['related_links'], 'title');
-        $this->assertSame(
+        self::assertSame(
             ['Third link', 'First link', 'Second link'],
             $titles,
             'Embedded children must follow the order supplied in the update payload. Actual order: ' . json_encode($titles)
