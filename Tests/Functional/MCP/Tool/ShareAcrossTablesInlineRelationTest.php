@@ -20,6 +20,54 @@ use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
  */
 class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
 {
+    public function testReadsExcludeChildrenOwnedByAnotherTableWithTheSameParentUid(): void
+    {
+        $this->seedSharedChildren();
+        $result = $this->getService(ReadTableTool::class)->execute(['table' => 'tt_content', 'uid' => 100]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $record = $this->extractJsonFromResult($result)['records'][0];
+        self::assertSame(['Content child'], array_column($record['tx_testsat_items'], 'title'));
+    }
+
+    public function testReplacingChildrenDoesNotDeleteAnotherTablesChildren(): void
+    {
+        $this->seedSharedChildren();
+        $result = $this->getService(WriteTableTool::class)->execute([
+            'table' => 'tt_content', 'action' => 'update', 'uid' => 100,
+            'data' => ['tx_testsat_items' => []],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $foreignChild = \TYPO3\CMS\Backend\Utility\BackendUtility::getRecordWSOL('tx_testsat_item', 2);
+        self::assertIsArray($foreignChild);
+        self::assertSame('Page child', $foreignChild['title']);
+        self::assertNotSame(2, (int)$foreignChild['t3ver_state'], 'Another table\'s child must not have a delete placeholder.');
+    }
+
+    public function testChildOfAnotherTableCannotBeClaimedByMatchingParentUid(): void
+    {
+        $this->seedSharedChildren();
+        $result = $this->getService(WriteTableTool::class)->execute([
+            'table' => 'tt_content', 'action' => 'update', 'uid' => 100,
+            'data' => ['tx_testsat_items' => [['uid' => 2, 'title' => 'Taken']]],
+        ]);
+        self::assertTrue($result->isError);
+        self::assertStringContainsString('does not belong', $result->content[0]->text);
+        self::assertSame('Page child', $this->getConnectionForTable('tx_testsat_item')->select(
+            ['title'], 'tx_testsat_item', ['uid' => 2],
+        )->fetchOne());
+    }
+
+    private function seedSharedChildren(): void
+    {
+        $connection = $this->getConnectionForTable('tx_testsat_item');
+        foreach (['tt_content' => 'Content child', 'pages' => 'Page child'] as $table => $title) {
+            $connection->insert('tx_testsat_item', [
+                'pid' => 1, 'foreign_table_parent_uid' => 100,
+                'tablenames' => $table, 'fieldname' => 'tx_testsat_items', 'title' => $title,
+            ]);
+        }
+    }
+
     protected array $coreExtensionsToLoad = [
         'workspaces',
     ];

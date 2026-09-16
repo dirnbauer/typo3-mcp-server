@@ -100,22 +100,22 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
     public function testUpdatesOfLiveChildrenLeaveLiveReferencesUntouched(): void
     {
         $this->getConnectionForTable(self::ITEM_TABLE)->insert(self::ITEM_TABLE, [
-            'uid' => 100, 'pid' => 1, 'title' => 'Live item', 'tt_content_items' => 1, 'file' => 1,
+            'uid' => 100, 'pid' => 1, 'title' => 'Live item', 'tt_content_items' => 100, 'file' => 1,
         ]);
         $this->getConnectionForTable('sys_file_reference')->insert('sys_file_reference', [
             'uid' => 100, 'pid' => 1, 'uid_local' => 1, 'uid_foreign' => 100,
-            'tablenames' => self::ITEM_TABLE, 'fieldname' => 'file',
+            'tablenames' => self::ITEM_TABLE, 'fieldname' => 'file', 'alternative' => 'Live alternative',
         ]);
         $this->getConnectionForTable('tt_content')->update('tt_content', [
             'CType' => 'textmedia', 'tx_testnestedfiles_items' => 1,
-        ], ['uid' => 1]);
+        ], ['uid' => 100]);
 
-        $this->updateItems(1, [['uid' => 100, 'file' => [['uid' => 100, 'alternative' => 'Draft only']]]]);
+        $this->updateItems(100, [['uid' => 100, 'file' => [['uid' => 100, 'alternative' => 'Draft only']]]]);
         $this->assertReference(100, 1, 'Draft only');
         $live = $this->getConnectionForTable('sys_file_reference')->select(
             ['alternative', 'deleted', 't3ver_wsid'], 'sys_file_reference', ['uid' => 100],
         )->fetchAssociative();
-        self::assertSame('', $live['alternative']);
+        self::assertSame('Live alternative', $live['alternative']);
         self::assertSame(0, (int)$live['deleted']);
         self::assertSame(0, (int)$live['t3ver_wsid']);
     }
