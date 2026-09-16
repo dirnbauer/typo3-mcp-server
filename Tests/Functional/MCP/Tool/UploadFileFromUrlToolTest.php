@@ -200,6 +200,23 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
         self::assertSame($json['uid'], $again['uid']);
     }
 
+    #[Test]
+    public function throwingHelperDoesNotPreventLaterHelpersFromRecognizingVideos(): void
+    {
+        $helpers = $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'];
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = [
+            'broken' => \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::class,
+        ] + $helpers;
+        \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::$calls = 0;
+
+        try {
+            $this->youtubeUrlBecomesAnOnlineMediaAssetWithoutDownloading();
+            self::assertSame(2, \Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper::$calls);
+        } finally {
+            $GLOBALS['TYPO3_CONF_VARS']['SYS']['fal']['onlineMediaHelpers'] = $helpers;
+        }
+    }
+
     /**
      * @param array<string, string> $extraHeaders
      */
