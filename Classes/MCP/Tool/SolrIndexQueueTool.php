@@ -7,14 +7,16 @@ namespace Hn\McpServer\MCP\Tool;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
- * Discover and run EXT:solr scheduler tasks without exposing raw scheduler CLI.
+ * Discover and run EXT:solr scheduler tasks without exposing the raw scheduler CLI.
+ *
+ * Tasks are discovered in `tx_scheduler_task`; the only subprocess this tool
+ * spawns is `scheduler:run --task=<uid> --force` for one validated Solr task.
  */
 #[AdminOnly]
 final class SolrIndexQueueTool extends AbstractTool
@@ -42,8 +44,9 @@ final class SolrIndexQueueTool extends AbstractTool
     {
         return [
             'description' => 'List or run EXT:solr scheduler tasks, especially the Apache Solr Index Queue Worker. '
-                . 'The run action validates that the selected scheduler task looks Solr-related before invoking '
-                . '`scheduler:run --task=<uid> --force` and never runs all due scheduler tasks. Admin-only.',
+                . 'Tasks are read from the TYPO3 scheduler table; the run action only invokes '
+                . '`scheduler:run --task=<uid> --force` for one task that looks Solr-related and never runs all due '
+                . 'scheduler tasks. Admin-only.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
@@ -92,24 +95,32 @@ final class SolrIndexQueueTool extends AbstractTool
 
     private function executeList(): CallToolResult
     {
-        $listResult = $this->runTypo3Command(['scheduler:list'], 60);
-        $tasks = $this->discoverSolrTasks($listResult);
+        $tasks = $this->discoverSolrTasks();
+        if ($tasks === null) {
+            return $this->schedulerUnavailableResult('list');
+        }
 
         $payload = [
             'action' => 'list',
-            'status' => $listResult['exitCode'] === 0 ? 'listed' : 'failed',
+            'status' => 'listed',
             'tasks' => $tasks,
             'taskCount' => count($tasks),
-            'schedulerList' => $listResult,
         ];
-
-        if ($listResult['exitCode'] !== 0) {
-            $payload['hint'] = 'The TYPO3 scheduler command is not available or failed. Install/activate typo3/cms-scheduler and EXT:solr before using Solr indexing through MCP.';
-        } elseif ($tasks === []) {
+        if ($tasks === []) {
             $payload['hint'] = 'No Solr scheduler tasks were found. Create an "Apache Solr - Index Queue Worker" task in the TYPO3 scheduler module first.';
         }
 
-        return $this->jsonResult($payload, $listResult['exitCode'] !== 0);
+        return $this->createJsonResult($payload);
+    }
+
+    private function schedulerUnavailableResult(string $action): CallToolResult
+    {
+        return $this->createJsonResult([
+            'action' => $action,
+            'status' => 'failed',
+            'tasks' => [],
+            'hint' => 'The TYPO3 scheduler table is not available. Install/activate typo3/cms-scheduler and EXT:solr before using Solr indexing through MCP.',
+        ], true);
     }
 
     /**
@@ -120,17 +131,9 @@ final class SolrIndexQueueTool extends AbstractTool
         $taskUid = $this->normalizeTaskUid($params['taskUid'] ?? null);
         $runs = $this->normalizeRuns($params['runs'] ?? null);
 
-        $listResult = $this->runTypo3Command(['scheduler:list'], 60);
-        $tasks = $this->discoverSolrTasks($listResult);
-
-        if ($listResult['exitCode'] !== 0) {
-            return $this->jsonResult([
-                'action' => 'run',
-                'status' => 'failed',
-                'tasks' => $tasks,
-                'schedulerList' => $listResult,
-                'hint' => 'The TYPO3 scheduler command is not available or failed. Install/activate typo3/cms-scheduler and EXT:solr before running Solr indexing through MCP.',
-            ], true);
+        $tasks = $this->discoverSolrTasks();
+        if ($tasks === null) {
+            return $this->schedulerUnavailableResult('run');
         }
 
         $selectedTask = $this->selectTask($tasks, $taskUid);
@@ -149,7 +152,7 @@ final class SolrIndexQueueTool extends AbstractTool
             }
         }
 
-        return $this->jsonResult([
+        return $this->createJsonResult([
             'action' => 'run',
             'status' => $failed ? 'failed' : 'completed',
             'task' => $selectedTask,
@@ -255,25 +258,12 @@ final class SolrIndexQueueTool extends AbstractTool
     }
 
     /**
-     * @param array<string, mixed> $listResult
-     * @return list<array<string, mixed>>
+     * Solr-related rows of `tx_scheduler_task`; null when the table cannot be
+     * queried (scheduler not installed).
+     *
+     * @return list<array<string, mixed>>|null
      */
-    private function discoverSolrTasks(array $listResult): array
-    {
-        $tasks = $this->discoverSolrTasksFromDatabase();
-        if ($tasks !== []) {
-            return $tasks;
-        }
-
-        $stdout = is_string($listResult['stdout'] ?? null) ? $listResult['stdout'] : '';
-        $stderr = is_string($listResult['stderr'] ?? null) ? $listResult['stderr'] : '';
-        return $this->discoverSolrTasksFromSchedulerOutput($stdout . "\n" . $stderr);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function discoverSolrTasksFromDatabase(): array
+    private function discoverSolrTasks(): ?array
     {
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_scheduler_task');
@@ -285,7 +275,7 @@ final class SolrIndexQueueTool extends AbstractTool
                 ->executeQuery()
                 ->fetchAllAssociative();
         } catch (\Throwable) {
-            return [];
+            return null;
         }
 
         $tasks = [];
@@ -293,9 +283,8 @@ final class SolrIndexQueueTool extends AbstractTool
             $serializedTask = is_string($row['serialized_task_object'] ?? null) ? $row['serialized_task_object'] : '';
             $description = is_string($row['description'] ?? null) ? trim($row['description']) : '';
             $class = $this->extractSerializedObjectClass($serializedTask);
-            $haystack = $class . ' ' . $description . ' ' . $serializedTask;
 
-            if (!$this->looksLikeSolrTask($haystack)) {
+            if (!$this->looksLikeSolrTask($class . ' ' . $description . ' ' . $serializedTask)) {
                 continue;
             }
 
@@ -304,55 +293,15 @@ final class SolrIndexQueueTool extends AbstractTool
                 continue;
             }
 
-            $disabledValue = $row['disable'] ?? 0;
-            $disabled = $disabledValue === true
-                || (is_int($disabledValue) && $disabledValue !== 0)
-                || (is_string($disabledValue) && is_numeric($disabledValue) && (int)$disabledValue !== 0);
-
-            $tasks[$uid] = [
+            $tasks[] = [
                 'uid' => $uid,
-                'disabled' => $disabled,
+                'disabled' => is_numeric($row['disable'] ?? null) && (int)$row['disable'] !== 0,
                 'description' => $description,
                 'class' => $class,
-                'source' => 'database',
             ];
         }
 
-        return array_values($tasks);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function discoverSolrTasksFromSchedulerOutput(string $output): array
-    {
-        $tasks = [];
-        $lines = preg_split('/\R/', $output);
-        if ($lines === false) {
-            return [];
-        }
-
-        foreach ($lines as $line) {
-            if (!$this->looksLikeSolrTask($line)) {
-                continue;
-            }
-
-            $uid = $this->extractTaskUidFromLine($line);
-            if ($uid === null) {
-                continue;
-            }
-
-            $tasks[$uid] = [
-                'uid' => $uid,
-                'disabled' => null,
-                'description' => trim($line),
-                'class' => '',
-                'source' => 'scheduler:list',
-            ];
-        }
-
-        ksort($tasks);
-        return array_values($tasks);
+        return $tasks;
     }
 
     private function looksLikeSolrTask(string $value): bool
@@ -372,22 +321,6 @@ final class SolrIndexQueueTool extends AbstractTool
         }
 
         return '';
-    }
-
-    private function extractTaskUidFromLine(string $line): ?int
-    {
-        $trimmed = trim($line);
-        if (preg_match('/^\|?\s*(\d+)\s*(?:\||\s)/', $trimmed, $matches) === 1) {
-            $uid = (int)$matches[1];
-            return $uid > 0 ? $uid : null;
-        }
-
-        if (preg_match('/\buid\b\D+(\d+)/i', $line, $matches) === 1) {
-            $uid = (int)$matches[1];
-            return $uid > 0 ? $uid : null;
-        }
-
-        return null;
     }
 
     /**
@@ -457,14 +390,5 @@ final class SolrIndexQueueTool extends AbstractTool
             'timedOut' => $timedOut,
             'executionTime' => round(microtime(true) - $startTime, 3),
         ];
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function jsonResult(array $payload, bool $isError): CallToolResult
-    {
-        $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        return new CallToolResult([new TextContent($json !== false ? $json : '{}')], $isError);
     }
 }

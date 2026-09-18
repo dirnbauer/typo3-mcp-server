@@ -933,10 +933,10 @@ List or run EXT:solr scheduler tasks through MCP without exposing arbitrary
    - ``runs`` (integer): how many times to run the selected task, default ``1``,
      max ``10``. Useful because Solr index queue workers process batches.
 
-``list`` calls TYPO3's ``scheduler:list`` and returns Solr-related scheduler
-tasks, including candidates discovered from ``tx_scheduler_task``. ``run`` first
-validates that the selected task looks Solr-related, then invokes only
-``scheduler:run --task=<uid>``. It never runs all due scheduler tasks.
+``list`` reads ``tx_scheduler_task`` and returns the Solr-related scheduler
+tasks (UID, enabled state, description, task class). ``run`` first validates
+that the selected task looks Solr-related, then invokes only
+``scheduler:run --task=<uid> --force``. It never runs all due scheduler tasks.
 
 CLI shortcut:
 

@@ -73,6 +73,21 @@ final class SolrIndexQueueToolTest extends AbstractFunctionalTest
         );
     }
 
+    public function testListFailsClosedWithoutTheSchedulerTable(): void
+    {
+        // typo3/cms-scheduler is not part of the functional test instance, so
+        // tx_scheduler_task does not exist: no subprocess is spawned and the
+        // caller gets an actionable hint instead of parsed CLI output.
+        $result = $this->tool->execute(['action' => 'list']);
+
+        self::assertTrue($result->isError);
+        $payload = json_decode($this->getFirstTextContent($result), true);
+        self::assertIsArray($payload);
+        self::assertSame('failed', $payload['status']);
+        self::assertSame([], $payload['tasks']);
+        self::assertStringContainsString('typo3/cms-scheduler', $payload['hint']);
+    }
+
     public function testRequiresAdminPrivileges(): void
     {
         $GLOBALS['BE_USER']->user['admin'] = 0;
