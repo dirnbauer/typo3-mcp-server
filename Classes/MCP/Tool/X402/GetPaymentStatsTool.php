@@ -11,7 +11,6 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Service\X402\X402ContentAccessService;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -100,9 +99,7 @@ final class GetPaymentStatsTool extends AbstractRecordTool
 
         $stats = $this->getPaymentStats($since, $groupBy);
 
-        return new CallToolResult([
-            new TextContent(json_encode($stats, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
-        ]);
+        return $this->createJsonResult($stats);
     }
 
     /**
@@ -227,9 +224,7 @@ final class GetPaymentStatsTool extends AbstractRecordTool
                 : 'Install webconsulting/typo3-x402-paywall to enable x402 content monetization.',
         ];
 
-        return new CallToolResult([
-            new TextContent(json_encode($status, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
-        ]);
+        return $this->createJsonResult($status);
     }
 
     private function databaseTableExists(string $table): bool

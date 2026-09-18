@@ -17,23 +17,39 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Abstract base class for MCP tools
+ * Base class of every MCP tool the registry hands out.
  *
- * Implements the Template Method pattern for consistent error handling
- * across all tools. The execute() method is final and handles all
- * exceptions, while subclasses implement doExecute() for their logic.
+ * execute() is the template method: it enforces the capability manifest and
+ * the #[AdminOnly] / #[DevSiteOnly] attributes, then delegates to doExecute()
+ * and turns every exception into a structured error result.
  */
 abstract class AbstractTool implements ToolInterface
 {
     use ExceptionHandlerTrait;
 
     /**
-     * Get the tool name based on the class name
+     * Tool name derived from the class name ("ReadTableTool" -> "ReadTable").
      */
     public function getName(): string
     {
-        $className = (new \ReflectionClass($this))->getShortName();
-        return str_replace('Tool', '', $className);
+        return str_replace('Tool', '', (new \ReflectionClass($this))->getShortName());
+    }
+
+    /**
+     * Marked #[AdminOnly]: only administrators may execute the tool.
+     */
+    public function isAdminOnly(): bool
+    {
+        return $this->hasAttribute(AdminOnly::class);
+    }
+
+    /**
+     * Marked #[DevSiteOnly]: listed and executable only while
+     * {@see DevSiteToolService::isAvailable()} reports local mode.
+     */
+    public function isDevSiteOnly(): bool
+    {
+        return $this->hasAttribute(DevSiteOnly::class);
     }
 
     /**
@@ -54,13 +70,25 @@ abstract class AbstractTool implements ToolInterface
     {
         try {
             $this->enforceCapabilityManifest();
-            $this->enforceAdminOnly();
-            $this->enforceDevSiteOnly();
+            if ($this->isAdminOnly()) {
+                $this->assertAdminUser();
+            }
+            if ($this->isDevSiteOnly()) {
+                GeneralUtility::makeInstance(DevSiteToolService::class)->assertAvailable();
+            }
             $this->initialize();
             return $this->doExecute($params);
         } catch (\Throwable $e) {
             return $this->handleException($e, $this->getName());
         }
+    }
+
+    /**
+     * @param class-string $attribute
+     */
+    protected function hasAttribute(string $attribute): bool
+    {
+        return (new \ReflectionClass($this))->getAttributes($attribute) !== [];
     }
 
     /**
@@ -96,36 +124,34 @@ abstract class AbstractTool implements ToolInterface
 
     protected function initialize(): void {}
 
-    /**
-     * Enforce the #[AdminOnly] attribute if present on the concrete tool class.
-     */
-    private function enforceAdminOnly(): void
+    private function assertAdminUser(): void
     {
-        $reflection = new \ReflectionClass($this);
-        if ($reflection->getAttributes(AdminOnly::class) === []) {
-            return;
-        }
-
         $backendUser = $GLOBALS['BE_USER'] ?? null;
         if (!$backendUser instanceof BackendUserAuthentication || !$backendUser->isAdmin()) {
             throw new ValidationException(['This tool requires admin privileges.']);
         }
     }
 
-    private function enforceDevSiteOnly(): void
-    {
-        $reflection = new \ReflectionClass($this);
-        if ($reflection->getAttributes(DevSiteOnly::class) === []) {
-            return;
-        }
-
-        GeneralUtility::makeInstance(DevSiteToolService::class)->assertAvailable();
-    }
-
     /**
      * @param array<string, mixed> $params
      */
     abstract protected function doExecute(array $params): CallToolResult;
+
+    /**
+     * JSON text result. Invalid UTF-8 (raw column values DataHandler did not
+     * sanitize) is substituted so the response stays valid JSON.
+     *
+     * @param array<string, mixed> $data
+     */
+    protected function createJsonResult(array $data, bool $isError = false): CallToolResult
+    {
+        $encoded = json_encode(
+            $data,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE,
+        );
+
+        return new CallToolResult([new TextContent($encoded === false ? '{}' : $encoded)], $isError);
+    }
 
     /**
      * Create an error result (required by ExceptionHandlerTrait)

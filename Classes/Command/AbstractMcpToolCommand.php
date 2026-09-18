@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Core\Environment;
  * wants to expose as Symfony --options. The base class:
  *
  *   1. Bootstraps an admin backend user + workspace context (mirrors
- *      McpTestCommand so the tool runs the way it does over MCP).
+ *      McpToolRunCommand so the tool runs the way it does over MCP).
  *   2. Reads --options + --param key=value, builds the tool's input array,
  *      and calls the tool through the registry.
  *   3. Formats the result based on --json (raw JSON), --plain (text only,

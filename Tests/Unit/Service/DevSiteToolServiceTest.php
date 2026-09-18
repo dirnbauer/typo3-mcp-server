@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Tests\Unit\Service;
 
-use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\Service\DevSiteToolService;
 use Hn\McpServer\Service\LocalModeService;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-
-#[DevSiteOnly]
-final class DevSiteOnlyTestDummy {}
 
 final class DevSiteToolServiceTest extends TestCase
 {
@@ -24,11 +20,6 @@ final class DevSiteToolServiceTest extends TestCase
         putenv('DDEV_HOSTNAME');
         putenv('DDEV_TLD');
         parent::tearDown();
-    }
-
-    public function testDetectsDevSiteOnlyAttribute(): void
-    {
-        self::assertTrue(DevSiteToolService::hasDevSiteOnlyAttribute(new DevSiteOnlyTestDummy()));
     }
 
     public function testIsUnavailableWhenLocalModeIsOff(): void

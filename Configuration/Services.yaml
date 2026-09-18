@@ -24,12 +24,6 @@ services:
         command: 'mcp:server'
         description: 'Starts an MCP (Model Context Protocol) server using stdio transport'
         
-  Hn\McpServer\Command\McpTestCommand:
-    tags:
-      - name: 'console.command'
-        command: 'mcp:test'
-        description: 'Test MCP tools directly without starting a server'
-        
   Hn\McpServer\Command\OAuthManageCommand:
     tags:
       - name: 'console.command'

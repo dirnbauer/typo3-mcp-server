@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Hn\McpServer\Exception\ValidationException;
-use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
-use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 
 /**
  * Gates MCP tools and resources that should only appear when
@@ -50,29 +48,5 @@ final readonly class DevSiteToolService
             'available' => $this->isAvailable(),
             'hint' => 'Requires DDEV, TYPO3 Development context, or localUnsafeMode=on',
         ];
-    }
-
-    public static function hasDevSiteOnlyAttribute(object $tool): bool
-    {
-        $class = self::resolveToolClass($tool);
-
-        return (new \ReflectionClass($class))->getAttributes(DevSiteOnly::class) !== [];
-    }
-
-    /**
-     * @return class-string
-     */
-    private static function resolveToolClass(object $tool): string
-    {
-        if ($tool instanceof CompatibleToolAdapter) {
-            $reflection = new \ReflectionClass($tool);
-            $property = $reflection->getProperty('tool');
-            $wrapped = $property->getValue($tool);
-            if (is_object($wrapped)) {
-                return $wrapped::class;
-            }
-        }
-
-        return $tool::class;
     }
 }

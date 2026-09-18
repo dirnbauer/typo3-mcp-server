@@ -9,7 +9,6 @@ use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Service\X402\X402ContentAccessService;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -119,7 +118,7 @@ final class ListPaidContentTool extends AbstractRecordTool
             ];
         }
 
-        return $this->jsonResult([
+        return $this->createJsonResult([
             'pages' => $resultPages,
             'total' => $total,
             'count' => count($resultPages),
@@ -153,7 +152,7 @@ final class ListPaidContentTool extends AbstractRecordTool
             $status['parentPageUid'] = $parentPageUid;
         }
 
-        return $this->jsonResult($status);
+        return $this->createJsonResult($status);
     }
 
     private function columnExists(string $table, string $column): bool
@@ -172,18 +171,5 @@ final class ListPaidContentTool extends AbstractRecordTool
         } catch (\Exception) {
             return false;
         }
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function jsonResult(array $data): CallToolResult
-    {
-        return new CallToolResult([
-            new TextContent(json_encode(
-                $data,
-                JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
-            )),
-        ]);
     }
 }

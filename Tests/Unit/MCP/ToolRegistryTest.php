@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Unit\MCP;
 
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
+use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\MCP\Tool\CompatibleToolAdapter;
 use Hn\McpServer\MCP\Tool\ToolInterface;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\DevSiteToolService;
+use Hn\McpServer\Service\LocalModeService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use PHPUnit\Framework\TestCase;
@@ -171,5 +175,95 @@ final class ToolRegistryTest extends TestCase
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('Duplicate MCP tool name: Duplicate');
         new ToolRegistry([$tool, $tool]);
+    }
+
+    public function testAttributesAreReadFromTheToolClass(): void
+    {
+        $tool = new #[AdminOnly] #[DevSiteOnly] class extends AbstractTool {
+            public function getSchema(): array
+            {
+                return ['inputSchema' => ['type' => 'object']];
+            }
+
+            protected function doExecute(array $params): CallToolResult
+            {
+                return new CallToolResult([]);
+            }
+        };
+
+        self::assertTrue($tool->isAdminOnly());
+        self::assertTrue($tool->isDevSiteOnly());
+    }
+
+    public function testAttributesOfAdaptedToolsAreReadFromTheWrappedClass(): void
+    {
+        $legacyTool = new #[DevSiteOnly] class {
+            public function getName(): string
+            {
+                return 'LegacyDevTool';
+            }
+
+            public function execute(): string
+            {
+                return 'ok';
+            }
+        };
+
+        $registry = new ToolRegistry([$legacyTool]);
+        $tool = $registry->getTool('LegacyDevTool');
+
+        self::assertNotNull($tool);
+        self::assertTrue($tool->isDevSiteOnly());
+        self::assertFalse($tool->isAdminOnly());
+    }
+
+    public function testDevSiteOnlyToolsAreHiddenOutsideLocalMode(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = ['localUnsafeMode' => 'off'];
+        $devTool = new #[DevSiteOnly] class extends AbstractTool {
+            public function getName(): string
+            {
+                return 'DevOnly';
+            }
+
+            public function getSchema(): array
+            {
+                return ['inputSchema' => ['type' => 'object']];
+            }
+
+            protected function doExecute(array $params): CallToolResult
+            {
+                return new CallToolResult([]);
+            }
+        };
+        $plainTool = new class extends AbstractTool {
+            public function getName(): string
+            {
+                return 'Plain';
+            }
+
+            public function getSchema(): array
+            {
+                return ['inputSchema' => ['type' => 'object']];
+            }
+
+            protected function doExecute(array $params): CallToolResult
+            {
+                return new CallToolResult([]);
+            }
+        };
+
+        try {
+            $registry = new ToolRegistry(
+                [$devTool, $plainTool],
+                null,
+                new DevSiteToolService(new LocalModeService(new ExtensionConfiguration())),
+            );
+
+            self::assertSame(['Plain'], array_keys($registry->getTools()));
+            self::assertSame($devTool, $registry->getTool('DevOnly'), 'Lookup by name stays possible; execute() enforces the gate.');
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']);
+        }
     }
 }

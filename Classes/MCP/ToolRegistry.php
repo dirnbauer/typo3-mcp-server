@@ -24,7 +24,11 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 final class ToolRegistry
 {
     /**
-     * @var ToolInterface[] Registered tools, keyed by name
+     * Every registered tool is an AbstractTool: native tools extend it and
+     * anything else is wrapped in CompatibleToolAdapter, so the manifest,
+     * admin-only and dev-site gates apply uniformly.
+     *
+     * @var array<string, AbstractTool> keyed by tool name
      */
     private array $tools = [];
 
@@ -49,9 +53,9 @@ final class ToolRegistry
     }
 
     /**
-     * Get all registered tools
+     * All registered tools; dev-site-only tools are hidden outside local mode.
      *
-     * @return ToolInterface[]
+     * @return array<string, AbstractTool> keyed by tool name
      */
     public function getTools(): array
     {
@@ -63,7 +67,7 @@ final class ToolRegistry
 
         return array_filter(
             $this->tools,
-            static fn(ToolInterface $tool): bool => !DevSiteToolService::hasDevSiteOnlyAttribute($tool),
+            static fn(AbstractTool $tool): bool => !$tool->isDevSiteOnly(),
         );
     }
 
@@ -72,7 +76,7 @@ final class ToolRegistry
      * inside AbstractTool::execute() so a manifest-blocked call surfaces a
      * structured error instead of a silent "tool not found".
      */
-    public function getTool(string $name): ?ToolInterface
+    public function getTool(string $name): ?AbstractTool
     {
         $this->resolveProviders();
 
@@ -118,7 +122,7 @@ final class ToolRegistry
         $this->tools[$name] = $normalizedTool;
     }
 
-    private function normalizeTool(mixed $tool): ?ToolInterface
+    private function normalizeTool(mixed $tool): ?AbstractTool
     {
         if ($tool instanceof AbstractTool) {
             return $tool;

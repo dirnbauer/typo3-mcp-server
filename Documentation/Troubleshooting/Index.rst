@@ -170,8 +170,8 @@ Check:
   admin flag required by the tool being called.
 - User and group TSconfig on ``_cli_`` also affect local-mode and strict-sandbox
   policy. Check ``mcp:get-capabilities --json`` in the same CLI environment.
-- Use ``mcp:test`` to call a single tool with JSON args under the same ``_cli_``
-  identity and isolate the problem.
+- Use ``mcp:tool <ToolName> --params '{...}'`` to call a single tool under the
+  same ``_cli_`` identity and isolate the problem.
 
 File tools refuse my path
 =========================

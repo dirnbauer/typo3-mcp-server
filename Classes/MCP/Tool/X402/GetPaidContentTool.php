@@ -11,7 +11,6 @@ use Hn\McpServer\Service\X402\X402ContentAccessService;
 use Hn\McpServer\Service\X402\X402PaymentRequirement;
 use Hn\McpServer\Service\X402\X402PaymentVerifierInterface;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -149,7 +148,7 @@ final class GetPaidContentTool extends AbstractRecordTool
             ],
         ];
 
-        return $this->jsonResult($result);
+        return $this->createJsonResult($result);
     }
 
     /**
@@ -183,7 +182,7 @@ final class GetPaidContentTool extends AbstractRecordTool
             ],
         ];
 
-        return $this->jsonResult($result);
+        return $this->createJsonResult($result);
     }
 
     private function hasPaywallColumns(): bool
@@ -195,7 +194,7 @@ final class GetPaidContentTool extends AbstractRecordTool
 
     private function returnConfigStatus(int $pageUid): CallToolResult
     {
-        return $this->jsonResult([
+        return $this->createJsonResult([
             'status' => 'configuration_info',
             'pageUid' => $pageUid,
             'x402_paywall_extension' => 'not installed',
@@ -219,18 +218,5 @@ final class GetPaidContentTool extends AbstractRecordTool
         } catch (\Exception) {
             return false;
         }
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function jsonResult(array $data): CallToolResult
-    {
-        return new CallToolResult([
-            new TextContent(json_encode(
-                $data,
-                JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
-            )),
-        ]);
     }
 }

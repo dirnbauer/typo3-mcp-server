@@ -209,7 +209,6 @@ capabilities:
     # they invoke; infrastructure commands declare their role instead.
     commands:
       mcp:server:                       {kind: transport, transport: stdio}
-      mcp:test:                         {kind: diagnostic}
       mcp:oauth:                        {kind: oauth-management}
       mcp:tool:                         {kind: tool-dispatch}
       mcp:tool:list:                    {kind: tool-discovery}

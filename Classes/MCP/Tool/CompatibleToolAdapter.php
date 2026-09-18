@@ -22,6 +22,14 @@ final class CompatibleToolAdapter extends AbstractTool
     }
 
     /**
+     * #[AdminOnly] / #[DevSiteOnly] are read from the wrapped tool class.
+     */
+    protected function hasAttribute(string $attribute): bool
+    {
+        return (new \ReflectionClass($this->tool))->getAttributes($attribute) !== [];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function getSchema(): array
