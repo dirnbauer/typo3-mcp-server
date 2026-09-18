@@ -7,9 +7,9 @@ namespace Hn\McpServer\Integration\Abilities;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use Webconsulting\Abilities\Domain\AbilityDefinition;
 use Webconsulting\Abilities\Domain\ExecutionContext;
 use Webconsulting\Abilities\Projection\Mcp\McpProjection;
@@ -90,12 +90,11 @@ final class AbilityTool extends AbstractTool
      */
     private function createExecutionContext(): ExecutionContext
     {
-        $backendUser = $GLOBALS['BE_USER'] ?? null;
-        $uid = $backendUser instanceof BackendUserAuthentication ? ($backendUser->user['uid'] ?? 0) : 0;
-        if (!is_numeric($uid) || (int)$uid <= 0) {
+        $uid = BackendUserUtility::getCurrentUserId();
+        if ($uid <= 0) {
             throw new AccessDeniedException('active TYPO3 backend user', 'execute ' . $this->getName());
         }
 
-        return ExecutionContext::mcp((int)$uid);
+        return ExecutionContext::mcp($uid);
     }
 }

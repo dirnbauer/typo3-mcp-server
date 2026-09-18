@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Hn\McpServer\Utility\BackendUserUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Authentication\CommandLineUserAuthentication;
 use TYPO3\CMS\Core\Core\Bootstrap;
@@ -26,11 +27,7 @@ final readonly class McpCliBackendUserBootstrapService
         }
 
         $backendUser = $GLOBALS['BE_USER'] ?? null;
-        $uid = $backendUser instanceof BackendUserAuthentication
-            ? ($backendUser->user['uid'] ?? 0)
-            : 0;
-
-        if (!is_numeric($uid) || (int)$uid <= 0) {
+        if (BackendUserUtility::getCurrentUserId() <= 0) {
             if (!$backendUser instanceof CommandLineUserAuthentication) {
                 $backendUser = Bootstrap::initializeBackendUser(CommandLineUserAuthentication::class);
             }

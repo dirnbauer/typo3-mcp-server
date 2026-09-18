@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Middleware;
 
+use Hn\McpServer\Utility\BackendUserUtility;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -22,7 +23,7 @@ final class BackendUserConfigurationMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
-        if ($backendUser instanceof BackendUserAuthentication && !empty($backendUser->user['uid'])) {
+        if ($backendUser instanceof BackendUserAuthentication && BackendUserUtility::getUserId($backendUser) > 0) {
             $normalizedUc = array_merge($backendUser->uc_default, $backendUser->uc);
             if ($normalizedUc != $backendUser->uc) {
                 $backendUser->uc = $normalizedUc;

@@ -6,6 +6,7 @@ namespace Hn\McpServer\Http;
 
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -81,11 +82,10 @@ final readonly class OAuthAuthorizeEndpoint
             return $this->redirectToLogin($request);
         }
 
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        if (!$beUser instanceof BackendUserAuthentication || !is_array($beUser->user)) {
+        $beUserId = BackendUserUtility::getCurrentUserId();
+        if ($beUserId <= 0) {
             return $this->createErrorResponse($request, 'server_error', 'Backend user context could not be initialized');
         }
-        $beUserId = (int)$beUser->user['uid'];
 
         // Handle authorization approval
         if ($request->getMethod() === 'POST' && isset($postParams['approve'])) {
@@ -144,11 +144,7 @@ final readonly class OAuthAuthorizeEndpoint
 
     private function isBackendUserAuthenticated(): bool
     {
-        $beUser = $GLOBALS['BE_USER'] ?? null;
-        return $beUser instanceof BackendUserAuthentication
-               && is_array($beUser->user)
-               && isset($beUser->user['uid'])
-               && $beUser->user['uid'] > 0;
+        return BackendUserUtility::getCurrentUserId() > 0;
     }
 
     /**
@@ -356,7 +352,7 @@ final readonly class OAuthAuthorizeEndpoint
             return $this->createErrorResponse($request, 'server_error', 'Backend user context missing');
         }
         $username = is_string($beUser->user['username'] ?? null) ? $beUser->user['username'] : 'Unknown';
-        $userId = is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0;
+        $userId = BackendUserUtility::getUserId($beUser);
 
         // ENT_QUOTES escapes single AND double quotes — required because the
         // consent template embeds these into HTML attributes; the default

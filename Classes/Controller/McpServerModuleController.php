@@ -12,6 +12,7 @@ use Hn\McpServer\Service\McpDiagnosticsPanelRenderer;
 use Hn\McpServer\Service\OAuthService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
@@ -55,7 +56,7 @@ final readonly class McpServerModuleController
             return new HtmlResponse($this->translate('accessDenied', fallback: 'Access denied'), 403);
         }
 
-        $userId = (int)($backendUser->user['uid'] ?? 0);
+        $userId = BackendUserUtility::getUserId($backendUser);
         /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
         $tokens = $this->oauthService->getUserTokens($userId);
         $neverUsed = $this->translate('tokens.neverUsed', fallback: 'Never');
@@ -132,7 +133,7 @@ final readonly class McpServerModuleController
 
         $tokenIdValue = $parsedBody['tokenId'] ?? '0';
         $tokenId = is_numeric($tokenIdValue) ? (int)$tokenIdValue : 0;
-        $userId = (int)($backendUser->user['uid'] ?? 0);
+        $userId = BackendUserUtility::getUserId($backendUser);
 
         if ($tokenId <= 0) {
             return new JsonResponse(['success' => false, 'message' => $this->translate('tokens.invalidId')], 400);
@@ -175,7 +176,7 @@ final readonly class McpServerModuleController
             return new JsonResponse(['success' => false, 'message' => $this->translate('csrfFailed')], 403);
         }
 
-        $userId = (int)($backendUser->user['uid'] ?? 0);
+        $userId = BackendUserUtility::getUserId($backendUser);
 
         try {
             $revokedCount = $this->oauthService->revokeAllUserTokens($userId);
@@ -240,13 +241,6 @@ final readonly class McpServerModuleController
         return $backendUser instanceof BackendUserAuthentication ? $backendUser : null;
     }
 
-    private function resolveBackendUserId(BackendUserAuthentication $backendUser): int
-    {
-        $uid = $backendUser->user['uid'] ?? 0;
-
-        return is_numeric($uid) ? (int)$uid : 0;
-    }
-
     private function getLanguageService(): LanguageService
     {
         /** @var LanguageService $languageService */
@@ -273,7 +267,7 @@ final readonly class McpServerModuleController
         }
 
         try {
-            $userId = $this->resolveBackendUserId($backendUser);
+            $userId = BackendUserUtility::getUserId($backendUser);
             $tokens = $this->oauthService->getUserTokens($userId);
             $diagnostics = $this->collectTranslatedDiagnostics($request, count($tokens));
 
@@ -306,7 +300,7 @@ final readonly class McpServerModuleController
         $neverUsed = $this->translate('tokens.neverUsed', fallback: 'Never');
 
         try {
-            $userId = (int)($backendUser->user['uid'] ?? 0);
+            $userId = BackendUserUtility::getUserId($backendUser);
             /** @var list<array{uid: int, client_name: string, token: string, crdate: int, expires: int, last_used: int}> $tokens */
             $tokens = $this->oauthService->getUserTokens($userId);
 
@@ -524,7 +518,7 @@ final readonly class McpServerModuleController
         }
 
         try {
-            $userId = (int)($backendUser->user['uid'] ?? 0);
+            $userId = BackendUserUtility::getUserId($backendUser);
             $requestData = $this->ajaxRequestBodyParser->parseStringFields($request);
 
             if (!$this->validateCsrfToken($requestData)) {

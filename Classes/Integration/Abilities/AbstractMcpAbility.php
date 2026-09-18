@@ -6,6 +6,7 @@ namespace Hn\McpServer\Integration\Abilities;
 
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Service\BackendUserContextService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use Webconsulting\Abilities\Domain\ExecutionContext;
 use Webconsulting\Abilities\Registry\AbstractAbility;
@@ -20,11 +21,7 @@ abstract class AbstractMcpAbility extends AbstractAbility
     public function checkPermission(array $input, ExecutionContext $context): bool|string
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
-        if (!$backendUser instanceof BackendUserAuthentication) {
-            return 'A real active TYPO3 backend user is required.';
-        }
-        $uid = $backendUser->user['uid'] ?? 0;
-        if (!is_numeric($uid) || (int)$uid <= 0) {
+        if (!$backendUser instanceof BackendUserAuthentication || BackendUserUtility::getUserId($backendUser) <= 0) {
             return 'A real active TYPO3 backend user is required.';
         }
         if ($context->surface === ExecutionContext::SURFACE_MCP) {

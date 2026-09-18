@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -107,7 +108,7 @@ final class GetSystemLogTool extends AbstractRecordTool
         }
 
         $isAdmin = $backendUser->isAdmin();
-        $currentUserId = is_numeric($backendUser->user['uid'] ?? null) ? (int)$backendUser->user['uid'] : 0;
+        $currentUserId = BackendUserUtility::getUserId($backendUser);
 
         $severity = is_numeric($params['severity'] ?? null) ? (int)$params['severity'] : 0;
         $action = is_numeric($params['action'] ?? null) ? (int)$params['action'] : null;

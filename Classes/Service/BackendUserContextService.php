@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
+use Hn\McpServer\Utility\BackendUserUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\UserAspect;
@@ -56,7 +57,10 @@ final readonly class BackendUserContextService
         BackendUserAuthentication $backendUser,
         bool $initializeAnonymousSession,
     ): int {
-        $uid = $this->backendUserId($backendUser);
+        $uid = BackendUserUtility::getUserId($backendUser);
+        if ($uid <= 0) {
+            throw new AccessDeniedException('active TYPO3 backend user', 'initialize context');
+        }
         $activeUser = $this->loadActiveBackendUser($uid);
         if ($activeUser === null) {
             throw new AccessDeniedException('active TYPO3 backend user', 'initialize context');
@@ -93,16 +97,6 @@ final readonly class BackendUserContextService
         $this->context->setAspect('backend.user', new UserAspect($backendUser));
 
         return $this->workspaceContextService->switchToReadWorkspace($backendUser);
-    }
-
-    private function backendUserId(BackendUserAuthentication $backendUser): int
-    {
-        $uid = $backendUser->user['uid'] ?? 0;
-        if (!is_numeric($uid) || (int)$uid <= 0) {
-            throw new AccessDeniedException('active TYPO3 backend user', 'initialize context');
-        }
-
-        return (int)$uid;
     }
 
     /**

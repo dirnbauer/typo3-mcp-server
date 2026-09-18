@@ -6,6 +6,7 @@ namespace Hn\McpServer\Service;
 
 use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\AccessDeniedException;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
@@ -51,7 +52,7 @@ final readonly class WorkspaceContextService
 
         if ($currentWorkspace > 0) {
             $this->logger->warning('Ignoring inaccessible or non-writable preselected workspace', [
-                'userId' => is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0,
+                'userId' => BackendUserUtility::getUserId($beUser),
                 'workspaceId' => $currentWorkspace,
             ]);
         }
@@ -103,7 +104,7 @@ final readonly class WorkspaceContextService
         }
 
         $this->logger->warning('Ignoring inaccessible preselected read workspace', [
-            'userId' => is_numeric($beUser->user['uid'] ?? null) ? (int)$beUser->user['uid'] : 0,
+            'userId' => BackendUserUtility::getUserId($beUser),
             'workspaceId' => $workspaceId,
         ]);
         $this->setLiveReadContext($beUser);
@@ -462,17 +463,16 @@ final readonly class WorkspaceContextService
         // already assigned workspace. MCP provisions an isolated draft as a
         // safety mechanism; normal table, field, page and DataHandler checks
         // still decide whether the requested record operation is permitted.
-        return is_numeric($beUser->user['uid'] ?? null) && (int)$beUser->user['uid'] > 0;
+        return BackendUserUtility::getUserId($beUser) > 0;
     }
 
     private function createMcpWorkspace(BackendUserAuthentication $beUser): int
     {
         try {
-            $rawUserId = $beUser->user['uid'] ?? null;
-            if (!is_numeric($rawUserId) || (int)$rawUserId <= 0) {
+            $userId = BackendUserUtility::getUserId($beUser);
+            if ($userId <= 0) {
                 return 0;
             }
-            $userId = (int)$rawUserId;
 
             $realName = $beUser->user['realName'] ?? '';
             $username = $beUser->user['username'] ?? 'unknown_user';

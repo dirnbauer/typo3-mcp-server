@@ -9,6 +9,7 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\TableAccessService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\LanguageAspect;
@@ -325,8 +326,7 @@ final readonly class X402ContentAccessService
     private function getBackendUser(): BackendUserAuthentication
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
-        $uid = $backendUser instanceof BackendUserAuthentication ? $backendUser->user['uid'] ?? 0 : 0;
-        if (!$backendUser instanceof BackendUserAuthentication || !is_numeric($uid) || (int)$uid <= 0) {
+        if (!$backendUser instanceof BackendUserAuthentication || BackendUserUtility::getUserId($backendUser) <= 0) {
             throw new ValidationException(['A real active TYPO3 backend user is required.']);
         }
 
