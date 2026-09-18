@@ -285,7 +285,6 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
             $requestFactory,
             $this->readToolDependency($registeredTool, 'capabilityManifest'),
             $this->readToolDependency($registeredTool, 'localMode'),
-            $this->readToolDependency($registeredTool, 'fileMetadataIndexService'),
             $this->readToolDependency($registeredTool, 'outboundUrlGuard'),
             $this->readToolDependency($registeredTool, 'fileUploadService'),
             $this->readToolDependency($registeredTool, 'onlineMediaHelperRegistry'),

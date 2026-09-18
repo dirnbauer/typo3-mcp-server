@@ -7,6 +7,7 @@ namespace Hn\McpServer\MCP\Tool\Record;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\File\UploadFileFromUrlTool;
 use Hn\McpServer\Service\FileReferenceAttachmentService;
+use Hn\McpServer\Service\FileUploadService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
@@ -14,15 +15,10 @@ use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
-use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\FileType;
-use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Resource\ResourceFactory;
-use TYPO3\CMS\Core\Resource\ResourceStorage;
-use TYPO3\CMS\Core\Resource\StorageRepository;
 
 /**
  * Stage images into the MCP sandbox, optionally run TYPO3 FAL image processing (CropScaleMask),
@@ -38,7 +34,7 @@ final class AttachImageTool extends AbstractRecordTool
         private readonly FileReferenceAttachmentService $fileReferenceAttachmentService,
         private readonly McpFileSandboxService $fileSandboxService,
         private readonly ResourceFactory $resourceFactory,
-        private readonly StorageRepository $storageRepository,
+        private readonly FileUploadService $fileUploadService,
         private readonly UploadFileFromUrlTool $uploadFileFromUrlTool,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
@@ -345,8 +341,8 @@ final class AttachImageTool extends AbstractRecordTool
         $ext = strtolower($processed->getExtension() ?: $original->getExtension() ?: 'jpg');
         $target = $this->fileSandboxService->resolveUploadTarget('processed/render-' . bin2hex(random_bytes(6)) . '.' . $ext);
 
-        $storage = $this->resolveStorage($target['storageUid']);
-        $folder = $this->ensureFolder($storage, $target['folderPath']);
+        $storage = $this->fileUploadService->resolveStorage($target['storageUid']);
+        $folder = $this->fileUploadService->ensureFolder($storage, $target['folderPath']);
         $storedName = $this->fileSandboxService->buildStoredUploadFileName('render.' . $ext);
 
         try {
@@ -358,34 +354,6 @@ final class AttachImageTool extends AbstractRecordTool
         $this->fileSandboxService->assertFileAllowed($newFile);
 
         return $newFile;
-    }
-
-    private function resolveStorage(int $storageUid): ResourceStorage
-    {
-        $storage = $this->storageRepository->findByUid($storageUid);
-        if ($storage === null || !$storage->isOnline()) {
-            throw new ValidationException(["Storage {$storageUid} not found or offline."]);
-        }
-        if (!$storage->isWritable()) {
-            throw new ValidationException(["Storage {$storageUid} is read-only."]);
-        }
-
-        return $storage;
-    }
-
-    private function ensureFolder(ResourceStorage $storage, string $folderPath): Folder
-    {
-        if ($storage->hasFolder($folderPath)) {
-            return $storage->getFolder($folderPath);
-        }
-
-        try {
-            return $storage->createFolder($folderPath);
-        } catch (InsufficientFolderAccessPermissionsException) {
-            throw new ValidationException(["Permission denied: Cannot create folder \"{$folderPath}\"."]);
-        } catch (ExistingTargetFolderException) {
-            return $storage->getFolder($folderPath);
-        }
     }
 
     /**

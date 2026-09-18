@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Http;
 
+use Hn\McpServer\Exception\UploadTooLargeException;
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\Service\BackendUserContextService;
-use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\FileUploadService;
 use Hn\McpServer\Service\SiteInformationService;
 use Psr\Http\Message\ResponseInterface;
@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderWritePermissionsException;
 use TYPO3\CMS\Core\Resource\Exception\InsufficientUserPermissionsException;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Target of the pre-signed upload URLs handed out by the UploadFile MCP tool.
@@ -39,7 +38,6 @@ final readonly class FileUploadEndpoint
         private LoggerInterface $logger,
         private FileUploadService $fileUploadService,
         private BackendUserContextService $backendUserContext,
-        private FileMetadataIndexService $fileMetadataIndexService,
         private SiteInformationService $siteInformationService,
         private AuthenticationRateLimiter $authenticationRateLimiter,
         private TcaFactory $tcaFactory,
@@ -56,7 +54,6 @@ final readonly class FileUploadEndpoint
 
     private function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
-        $tempPath = null;
         try {
             $corsRejection = $this->rejectDisallowedCorsRequest($request);
             if ($corsRejection instanceof ResponseInterface) {
@@ -113,39 +110,31 @@ final readonly class FileUploadEndpoint
             // Before buffering or touching the storage: a rejected name should
             // cost neither disk space nor a freshly created folder.
             $this->fileUploadService->assertFileNameIsAllowed($fileName);
-
-            $tempPath = $this->bufferToTempFile($body, $this->fileUploadService->getMaxFileBytes());
-
             [$storageUid, $folderPath] = $this->parseTargetFolder($tokenRow['target_folder']);
-            $storage = $this->fileUploadService->resolveStorage($storageUid);
-            $folder = $this->fileUploadService->ensureFolder($storage, $folderPath);
-            $storedFileName = $this->fileUploadService->reserveStoredFileName($folder, $fileName);
-            $stored = $this->fileUploadService->storeFile($tempPath, $storedFileName, $folder);
-            if (!$stored['deduplicated']) {
-                $this->fileMetadataIndexService->ensureImageMetadataForFile($stored['file']);
-            }
+
+            $stored = $this->fileUploadService->withTemporaryFile(
+                function (string $tempPath) use ($body, $storageUid, $folderPath, $fileName): array {
+                    $this->fileUploadService->bufferStreamToFile($body, $tempPath);
+
+                    return $this->fileUploadService->storeUpload($tempPath, $storageUid, $folderPath, $fileName);
+                },
+            );
 
             $data = ['action' => 'uploaded']
                 + $this->fileUploadService->describeFile($stored['file'], $fileName, $stored['deduplicated'])
-                + ['targetFolder' => $folder->getCombinedIdentifier()];
+                + ['targetFolder' => $storageUid . ':' . $folderPath];
 
             return $this->addSecurityHeaders($this->addCorsHeaders(new JsonResponse($data, 201), $request));
+        } catch (UploadTooLargeException $e) {
+            return $this->jsonError($request, $e->getUserMessage(), 413);
         } catch (ValidationException $e) {
             return $this->jsonError($request, $e->getUserMessage(), 400);
-        } catch (\LengthException $e) {
-            return $this->jsonError($request, $e->getMessage(), 413);
         } catch (InsufficientFolderAccessPermissionsException|InsufficientFolderWritePermissionsException|InsufficientUserPermissionsException $e) {
             return $this->jsonError($request, 'No permission for the target folder: ' . $e->getMessage(), 403);
         } catch (\Throwable $e) {
             // Log the details, but do not leak exception messages (paths etc.)
             $this->logger->error('Pre-signed upload failed', ['exception' => $e]);
             return $this->jsonError($request, 'Upload failed due to an unexpected server error (see TYPO3 log).', 500);
-        } finally {
-            if ($tempPath !== null && file_exists($tempPath)) {
-                // $tempPath always comes from TYPO3's tempnam(), never from request input.
-                // nosemgrep: php.lang.security.unlink-use.unlink-use
-                unlink($tempPath);
-            }
         }
     }
 
@@ -188,45 +177,6 @@ final readonly class FileUploadEndpoint
         }
 
         return [$request->getBody(), null];
-    }
-
-    /**
-     * Stream the upload into a temp file, enforcing the size limit.
-     */
-    private function bufferToTempFile(StreamInterface $body, int $maxBytes): string
-    {
-        $tempPath = GeneralUtility::tempnam('mcp_upload_');
-        $handle = fopen($tempPath, 'wb');
-        if ($handle === false) {
-            throw new \RuntimeException('Failed to create a temporary file for the upload.');
-        }
-        $bytes = 0;
-        try {
-            if ($body->isSeekable()) {
-                $body->rewind();
-            }
-            while (!$body->eof()) {
-                $chunk = $body->read(65536);
-                if ($chunk === '') {
-                    break;
-                }
-                $bytes += strlen($chunk);
-                if ($bytes > $maxBytes) {
-                    throw new \LengthException($this->fileUploadService->buildSizeLimitMessage());
-                }
-                fwrite($handle, $chunk);
-            }
-        } finally {
-            fclose($handle);
-        }
-
-        if ($bytes === 0) {
-            // nosemgrep: php.lang.security.unlink-use.unlink-use
-            unlink($tempPath);
-            throw new ValidationException(['The request body was empty - send the raw file bytes as PUT/POST body.']);
-        }
-
-        return $tempPath;
     }
 
     /**

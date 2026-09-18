@@ -6,17 +6,13 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
-use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\FileUploadService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\SiteInformationService;
+use Hn\McpServer\Utility\BackendUserUtility;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Resource\File;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Upload a file into the MCP file sandbox.
@@ -29,11 +25,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class UploadFileTool extends AbstractTool
 {
-    private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
-
     public function __construct(
         private readonly McpFileSandboxService $fileSandboxService,
-        private readonly FileMetadataIndexService $fileMetadataIndexService,
         private readonly FileUploadService $fileUploadService,
         private readonly SiteBaseUrlResolver $baseUrlResolver,
         private readonly SiteInformationService $siteInformationService,
@@ -100,7 +93,7 @@ final class UploadFileTool extends AbstractTool
     {
         $path = is_string($params['path'] ?? null) ? trim($params['path']) : '';
         $contentBase64 = is_string($params['content_base64'] ?? null) ? trim($params['content_base64']) : '';
-        $metadata = is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
+        $metadata = $this->fileUploadService->sanitizeMetadata($params['metadata'] ?? null);
 
         if ($path === '') {
             throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP file sandbox.']);
@@ -113,49 +106,26 @@ final class UploadFileTool extends AbstractTool
         $this->fileUploadService->assertWithinSizeLimit(strlen($decodedContent));
 
         $target = $this->fileSandboxService->resolveUploadTarget($path);
-        // Check the requested name before touching the storage: resolving the
-        // folder creates missing directories, and a rejected upload should not
-        // leave an empty folder behind.
-        $this->fileUploadService->assertFileNameIsAllowed($target['fileName']);
-        $storage = $this->fileUploadService->resolveStorage($target['storageUid']);
-        $folder = $this->fileUploadService->ensureFolder($storage, $target['folderPath']);
-        $storedFileName = $this->fileUploadService->reserveStoredFileName($folder, $target['fileName']);
+        $stored = $this->fileUploadService->withTemporaryFile(
+            function (string $tempFile) use ($decodedContent, $target, $metadata): array {
+                if (file_put_contents($tempFile, $decodedContent) === false) {
+                    throw new \RuntimeException('Failed to buffer the uploaded content on the server.');
+                }
 
-        $tempFile = GeneralUtility::tempnam('mcp_upload_');
-        try {
-            if (file_put_contents($tempFile, $decodedContent) === false) {
-                throw new \RuntimeException('Failed to buffer the uploaded content on the server.');
-            }
-            $stored = $this->fileUploadService->storeFile($tempFile, $storedFileName, $folder);
-        } finally {
-            if (file_exists($tempFile)) {
-                // $tempFile always comes from TYPO3's tempnam(), never from request input.
-                // nosemgrep: php.lang.security.unlink-use.unlink-use
-                unlink($tempFile);
-            }
-        }
+                return $this->fileUploadService->storeUpload(
+                    $tempFile,
+                    $target['storageUid'],
+                    $target['folderPath'],
+                    $target['fileName'],
+                    $metadata,
+                );
+            },
+        );
 
-        $newFile = $stored['file'];
-        if (!$stored['deduplicated']) {
-            $this->fileMetadataIndexService->ensureImageMetadataForFile($newFile);
-            if ($metadata !== []) {
-                $this->applyMetadata($newFile, $metadata);
-            }
-        }
-
-        $result = ['action' => 'uploaded']
-            + $this->fileUploadService->describeFile($newFile, $target['fileName'], $stored['deduplicated'])
-            + [
-                'baseFolder' => $target['baseFolder'],
-                'uploadFolder' => $target['uploadFolder'],
-                'workspaceId' => $target['workspaceId'],
-            ];
-
-        if ($metadata !== [] && !$stored['deduplicated']) {
-            $result['metadata'] = $metadata;
-        }
-
-        return $this->createJsonResult($result);
+        return $this->createJsonResult(
+            ['action' => 'uploaded']
+            + $this->fileUploadService->describeUpload($target, $stored, $target['fileName'], $metadata),
+        );
     }
 
     /**
@@ -177,14 +147,8 @@ final class UploadFileTool extends AbstractTool
         // stdio mode without a fully qualified site base).
         $endpointUrl = $this->resolveUploadEndpointUrl();
 
-        $backendUser = $GLOBALS['BE_USER'] ?? null;
-        $backendUserId = 0;
-        if ($backendUser instanceof BackendUserAuthentication) {
-            $rawUid = $backendUser->user['uid'] ?? 0;
-            $backendUserId = is_numeric($rawUid) ? (int)$rawUid : 0;
-        }
         $tokenData = $this->fileUploadService->createUploadToken(
-            $backendUserId,
+            BackendUserUtility::getCurrentUserId(),
             $target['storageUid'] . ':' . $target['folderPath'],
             $fileName,
         );
@@ -258,43 +222,5 @@ final class UploadFileTool extends AbstractTool
         }
 
         return $decoded;
-    }
-
-    /**
-     * @param array<string, string> $metadata
-     */
-    private function applyMetadata(File $file, array $metadata): void
-    {
-        $metaDataObj = $file->getMetaData();
-        foreach ($metadata as $key => $value) {
-            $metaDataObj->offsetSet($key, $value);
-        }
-        $metaDataObj->save();
-    }
-
-    /**
-     * @param array<mixed, mixed> $raw
-     * @return array<string, string>
-     */
-    private function sanitizeMetadata(array $raw): array
-    {
-        $clean = [];
-        foreach (self::METADATA_FIELDS as $field) {
-            if (isset($raw[$field]) && is_string($raw[$field])) {
-                $clean[$field] = $raw[$field];
-            }
-        }
-
-        return $clean;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function createJsonResult(array $data): CallToolResult
-    {
-        $json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
-        return new CallToolResult([new TextContent($json !== false ? $json : '{}')]);
     }
 }

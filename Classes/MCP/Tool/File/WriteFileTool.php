@@ -6,15 +6,12 @@ namespace Hn\McpServer\MCP\Tool\File;
 
 use Hn\McpServer\Exception\ValidationException;
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\FileUploadService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
-use Mcp\Types\TextContent;
-use TYPO3\CMS\Core\Resource\Exception\ExistingTargetFolderException;
-use TYPO3\CMS\Core\Resource\Exception\InsufficientFolderAccessPermissionsException;
 use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\Folder;
 use TYPO3\CMS\Core\Resource\ResourceStorage;
-use TYPO3\CMS\Core\Resource\StorageRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -25,11 +22,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class WriteFileTool extends AbstractTool
 {
-    private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
-
     public function __construct(
-        private readonly StorageRepository $storageRepository,
         private readonly McpFileSandboxService $fileSandboxService,
+        private readonly FileUploadService $fileUploadService,
     ) {}
 
     /**
@@ -94,25 +89,25 @@ final class WriteFileTool extends AbstractTool
         $path = is_string($params['path'] ?? null) ? $params['path'] : '';
         $content = is_string($params['content'] ?? null) ? $params['content'] : null;
         $overwrite = (bool)($params['overwrite'] ?? false);
-        $metadata = is_array($params['metadata'] ?? null) ? $this->sanitizeMetadata($params['metadata']) : [];
+        $metadata = $this->fileUploadService->sanitizeMetadata($params['metadata'] ?? null);
 
         if ($path === '') {
             throw new ValidationException(['Parameter "path" is required. Use a relative path or a combined identifier inside the MCP file sandbox.']);
         }
 
-        if ($content === null && empty($metadata)) {
+        if ($content === null && $metadata === []) {
             throw new ValidationException(['Either "content" or "metadata" (or both) must be provided.']);
         }
 
         $parsed = $this->fileSandboxService->resolveFileTarget($path);
-        $storage = $this->resolveStorage($parsed['storageUid']);
+        $storage = $this->fileUploadService->resolveStorage($parsed['storageUid']);
 
         if ($content === null) {
             return $this->updateMetadataOnly($storage, $parsed, $metadata);
         }
 
         $this->validateExtension($parsed['fileName']);
-        $folder = $this->ensureFolder($storage, $parsed['folderPath']);
+        $folder = $this->fileUploadService->ensureFolder($storage, $parsed['folderPath']);
 
         if ($folder->hasFile($parsed['fileName'])) {
             if (!$overwrite) {
@@ -122,29 +117,19 @@ final class WriteFileTool extends AbstractTool
             }
             $existingFile = $this->getExistingFile($storage, $folder, $parsed['fileName']);
             $existingFile->setContents($content);
-
-            if (!empty($metadata)) {
-                $this->applyMetadata($existingFile, $metadata);
-            }
+            $this->fileUploadService->applyMetadata($existingFile, $metadata);
 
             return $this->buildResult('overwritten', $existingFile, $metadata);
         }
 
-        $tempFile = GeneralUtility::tempnam('mcp_write_');
-        try {
-            file_put_contents($tempFile, $content);
-            $newFile = $storage->addFile($tempFile, $folder, $parsed['fileName']);
-        } finally {
-            if (file_exists($tempFile)) {
-                // $tempFile always comes from TYPO3's tempnam(), never from request input.
-                // nosemgrep: php.lang.security.unlink-use.unlink-use
-                unlink($tempFile);
-            }
-        }
+        $newFile = $this->fileUploadService->withTemporaryFile(
+            static function (string $tempFile) use ($content, $storage, $folder, $parsed): File {
+                file_put_contents($tempFile, $content);
 
-        if (!empty($metadata)) {
-            $this->applyMetadata($newFile, $metadata);
-        }
+                return $storage->addFile($tempFile, $folder, $parsed['fileName']);
+            },
+        );
+        $this->fileUploadService->applyMetadata($newFile, $metadata);
 
         return $this->buildResult('created', $newFile, $metadata);
     }
@@ -169,21 +154,9 @@ final class WriteFileTool extends AbstractTool
         }
 
         $file = $this->getExistingFile($storage, $folder, $parsed['fileName']);
-        $this->applyMetadata($file, $metadata);
+        $this->fileUploadService->applyMetadata($file, $metadata);
 
         return $this->buildResult('metadata_updated', $file, $metadata);
-    }
-
-    /**
-     * @param array<string, string> $metadata
-     */
-    private function applyMetadata(File $file, array $metadata): void
-    {
-        $metaDataObj = $file->getMetaData();
-        foreach ($metadata as $key => $value) {
-            $metaDataObj->offsetSet($key, $value);
-        }
-        $metaDataObj->save();
     }
 
     /**
@@ -198,41 +171,11 @@ final class WriteFileTool extends AbstractTool
             'size' => $file->getSize(),
         ];
 
-        if (!empty($metadata)) {
+        if ($metadata !== []) {
             $result['metadata'] = $metadata;
         }
 
-        return new CallToolResult([new TextContent(
-            json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
-        )]);
-    }
-
-    /**
-     * @param array<mixed, mixed> $raw
-     * @return array<string, string>
-     */
-    private function sanitizeMetadata(array $raw): array
-    {
-        $clean = [];
-        foreach (self::METADATA_FIELDS as $field) {
-            if (isset($raw[$field]) && is_string($raw[$field])) {
-                $clean[$field] = $raw[$field];
-            }
-        }
-        return $clean;
-    }
-
-    private function resolveStorage(int $storageUid): ResourceStorage
-    {
-        $storage = $this->storageRepository->findByUid($storageUid);
-        if ($storage === null || !$storage->isOnline()) {
-            throw new ValidationException(["Storage {$storageUid} not found or offline."]);
-        }
-        if (!$storage->isWritable()) {
-            throw new ValidationException(["Storage {$storageUid} ({$storage->getName()}) is read-only."]);
-        }
-
-        return $storage;
+        return $this->createJsonResult($result);
     }
 
     private function validateExtension(string $fileName): void
@@ -266,21 +209,6 @@ final class WriteFileTool extends AbstractTool
                 "Extension \".{$ext}\" is not allowed for text file creation. "
                 . 'Allowed: ' . implode(', ', $textExtensions) . '.',
             ]);
-        }
-    }
-
-    private function ensureFolder(ResourceStorage $storage, string $folderPath): Folder
-    {
-        if ($storage->hasFolder($folderPath)) {
-            return $storage->getFolder($folderPath);
-        }
-
-        try {
-            return $storage->createFolder($folderPath);
-        } catch (InsufficientFolderAccessPermissionsException) {
-            throw new ValidationException(["Permission denied: Cannot create folder \"{$folderPath}\"."]);
-        } catch (ExistingTargetFolderException) {
-            return $storage->getFolder($folderPath);
         }
     }
 

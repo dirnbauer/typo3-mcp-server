@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\Service;
 
+use Hn\McpServer\Exception\UploadTooLargeException;
 use Hn\McpServer\Exception\ValidationException;
+use Psr\Http\Message\StreamInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
@@ -39,6 +41,11 @@ use TYPO3\CMS\Core\Validation\ResultException;
 final readonly class FileUploadService
 {
     public const UPLOAD_TOKEN_LIFETIME = 900;
+
+    /**
+     * sys_file_metadata columns a client may set on an uploaded file.
+     */
+    private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
 
     private const DEFAULT_MAX_FILE_SIZE_MB = 500;
     private const TOKEN_TABLE = 'tx_mcpserver_upload_tokens';
@@ -77,7 +84,165 @@ final readonly class FileUploadService
         private McpFileSandboxService $fileSandboxService,
         private TableAccessService $tableAccessService,
         private ResourceConsistencyService $resourceConsistencyService,
+        private FileMetadataIndexService $fileMetadataIndexService,
     ) {}
+
+    /**
+     * Validate the name, resolve storage and folder, store the temp file under
+     * a randomized name and finish a fresh (non-deduplicated) file with image
+     * metadata and the requested sys_file_metadata values. This is the one
+     * write path shared by UploadFile, UploadFileFromUrl and /mcp_upload.
+     *
+     * @param array<string, string> $metadata
+     * @return array{file: File, deduplicated: bool}
+     */
+    public function storeUpload(
+        string $tempPath,
+        int $storageUid,
+        string $folderPath,
+        string $fileName,
+        array $metadata = [],
+    ): array {
+        // Check the requested name before touching the storage: resolving the
+        // folder creates missing directories, and a rejected upload should not
+        // leave an empty folder behind.
+        $this->assertFileNameIsAllowed($fileName);
+        $storage = $this->resolveStorage($storageUid);
+        $folder = $this->ensureFolder($storage, $folderPath);
+        $storedFileName = $this->reserveStoredFileName($folder, $fileName);
+
+        $stored = $this->storeFile($tempPath, $storedFileName, $folder);
+        if (!$stored['deduplicated']) {
+            $this->fileMetadataIndexService->ensureImageMetadataForFile($stored['file']);
+            $this->applyMetadata($stored['file'], $metadata);
+        }
+
+        return $stored;
+    }
+
+    /**
+     * Response data shared by the upload tools: the stored file plus the
+     * sandbox target it landed in. Metadata is echoed only when it was
+     * applied, i.e. for a fresh file.
+     *
+     * @param array{baseFolder: string, uploadFolder: string, workspaceId: int} $target
+     * @param array{file: File, deduplicated: bool} $stored
+     * @param array<string, string> $metadata
+     * @return array<string, mixed>
+     */
+    public function describeUpload(array $target, array $stored, string $requestedFileName, array $metadata = []): array
+    {
+        $data = $this->describeFile($stored['file'], $requestedFileName, $stored['deduplicated']) + [
+            'baseFolder' => $target['baseFolder'],
+            'uploadFolder' => $target['uploadFolder'],
+            'workspaceId' => $target['workspaceId'],
+        ];
+        if ($metadata !== [] && !$stored['deduplicated']) {
+            $data['metadata'] = $metadata;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Keep only the supported string metadata fields of a raw `metadata` input.
+     *
+     * @return array<string, string>
+     */
+    public function sanitizeMetadata(mixed $raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $clean = [];
+        foreach (self::METADATA_FIELDS as $field) {
+            if (is_string($raw[$field] ?? null)) {
+                $clean[$field] = $raw[$field];
+            }
+        }
+
+        return $clean;
+    }
+
+    /**
+     * @param array<string, string> $metadata
+     */
+    public function applyMetadata(File $file, array $metadata): void
+    {
+        if ($metadata === []) {
+            return;
+        }
+        $metaData = $file->getMetaData();
+        foreach ($metadata as $key => $value) {
+            $metaData->offsetSet($key, $value);
+        }
+        $metaData->save();
+    }
+
+    /**
+     * Run $callback with the path of a fresh temporary file that is removed
+     * afterwards, whatever happens inside.
+     *
+     * @template T
+     * @param callable(string): T $callback
+     * @return T
+     */
+    public function withTemporaryFile(callable $callback): mixed
+    {
+        $tempPath = GeneralUtility::tempnam('mcp_upload_');
+        try {
+            return $callback($tempPath);
+        } finally {
+            if (file_exists($tempPath)) {
+                // $tempPath always comes from TYPO3's tempnam(), never from request input.
+                // nosemgrep: php.lang.security.unlink-use.unlink-use
+                unlink($tempPath);
+            }
+        }
+    }
+
+    /**
+     * Stream a request or response body into $tempPath, enforcing
+     * `maxFileSizeMb` while reading so an oversized body is never fully
+     * buffered. Returns the number of bytes written.
+     *
+     * @throws UploadTooLargeException when the body exceeds the limit
+     * @throws ValidationException when the body is empty
+     */
+    public function bufferStreamToFile(StreamInterface $body, string $tempPath): int
+    {
+        $maxBytes = $this->getMaxFileBytes();
+        $handle = fopen($tempPath, 'wb');
+        if ($handle === false) {
+            throw new \RuntimeException('Failed to create a temporary file for the upload.');
+        }
+
+        $bytes = 0;
+        try {
+            if ($body->isSeekable()) {
+                $body->rewind();
+            }
+            while (!$body->eof()) {
+                $chunk = $body->read(65536);
+                if ($chunk === '') {
+                    break;
+                }
+                $bytes += strlen($chunk);
+                if ($bytes > $maxBytes) {
+                    throw new UploadTooLargeException([$this->buildSizeLimitMessage()]);
+                }
+                fwrite($handle, $chunk);
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        if ($bytes === 0) {
+            throw new ValidationException(['The payload was empty - no file content was received.']);
+        }
+
+        return $bytes;
+    }
 
     public function resolveStorage(int $storageUid): ResourceStorage
     {
@@ -208,7 +373,7 @@ final readonly class FileUploadService
     public function assertWithinSizeLimit(int $bytes): void
     {
         if ($bytes > $this->getMaxFileBytes()) {
-            throw new ValidationException([$this->buildSizeLimitMessage()]);
+            throw new UploadTooLargeException([$this->buildSizeLimitMessage()]);
         }
     }
 
