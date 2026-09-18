@@ -14,6 +14,11 @@ final readonly class RecordSearchResultFormatter
         private LanguageService $languageService,
         private TableAccessService $tableAccessService,
     ) {}
+
+    /**
+     * @param array<string, array<mixed>> $searchResults keyed by table: a searchInTable() result or a list of attributed parent records
+     * @param list<string> $searchTerms
+     */
     public function formatSearchResults(array $searchResults, array $searchTerms, string $termLogic, ?int $languageId = null): string
     {
 
@@ -62,6 +67,10 @@ final readonly class RecordSearchResultFormatter
         return $result;
     }
 
+    /**
+     * @param array<mixed> $tableData a searchInTable() result (`records` key) or a plain list of attributed records
+     * @param list<string> $searchTerms
+     */
     public function formatTableResults(string $table, array $tableData, array $searchTerms, ?int $languageId = null): string
     {
         $tableLabel = RecordFormattingUtility::getTableLabel($table);
@@ -69,14 +78,7 @@ final readonly class RecordSearchResultFormatter
         $result .= str_repeat('-', strlen("TABLE: $tableLabel ($table)")) . "\n";
 
         // Handle both searchInTable result structure and attributed results array
-        $records = [];
-        if (isset($tableData['records'])) {
-            // This is a searchInTable result structure
-            $records = $tableData['records'];
-        } elseif (is_array($tableData) && !empty($tableData)) {
-            // This is a direct array of records (from attributed results)
-            $records = $tableData;
-        }
+        $records = is_array($tableData['records'] ?? null) ? $tableData['records'] : $tableData;
 
         $result .= 'Found ' . count($records) . " record(s)\n\n";
 
@@ -88,6 +90,10 @@ final readonly class RecordSearchResultFormatter
         return $result;
     }
 
+    /**
+     * @param array<string, mixed> $record
+     * @param list<string> $searchTerms
+     */
     public function formatRecord(string $table, array $record, array $searchTerms, ?int $languageId = null): string
     {
         $title = RecordFormattingUtility::getRecordTitle($table, $record);
@@ -155,6 +161,10 @@ final readonly class RecordSearchResultFormatter
         return $result;
     }
 
+    /**
+     * @param array<string, mixed> $record
+     * @param list<string> $searchTerms
+     */
     public function getMatchingContentPreview(string $table, array $record, array $searchTerms): string
     {
         $searchableFields = $this->tableAccessService->getSearchFields($table);

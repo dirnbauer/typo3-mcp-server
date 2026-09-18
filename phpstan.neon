@@ -1,27 +1,23 @@
 includes:
-    - phpstan-baseline.neon
     - vendor/phpat/phpat/extension.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
     # TYPO3 v14 PHPStan rules (saschaegerer/phpstan-typo3) — TCA, FormEngine,
-    # DataHandler, Extbase ObjectManager / repository typing, deprecated calls.
+    # DataHandler, Extbase repository typing, deprecated calls.
     - vendor/saschaegerer/phpstan-typo3/extension.neon
-    # phpstan-strict-rules — overloaded comparisons, dynamic property access, etc.
-    - vendor/phpstan/phpstan-strict-rules/rules.neon
-    # phpstan-deprecation-rules — flag use of @deprecated APIs (TYPO3 v14 cleanups).
+    # Flag use of @deprecated APIs (TYPO3 v14 cleanups).
     - vendor/phpstan/phpstan-deprecation-rules/rules.neon
 
 parameters:
-    # Level "max" = maximum strictness. New errors must be either fixed or
-    # explicitly excluded; the baseline below is the historical residue we
-    # are working through, not a license to ignore new findings.
-    level: max
+    # Portfolio baseline: level 8 everywhere, no baseline file, no ignores.
+    level: 8
     paths:
         - Classes
+        - Tests/Unit
         - Tests/Architecture
-    excludePaths:
-        - Classes/Domain/Model/*
     scanFiles:
-        # The optional paywall package intentionally cannot be installed in
-        # this dependency tree until it drops mcp/sdk. Keep its conditional
-        # adapter type-checked against the exact API surface we consume.
+        # The optional paywall package cannot be installed in this dependency
+        # tree; keep its conditional adapter type-checked against the exact
+        # API surface we consume.
         - Build/PHPStan/typo3-x402-paywall.php
     treatPhpDocTypesAsCertain: false

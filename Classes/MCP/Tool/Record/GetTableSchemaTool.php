@@ -385,6 +385,8 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
     /**
      * Add field details inline
+     *
+     * @param array<string, mixed> $fieldConfig
      */
     protected function addFieldDetailsInline(string &$result, array $fieldConfig, string $fieldName, string $table, string $filterType = '', ?int $pid = null): void
     {
@@ -500,6 +502,8 @@ final class GetTableSchemaTool extends AbstractRecordTool
 
     /**
      * Add FlexForm identifiers to the result
+     *
+     * @param array<string, mixed> $config
      */
     protected function addFlexFormIdentifiers(string &$result, array $config, string $table, string $fieldName, string $filterType = ''): void
     {
@@ -556,6 +560,8 @@ final class GetTableSchemaTool extends AbstractRecordTool
     /**
      * Get types that are removed by TSconfig
      * This uses the same logic as TcaSelectItems to determine which types are restricted
+     *
+     * @return list<string>
      */
     protected function getRemovedTypesByTSconfig(string $table, string $typeField): array
     {

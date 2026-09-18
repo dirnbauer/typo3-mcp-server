@@ -320,6 +320,9 @@ final class ReadTableTool extends AbstractRecordTool
 
     /**
      * Get translation source data for records
+     *
+     * @param list<array<string, mixed>> $records
+     * @return array<int, array{sourceUid: int, sourceLanguage: string, inheritedFields: array<string, mixed>}> keyed by record UID
      */
     protected function getTranslationSourceData(array $records, string $table): array
     {
@@ -344,7 +347,7 @@ final class ReadTableTool extends AbstractRecordTool
         }
 
         // Load parent records
-        $parentRecords = $this->loadParentRecords($table, array_unique($parentUids));
+        $parentRecords = $this->loadParentRecords($table, array_values(array_unique($parentUids)));
 
         // Build translation metadata
         foreach ($records as $record) {
@@ -380,6 +383,9 @@ final class ReadTableTool extends AbstractRecordTool
 
     /**
      * Load parent records for translations
+     *
+     * @param list<int> $parentUids
+     * @return array<int, array<string, mixed>> keyed by UID
      */
     protected function loadParentRecords(string $table, array $parentUids): array
     {
@@ -394,9 +400,9 @@ final class ReadTableTool extends AbstractRecordTool
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace))
             ->add(new WorkspaceDeletePlaceholderRestriction(
-                $this->getBackendUser()->workspace ?? 0,
+                $this->getBackendUser()->workspace,
                 $this->tcaSchemaFactory,
             ));
 

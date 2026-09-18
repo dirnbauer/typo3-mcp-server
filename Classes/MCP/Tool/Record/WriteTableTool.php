@@ -8,7 +8,6 @@ use Doctrine\DBAL\ParameterType;
 use Hn\McpServer\Event\AfterRecordWriteEvent;
 use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\Exception\ValidationException;
-use Hn\McpServer\Service\FileMetadataIndexService;
 use Hn\McpServer\Service\LanguageService;
 use Hn\McpServer\Service\Record\RecordDataWriteConverter;
 use Hn\McpServer\Service\Record\RecordInlineRelationWriteService;
@@ -47,7 +46,6 @@ final class WriteTableTool extends AbstractRecordTool
         private readonly ConnectionPool $connectionPool,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly SiteFinder $siteFinder,
-        private readonly FileMetadataIndexService $fileMetadataIndexService,
         private readonly RecordSearchReplaceService $searchReplaceService,
         private readonly RecordDataWriteConverter $dataWriteConverter,
         private readonly RecordInlineRelationWriteService $inlineRelationService,
@@ -306,15 +304,14 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch BeforeRecordWriteEvent — allows listeners to modify data or veto
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
         $beforeEvent = new BeforeRecordWriteEvent($table, $action, $data, $uid, $pid);
-        $eventDispatcher->dispatch($beforeEvent);
+        $this->eventDispatcher->dispatch($beforeEvent);
 
         if ($beforeEvent->isVetoed()) {
             return $this->createErrorResult('Operation vetoed: ' . ($beforeEvent->getVetoReason() ?? 'No reason given'));
         }
         $data = $beforeEvent->getData();
-        if ($action === 'create' && is_array($data) && array_key_exists('pid', $data)) {
+        if ($action === 'create' && array_key_exists('pid', $data)) {
             $pid = (int)$data['pid'];
             unset($data['pid']);
         }
@@ -322,10 +319,20 @@ final class WriteTableTool extends AbstractRecordTool
             $this->assertRootLevelPageCreationAllowed($table, $pid, $allowRootLevelPageCreation);
         }
 
-        // Execute the action
+        // Execute the action. The validation switch above already rejected
+        // a missing pid (create) or uid (every other action); repeating the
+        // checks here keeps that contract explicit at the call sites.
+        if ($action === 'create') {
+            if ($pid === null) {
+                throw new \LogicException('create without pid should have been rejected by validation');
+            }
+            return $this->createRecord($table, $pid, $data, $position);
+        }
+        if ($uid === null) {
+            throw new \LogicException($action . ' without uid should have been rejected by validation');
+        }
+
         switch ($action) {
-            case 'create':
-                return $this->createRecord($table, $pid, $data, $position);
 
             case 'update':
                 // Resolve search_replace into concrete field values and merge into data
@@ -342,9 +349,6 @@ final class WriteTableTool extends AbstractRecordTool
                     return $updateResult;
                 }
                 if ($positionExplicit) {
-                    if ($uid === null) {
-                        throw new \LogicException('update with position requires uid (validated in switch case update)');
-                    }
                     if (!is_string($position) || $position === '') {
                         throw new \LogicException('positionExplicit is true but position is not a non-empty string');
                     }
@@ -354,7 +358,7 @@ final class WriteTableTool extends AbstractRecordTool
                 throw new \LogicException('WriteTable update without data/search_replace/position should have been rejected by validation');
 
             case 'move':
-                return $this->moveRecord($table, $uid, $position, $pid);
+                return $this->moveRecord($table, $uid, $position ?? 'bottom', $pid);
 
             case 'delete':
                 return $this->deleteRecord($table, $uid);
@@ -374,6 +378,8 @@ final class WriteTableTool extends AbstractRecordTool
 
     /**
      * Create a new record
+     *
+     * @param RecordData $data
      */
     protected function createRecord(string $table, int $pid, array $data, ?string $position): CallToolResult
     {
@@ -549,8 +555,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $actualPid));
+        $this->eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'create', $liveUid, $data, $actualPid));
 
         // Build response with additional useful info
         $result = [
@@ -584,6 +589,9 @@ final class WriteTableTool extends AbstractRecordTool
 
     /**
      * Update an existing record
+     */
+    /**
+     * @param RecordData $data
      */
     protected function updateRecord(string $table, int $uid, array $data, ?string $position = null): CallToolResult
     {
@@ -664,8 +672,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
+        $this->eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'update', $uid, $data, null));
 
         // Return the result with the original live UID
         return $this->createJsonResult([
@@ -695,8 +702,7 @@ final class WriteTableTool extends AbstractRecordTool
         }
 
         // Dispatch AfterRecordWriteEvent
-        $eventDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
+        $this->eventDispatcher->dispatch(new AfterRecordWriteEvent($table, 'delete', $uid, [], null));
 
         return $this->createJsonResult([
             'action' => 'delete',
@@ -849,6 +855,9 @@ final class WriteTableTool extends AbstractRecordTool
      * is already the first record on the page, we insert at the top of the page instead.
      *
      * @return array cmdMap ready for DataHandler::start()
+     */
+    /**
+     * @return array<string, array<int, array<string, mixed>>> DataHandler command map
      */
     protected function buildBeforePositionCmdMap(string $table, int $recordUid, int $pid, int $referenceUid): array
     {
@@ -1262,7 +1271,11 @@ final class WriteTableTool extends AbstractRecordTool
      * @param int|null $uid Record UID (required for update actions)
      * @return true|string True if valid, error message if invalid
      */
-    protected function validateRecordData(string $table, array &$data, string $action, ?int $uid = null, int $pid = 0)
+    /**
+     * @param RecordData $data
+     * @return string|true the validation error, or true when the data is valid
+     */
+    protected function validateRecordData(string $table, array &$data, string $action, ?int $uid = null, int $pid = 0): string|true
     {
         // Table access has already been validated by ensureTableAccess() before this method is called
         // No need to re-check table existence here
@@ -1448,7 +1461,7 @@ final class WriteTableTool extends AbstractRecordTool
 
                 // Special handling for passthrough fields (often used for inline relations)
                 $fieldConfig = $this->tableAccessService->getFieldConfig($table, $fieldName);
-                if ($fieldConfig && isset($fieldConfig['config']['type']) && $fieldConfig['config']['type'] === 'passthrough') {
+                if (($fieldConfig['config']['type'] ?? null) === 'passthrough') {
                     // Passthrough fields are valid if they exist in TCA, even if not in showitem
                     // Example: tx_news_related_news stores the foreign key for inline relations
                     continue;
@@ -1483,6 +1496,10 @@ final class WriteTableTool extends AbstractRecordTool
      * array in the dataMap. DataMapProcessor's DataMapItem::buildState() reads the
      * persisted l10n_state JSON from the database first, then merges incoming array
      * values on top (see DataMapItem::buildState step 4).
+     */
+    /**
+     * @param RecordData $data
+     * @return RecordData
      */
     protected function ensureL10nStateForTranslation(string $table, int $uid, array $data): array
     {
@@ -1636,6 +1653,10 @@ final class WriteTableTool extends AbstractRecordTool
      * @param array $data Record data
      * @return array Modified data with sys_language_uid if needed
      */
+    /**
+     * @param RecordData $data
+     * @return RecordData
+     */
     protected function ensureLanguageField(string $table, array $data): array
     {
         // Only modify data for non-admin users who need this for permission checks
@@ -1730,6 +1751,9 @@ final class WriteTableTool extends AbstractRecordTool
      * @param array $data Record data
      * @return string|null Error message if permission denied, null if all permissions granted
      */
+    /**
+     * @param RecordData $data
+     */
     protected function validateAuthModePermissions(string $table, array $data): ?string
     {
         $beUser = $GLOBALS['BE_USER'];
@@ -1817,6 +1841,9 @@ final class WriteTableTool extends AbstractRecordTool
      *
      * @param array $errorLog DataHandler error log
      * @return string Formatted error message
+     */
+    /**
+     * @param list<string> $errorLog
      */
     protected function formatDataHandlerErrors(array $errorLog): string
     {

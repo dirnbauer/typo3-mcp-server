@@ -108,6 +108,8 @@ final class BrowseFolderTool extends AbstractRecordTool
 
     /**
      * Render folder contents into output lines
+     *
+     * @param list<string> $lines
      */
     private function renderFolderContents(Folder $folder, array &$lines, bool $recursive, int $depth): void
     {

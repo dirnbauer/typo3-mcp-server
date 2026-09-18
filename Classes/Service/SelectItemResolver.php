@@ -29,7 +29,7 @@ final class SelectItemResolver
     /**
      * Runtime cache for compiled form data, keyed by table, pid, and record context.
      *
-     * @var array<string, array>
+     * @var array<string, array<string, mixed>>
      */
     private array $cache = [];
 
@@ -38,11 +38,11 @@ final class SelectItemResolver
      *
      * @param string $table Table name
      * @param string $field Field name
-     * @param array $record Record context (used for pid resolution and itemsProcFunc context).
+     * @param array<string, mixed> $record Record context (used for pid resolution and itemsProcFunc context).
      *                      For updates: merge existing DB record with submitted data.
      *                      For creates: submitted data with pid.
      *                      For schema display: empty array (pid defaults to 0).
-     * @return array|null Array with 'values' and 'labels' keys, or null on failure
+     * @return array{values: list<string>, labels: array<string, mixed>}|null Array with 'values' and 'labels' keys, or null on failure
      */
     public function resolveSelectItems(string $table, string $field, array $record = []): ?array
     {
@@ -80,8 +80,8 @@ final class SelectItemResolver
      * itemsProcFunc callbacks receive as $parameters['row'].
      *
      * @param string $table Table name
-     * @param array $record Record context for databaseRow and pid resolution
-     * @return array The compiled form data
+     * @param array<string, mixed> $record Record context for databaseRow and pid resolution
+     * @return array<string, mixed> The compiled form data
      */
     private function compileFormData(string $table, array $record): array
     {
@@ -303,8 +303,8 @@ final class SelectItemResolver
     /**
      * Parse resolved items into the values/labels structure.
      *
-     * @param array $items Resolved items from FormDataCompiler
-     * @return array Array with 'values' and 'labels' keys
+     * @param array<mixed> $items Resolved items from FormDataCompiler
+     * @return array{values: list<string>, labels: array<string, mixed>} Array with 'values' and 'labels' keys
      */
     private function parseItems(array $items): array
     {

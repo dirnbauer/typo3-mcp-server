@@ -57,7 +57,7 @@ final class ToolRegistryTest extends TestCase
 
         $registeredTool = $registry->getTool('NativeTool');
         self::assertInstanceOf(CompatibleToolAdapter::class, $registeredTool);
-        self::assertNotSame($tool, $registeredTool);
+        self::assertSame('NativeTool', $registeredTool->getName());
     }
 
     public function testRegistryKeepsAbstractToolsUntouched(): void
@@ -138,9 +138,7 @@ final class ToolRegistryTest extends TestCase
         $registry = new ToolRegistry([$legacyTool]);
         $tool = $registry->getTool('LegacyTool');
 
-        self::assertNotNull($tool);
-        self::assertInstanceOf(ToolInterface::class, $tool);
-        self::assertNotSame($legacyTool, $tool);
+        self::assertInstanceOf(CompatibleToolAdapter::class, $tool);
 
         $schema = $tool->getSchema();
         self::assertIsArray($schema['inputSchema']);

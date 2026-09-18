@@ -47,7 +47,7 @@ final class McpClientConfigBuilderTest extends TestCase
                 Environment::getProjectPath() . '/vendor/bin/typo3',
                 'mcp:server',
             ], $config['args']);
-            self::assertSame(Environment::getProjectPath(), $config['cwd']);
+            self::assertSame(Environment::getProjectPath(), $config['cwd'] ?? null);
         });
     }
 
@@ -81,7 +81,8 @@ final class McpClientConfigBuilderTest extends TestCase
         parse_str((string)parse_url((string)$url, PHP_URL_QUERY), $query);
 
         self::assertSame('Example Site', $query['name']);
-        self::assertSame($config, json_decode((string)base64_decode((string)$query['config'], true), true));
+        self::assertIsString($query['config']);
+        self::assertSame($config, json_decode((string)base64_decode($query['config'], true), true));
     }
 
     /**

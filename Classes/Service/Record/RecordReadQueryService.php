@@ -70,10 +70,12 @@ final readonly class RecordReadQueryService
         return $this->tableAccessService->hasTable($table);
     }
 
-    private function logException(\Throwable $e, string $context): void
-    {
-        unset($e, $context);
-    }
+    /**
+     * @param int|list<int>|null $uid
+     * @param list<array<string, mixed>> $filters normalized filter definitions ({field, operator, value})
+     * @param list<string> $requestedFields
+     * @return array{records: list<array<string, mixed>>, total: int, limit: int, offset: int, hasMore: bool}
+     */
     public function getRecords(
         string $table,
         ?int $pid,
@@ -91,9 +93,9 @@ final readonly class RecordReadQueryService
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace))
             ->add(new WorkspaceDeletePlaceholderRestriction(
-                $this->getBackendUser()->workspace ?? 0,
+                $this->getBackendUser()->workspace,
                 $this->tcaSchemaFactory,
             ));
 
@@ -129,7 +131,7 @@ final readonly class RecordReadQueryService
             // 1. The UID is a workspace UID (for new records)
             // 2. The UID is a live UID (for existing records with workspace versions)
 
-            $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
+            $currentWorkspace = $this->getBackendUser()->workspace;
             if ($currentWorkspace > 0 && $this->tableAccessService->isWorkspaceCapable($table)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
@@ -170,9 +172,9 @@ final readonly class RecordReadQueryService
         $countQueryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace ?? 0))
+            ->add(new WorkspaceRestriction($this->getBackendUser()->workspace))
             ->add(new WorkspaceDeletePlaceholderRestriction(
-                $this->getBackendUser()->workspace ?? 0,
+                $this->getBackendUser()->workspace,
                 $this->tcaSchemaFactory,
             ));
 
@@ -198,7 +200,7 @@ final readonly class RecordReadQueryService
         if ($uid !== null) {
             $uids = is_array($uid) ? $uid : [$uid];
             // Apply the same UID filtering logic for count query
-            $currentWorkspace = $this->getBackendUser()->workspace ?? 0;
+            $currentWorkspace = $this->getBackendUser()->workspace;
             if ($currentWorkspace > 0 && $this->tableAccessService->isWorkspaceCapable($table)) {
                 // In workspace context, check both live and workspace UIDs
                 // The WorkspaceDeletePlaceholderRestriction will handle delete placeholders automatically
@@ -273,6 +275,9 @@ final readonly class RecordReadQueryService
         ];
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function normalizeSystemFieldFilters(string $table, mixed $filters, ?int $pid): array
     {
         if ($filters === null || $filters === []) {
@@ -349,6 +354,9 @@ final readonly class RecordReadQueryService
      * them case-insensitively (e.g. "ctype" instead of "CType"). This maps each
      * requested name to the actual TCA column name or essential field name.
      * Unrecognized names are kept as-is (they simply won't match anything).
+     *
+     * @param list<string> $requestedFields
+     * @return list<string>
      */
     public function normalizeFieldNames(string $table, array $requestedFields): array
     {
@@ -378,7 +386,7 @@ final readonly class RecordReadQueryService
      * Apply structured filters to a query builder using parameterized queries.
      *
      * @param QueryBuilder $queryBuilder
-     * @param array $filters Array of filter definitions with field, operator, value
+     * @param list<array<string, mixed>> $filters Array of filter definitions with field, operator, value
      * @param string $table Table name for field validation
      * @throws ValidationException
      */
@@ -495,6 +503,9 @@ final readonly class RecordReadQueryService
         }
     }
 
+    /**
+     * @param array<mixed> $values
+     */
     public function isIntegerArray(array $values): bool
     {
         return !empty($values) && array_reduce($values, static fn(bool $carry, $v): bool => $carry && is_int($v), true);
@@ -546,12 +557,16 @@ final readonly class RecordReadQueryService
         return true;
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @return list<array<string, mixed>>
+     */
     public function applyWorkspaceOverlay(string $table, array $records): array
     {
         if (empty($records)) {
             return $records;
         }
-        $workspaceId = (int)$this->getBackendUser()->workspace;
+        $workspaceId = $this->getBackendUser()->workspace;
         if ($workspaceId <= 0) {
             return $records;
         }
@@ -564,12 +579,11 @@ final readonly class RecordReadQueryService
             $original = $row;
             try {
                 BackendUtility::workspaceOL($table, $row, $workspaceId);
-            } catch (\Throwable $e) {
+            } catch (\Throwable) {
                 // Defensive: a corrupt workspace version (e.g. binary garbage
                 // in a string field on a strict driver) must not turn the
                 // whole read into a hard error response. Log and keep the
                 // live row.
-                $this->logException($e, sprintf('applying workspace overlay on %s', $table));
                 $row = $original;
             }
             if (!is_array($row)) {

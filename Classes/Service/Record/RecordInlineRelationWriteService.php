@@ -72,7 +72,7 @@ final readonly class RecordInlineRelationWriteService
     public function buildDataMap(
         array &$dataMap,
         string $parentTable,
-        $parentId,
+        int|string $parentId,
         int $pid,
         array $inlineRelations,
         array &$cmdMap,
@@ -388,7 +388,10 @@ final readonly class RecordInlineRelationWriteService
         }
     }
 
-    public function validateField(array $fieldConfig, $value): ?string
+    /**
+     * @param array<string, mixed> $fieldConfig
+     */
+    public function validateField(array $fieldConfig, mixed $value): ?string
     {
         // Check if value is an array
         if (!is_array($value)) {

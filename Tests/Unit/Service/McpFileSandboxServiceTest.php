@@ -20,6 +20,8 @@ use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 final class McpFileSandboxServiceTest extends TestCase
 {
     private mixed $originalBackendUser;
+
+    /** @var array<string, mixed> */
     private array $originalExtensionSettings;
 
     protected function setUp(): void
@@ -198,6 +200,9 @@ final class McpFileSandboxServiceTest extends TestCase
         self::assertMatchesRegularExpression('/^My-unsafe-file-[a-f0-9]{16}\.png$/', $fileName);
     }
 
+    /**
+     * @param array<string, mixed> $configuration
+     */
     private function createSubject(array $configuration): McpFileSandboxService
     {
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] = $configuration;

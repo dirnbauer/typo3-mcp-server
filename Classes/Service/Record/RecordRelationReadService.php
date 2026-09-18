@@ -24,6 +24,12 @@ final readonly class RecordRelationReadService
         private RecordReadQueryService $readQueryService,
         private EventDispatcherInterface $eventDispatcher,
     ) {}
+
+    /**
+     * @param array<string, mixed> $result read result carrying a `records` list
+     * @param list<string> $requestedFields
+     * @return array<string, mixed>
+     */
     public function includeRelations(array $result, string $table, array $requestedFields = []): array
     {
         if (empty($result['records'])) {
@@ -57,6 +63,10 @@ final readonly class RecordRelationReadService
         return $result;
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @param array<string, mixed> $fieldConfig
+     */
     public function includeSelectRelations(array &$records, string $fieldName, array $fieldConfig, string $table): void
     {
         // Check if this is a foreign table relation
@@ -85,6 +95,10 @@ final readonly class RecordRelationReadService
         }
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @param array<string, mixed> $fieldConfig
+     */
     public function includeMmRelations(array &$records, string $fieldName, array $fieldConfig, string $table): void
     {
         $mmTable = $fieldConfig['config']['MM'];
@@ -104,6 +118,10 @@ final readonly class RecordRelationReadService
         }
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @param array<string, mixed> $fieldConfig
+     */
     public function includeRegularRelations(array &$records, string $fieldName, array $fieldConfig): void
     {
         // Check if this field supports multiple values
@@ -120,7 +138,7 @@ final readonly class RecordRelationReadService
             if (isset($record[$fieldName])) {
                 if ($supportsMultiple) {
                     // Multi-select field - convert to array
-                    if (empty($record[$fieldName]) || $record[$fieldName] === 0 || $record[$fieldName] === '0') {
+                    if (empty($record[$fieldName])) {
                         $record[$fieldName] = [];
                     } elseif (is_int($record[$fieldName])) {
                         $record[$fieldName] = [$record[$fieldName]];
@@ -145,11 +163,15 @@ final readonly class RecordRelationReadService
         }
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @param array<string, mixed> $fieldConfig
+     */
     public function includeStaticItems(array &$records, string $fieldName, array $fieldConfig): void
     {
         // Convert comma-separated values to array for each record
         foreach ($records as &$record) {
-            if (isset($record[$fieldName]) && $record[$fieldName] !== '' && $record[$fieldName] !== null) {
+            if (isset($record[$fieldName]) && $record[$fieldName] !== '') {
                 // Convert to array if it's a multi-select field
                 if (!empty($fieldConfig['config']['multiple'])) {
                     $values = GeneralUtility::trimExplode(',', (string)$record[$fieldName], true);
@@ -160,6 +182,11 @@ final readonly class RecordRelationReadService
         }
     }
 
+    /**
+     * @param list<array<string, mixed>> $records
+     * @param array<string, mixed> $fieldConfig
+     * @param list<int> $recordUids
+     */
     public function includeInlineRelations(array &$records, string $fieldName, array $fieldConfig, array $recordUids, string $parentTable): void
     {
         if (empty($fieldConfig['config']['foreign_table'])) {
@@ -213,7 +240,7 @@ final readonly class RecordRelationReadService
         foreach ($records as &$record) {
             $uid = $record['uid'] ?? null;
             if ($uid !== null) {
-                if (isset($groupedRecords[$uid]) && !empty($groupedRecords[$uid])) {
+                if (isset($groupedRecords[$uid])) {
                     if ($isHiddenTable) {
                         // Embed full records for hidden tables (like sys_file_reference).
                         // The foreign field that links each child back to its parent is
@@ -239,6 +266,11 @@ final readonly class RecordRelationReadService
         }
     }
 
+    /**
+     * @param list<int> $parentUids
+     * @param array<string, mixed> $foreignMatchFields
+     * @return list<array<string, mixed>>
+     */
     public function getInlineRelatedRecords(string $table, string $foreignField, array $parentUids, string $foreignSortBy = '', array $foreignMatchFields = [], bool $embedAsChildren = false): array
     {
         if (empty($parentUids)) {
@@ -253,7 +285,7 @@ final readonly class RecordRelationReadService
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($this->readQueryService->getBackendUserForRelations()->workspace ?? 0));
+            ->add(new WorkspaceRestriction($this->readQueryService->getBackendUserForRelations()->workspace));
 
         // Select all fields
         // Apply default sorting if foreign_sortby is defined
@@ -325,6 +357,10 @@ final readonly class RecordRelationReadService
         return $processedRecords;
     }
 
+    /**
+     * @param array<string, mixed> $fieldConfig the field's TCA `config`
+     * @return list<int>
+     */
     public function getMmRelationValues(string $mmTable, string $localTable, int $localUid, string $fieldName, array $fieldConfig): array
     {
         $connectionPool = $this->connectionPool;

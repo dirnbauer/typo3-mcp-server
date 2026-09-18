@@ -215,12 +215,8 @@ final class CapabilityManifestServiceTest extends TestCase
         $service->assertHostAllowed('images.assets.example.org');
         $service->assertUrlAllowed('https://api.example.org/data');
 
-        try {
-            $service->assertUrlAllowed('http://api.example.org/data');
-            self::fail('The structured HTTPS-only rule must reject plaintext HTTP.');
-        } catch (AccessDeniedException) {
-            self::assertTrue(true);
-        }
+        $this->expectException(AccessDeniedException::class);
+        $service->assertUrlAllowed('http://api.example.org/data');
     }
 
     #[Test]
@@ -241,8 +237,7 @@ final class CapabilityManifestServiceTest extends TestCase
         $service = $this->createSubject(['enforceCapabilityManifest' => '0']);
         $service->assertHostAllowed('evil.example.org');
 
-        // No exception means we passed.
-        self::assertTrue(true);
+        self::assertFalse($service->isEnforced(), 'No exception above means the gate was skipped.');
     }
 
     #[Test]
@@ -263,7 +258,7 @@ final class CapabilityManifestServiceTest extends TestCase
         );
 
         $service->assertHostAllowed('images.unsplash.com');
-        self::assertTrue(true);
+        self::assertNotContains('images.unsplash.com', $service->getNetworkOutboundPolicy(), 'Allowed by local mode, not by the manifest.');
     }
 
     #[Test]

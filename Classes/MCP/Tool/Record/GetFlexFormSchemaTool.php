@@ -116,7 +116,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                         // Parse the XML content using TYPO3's built-in method
                         $xmlArray = GeneralUtility::xml2array($content);
 
-                        if ($xmlArray) {
+                        if (is_array($xmlArray)) {
                             $processedData = $this->processFlexFormXml($xmlArray);
                             $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                             return $this->createSuccessResult($result);
@@ -135,7 +135,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                 // Parse the XML content using TYPO3's built-in method
                 $xmlArray = GeneralUtility::xml2array($dsValue);
 
-                if ($xmlArray) {
+                if (is_array($xmlArray)) {
                     $processedData = $this->processFlexFormXml($xmlArray);
                     $result = $this->formatFlexFormSchema($processedData, $header . $prefix);
                     return $this->createSuccessResult($result);
@@ -150,7 +150,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
                 return $this->createSuccessResult($result);
             }
 
-            return $this->createSuccessResult($result);
+            throw new \RuntimeException('FlexForm data structure for "' . $identifier . '" is neither a string nor an array.');
         }
 
         // If we get here, the identifier was not found
@@ -159,6 +159,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
     /**
      * Get all possible values for a pointer field
+     *
+     * @return list<mixed>
      */
     protected function getPointerFieldValues(string $table, string $field): array
     {
@@ -195,8 +197,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
      * Process a single field configuration
      *
      * @param string $fieldName The field name
-     * @param array $field The field configuration
-     * @return array Processed field data with type, label, description, etc.
+     * @param array<string, mixed> $field The field configuration
+     * @return array{name: string, type: string, label: string, description: string, config: array<string, mixed>, jsonPath: string}
      */
     protected function processField(string $fieldName, array $field): array
     {
@@ -234,8 +236,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     /**
      * Process a collection of fields
      *
-     * @param array $fields The fields to process
-     * @return array Array of processed field data
+     * @param array<string, mixed> $fields The fields to process
+     * @return list<array{name: string, type: string, label: string, description: string, config: array<string, mixed>, jsonPath: string}>
      */
     protected function processFields(array $fields): array
     {
@@ -251,8 +253,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     /**
      * Process FlexForm sheets
      *
-     * @param array $sheets The sheets to process
-     * @return array Processed sheets data
+     * @param array<string, mixed> $sheets The sheets to process
+     * @return list<array{name: string|null, fields: list<array<string, mixed>>}>
      */
     protected function processSheets(array $sheets): array
     {
@@ -277,8 +279,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     /**
      * Process FlexForm XML structure
      *
-     * @param array $xmlArray The parsed XML array
-     * @return array Processed FlexForm data
+     * @param array<string, mixed> $xmlArray The parsed XML array
+     * @return array{sheets: list<array{name: string|null, fields: list<array<string, mixed>>}>, fields: list<string>, hasSheets: bool}
      */
     protected function processFlexFormXml(array $xmlArray): array
     {
@@ -317,7 +319,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     /**
      * Format processed FlexForm data as text
      *
-     * @param array $data Processed FlexForm data
+     * @param array{sheets: list<array{name: string|null, fields: list<array<string, mixed>>}>, fields: list<string>, hasSheets: bool} $data Processed FlexForm data
      * @param string $prefix Additional prefix text
      * @return string Formatted text output
      */
@@ -373,7 +375,7 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     /**
      * Format a single field for text output
      *
-     * @param array $field The field data
+     * @param array<string, mixed> $field The field data
      * @param string $indent Indentation prefix
      * @return string Formatted field text
      */
@@ -403,45 +405,41 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
     }
 
     /**
-     * Build example JSON structure from field names
+     * Build example JSON structure from dot-separated field names
+     *
+     * @param list<string> $fieldNames
+     * @return array{pi_flexform: array<string, mixed>}
      */
     protected function buildJsonExample(array $fieldNames): array
     {
-        $example = ['pi_flexform' => []];
-
+        $flexForm = [];
         foreach ($fieldNames as $fieldName) {
-            // Skip non-field entries
-            if (!str_contains((string)$fieldName, '.')) {
-                $example['pi_flexform'][$fieldName] = '<' . $fieldName . ' value>';
-            } else {
-                // Handle nested structure
-                $parts = explode('.', (string)$fieldName);
-                $current = &$example['pi_flexform'];
-
-                // Navigate/create the nested structure
-                for ($i = 0; $i < count($parts) - 1; $i++) {
-                    if (!isset($current[$parts[$i]])) {
-                        $current[$parts[$i]] = [];
-                    }
-                    $current = &$current[$parts[$i]];
+            $parts = explode('.', $fieldName);
+            $leaf = array_pop($parts);
+            $branch = &$flexForm;
+            foreach ($parts as $part) {
+                if (!is_array($branch[$part] ?? null)) {
+                    $branch[$part] = [];
                 }
-
-                // Set the final value
-                $current[$parts[count($parts) - 1]] = '<' . $parts[count($parts) - 1] . ' value>';
+                $branch = &$branch[$part];
             }
+            $branch[$leaf] = '<' . $leaf . ' value>';
+            unset($branch);
         }
 
-        return $example;
+        return ['pi_flexform' => $flexForm];
     }
 
     /**
      * Generate a JSON example for the FlexForm
+     *
+     * @param array<string, mixed> $flexFormDS
      */
     protected function generateJsonExample(array $flexFormDS): string
     {
         // Check if we have a valid FlexForm structure
-        if (empty($flexFormDS)) {
-            return json_encode(['pi_flexform' => []], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($flexFormDS === []) {
+            return '{"pi_flexform": {}}';
         }
 
         // Create a simplified structure that matches what ReadTableTool will return
@@ -462,11 +460,15 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
             }
         }
 
-        return json_encode(['pi_flexform' => $example], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $json = json_encode(['pi_flexform' => $example], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        return $json === false ? '{"pi_flexform": {}}' : $json;
     }
 
     /**
      * Get an example value for a FlexForm field based on its configuration
+     *
+     * @param array<string, mixed> $fieldConfig
      */
     protected function getExampleValueForField(array $fieldConfig): mixed
     {
@@ -522,6 +524,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
     /**
      * Process a FlexForm field and return its description
+     *
+     * @param array<string, mixed> $fieldConfig
      */
     protected function processFlexFormField(string $fieldName, array $fieldConfig, int $level): string
     {
@@ -609,60 +613,18 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
     /**
      * Add field details inline
+     *
+     * @param array<string, mixed> $config
      */
-    protected function addFieldDetailsInline(string &$result, $config): void
+    protected function addFieldDetailsInline(string &$result, array $config): void
     {
         TcaFormattingUtility::addFieldDetailsInline($result, $config);
     }
 
     /**
-     * Get all available FlexForms for a table and field
-     */
-    protected function getAvailableFlexForms(string $table, string $field): array
-    {
-        $result = [];
-
-        // Check if the table and field exist
-        if (!isset($GLOBALS['TCA'][$table]['columns'][$field])) {
-            return $result;
-        }
-
-        // Check if the field is a FlexForm field
-        if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] !== 'flex') {
-            return $result;
-        }
-
-        $flexFormConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'];
-
-        // Handle ds configuration (TYPO3 14 removed ds_pointerField)
-        if (!empty($flexFormConfig['ds']) && is_array($flexFormConfig['ds'])) {
-            foreach ($flexFormConfig['ds'] as $key => $ds) {
-                if (is_string($ds) && str_starts_with($ds, 'FILE:')) {
-                    $file = substr($ds, 5);
-                    $result[$key] = [
-                        'id' => $key,
-                        'file' => $file,
-                    ];
-                } else {
-                    $result[$key] = [
-                        'id' => $key,
-                    ];
-                }
-            }
-        }
-
-        // Add default FlexForm if available
-        if (!empty($flexFormConfig['ds']['default'])) {
-            $result['default'] = [
-                'id' => 'default',
-            ];
-        }
-
-        return $result;
-    }
-
-    /**
      * Get the FlexForm data structure for a specific identifier
+     *
+     * @return array<string, mixed>
      */
     protected function getFlexFormDS(string $table, string $field, string $identifier): array
     {
@@ -708,6 +670,8 @@ final class GetFlexFormSchemaTool extends AbstractRecordTool
 
     /**
      * Process a FlexForm data structure and return a human-readable description
+     *
+     * @param array<string, mixed> $flexFormDS
      */
     protected function processFlexFormDS(array $flexFormDS, string $identifier): string
     {

@@ -285,6 +285,9 @@ final class BulkWriteTool extends AbstractRecordTool
         return null;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     private function detectInlineChildData(string $table, array $data): ?string
     {
         $tca = $GLOBALS['TCA'] ?? null;

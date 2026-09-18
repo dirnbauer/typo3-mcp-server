@@ -150,6 +150,8 @@ final class GetPageTreeTool extends AbstractRecordTool
      * one query per parent page. The first layer (direct children of startPage)
      * is always fetched completely. Subsequent layers are limited to SUBPAGE_LIMIT
      * children per parent to prevent large folders from overwhelming the output.
+     *
+     * @return list<array<string, mixed>>
      */
     protected function getPageTree(int $startPage, int $depth, ?int $languageUid = null): array
     {
@@ -250,7 +252,8 @@ final class GetPageTreeTool extends AbstractRecordTool
      * @param int|null $languageUid Language UID for overlays
      * @param PageRepository $pageRepository PageRepository with language context
      * @param int|null $perParentLimit Max children per parent (null = unlimited)
-     * @return array Keyed by parent UID: [parentUid => ['pages' => [...], 'total' => int]]
+     * @param list<int> $parentUids
+     * @return array<int, array{pages: list<array<string, mixed>>, total: int}> keyed by parent UID
      */
     protected function fetchChildrenBatch(
         array $parentUids,
@@ -322,8 +325,8 @@ final class GetPageTreeTool extends AbstractRecordTool
     /**
      * Count subpages for multiple parent UIDs in a single query.
      *
-     * @param array $parentUids Parent page UIDs to count children for
-     * @return array Keyed by parent UID: [parentUid => count]
+     * @param list<int> $parentUids Parent page UIDs to count children for
+     * @return array<int, int> Keyed by parent UID: [parentUid => count]
      */
     protected function batchCountSubpages(array $parentUids): array
     {
@@ -393,12 +396,12 @@ final class GetPageTreeTool extends AbstractRecordTool
     /**
      * Build the nested tree structure from pre-fetched layer data.
      *
-     * @param array $layerData Layer data indexed by depth, then by parent UID
-     * @param array $subpageCounts Subpage counts for leaf nodes
+     * @param array<int, array<int, array{pages: list<array<string, mixed>>, total: int}>> $layerData Layer data indexed by depth, then by parent UID
+     * @param array<int, int> $subpageCounts Subpage counts for leaf nodes
      * @param int $parentUid The parent UID to build children for
      * @param int $maxDepth Total depth requested
      * @param int $currentLayer Current layer index (0-based)
-     * @return array Nested tree structure
+     * @return list<array<string, mixed>> Nested tree structure
      */
     protected function buildTreeFromLayers(
         array $layerData,
@@ -581,6 +584,9 @@ final class GetPageTreeTool extends AbstractRecordTool
 
     /**
      * Collect all page UIDs from the tree structure
+     *
+     * @param list<array<string, mixed>> $pageTree
+     * @return list<int>
      */
     protected function collectPageUids(array $pageTree): array
     {
@@ -599,6 +605,9 @@ final class GetPageTreeTool extends AbstractRecordTool
 
     /**
      * Get record counts for given page UIDs
+     *
+     * @param list<int> $pageUids
+     * @return array<int, array<string, int>> page UID => [table => count]
      */
     protected function getRecordCounts(array $pageUids): array
     {
@@ -727,6 +736,10 @@ final class GetPageTreeTool extends AbstractRecordTool
 
     /**
      * Render the page tree as a text-based tree with indentation
+     *
+     * @param list<array<string, mixed>> $pageTree
+     * @param array<int, array<string, int>> $recordCounts page UID => [table => count]
+     * @param array<int, string> $pluginHints page UID => rendered hint suffix
      */
     protected function renderTextTree(array $pageTree, int $level = 0, ?int $languageUid = null, array $recordCounts = [], array $pluginHints = []): string
     {

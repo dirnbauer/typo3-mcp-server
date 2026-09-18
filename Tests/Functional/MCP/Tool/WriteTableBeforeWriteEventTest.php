@@ -8,10 +8,28 @@ use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+/**
+ * Reroutes `data.pid` from a BeforeRecordWriteEvent listener; the tool must
+ * pick the listener's page up after dispatching the event.
+ */
+final class ReroutePidListener
+{
+    public function __construct(private readonly int $reroutedPid) {}
+
+    public function __invoke(BeforeRecordWriteEvent $event): void
+    {
+        if ($event->getAction() !== 'create') {
+            return;
+        }
+        $data = $event->getData();
+        $data['pid'] = $this->reroutedPid;
+        $event->setData($data);
+    }
+}
 
 /**
  * Verify that a `BeforeRecordWriteEvent` listener can reroute the target page
@@ -20,44 +38,20 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * effect. Without that, the listener's pid mutation would be silently ignored
  * and the record would land on the originally requested page.
  */
-class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
+final class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
 {
     use McpAssertionsTrait;
-
-    private WriteTableTool $writeTool;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
-    }
-
-    protected function tearDown(): void
-    {
-        // Drop any singleton instance we may have set so other tests in the
-        // same process see the real container-resolved dispatcher again.
-        GeneralUtility::removeSingletonInstance(
-            EventDispatcherInterface::class,
-            GeneralUtility::makeInstance(EventDispatcherInterface::class)
-        );
-        parent::tearDown();
-    }
 
     public function testBeforeWriteListenerCanReroutePidOnCreate(): void
     {
         $requestedPid = 1; // "Home" in the standard fixtures
         $reroutedPid = 2;  // "About"
 
-        $this->installDispatcher(function (object $event) use ($reroutedPid): void {
-            if ($event instanceof BeforeRecordWriteEvent && $event->getAction() === 'create') {
-                $data = $event->getData();
-                $data['pid'] = $reroutedPid;
-                $event->setData($data);
-            }
-        });
-        $this->writeTool = GeneralUtility::makeInstance(WriteTableTool::class);
+        $container = GeneralUtility::getContainer();
+        $container->set(ReroutePidListener::class, new ReroutePidListener($reroutedPid));
+        $container->get(ListenerProvider::class)->addListener(BeforeRecordWriteEvent::class, ReroutePidListener::class);
 
-        $result = $this->writeTool->execute([
+        $result = $this->get(WriteTableTool::class)->execute([
             'action' => 'create',
             'table' => 'tt_content',
             'data' => [
@@ -81,24 +75,7 @@ class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
             $reroutedPid,
             (int)$record['pid'],
             'Listener edited data.pid but the record landed on the originally requested page — '
-            . 'pid must be re-read from data after BeforeRecordWriteEvent dispatch.'
+            . 'pid must be re-read from data after BeforeRecordWriteEvent dispatch.',
         );
-    }
-
-    private function installDispatcher(callable $listener): void
-    {
-        // Implement SingletonInterface so GeneralUtility::setSingletonInstance
-        // accepts our anonymous dispatcher as a stand-in for the container's.
-        $dispatcher = new class ($listener) implements EventDispatcherInterface, SingletonInterface {
-            public function __construct(private $listener) {}
-
-            public function dispatch(object $event): object
-            {
-                ($this->listener)($event);
-                return $event;
-            }
-        };
-
-        GeneralUtility::setSingletonInstance(EventDispatcherInterface::class, $dispatcher);
     }
 }

@@ -26,7 +26,6 @@
 		"phpat/phpat": "^0.12.3",
 		"phpstan/phpstan": "^2.1.33",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
-		"phpstan/phpstan-strict-rules": "^2.0",
 		"rector/rector": "2.6.3",
 		"saschaegerer/phpstan-typo3": "^3.0",
 		"ssch/typo3-rector": "^3.0",
@@ -36,7 +35,8 @@
 		"typo3/cms-frontend": "^14.3.6",
 		"typo3/cms-install": "^14.3.6",
 		"typo3/testing-framework": "^9.4",
-		"typo3/cms-redirects": "^14.3.6"
+		"typo3/cms-redirects": "^14.3.6",
+		"phpstan/phpstan-phpunit": "^2.0"
 	},
 	"conflict": {
 		"mcp/sdk": "*"

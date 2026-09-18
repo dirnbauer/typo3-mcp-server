@@ -26,7 +26,7 @@ final class AfterSchemaLoadEvent
     /**
      * @param string $table The table name
      * @param string $type The record type (e.g. CType value, empty for default)
-     * @param array<string, array> $fields Field name => TCA-shaped config array
+     * @param array<string, array<string, mixed>> $fields Field name => TCA-shaped config array
      */
     public function __construct(
         private readonly string $table,
@@ -45,7 +45,7 @@ final class AfterSchemaLoadEvent
     }
 
     /**
-     * @return array<string, array>
+     * @return array<string, array<string, mixed>>
      */
     public function getFields(): array
     {
@@ -53,7 +53,7 @@ final class AfterSchemaLoadEvent
     }
 
     /**
-     * @param array<string, array> $fields
+     * @param array<string, array<string, mixed>> $fields
      */
     public function setFields(array $fields): void
     {
@@ -65,6 +65,9 @@ final class AfterSchemaLoadEvent
         unset($this->fields[$fieldName]);
     }
 
+    /**
+     * @param array<string, mixed> $configuration TCA-shaped field configuration
+     */
     public function addField(string $fieldName, array $configuration): void
     {
         $this->fields[$fieldName] = $configuration;

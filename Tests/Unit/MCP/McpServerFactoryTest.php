@@ -157,7 +157,7 @@ final class McpServerFactoryTest extends TestCase
         self::assertIsCallable($handlers['tools/list']);
         self::assertIsCallable($handlers['tools/call']);
 
-        $listResult = $handlers['tools/list']();
+        $listResult = $handlers['tools/list'](null);
         self::assertInstanceOf(ListToolsResult::class, $listResult);
         self::assertCount(1, $listResult->tools);
         self::assertSame('LegacyTool', $listResult->tools[0]->name);
@@ -183,10 +183,17 @@ final class McpServerFactoryTest extends TestCase
             {
                 return 'Returns JSON';
             }
+            /**
+             * @return array<string, mixed>
+             */
             public function getInputSchema(): array
             {
                 return ['type' => 'object', 'properties' => []];
             }
+
+            /**
+             * @param array<string, mixed> $params
+             */
             public function execute(array $params): string
             {
                 return '{"ok":true,"count":2}';

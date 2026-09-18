@@ -144,6 +144,8 @@ final class SearchTool extends AbstractRecordTool
 
     /**
      * Validate all parameters
+     *
+     * @param array<string, mixed> $params
      */
     protected function validateParameters(array $params): void
     {
@@ -171,6 +173,9 @@ final class SearchTool extends AbstractRecordTool
 
     /**
      * Validate and normalize search terms
+     *
+     * @param array<mixed> $terms
+     * @return list<string>
      */
     protected function validateAndNormalizeSearchTerms(array $terms): array
     {
@@ -212,6 +217,9 @@ final class SearchTool extends AbstractRecordTool
 
     /**
      * Perform search across tables (including inline relations)
+     *
+     * @param list<string> $searchTerms
+     * @return array<string, array<mixed>> keyed by table: a searchInTable() result, or the attributed parent records
      */
     protected function performSearch(array $searchTerms, string $termLogic, string $table, ?int $pageId, int $limit, ?int $languageId = null): array
     {

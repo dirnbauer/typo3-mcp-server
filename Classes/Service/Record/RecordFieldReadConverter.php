@@ -11,7 +11,14 @@ final readonly class RecordFieldReadConverter
 {
     public function __construct(
         private TableAccessService $tableAccessService,
+        private FlexFormService $flexFormService,
     ) {}
+
+    /**
+     * @param array<string, mixed> $record
+     * @param list<string> $requestedFields
+     * @return array<string, mixed>
+     */
     public function processRecord(array $record, string $table, array $requestedFields = []): array
     {
         $processedRecord = [];
@@ -96,7 +103,7 @@ final readonly class RecordFieldReadConverter
         return $processedRecord;
     }
 
-    public function convertFieldValue(string $table, string $field, $value)
+    public function convertFieldValue(string $table, string $field, mixed $value): mixed
     {
         // Skip null values
         if ($value === null) {
@@ -155,8 +162,7 @@ final readonly class RecordFieldReadConverter
         if ($this->tableAccessService->isFlexFormField($table, $field) && is_string($value) && !empty($value) && str_starts_with($value, '<?xml')) {
             try {
                 // Use TYPO3's FlexFormService to convert XML to array
-                $flexFormService = new FlexFormService();
-                $flexFormArray = $flexFormService->convertFlexFormContentToArray($value);
+                $flexFormArray = $this->flexFormService->convertFlexFormContentToArray($value);
 
                 // Simplify the structure for easier use in LLMs
                 $result = [];

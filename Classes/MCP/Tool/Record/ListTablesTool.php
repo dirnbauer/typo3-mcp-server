@@ -5,23 +5,13 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\Service\TableAccessService;
-use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * Tool for listing available tables in TYPO3
  */
 final class ListTablesTool extends AbstractRecordTool
 {
-    public function __construct(
-        TableAccessService $tableAccessService,
-        WorkspaceContextService $workspaceContextService,
-        private readonly ConnectionPool $connectionPool,
-    ) {
-        parent::__construct($tableAccessService, $workspaceContextService);
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -62,6 +52,9 @@ final class ListTablesTool extends AbstractRecordTool
 
     /**
      * Format accessible tables from TableAccessService to the expected format
+     *
+     * @param array<string, array<string, mixed>> $accessibleTables
+     * @return array<string, array<string, mixed>>
      */
     protected function formatAccessibleTables(array $accessibleTables): array
     {
@@ -87,6 +80,9 @@ final class ListTablesTool extends AbstractRecordTool
 
     /**
      * Group tables by extension
+     *
+     * @param array<string, array<string, mixed>> $tables
+     * @return array<string, array{extension: string, extensionLabel: string, tables: array<string, array<string, mixed>>}>
      */
     protected function groupTablesByExtension(array $tables): array
     {
@@ -114,6 +110,8 @@ final class ListTablesTool extends AbstractRecordTool
 
     /**
      * Format tables as text
+     *
+     * @param array<string, array{extension: string, extensionLabel: string, tables: array<string, array<string, mixed>>}> $groupedTables
      */
     protected function formatTablesAsText(array $groupedTables): string
     {

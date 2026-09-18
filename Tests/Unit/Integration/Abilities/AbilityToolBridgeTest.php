@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Unit\Integration\Abilities;
 
 use Hn\McpServer\Integration\Abilities\AbilityTool;
 use Hn\McpServer\Integration\Abilities\AbilityToolBridge;
-use Hn\McpServer\MCP\Tool\ToolProviderInterface;
 use Hn\McpServer\MCP\ToolRegistry;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Tests\Unit\Integration\Abilities\Fixtures\CliOnlyAbility;
@@ -85,7 +84,6 @@ final class AbilityToolBridgeTest extends TestCase
     public function bridgeIsAToolProviderTheRegistryResolvesLazily(): void
     {
         $bridge = new AbilityToolBridge($this->projection);
-        self::assertInstanceOf(ToolProviderInterface::class, $bridge);
 
         $registry = new ToolRegistry([], null, null, [$bridge]);
 
@@ -162,12 +160,13 @@ final class AbilityToolBridgeTest extends TestCase
         $result = $this->tool('ability_bridge-test_echo')->execute(['message' => 'hello']);
 
         self::assertFalse($result->isError, $this->text($result->content));
-        self::assertInstanceOf(ExecutionContext::class, $this->echoAbility->lastContext);
-        self::assertSame(ExecutionContext::SURFACE_MCP, $this->echoAbility->lastContext->surface);
-        self::assertSame(42, $this->echoAbility->lastContext->backendUserUid);
+        $context = $this->echoAbility->lastContext;
+        self::assertInstanceOf(ExecutionContext::class, $context);
+        self::assertSame(ExecutionContext::SURFACE_MCP, $context->surface);
+        self::assertSame(42, $context->backendUserUid);
         // MCP is a trusted surface: the endpoint authenticated the session,
         // so scope checks are skipped while policy and permission still run.
-        self::assertTrue($this->echoAbility->lastContext->isTrusted());
+        self::assertTrue($context->isTrusted());
 
         self::assertSame(
             ['ok' => true, 'data' => ['echo' => 'hello']],
@@ -274,6 +273,9 @@ final class AbilityToolBridgeTest extends TestCase
 
     /**
      * @param list<mixed> $content
+     */
+    /**
+     * @param array<mixed> $content
      */
     private function text(array $content): string
     {

@@ -6,6 +6,7 @@ namespace Hn\McpServer\Service\Record;
 
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Schema\Column;
 use Hn\McpServer\Database\Query\Restriction\WorkspaceDeletePlaceholderRestriction;
 use Hn\McpServer\Event\BeforeRecordReadEvent;
 use Hn\McpServer\Exception\DatabaseException;
@@ -28,6 +29,9 @@ final readonly class RecordSearchExecutor
         private TcaSchemaFactory $tcaSchemaFactory,
     ) {}
 
+    /**
+     * @return list<string>
+     */
     public function getSearchableFields(string $table): array
     {
         return $this->tableAccessService->getSearchFields($table);
@@ -38,10 +42,9 @@ final readonly class RecordSearchExecutor
         $this->tableAccessService->validateTableAccess($table, $operation);
     }
 
-    private function logException(\Throwable $e, string $context): void
-    {
-        unset($e, $context);
-    }
+    /**
+     * @return list<string>
+     */
     public function getTablesToSearch(string $specificTable = ''): array
     {
         if (!empty($specificTable)) {
@@ -72,16 +75,23 @@ final readonly class RecordSearchExecutor
         return $searchableTables;
     }
 
+    /**
+     * @param list<string> $searchableFields
+     * @return list<string>
+     */
     public function validateSearchableFields(string $table, array $searchableFields): array
     {
-        $connectionPool = $this->connectionPool;
-        $connection = $connectionPool->getConnectionForTable($table);
+        if ($table === '') {
+            return $searchableFields;
+        }
+        $connection = $this->connectionPool->getConnectionForTable($table);
 
         try {
             // Get the actual columns from the database table
-            $schemaManager = $connection->createSchemaManager();
-            $tableColumns = $schemaManager->listTableColumns($table);
-            $availableColumns = array_keys($tableColumns);
+            $availableColumns = array_map(
+                static fn(Column $column): string => $column->getObjectName()->getIdentifier()->getValue(),
+                $connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table),
+            );
 
             // Filter searchable fields to only include existing columns
             $validFields = [];
@@ -92,13 +102,17 @@ final readonly class RecordSearchExecutor
             }
 
             return $validFields;
-        } catch (\Throwable $e) {
-            // Log validation error but continue with original fields
-            $this->logException($e, 'validating searchable fields');
+        } catch (\Throwable) {
+            // Schema introspection failed; continue with the TCA field list
             return $searchableFields;
         }
     }
 
+    /**
+     * @param list<string> $searchTerms
+     * @param list<string> $searchableFields
+     * @return array<string, mixed> `records` list plus paging metadata, empty when nothing matched
+     */
     public function searchInTable(string $table, array $searchTerms, string $termLogic, array $searchableFields, ?int $pageId, int $limit, ?int $languageId = null): array
     {
         $connectionPool = $this->connectionPool;
@@ -108,9 +122,9 @@ final readonly class RecordSearchExecutor
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0))
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace))
             ->add(new WorkspaceDeletePlaceholderRestriction(
-                $GLOBALS['BE_USER']->workspace ?? 0,
+                $GLOBALS['BE_USER']->workspace,
                 $this->tcaSchemaFactory,
             ));
 
@@ -138,9 +152,7 @@ final readonly class RecordSearchExecutor
             }
 
             // Combine field conditions with OR (any field can match this term)
-            if (!empty($fieldConditions)) {
-                $termConditions[] = $queryBuilder->expr()->or(...$fieldConditions);
-            }
+            $termConditions[] = $queryBuilder->expr()->or(...$fieldConditions);
         }
 
         if (empty($termConditions)) {
@@ -218,6 +230,9 @@ final readonly class RecordSearchExecutor
 
     /**
      * Enhance records with page information
+     *
+     * @param list<array<string, mixed>> $records
+     * @return list<array<string, mixed>>
      */
     public function enhanceRecordsWithPageInfo(array $records, string $table, ?int $languageId = null): array
     {
@@ -262,7 +277,7 @@ final readonly class RecordSearchExecutor
         }
 
         // Get page information
-        $pageInfo = $this->getPageInfo(array_unique($pageIds));
+        $pageInfo = $this->getPageInfo(array_values(array_unique($pageIds)));
 
         // Enhance records
         foreach ($records as &$record) {
@@ -277,6 +292,9 @@ final readonly class RecordSearchExecutor
 
     /**
      * Get page information for multiple page IDs
+     *
+     * @param list<int> $pageIds
+     * @return array<int, array<string, mixed>> keyed by page UID
      */
     private function getPageInfo(array $pageIds): array
     {
@@ -290,7 +308,7 @@ final readonly class RecordSearchExecutor
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace));
 
         $pages = $queryBuilder->select('uid', 'title', 'slug', 'nav_title')
             ->from('pages')

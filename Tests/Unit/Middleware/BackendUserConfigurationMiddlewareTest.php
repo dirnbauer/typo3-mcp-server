@@ -65,9 +65,10 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         self::assertSame($response, $result);
         self::assertSame(1, $handler->calls);
         self::assertSame(1, $backendUser->writeUcCalls);
-        self::assertSame('de', $backendUser->uc['lang']);
-        self::assertSame(50, $backendUser->uc['titleLen']);
-        self::assertSame([], $backendUser->uc['moduleData']);
+        self::assertEquals(
+            ['lang' => 'de', 'titleLen' => 50, 'moduleData' => []],
+            array_intersect_key($backendUser->uc, ['lang' => 1, 'titleLen' => 1, 'moduleData' => 1]),
+        );
     }
 
     #[Test]
@@ -109,7 +110,9 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
 
         self::assertSame($response, $result);
         self::assertSame(0, $backendUser->writeUcCalls);
-        self::assertSame(50, $backendUser->uc['titleLen']);
-        self::assertSame('en', $backendUser->uc['lang']);
+        self::assertEquals(
+            ['titleLen' => 50, 'lang' => 'en'],
+            array_intersect_key($backendUser->uc, ['titleLen' => 1, 'lang' => 1]),
+        );
     }
 }

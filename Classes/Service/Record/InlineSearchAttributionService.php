@@ -21,11 +21,11 @@ final readonly class InlineSearchAttributionService
         private EventDispatcherInterface $eventDispatcher,
     ) {}
 
-    private function logException(\Throwable $e, string $context): void
-    {
-        // SearchTool logs via AbstractTool; keep attribution resilient without failing search.
-        unset($e, $context);
-    }
+    /**
+     * @param array<string, array<string, mixed>> $searchResults keyed by table
+     * @param array<string, array<string, mixed>> $inlineTableMetadata keyed by inline table
+     * @return array<string, array<mixed>> keyed by table: regular results pass through, inline matches become parent-record lists
+     */
     public function attributeInlineResultsToParents(array $searchResults, array $inlineTableMetadata): array
     {
         $attributedResults = [];
@@ -99,6 +99,10 @@ final readonly class InlineSearchAttributionService
         return $attributedResults;
     }
 
+    /**
+     * @param array<string, mixed> $inlineRecord
+     * @return list<array<string, mixed>>
+     */
     public function findParentRecordsForInlineRecord(
         array $inlineRecord,
         string $inlineTable,
@@ -113,7 +117,7 @@ final readonly class InlineSearchAttributionService
         $queryBuilder->getRestrictions()
             ->removeAll()
             ->add(new DeletedRestriction())
-            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace ?? 0));
+            ->add(new WorkspaceRestriction($GLOBALS['BE_USER']->workspace));
 
         $queryBuilder->select('*')->from($parentTable);
 
@@ -152,13 +156,16 @@ final readonly class InlineSearchAttributionService
 
             // Enhance with page information
             return $this->searchExecutor->enhanceRecordsWithPageInfo($parentRecords, $parentTable);
-        } catch (\Throwable $e) {
-            // Log the error but continue without parent records
-            $this->logException($e, 'finding parent records');
+        } catch (\Throwable) {
+            // Continue without parent records; the search itself still succeeds.
             return [];
         }
     }
 
+    /**
+     * @param list<string> $primaryTables
+     * @return list<array{table: string, parent_table: string, parent_field: string, foreign_field: string, relation_type?: string}>
+     */
     public function getInlineRelatedHiddenTables(array $primaryTables): array
     {
         $inlineTables = [];

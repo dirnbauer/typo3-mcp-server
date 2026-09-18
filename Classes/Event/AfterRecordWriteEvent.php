@@ -20,7 +20,7 @@ final readonly class AfterRecordWriteEvent
      * @param string $table The target table
      * @param string $action The action that was performed: 'create', 'update', or 'delete'
      * @param int $uid The record UID (live UID for workspace transparency)
-     * @param array $data The record data that was written (empty for delete)
+     * @param array<string, mixed> $data The record data that was written (empty for delete)
      * @param int|null $pid Page ID (only for create)
      */
     public function __construct(
@@ -46,6 +46,9 @@ final readonly class AfterRecordWriteEvent
         return $this->uid;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getData(): array
     {
         return $this->data;

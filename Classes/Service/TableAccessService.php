@@ -164,20 +164,6 @@ final class TableAccessService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function getConfigurationSection(string $section): array
-    {
-        $configuration = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        if (!is_array($configuration)) {
-            return [];
-        }
-
-        $sectionConfiguration = $configuration[$section] ?? [];
-        return is_array($sectionConfiguration) ? $sectionConfiguration : [];
-    }
-
-    /**
      * Get the current backend user, ensuring it's properly initialized
      */
     private function getBackendUser(): BackendUserAuthentication
@@ -919,12 +905,8 @@ final class TableAccessService
     }
 
     /**
-     * Check if a specific field can be accessed
-     *
-     * @param string $table Table name
-     * @param string $fieldName Field name
-     * @param string $type Record type (optional, for type-specific TSconfig)
-     * @return bool
+     * Page UID whose Page TSconfig applies: the given pid, or the first site
+     * root page when none is known.
      */
     public function resolveTSconfigPid(?int $pid = null): int
     {
@@ -999,88 +981,6 @@ final class TableAccessService
         }
 
         return true;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getRelevantPageTsconfig(): array
-    {
-        $tsConfig = BackendUtility::getPagesTSconfig(0);
-        if (($tsConfig['TCEFORM.'] ?? null) !== null || ($tsConfig['TCEMAIN.'] ?? null) !== null) {
-            return $tsConfig;
-        }
-
-        // In functional tests and root-level schema lookups, page uid 0 often has no rootline.
-        // Fall back to the site root page so default Page TSconfig is still respected.
-        $fallbackTsConfig = BackendUtility::getPagesTSconfig(1);
-        if (($fallbackTsConfig['TCEFORM.'] ?? null) !== null || ($fallbackTsConfig['TCEMAIN.'] ?? null) !== null) {
-            return $fallbackTsConfig;
-        }
-
-        return $tsConfig;
-    }
-
-    private function isFieldDisabledByDefaultPageTsconfig(string $table, string $fieldName, string $type = ''): bool
-    {
-        $beConfiguration = $this->getConfigurationSection('BE');
-        $defaultPageTsconfig = is_string($beConfiguration['defaultPageTSconfig'] ?? null) ? $beConfiguration['defaultPageTSconfig'] : '';
-        if ($defaultPageTsconfig === '') {
-            return false;
-        }
-
-        $patterns = [
-            '/^\s*TCEFORM\.' . preg_quote($table, '/') . '\.' . preg_quote($fieldName, '/') . '\.disabled\s*=\s*1\s*$/m',
-        ];
-
-        if ($type !== '') {
-            $patterns[] = '/^\s*TCEFORM\.' . preg_quote($table, '/') . '\.' . preg_quote($fieldName, '/') . '\.types\.' . preg_quote($type, '/') . '\.disabled\s*=\s*1\s*$/m';
-        }
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $defaultPageTsconfig) === 1) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param array<string, mixed> $tsConfig
-     */
-    private function getTsConfigFieldSetting(array $tsConfig, string $table, string $fieldName, string $setting, string $type = ''): mixed
-    {
-        $tceForm = $tsConfig['TCEFORM.'] ?? [];
-        if (!is_array($tceForm)) {
-            return null;
-        }
-
-        $tableConfig = $tceForm[$table . '.'] ?? [];
-        if (!is_array($tableConfig)) {
-            return null;
-        }
-
-        $fieldConfig = $tableConfig[$fieldName . '.'] ?? [];
-        if (!is_array($fieldConfig)) {
-            return null;
-        }
-
-        if ($type !== '') {
-            $typesConfig = $fieldConfig['types.'] ?? [];
-            if (!is_array($typesConfig)) {
-                return null;
-            }
-
-            $typeConfig = $typesConfig[$type . '.'] ?? [];
-            if (!is_array($typeConfig)) {
-                return null;
-            }
-
-            return $typeConfig[$setting] ?? null;
-        }
-
-        return $fieldConfig[$setting] ?? null;
     }
 
     /**

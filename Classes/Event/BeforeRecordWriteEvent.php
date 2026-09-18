@@ -21,7 +21,7 @@ final class BeforeRecordWriteEvent
     /**
      * @param string $table The target table
      * @param string $action The action: 'create', 'update', 'delete', 'translate', or 'move'
-     * @param array $data The record data (mutable)
+     * @param array<string, mixed> $data The record data (mutable)
      * @param int|null $uid Record UID (null for create)
      * @param int|null $pid Page ID (null for update/delete)
      */
@@ -43,11 +43,17 @@ final class BeforeRecordWriteEvent
         return $this->action;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getData(): array
     {
         return $this->data;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function setData(array $data): void
     {
         $this->data = $data;

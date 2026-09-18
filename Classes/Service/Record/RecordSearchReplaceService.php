@@ -119,7 +119,8 @@ final readonly class RecordSearchReplaceService
     }
 
     /**
-     * @param list<array{search: string, replace: string, replaceAll?: bool}> $value
+     * @param array<mixed> $value
+     * @phpstan-assert-if-true list<array{search: string, replace: string, replaceAll?: bool}> $value
      */
     public function isSearchReplaceArray(array $value): bool
     {

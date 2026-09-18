@@ -116,7 +116,7 @@ final class CapabilityManifestConsistencyTest extends TestCase
         $sql = file_get_contents($this->projectRoot() . '/ext_tables.sql');
         self::assertIsString($sql);
         preg_match_all('/CREATE\s+TABLE\s+([a-z0-9_]+)/i', $sql, $matches);
-        $defined = $matches[1] ?? [];
+        $defined = $matches[1];
 
         sort($declared);
         sort($defined);
