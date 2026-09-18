@@ -19,24 +19,24 @@
 		"webconsulting/typo3-abilities": "^1.0"
 	},
 	"require-dev": {
-		"brianium/paratest": "^7.8",
 		"a9f/typo3-fractor": "^1.0",
+		"brianium/paratest": "^7.8",
 		"friendsofphp/php-cs-fixer": "^3.94",
 		"georgringer/news": "^14.0",
 		"phpat/phpat": "^0.12.3",
 		"phpstan/phpstan": "^2.1.33",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
+		"phpstan/phpstan-phpunit": "^2.0",
 		"rector/rector": "2.6.3",
 		"saschaegerer/phpstan-typo3": "^3.0",
 		"ssch/typo3-rector": "^3.0",
-		"typo3/coding-standards": "dev-main",
 		"typo3/cms-extbase": "^14.3.6",
 		"typo3/cms-fluid": "^14.3.6",
 		"typo3/cms-frontend": "^14.3.6",
 		"typo3/cms-install": "^14.3.6",
-		"typo3/testing-framework": "^9.4",
 		"typo3/cms-redirects": "^14.3.6",
-		"phpstan/phpstan-phpunit": "^2.0"
+		"typo3/coding-standards": "dev-main",
+		"typo3/testing-framework": "^9.4"
 	},
 	"conflict": {
 		"mcp/sdk": "*"
@@ -128,6 +128,7 @@
 		},
 		"platform": {
 			"php": "8.4.0"
-		}
+		},
+		"sort-packages": true
 	}
 }

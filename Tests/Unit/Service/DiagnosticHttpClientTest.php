@@ -8,13 +8,14 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Psr7\Request as RecordedRequest;
 use GuzzleHttp\Psr7\Response;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\DiagnosticHttpClient;
 use Hn\McpServer\Service\LocalModeService;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Http\Client\GuzzleClientFactory;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -35,6 +36,7 @@ final class DiagnosticHttpClientTest extends TestCase
     #[Test]
     public function manifestApprovedSameOriginDiagnosticIsExecuted(): void
     {
+        /** @var \ArrayObject<int, array{request: RequestInterface, response: ResponseInterface|null, error: mixed, options: array<mixed>}> $history */
         $history = new \ArrayObject();
         $client = $this->createGuzzleClient(
             [new Response(401, [], '{"error":"Unauthorized"}')],
@@ -47,11 +49,10 @@ final class DiagnosticHttpClientTest extends TestCase
         $result = $subject->request('GET', 'https://example.com/mcp');
 
         self::assertSame(['status' => 401, 'body' => '{"error":"Unauthorized"}'], $result);
-        self::assertCount(1, $history);
-        $request = $history[0]['request'] ?? null;
-        if (!$request instanceof RecordedRequest) {
-            self::fail('Expected the diagnostic request in Guzzle history.');
-        }
+        $recorded = iterator_to_array($history);
+        self::assertCount(1, $recorded);
+        self::assertArrayHasKey(0, $recorded);
+        $request = $recorded[0]['request'];
         self::assertSame('/mcp', $request->getRequestTarget());
         self::assertSame('example.com', $request->getHeaderLine('Host'));
     }
@@ -71,6 +72,7 @@ final class DiagnosticHttpClientTest extends TestCase
     #[Test]
     public function redirectsAreReturnedWithoutFollowingTheUnvalidatedLocation(): void
     {
+        /** @var \ArrayObject<int, array{request: RequestInterface, response: ResponseInterface|null, error: mixed, options: array<mixed>}> $history */
         $history = new \ArrayObject();
         $client = $this->createGuzzleClient(
             [
@@ -86,17 +88,15 @@ final class DiagnosticHttpClientTest extends TestCase
         $result = $subject->request('GET', 'https://example.com/mcp');
 
         self::assertSame(302, $result['status'] ?? null);
-        self::assertCount(1, $history, 'The redirect target must never be requested.');
-        $request = $history[0]['request'] ?? null;
-        if (!$request instanceof RecordedRequest) {
-            self::fail('Expected the diagnostic request in Guzzle history.');
-        }
-        self::assertSame('example.com', $request->getHeaderLine('Host'));
+        $recorded = iterator_to_array($history);
+        self::assertCount(1, $recorded, 'The redirect target must never be requested.');
+        self::assertArrayHasKey(0, $recorded);
+        self::assertSame('example.com', $recorded[0]['request']->getHeaderLine('Host'));
     }
 
     /**
      * @param list<Response> $responses
-     * @param \ArrayObject<int, array<mixed>> $history
+     * @param \ArrayObject<int, array{request: RequestInterface, response: ResponseInterface|null, error: mixed, options: array<mixed>}> $history
      */
     private function createGuzzleClient(array $responses, \ArrayObject $history): Client
     {

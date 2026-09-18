@@ -16,9 +16,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Reroutes `data.pid` from a BeforeRecordWriteEvent listener; the tool must
  * pick the listener's page up after dispatching the event.
  */
-final class ReroutePidListener
+final readonly class ReroutePidListener
 {
-    public function __construct(private readonly int $reroutedPid) {}
+    public function __construct(private int $reroutedPid) {}
 
     public function __invoke(BeforeRecordWriteEvent $event): void
     {

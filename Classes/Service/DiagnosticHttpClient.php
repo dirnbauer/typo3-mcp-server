@@ -63,12 +63,8 @@ readonly class DiagnosticHttpClient
         $pool = new Pool($client, $poolRequests, [
             'concurrency' => count($poolRequests),
             'options' => $options,
-            'fulfilled' => function (mixed $response, string $id) use (&$results): void {
-                if (!$response instanceof ResponseInterface) {
-                    return;
-                }
-
-                $results[$id] = [
+            'fulfilled' => function (ResponseInterface $response, int|string $id) use (&$results): void {
+                $results[(string)$id] = [
                     'status' => $response->getStatusCode(),
                     'body' => (string)$response->getBody(),
                 ];

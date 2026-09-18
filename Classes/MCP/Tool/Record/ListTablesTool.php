@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hn\McpServer\MCP\Tool\Record;
 
-use Hn\McpServer\Service\TableAccessService;
 use Mcp\Types\CallToolResult;
 
 /**
