@@ -7,9 +7,7 @@ namespace Hn\McpServer\Service;
 use Hn\McpServer\Exception\AccessDeniedException;
 use Symfony\Component\Yaml\Yaml;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 /**
  * Reads and enforces Configuration/Capabilities.yaml.
@@ -33,7 +31,11 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
  */
 final class CapabilityManifestService
 {
-    private const MANIFEST_PATH = 'Configuration/Capabilities.yaml';
+    /**
+     * The manifest ships inside this extension, so it always sits two levels
+     * above Classes/Service/ - no extension-path lookup required.
+     */
+    private const MANIFEST_PATH = __DIR__ . '/../../Configuration/Capabilities.yaml';
 
     /**
      * Abilities declare direct HTTP in the same vocabulary; the manifest
@@ -51,9 +53,8 @@ final class CapabilityManifestService
         private readonly SiteFinder $siteFinder,
         private readonly ?LocalModeService $localMode = null,
         /**
-         * Optional manifest-path override for tests. Production code never
-         * passes this — DI auto-wires nothing into it and the class falls
-         * back to extension/public/relative resolution.
+         * Optional manifest-path override for tests; production code never
+         * passes it and reads the bundled manifest.
          */
         private readonly ?string $manifestPathOverride = null,
     ) {}
@@ -67,8 +68,8 @@ final class CapabilityManifestService
             return $this->manifest;
         }
 
-        $path = $this->resolveManifestPath();
-        if ($path === null || !is_file($path)) {
+        $path = $this->manifestPathOverride ?? self::MANIFEST_PATH;
+        if (!is_file($path)) {
             $this->manifest = ['capabilities' => []];
             return $this->manifest;
         }
@@ -125,14 +126,7 @@ final class CapabilityManifestService
      */
     public function getRequiresMap(): array
     {
-        $capabilities = $this->getCapabilities();
-        $mcp = $this->getMcpExtension();
-        // Legacy top-level fallback keeps operator manifests made for older
-        // extension releases working. A present x-mcp map is authoritative,
-        // including when deliberately empty.
-        $requires = array_key_exists('requires', $mcp)
-            ? $mcp['requires']
-            : ($capabilities['requires'] ?? []);
+        $requires = $this->getMcpExtension()['requires'] ?? [];
         if (!is_array($requires)) {
             return [];
         }
@@ -501,13 +495,8 @@ final class CapabilityManifestService
      */
     private function getToolPolicyDefinitions(): array
     {
-        $capabilities = $this->getCapabilities();
         $mcp = $this->getMcpExtension();
-        // See getRequiresMap(): new manifests use x-mcp, old installations
-        // may still carry the native map directly under capabilities.
-        $native = array_key_exists('tools', $mcp)
-            ? $mcp['tools']
-            : ($capabilities['tools'] ?? []);
+        $native = $mcp['tools'] ?? [];
         $external = $mcp['external_tools'] ?? [];
 
         $native = is_array($native) ? $this->normalizeStringKeyedMap($native) : [];
@@ -613,44 +602,5 @@ final class CapabilityManifestService
             // No sites configured (CLI / install) — `self` matches nothing.
         }
         return false;
-    }
-
-    private function resolveManifestPath(): ?string
-    {
-        if ($this->manifestPathOverride !== null && is_file($this->manifestPathOverride)) {
-            return $this->manifestPathOverride;
-        }
-        // Prefer the extension folder path resolved by TYPO3 (handles both
-        // composer and TER installations).
-        $candidate = null;
-        try {
-            $candidate = ExtensionManagementUtility::extPath('mcp_server') . self::MANIFEST_PATH;
-        } catch (\Throwable) {
-            // Extension manager not booted yet — fall through to the public path.
-        }
-
-        if (is_string($candidate) && is_file($candidate)) {
-            return $candidate;
-        }
-
-        // Fallback for early-bootstrap calls (CLI before TYPO3 is booted).
-        try {
-            $public = Environment::getPublicPath() . '/typo3conf/ext/mcp_server/' . self::MANIFEST_PATH;
-            if (is_file($public)) {
-                return $public;
-            }
-        } catch (\Throwable) {
-            // Environment not initialized (unit tests outside a TYPO3 instance).
-        }
-
-        // Last resort — resolve relative to this file's own location. Useful
-        // in unit tests that don't bootstrap a full TYPO3.
-        $relative = __DIR__ . '/../../' . self::MANIFEST_PATH;
-        $resolved = realpath($relative);
-        if (is_string($resolved) && is_file($resolved)) {
-            return $resolved;
-        }
-
-        return null;
     }
 }

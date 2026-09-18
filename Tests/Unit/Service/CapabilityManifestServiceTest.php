@@ -286,11 +286,13 @@ final class CapabilityManifestServiceTest extends TestCase
         // sense when there is content to attach them to.
         $service = $this->createSubjectWithManifest([
             'subsystems' => ['database:read', 'file:read', 'file:write'],
-            'requires' => [
-                'file:write' => ['file:read', 'database:write'],
-            ],
-            'tools' => [
-                'UploadFileFromUrl' => ['file:write'],
+            'x-mcp' => [
+                'requires' => [
+                    'file:write' => ['file:read', 'database:write'],
+                ],
+                'tools' => [
+                    'UploadFileFromUrl' => ['file:write'],
+                ],
             ],
         ]);
 
@@ -304,8 +306,10 @@ final class CapabilityManifestServiceTest extends TestCase
     {
         $service = $this->createSubjectWithManifest([
             'subsystems' => ['database:read', 'file:read', 'file:write'],
-            'requires' => [
-                'file:write' => ['file:read', 'database:write'],
+            'x-mcp' => [
+                'requires' => [
+                    'file:write' => ['file:read', 'database:write'],
+                ],
             ],
         ]);
 
@@ -316,8 +320,11 @@ final class CapabilityManifestServiceTest extends TestCase
     }
 
     #[Test]
-    public function mcpExtensionPolicyTakesPrecedenceOverLegacyTopLevelPolicy(): void
+    public function toolPolicyLivesOnlyInTheMcpExtensionBlock(): void
     {
+        // Top-level `tools` / `requires` are not part of the public
+        // capability-manifest schema and are ignored; policy is read from
+        // `x-mcp` only.
         $service = $this->createSubjectWithManifest([
             'subsystems' => ['database:read'],
             'tools' => ['ReadTable' => ['database:write']],
@@ -325,7 +332,6 @@ final class CapabilityManifestServiceTest extends TestCase
             'x-mcp' => [
                 'runtime_subsystems' => ['workspace:read'],
                 'tools' => ['ReadTable' => ['database:read']],
-                'requires' => [],
             ],
         ]);
 
@@ -333,6 +339,21 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertSame([], $service->getRequiresMap());
         self::assertContains('workspace:read', $service->getDeclaredSubsystems());
         $service->assertToolAllowed('ReadTable');
+    }
+
+    #[Test]
+    public function missingManifestFileYieldsAnEmptyManifest(): void
+    {
+        $siteFinder = self::createStub(SiteFinder::class);
+        $service = new CapabilityManifestService(
+            new ExtensionConfiguration(),
+            $siteFinder,
+            $this->createLocalModeOff(),
+            sys_get_temp_dir() . '/mcp-cap-does-not-exist-' . bin2hex(random_bytes(4)) . '.yaml',
+        );
+
+        self::assertSame(['capabilities' => []], $service->getManifest());
+        self::assertSame([], $service->getDeclaredSubsystems());
     }
 
     /**
