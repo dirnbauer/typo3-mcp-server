@@ -27,11 +27,17 @@
 *.xlf.*.bak
 Resources/Private/Language/*.bak
 .DS_Store
+._*
+*.cache
 .php-cs-fixer.cache
+.phpunit.cache/
 Documentation-GENERATED-temp
 node_modules
 npm-debug.log*
-.idea
+.idea/
+.vscode/
+Build/Reports/
+*.map
 
 # Local agent memory
 /memory/
