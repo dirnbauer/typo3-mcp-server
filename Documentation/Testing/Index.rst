@@ -17,13 +17,8 @@ TYPO3 installation, Playwright setup, CI artifacts, and maintenance rules.
    E2eCiDebugging
    ProtocolCompatibility
    ToolContextBenchmark
-
-.. seealso::
-
-   - ``Testing/CursorTesting.md`` — manual MCP-end-to-end testing through
-     Cursor (Markdown source — see the file in the repository).
-   - ``Testing/FullFeatureChatbotScript.md`` — natural-language test script
-     for any MCP-connected chatbot.
+   CursorTesting
+   ChatbotScript
 
 .. _testing-overview:
 
@@ -38,7 +33,8 @@ The project uses several layers of tests:
 - LLM-oriented tests for MCP response ergonomics and model-facing workflows
 - deterministic A/B measurements for tool-schema tax and response payloads
 - Playwright E2E tests for browser-visible backend module workflows
-- code-quality checks for PHPStan, PHP CS Fixer, Rector, and Fractor
+- code-quality checks for PHPStan (level 8, no baseline), PHP CS Fixer,
+  Rector, and Fractor
 - dual-era wire checks for MCP ``2025-11-25`` and ``2026-07-28``
 - bundled Abilities CLI plus the MCP bridge that projects the registry into
   the tool catalog

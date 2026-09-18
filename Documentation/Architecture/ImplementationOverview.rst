@@ -15,6 +15,41 @@ workspaces, TCA, language overlays, and file access.
 For a product-level summary of what this maintained fork adds compared with
 the original upstream line, see :doc:`../Introduction/ForkChanges`.
 
+Design principles
+=================
+
+TYPO3 remains authoritative
+   Record writes go through ``DataHandler``, files through FAL, page
+   language overlays through ``PageRepository``, and table semantics through
+   the Schema API. TCA and the authenticated backend user's permissions
+   decide what a tool may access.
+
+Workspace internals stay transparent
+   Strict mode selects or creates a writable draft; trusted local mode
+   defaults an omitted ``workspace_id`` to live workspace ``0``. Clients only
+   ever see stable live-facing UIDs.
+
+Files have different semantics
+   Physical writes take effect immediately. The MCP sandbox limits write
+   locations in strict mode, backend file mounts apply in every mode, and only
+   file references are workspace-versioned.
+
+Schemas follow the instance
+   Language parameters appear only when meaningful site languages exist, and
+   optional extension data is discovered at runtime. Tool contracts may change
+   within TYPO3 v14 when that improves LLM ergonomics.
+
+Policy is shared
+   Native MCP, CLI, and Abilities projections execute the same governed tools.
+   Local mode relaxes documented workspace, file, and outbound restrictions,
+   never authentication or backend-user permissions.
+
+Local stdio and the host OS boundary
+   ``vendor/bin/typo3 mcp:server`` runs as the OS user that starts it (or
+   inside the DDEV container via ``ddev exec``). TYPO3 permissions do not
+   isolate that PHP process from the rest of the host, so use local stdio on
+   trusted hosts only; see :ref:`installation-local-cli`.
+
 Request flow
 ============
 

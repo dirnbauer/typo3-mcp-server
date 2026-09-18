@@ -7,6 +7,88 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.8.0 - 2026-09-18
+
+Behaviour-preserving overhaul of the fork-only code paths, static analysis at
+level 8 without a baseline, and a rewritten manual. Upstream `main` (`74e8188`)
+was already merged; no new upstream commits existed at release time.
+
+### Changed
+
+- **One upload write path.** `FileUploadService::storeUpload()` validates the
+  name, resolves storage and folder, reserves the randomized name, stores the
+  file, indexes image metadata and applies `sys_file_metadata` for
+  `UploadFile`, `UploadFileFromUrl` and `/mcp_upload` alike. The service also
+  owns `describeUpload()`, `sanitizeMetadata()`, `applyMetadata()`,
+  `withTemporaryFile()` and the size-limited `bufferStreamToFile()`, which
+  replaced three copies of the chunked download/PUT loop. `WriteFileTool` and
+  `AttachImageTool` reuse `resolveStorage()`/`ensureFolder()`.
+- **Tool attributes live on the tool.** `AbstractTool::isAdminOnly()` /
+  `isDevSiteOnly()` read `#[AdminOnly]` / `#[DevSiteOnly]`;
+  `CompatibleToolAdapter` resolves them on the wrapped class, so third-party
+  tools carrying the attributes are now gated at execution time too.
+  `ToolRegistry` stores `AbstractTool` instances and filters dev-site tools
+  through that method; `DevSiteToolService` no longer reads the adapter's
+  private property by reflection.
+- `AbstractTool::createJsonResult()` (invalid UTF-8 substituted, compact JSON)
+  replaces private JSON helpers in `AbstractRecordTool`, `SolrIndexQueue` and
+  the x402 tools. The x402 tools and `SolrIndexQueue` therefore return compact
+  instead of pretty-printed JSON.
+- `SolrIndexQueue` discovers tasks from `tx_scheduler_task` only. It no longer
+  spawns `scheduler:list` (60 s timeout) or parses its text output; `list`
+  results drop the `schedulerList` block and the tool fails closed with a hint
+  when the scheduler table is missing.
+- `CapabilityManifestService` reads the bundled manifest from its fixed path
+  (the `typo3conf/ext` fallback of a TER install this fork never had is gone)
+  and takes tool/prerequisite policy from `x-mcp` only; the top-level
+  `capabilities.tools` / `capabilities.requires` fallbacks were removed.
+- `BackendUserUtility::getUserId()` replaces twenty ad-hoc
+  `$GLOBALS['BE_USER']->user['uid']` extractions in the fork's code paths.
+- `WriteTableTool` uses its injected event dispatcher, `RecordFieldReadConverter`
+  receives `FlexFormService` through DI, `RecordSearchExecutor` uses Doctrine's
+  non-deprecated column introspection.
+- PHPStan runs at level 8 on `Classes`, `Tests/Unit` and `Tests/Architecture`
+  with `phpstan-typo3`, `phpstan-phpunit`, `phpstan-deprecation-rules` and
+  `phpat`; the 745-entry baseline and `phpstan-strict-rules` are gone.
+
+### Added
+
+- Adapted fixes from open upstream pull requests: file fields on nested inline
+  children resolve through the shared DataHandler map (replace, update,
+  delete, deeper nesting); shared inline child tables are scoped by their
+  owning table on read and write; field visibility uses the record's actual
+  page; page moves walk the staged ancestry and reject cycles before any
+  change; a failing online media helper no longer blocks the remaining
+  helpers (warnings carry only the extension and exception class); the idle
+  HTTP session timeout is configurable through `sessionTimeout` (default
+  four hours).
+- `UploadTooLargeException` (a `ValidationException`) for payloads over
+  `maxFileSizeMb`; the upload endpoint maps it to HTTP 413.
+- Tests for the attribute helpers on adapted tools, dev-site filtering in the
+  registry, the missing-manifest and `x-mcp`-only policy cases, and the
+  fail-closed `SolrIndexQueue` list.
+
+### Removed
+
+- `mcp:test` (`McpTestCommand`) duplicated `mcp:tool <Name>`.
+- Unused `TableAccessService` TSconfig helpers, `GetFlexFormSchemaTool::getAvailableFlexForms()`,
+  the `ListTablesTool` `ConnectionPool` and `WriteTableTool`
+  `FileMetadataIndexService` dependencies, and the undefined `$result` branch
+  in `GetFlexFormSchemaTool` (now an explicit exception).
+- `.github/workflows/claude.yml`, `Documentation/Reviews/*.md`,
+  `Documentation/Changelog/Modernization2026.rst`, the committed
+  `.claude/skills` and `.agents/skills` copies of `Resources/Private/Skills`.
+
+### Documentation
+
+- `README.md` is a 110-line overview; the manual gained `Usage/Index.rst`
+  (example session, tool families, files, translations, CLI) and
+  `Developer/Index.rst` (setup, layout, upstream sync, releasing).
+  `Testing/CursorTesting.md` and `Testing/FullFeatureChatbotScript.md` are
+  now reStructuredText pages; `TECHNICAL_OVERVIEW.md` and `CLAUDE.md` point
+  at `Documentation/` and `AGENTS.md`. Stale PHP 8.3 statements were corrected
+  to the required PHP 8.4.
+
 ## 0.7.2 - 2026-09-13
 
 ### Fixed

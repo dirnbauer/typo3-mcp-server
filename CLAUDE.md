@@ -1,11 +1,1 @@
-- This project is about developing the mcp_server typo3 extension, that allows someone without technical knowledge to edit content using LLM's.
-- Run the tests using `composer test`. Test must cover the TYPO3 integration.
-- Run E2E (Playwright) tests using `Build/runTests.sh -s e2e`. This spins up MySQL, TYPO3, and Playwright in Docker containers automatically. If Docker is unavailable, the script falls back to a local mode (host PHP + SQLite + local Playwright); this can also be forced with `-n` / `--no-docker`.
-- Read the TECHNICAL_OVERVIEW.md and documentation in the Documentation/Architecture/ folder to understand important design decisions and implementation details.
-- The Tools for LLMs don't need backwards compatibility. We can completely change parameters or even their names if it better describes them without it being a breaking change.
-- Every Tool (that uses the database) must use TYPO3 Workspaces explicitly. Live data must never be directly edited. However: Ensure that the workspaces are invisible to the MCP client, for example, by only exposing the live id.
-- This MCP does create a Workspace if one doesn't exist. This is intentional and must work even in tests. A mixture of live and workspace data is a real scenario, and the tool results must work as if there are no workspaces.
-- In Tests: check all MCP tool call for failure like this: `$this->assertFalse($result->isError, json_encode($result->jsonSerialize()));`
-- Always check if there is some typo3 core api that can be used for TCA related data actions.
-- If the TYPO3 instance has no language support, then hide all aspects of translation like parameters or even database fields. Check the LanguageService.php to check support.
-- Language overlays use TYPO3's PageRepository API while workspace overlays use custom implementation for transparency (see Documentation/Architecture/LanguageOverlays.rst)
+@AGENTS.md

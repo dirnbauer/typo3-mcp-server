@@ -11,8 +11,8 @@ Installation
 Requirements
 ============
 
-- TYPO3 v14
-- PHP 8.3+
+- TYPO3 ``^14.3``
+- PHP 8.4 or 8.5
 - TYPO3 backend access for the editors who will use MCP
 - TYPO3 Workspaces extension, installed as a dependency
 
@@ -155,8 +155,8 @@ the remote OAuth endpoint.
    with least-privilege OS accounts and without mixing it with production
    secrets or unrestricted terminal access.
 
-   The same topic is covered technically under **Local stdio and the host OS
-   boundary** in ``TECHNICAL_OVERVIEW.md`` (repository root).
+   The request path and the services behind it are described in
+   :doc:`../Architecture/ImplementationOverview`.
 
 .. _installation-cli-mirror:
 

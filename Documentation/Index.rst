@@ -86,6 +86,8 @@ Start here depending on your role:
 - :doc:`Introduction/ForkChanges` for the maintained fork changes
 - :doc:`Introduction/IntendedBehavior` for the explicit intended-behavior spec
 - :doc:`Installation/Index` for Composer installation and first setup
+- :doc:`Usage/Index` for an example session, the tool families, file
+  handling, translations and the CLI mirror
 - :doc:`Configuration/Index` for module, OAuth, workspace, and file sandbox
   configuration
 - :doc:`Configuration/LiveEditsOnDevelopment` for MCP chatbot live vs draft
@@ -95,24 +97,22 @@ Start here depending on your role:
 - :doc:`Architecture/Index` for design decisions, implementation layers, and
   deeper architecture notes
 - :doc:`Integration/Index` for the bundled Abilities registry and its projections
-- :doc:`Changelog/Index` for the complete 2026 modernization record
+- :doc:`Developer/Index` for the development workflow, repository layout,
+  upstream sync and releases
+- :doc:`Changelog/Index` for the current release notes
 - :doc:`Troubleshooting/Index` when something is not working
-
-Further reading
-===============
-
-- :file:`README.md` for the GitHub-facing project overview
-- :file:`TECHNICAL_OVERVIEW.md` for the contributor architecture entry point
 
 .. toctree::
    :maxdepth: 2
 
    Introduction/Index
    Installation/Index
+   Usage/Index
    Configuration/Index
    Tools/Index
    Testing/Index
    Architecture/Index
    Integration/Index
+   Developer/Index
    Changelog/Index
    Troubleshooting/Index

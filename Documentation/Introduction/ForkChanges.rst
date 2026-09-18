@@ -346,7 +346,7 @@ Tests, docs, and quality gates
 The fork adds source documentation and verification around the tool surface:
 
 - ``Documentation/`` contains the TYPO3 reStructuredText manual.
-- ``TECHNICAL_OVERVIEW.md`` links contributors to the canonical architecture manual.
+- :doc:`../Developer/Index` is the contributor entry point.
 - ``CHANGELOG.md`` records fork-level changes.
 - Unit tests cover focused services and runtime behavior.
 - Functional tests cover tool contracts, workspaces, permissions, languages,

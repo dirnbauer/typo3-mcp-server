@@ -41,3 +41,7 @@ Build/Reports/
 
 # Local agent memory
 /memory/
+
+# Output of `mcp:install-editor-skills` (source: Resources/Private/Skills)
+/.claude/skills/
+/.agents/skills/

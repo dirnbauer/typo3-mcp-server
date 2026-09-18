@@ -74,8 +74,7 @@ How it works
 
    **Local stdio** (this maintained line): host security is **not** the same as
    TYPO3 permissions. See :ref:`installation-local-cli` in
-   :doc:`../Installation/Index` and **Local stdio and the host OS boundary** in
-   ``TECHNICAL_OVERVIEW.md`` at the repository root.
+   :doc:`../Installation/Index`.
 
 Core principles
 ===============
@@ -171,7 +170,7 @@ Supported versions
 ==================
 
 - TYPO3 v14
-- PHP 8.3 or higher
+- PHP 8.4 or 8.5
 - MCP ``2025-11-25`` stable and ``2026-07-28`` stateless wire formats
 
 The extension is aligned with TYPO3 v14 and will keep adapting as v14 and MCP
