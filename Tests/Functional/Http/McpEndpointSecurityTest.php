@@ -370,6 +370,34 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
     }
 
+    /**
+     * A browser only lets a client script read response headers that CORS
+     * exposes. Without WWW-Authenticate in that list, a browser-based MCP
+     * client cannot see the resource_metadata and scope of the challenge.
+     * Adapted from upstream branch claude/stoic-brahmagupta-cx7skz (892bd08).
+     */
+    #[Test]
+    public function testBrowserClientCanReadTheAuthenticationChallenge(): void
+    {
+        $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
+        $request = $factory->createServerRequest('POST', 'https://example.org/mcp')
+            ->withHeader('Origin', 'https://example.org');
+        $GLOBALS['TYPO3_REQUEST'] = $request;
+
+        $response = ($this->createEndpoint())($request);
+
+        self::assertSame(401, $response->getStatusCode());
+        self::assertSame('https://example.org', $response->getHeaderLine('Access-Control-Allow-Origin'));
+        self::assertStringContainsString('resource_metadata=', $response->getHeaderLine('WWW-Authenticate'));
+        self::assertContains(
+            'www-authenticate',
+            array_map(
+                static fn(string $header): string => strtolower(trim($header)),
+                explode(',', $response->getHeaderLine('Access-Control-Expose-Headers')),
+            ),
+        );
+    }
+
     #[Test]
     public function testAuthenticationMetadataPreservesHttpDefaultPortOnHttpsUri(): void
     {

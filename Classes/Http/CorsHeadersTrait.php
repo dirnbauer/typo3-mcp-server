@@ -29,7 +29,12 @@ trait CorsHeadersTrait
         'Mcp-Name',
     ];
 
-    /** @var list<string> */
+    /**
+     * WWW-Authenticate carries resource_metadata and scope of a 401/403
+     * challenge; browser clients can only read it when it is exposed.
+     *
+     * @var list<string>
+     */
     private const CORS_EXPOSED_RESPONSE_HEADERS = [
         'Retry-After',
         'Mcp-Session-Id',
@@ -37,6 +42,7 @@ trait CorsHeadersTrait
         'Mcp-Method',
         'Mcp-Name',
         'Content-Type',
+        'WWW-Authenticate',
     ];
 
     /**
