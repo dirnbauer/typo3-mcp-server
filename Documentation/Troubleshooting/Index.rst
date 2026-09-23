@@ -173,6 +173,19 @@ Check:
 - Use ``mcp:tool <ToolName> --params '{...}'`` to call a single tool under the
   same ``_cli_`` identity and isolate the problem.
 
+Rich text with a ``t3://`` link fails over the CLI
+===================================================
+
+Symptom: ``WriteTable`` saves rich text over HTTP, but the same call through
+``mcp:server`` (stdio) or an ``mcp:*`` command failed with "Operation
+failed" while ``security.backend.htmlSanitizeRte`` is enabled.
+
+Since 0.9.2 the write tools publish a request for the site of the written
+record, so this works on every transport. When the result carries
+``siteContext`` with ``"fallback": true``, the record's page is not part of
+any site and the first configured site was used instead: check that the page
+tree the record lives in has a site configuration.
+
 File tools refuse my path
 =========================
 

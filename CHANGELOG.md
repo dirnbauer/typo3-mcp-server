@@ -7,6 +7,50 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.2 - 2026-09-23
+
+### Fixed
+
+- **Rich text with `t3://` links over the CLI and stdio transports.** With
+  `security.backend.htmlSanitizeRte` enabled, DataHandler's RTE sanitizer
+  needs a PSR-7 request, and the `mcp:*` commands and `mcp:server` had none:
+  WriteTable, BulkWrite, ImportContent, ImportFromUrl and CopyContent (with
+  overrides) failed with "Operation failed". These tools now publish a
+  request for the site of the written record while they run: the site
+  `SiteFinder::getSiteByPageId()` finds for the record's page (the target
+  page on create, the stored pid on update, the page itself for `pages`),
+  on the base of that site's default language. A record on a page outside
+  every site falls back to the first site, and the result says so in
+  `siteContext`. The request is removed after the call, so the stdio server
+  never carries one call's site into the next (`SiteRequestContext`,
+  `SiteRequestAwareToolInterface`).
+- Over HTTP the same tools saw the `/mcp` endpoint's frontend-stack request
+  since 0.9.0, which switched FileRepository and the storages to frontend
+  behaviour in the middle of a backend-user write: updating a live file
+  reference of a nested inline child in a workspace failed. The tools now
+  see that request as a backend request; the endpoint gets its own request
+  back afterwards.
+
+### Changed
+
+- **FlexForm updates merge.** An update used to replace every stored
+  setting with the ones sent. Now fields that are sent are set, fields that
+  are not sent keep their value and sheet, and a field sent as `null` is
+  removed (a `null` group such as `{"settings": {"media": null}}` removes
+  every field below it). A value an older write stored in the wrong sheet
+  moves to the sheet its DataStructure declares (#131). A FlexForm XML
+  string still replaces the whole value. Documented in the WriteTable tool
+  description and the manual.
+
+### Removed
+
+- `ext_emconf.php`, also in the two test fixture extensions. The fork is
+  distributed through Composer and Git only, and TYPO3 v14 reads the
+  metadata from `composer.json`: `extra.typo3/cms.version` and an empty
+  `extra.typo3/cms.Package.providesPackages` (deprecation #108345), the
+  title from the `"MCP Server - …"` description. The former `beta` state
+  label is gone; the 0.x version says the same.
+
 ## 0.9.1 - 2026-09-23
 
 ### Fixed

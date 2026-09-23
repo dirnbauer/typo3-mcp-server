@@ -9,6 +9,17 @@ Changelog
 The complete release history lives in :file:`CHANGELOG.md` at the repository
 root (Keep a Changelog format). This page summarizes the current release.
 
+0.9.2 - 2026-09-23
+==================
+
+- Rich text with ``t3://`` links saves over the CLI commands and the stdio
+  server: the write tools publish a request for the site of the written
+  record (fallback to the first site, reported in ``siteContext``). Over
+  HTTP the tools see the endpoint's request as a backend request, which fixes
+  updates of live file references on nested inline children in a workspace.
+- FlexForm updates merge into the stored settings; ``null`` removes a field.
+- :file:`ext_emconf.php` is gone; the metadata lives in :file:`composer.json`.
+
 0.9.1 - 2026-09-23
 ==================
 

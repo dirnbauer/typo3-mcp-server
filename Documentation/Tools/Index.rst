@@ -489,6 +489,23 @@ Important behavior:
   relation list, so include existing child UIDs to retain them
 - update payloads can use structured search-and-replace operations for text
   fields
+- FlexForm fields (for example ``pi_flexform``) take a JSON object with
+  nested or dotted keys (``{"settings": {"orderBy": "datetime"}}`` or
+  ``{"settings.orderBy": "datetime"}``). Every value is stored in the sheet
+  its DataStructure declares. On ``update`` the object is merged into the
+  stored value: fields that are sent are set, fields that are not sent keep
+  their value, and a field sent as ``null`` is removed
+  (``{"settings": {"limit": null}}``). A ``null`` group such as
+  ``{"settings": {"media": null}}`` removes every field below it. A list of
+  scalars is stored comma-separated; send ``""`` to clear a multi-value field.
+  A FlexForm XML string is stored as it is and replaces the whole value
+- over the CLI commands and the stdio server there is no HTTP request, yet
+  TYPO3 checks rich-text links (for example ``t3://page?uid=42``) against
+  one when ``security.backend.htmlSanitizeRte`` is enabled. The write tools
+  then use a request for the site of the written record (its page, that
+  site's base and default language). A record on a page outside every site
+  uses the first configured site, and the result says so in
+  ``siteContext``
 - translation creates language overlays from default-language source records
 - the ``translate`` response includes ``translationUid`` (live UID),
   ``targetLanguage`` (ISO code from the owning site, not a first-wins guess),
