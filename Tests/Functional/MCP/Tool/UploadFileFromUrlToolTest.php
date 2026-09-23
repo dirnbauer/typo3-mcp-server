@@ -8,6 +8,11 @@ use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
 use Hn\McpServer\MCP\Tool\AbstractTool;
 use Hn\McpServer\MCP\Tool\File\UploadFileFromUrlTool;
+use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\FileUploadService;
+use Hn\McpServer\Service\LocalModeService;
+use Hn\McpServer\Service\McpFileSandboxService;
+use Hn\McpServer\Service\OutboundUrlGuardService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Fixtures\ThrowingOnlineMediaHelper;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,6 +21,7 @@ use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\Stream;
+use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
 
 /**
  * SSRF and URL validation for UploadFileFromUrl (no outbound HTTP required).
@@ -281,26 +287,26 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
         self::assertInstanceOf(UploadFileFromUrlTool::class, $registeredTool);
 
         return new UploadFileFromUrlTool(
-            $this->readToolDependency($registeredTool, 'fileSandboxService'),
+            $this->readToolDependency($registeredTool, 'fileSandboxService', McpFileSandboxService::class),
             $requestFactory,
-            $this->readToolDependency($registeredTool, 'capabilityManifest'),
-            $this->readToolDependency($registeredTool, 'localMode'),
-            $this->readToolDependency($registeredTool, 'outboundUrlGuard'),
-            $this->readToolDependency($registeredTool, 'fileUploadService'),
-            $this->readToolDependency($registeredTool, 'onlineMediaHelperRegistry'),
+            $this->readToolDependency($registeredTool, 'capabilityManifest', CapabilityManifestService::class),
+            $this->readToolDependency($registeredTool, 'localMode', LocalModeService::class),
+            $this->readToolDependency($registeredTool, 'outboundUrlGuard', OutboundUrlGuardService::class),
+            $this->readToolDependency($registeredTool, 'fileUploadService', FileUploadService::class),
+            $this->readToolDependency($registeredTool, 'onlineMediaHelperRegistry', OnlineMediaHelperRegistry::class),
         );
     }
 
     /**
      * @template T of object
+     * @param class-string<T> $type
      * @return T
      */
-    private function readToolDependency(UploadFileFromUrlTool $tool, string $property): object
+    private function readToolDependency(UploadFileFromUrlTool $tool, string $property, string $type): object
     {
         $reflection = new \ReflectionProperty($tool, $property);
         $value = $reflection->getValue($tool);
-        self::assertIsObject($value);
-        /** @var T $value */
+        self::assertInstanceOf($type, $value);
         return $value;
     }
 }

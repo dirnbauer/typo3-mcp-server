@@ -69,7 +69,6 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $container = $this->getContainer();
         $service = $container->get(LanguageService::class);
-        assert($service instanceof LanguageService);
         $this->languageService = $service;
     }
 
@@ -201,8 +200,9 @@ abstract class AbstractFunctionalTest extends FunctionalTestCase
     protected function getService(string $className): object
     {
         $service = $this->getContainer()->get($className);
-        assert($service instanceof $className);
-        /** @var T $service */
+        if (!$service instanceof $className) {
+            throw new \LogicException(sprintf('The container returned %s for %s.', get_debug_type($service), $className));
+        }
         return $service;
     }
 }

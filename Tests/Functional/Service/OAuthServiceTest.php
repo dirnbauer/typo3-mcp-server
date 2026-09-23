@@ -29,7 +29,6 @@ final class OAuthServiceTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         $service = $this->getContainer()->get(OAuthService::class);
-        assert($service instanceof OAuthService);
         $this->service = $service;
     }
 

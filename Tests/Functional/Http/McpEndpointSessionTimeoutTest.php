@@ -12,7 +12,6 @@ use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
@@ -208,7 +207,6 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
     {
         $container = $this->getContainer();
         $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
-        assert($logger instanceof LoggerInterface);
 
         return new McpEndpoint(
             $logger,

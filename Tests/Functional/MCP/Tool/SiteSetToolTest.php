@@ -127,7 +127,6 @@ final class SiteSetToolTest extends AbstractFunctionalTest
 
     private function getSiteConfigPath(string $identifier): string
     {
-        /** @var SiteConfiguration $siteConfiguration */
         $siteConfiguration = $this->getService(SiteConfiguration::class);
         $paths = $siteConfiguration->getAllSiteConfigurationPaths();
         self::assertArrayHasKey($identifier, $paths);

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 
 use Hn\McpServer\MCP\Tool\Record\ImportFromUrlTool;
+use Hn\McpServer\Service\CapabilityManifestService;
+use Hn\McpServer\Service\LocalModeService;
+use Hn\McpServer\Service\OutboundUrlGuardService;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
@@ -89,9 +92,9 @@ final class ImportFromUrlToolTest extends AbstractFunctionalTest
             $this->getService(TableAccessService::class),
             $this->getService(WorkspaceContextService::class),
             $requestFactory,
-            $this->readToolDependency('capabilityManifest'),
-            $this->readToolDependency('localMode'),
-            $this->readToolDependency('outboundUrlGuard'),
+            $this->readToolDependency('capabilityManifest', CapabilityManifestService::class),
+            $this->readToolDependency('localMode', LocalModeService::class),
+            $this->readToolDependency('outboundUrlGuard', OutboundUrlGuardService::class),
         );
         $result = $tool->execute([
             'url' => 'https://93.184.216.34/article',
@@ -121,9 +124,9 @@ final class ImportFromUrlToolTest extends AbstractFunctionalTest
             $this->getService(TableAccessService::class),
             $this->getService(WorkspaceContextService::class),
             $requestFactory,
-            $this->readToolDependency('capabilityManifest'),
-            $this->readToolDependency('localMode'),
-            $this->readToolDependency('outboundUrlGuard'),
+            $this->readToolDependency('capabilityManifest', CapabilityManifestService::class),
+            $this->readToolDependency('localMode', LocalModeService::class),
+            $this->readToolDependency('outboundUrlGuard', OutboundUrlGuardService::class),
         );
         $result = $tool->execute([
             'url' => 'https://93.184.216.34/oversized',
@@ -134,11 +137,16 @@ final class ImportFromUrlToolTest extends AbstractFunctionalTest
         self::assertStringContainsString('exceeds maximum size', $this->getFirstTextContent($result));
     }
 
-    private function readToolDependency(string $property): object
+    /**
+     * @template T of object
+     * @param class-string<T> $type
+     * @return T
+     */
+    private function readToolDependency(string $property, string $type): object
     {
         $reflection = new \ReflectionProperty($this->tool, $property);
         $value = $reflection->getValue($this->tool);
-        self::assertIsObject($value);
+        self::assertInstanceOf($type, $value);
         return $value;
     }
 }

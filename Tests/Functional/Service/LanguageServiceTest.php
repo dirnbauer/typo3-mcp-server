@@ -32,7 +32,6 @@ class LanguageServiceTest extends FunctionalTestCase
 
         // Initialize the language service
         $service = $this->getContainer()->get(LanguageService::class);
-        assert($service instanceof LanguageService);
         $this->languageService = $service;
     }
 

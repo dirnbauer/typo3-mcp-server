@@ -18,7 +18,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
@@ -60,7 +59,6 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
 
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $backendUser = $this->setUpBackendUser(1);
-        assert($backendUser instanceof BackendUserAuthentication);
         $GLOBALS['BE_USER'] = $backendUser;
 
         $this->originalMcpExtensionSettings = is_array($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] ?? null)
@@ -79,7 +77,6 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
     {
         $container = $this->getContainer();
         $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
-        assert($logger instanceof LoggerInterface);
 
         $oauthService = $container->get(OAuthService::class);
         $connectionPool = $container->get(ConnectionPool::class);
@@ -235,7 +232,6 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
         $factory = GeneralUtility::makeInstance(ServerRequestFactory::class);
         $request = $factory->createServerRequest('POST', 'https://example.org/mcp');
         $oauthService = $this->getContainer()->get(OAuthService::class);
-        assert($oauthService instanceof OAuthService);
         $token = $oauthService->createDirectAccessToken(1, 'content-type-test', $request);
 
         $body = new Stream('php://temp', 'rw');
@@ -535,7 +531,6 @@ final class McpEndpointSecurityTest extends FunctionalTestCase
     {
         $serializedUc = serialize(['lang' => 'de']);
         $connectionPool = $this->getContainer()->get(ConnectionPool::class);
-        assert($connectionPool instanceof ConnectionPool);
         $connectionPool
             ->getConnectionForTable('be_users')
             ->update('be_users', ['uc' => $serializedUc], ['uid' => 1]);

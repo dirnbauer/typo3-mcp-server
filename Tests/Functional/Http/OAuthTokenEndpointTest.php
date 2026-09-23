@@ -27,7 +27,6 @@ final class OAuthTokenEndpointTest extends AbstractFunctionalTest
         parent::setUp();
 
         $service = $this->getContainer()->get(OAuthService::class);
-        assert($service instanceof OAuthService);
         $this->oauthService = $service;
     }
 

@@ -21,8 +21,9 @@ trait GetServiceTrait
     protected function getService(string $className): object
     {
         $service = $this->getContainer()->get($className);
-        assert($service instanceof $className);
-        /** @var T $service */
+        if (!$service instanceof $className) {
+            throw new \LogicException(sprintf('The container returned %s for %s.', get_debug_type($service), $className));
+        }
         return $service;
     }
 }

@@ -16,7 +16,6 @@ use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Mcp\Types\MetaKeys;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
@@ -213,7 +212,6 @@ final class AbilityToolBridgeTest extends AbstractFunctionalTest
     {
         $container = $this->getContainer();
         $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
-        assert($logger instanceof LoggerInterface);
 
         return new McpEndpoint(
             $logger,

@@ -13,9 +13,7 @@ use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\MetaKeys;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -55,7 +53,6 @@ final class McpEndpointProtocolTest extends FunctionalTestCase
         $this->previousRequest = $GLOBALS['TYPO3_REQUEST'] ?? null;
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $backendUser = $this->setUpBackendUser(1);
-        assert($backendUser instanceof BackendUserAuthentication);
         $GLOBALS['BE_USER'] = $backendUser;
 
         $this->originalMcpExtensionSettings = is_array($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server'] ?? null)
@@ -283,7 +280,6 @@ final class McpEndpointProtocolTest extends FunctionalTestCase
     {
         $container = $this->getContainer();
         $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
-        assert($logger instanceof LoggerInterface);
 
         return new McpEndpoint(
             $logger,

@@ -32,7 +32,6 @@ final class SiteInformationServiceTest extends FunctionalTestCase
         $this->createRelativeBaseSiteConfiguration();
 
         $service = $this->getContainer()->get(SiteInformationService::class);
-        assert($service instanceof SiteInformationService);
         $this->service = $service;
     }
 

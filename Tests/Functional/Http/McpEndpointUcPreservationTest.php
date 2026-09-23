@@ -12,9 +12,7 @@ use Hn\McpServer\Service\SiteBaseUrlResolver;
 use Hn\McpServer\Service\WorkspaceContextService;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -57,7 +55,6 @@ final class McpEndpointUcPreservationTest extends FunctionalTestCase
         $this->previousRequest = $GLOBALS['TYPO3_REQUEST'] ?? null;
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/be_users.csv');
         $backendUser = $this->setUpBackendUser(1);
-        assert($backendUser instanceof BackendUserAuthentication);
         $GLOBALS['BE_USER'] = $backendUser;
     }
 
@@ -119,7 +116,6 @@ final class McpEndpointUcPreservationTest extends FunctionalTestCase
             ->createServerRequest('POST', 'https://example.org/mcp', ['REMOTE_ADDR' => '198.51.100.80']);
 
         $oauthService = $this->getContainer()->get(OAuthService::class);
-        assert($oauthService instanceof OAuthService);
         $accessToken = $oauthService->createDirectAccessToken(1, 'uc-preservation-test', $request);
 
         $body = new Stream('php://temp', 'rw');
@@ -140,18 +136,12 @@ final class McpEndpointUcPreservationTest extends FunctionalTestCase
     {
         $container = $this->getContainer();
         $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(McpEndpoint::class);
-        assert($logger instanceof LoggerInterface);
 
         $oauthService = $container->get(OAuthService::class);
-        assert($oauthService instanceof OAuthService);
         $connectionPool = $container->get(ConnectionPool::class);
-        assert($connectionPool instanceof ConnectionPool);
         $workspaceContextService = $container->get(WorkspaceContextService::class);
-        assert($workspaceContextService instanceof WorkspaceContextService);
         $languageServiceFactory = $container->get(LanguageServiceFactory::class);
-        assert($languageServiceFactory instanceof LanguageServiceFactory);
         $rateLimiterFactory = $container->get(RateLimiterFactory::class);
-        assert($rateLimiterFactory instanceof RateLimiterFactory);
 
         return new McpEndpoint(
             $logger,

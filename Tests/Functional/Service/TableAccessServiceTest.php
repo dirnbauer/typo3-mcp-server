@@ -29,7 +29,6 @@ final class TableAccessServiceTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         $service = $this->getContainer()->get(TableAccessService::class);
-        assert($service instanceof TableAccessService);
         $this->service = $service;
     }
 
