@@ -416,4 +416,73 @@ class GetPageTreeToolTest extends FunctionalTestCase
         // Verify record counts are included (page 1 has 3 content elements)
         self::assertStringContainsString('[tt_content: 3]', $content);
     }
+
+    /**
+     * Below the first layer, a parent shows at most ten subpages and says how
+     * many it has. From upstream hauptsacheNet/typo3-mcp-server#20.
+     */
+    public function testSubpageTruncation(): void
+    {
+        $this->insertPage(2000, 0, 'Truncation Test Root');
+        $this->insertPage(2001, 2000, 'Parent With Many Children');
+        for ($i = 1; $i <= 15; $i++) {
+            $this->insertPage(2100 + $i, 2001, 'Child ' . $i, $i * 100);
+        }
+
+        $result = $this->getService(GetPageTreeTool::class)->execute([
+            'startPage' => 2000,
+            'depth' => 2,
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $content = $result->content[0]->text;
+        self::assertStringContainsString('[2001] Parent With Many Children', $content);
+        for ($i = 1; $i <= 10; $i++) {
+            self::assertStringContainsString('[' . (2100 + $i) . '] Child ' . $i . ' ', $content);
+        }
+        for ($i = 11; $i <= 15; $i++) {
+            self::assertStringNotContainsString('[' . (2100 + $i) . '] Child ' . $i . ' ', $content);
+        }
+        self::assertStringContainsString('showing 10 of 15 subpages', $content);
+        self::assertStringContainsString('use GetPageTree with startPage: 2001 to see all', $content);
+    }
+
+    /**
+     * The direct children of the start page are never truncated.
+     * From upstream hauptsacheNet/typo3-mcp-server#20.
+     */
+    public function testFirstLayerNotTruncated(): void
+    {
+        $this->insertPage(3000, 0, 'First Layer Test Root');
+        for ($i = 1; $i <= 15; $i++) {
+            $this->insertPage(3000 + $i, 3000, 'First Layer Child ' . $i, $i * 100);
+        }
+
+        $result = $this->getService(GetPageTreeTool::class)->execute([
+            'startPage' => 3000,
+            'depth' => 1,
+        ]);
+
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $content = $result->content[0]->text;
+        for ($i = 1; $i <= 15; $i++) {
+            self::assertStringContainsString('[' . (3000 + $i) . '] First Layer Child ' . $i . ' ', $content);
+        }
+        self::assertStringNotContainsString('showing', $content);
+        self::assertStringNotContainsString('to see all', $content);
+    }
+
+    private function insertPage(int $uid, int $pid, string $title, int $sorting = 0): void
+    {
+        $this->getService(ConnectionPool::class)->getConnectionForTable('pages')->insert('pages', [
+            'uid' => $uid,
+            'pid' => $pid,
+            'title' => $title,
+            'doktype' => 1,
+            'slug' => '/page-' . $uid,
+            'sorting' => $sorting,
+            'tstamp' => time(),
+            'crdate' => time(),
+        ]);
+    }
 }
