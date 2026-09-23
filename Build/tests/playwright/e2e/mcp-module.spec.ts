@@ -96,6 +96,8 @@ test.describe('MCP Server Backend Module', () => {
   });
 
   test('copy elements exist', async () => {
-    await expect(frame.locator('typo3-copy-to-clipboard').first()).toBeVisible({ timeout: 10000 });
+    // Scoped to the module: the docheader's shortcut dropdown carries its
+    // own, hidden <typo3-copy-to-clipboard> ("Copy URL of this record").
+    await expect(frame.locator('#mcp-tab-setup typo3-copy-to-clipboard').first()).toBeVisible({ timeout: 10000 });
   });
 });

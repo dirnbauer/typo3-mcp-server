@@ -242,5 +242,7 @@ Current test cases
    Filters for ``readtable`` and for a term without a match.
 
 ``copy elements exist``
-   Confirms that a ``typo3-copy-to-clipboard`` element is rendered.
+   Confirms that the setup tab renders a visible ``typo3-copy-to-clipboard``
+   element. The locator is scoped to ``#mcp-tab-setup`` because the docheader's
+   shortcut dropdown contains a hidden one of its own.
 
