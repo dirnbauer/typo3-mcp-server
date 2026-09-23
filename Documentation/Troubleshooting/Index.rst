@@ -301,16 +301,17 @@ Full guide: :ref:`configuration-live-edits-production-override` in
 The backend module tabs do nothing
 ==================================
 
-Symptom: clicking client-setup tabs in :guilabel:`User > MCP Server` does
-not switch the content.
+Symptom: the tabs or client panels in :guilabel:`User > MCP Server` do not
+switch, or the token buttons do nothing.
 
-Check:
+Tabs and panels are core elements (``@typo3/backend/tab.js``, Bootstrap
+collapse); the token actions live in
+``Resources/Public/JavaScript/mcp-module.js``. Check:
 
-- Clear the browser cache. The custom tab implementation lives in
-  ``Resources/Public/JavaScript/mcp-module.js`` and may be cached
-  aggressively by a CDN.
-- Run :guilabel:`Maintenance > Flush TYPO3 and PHP Cache` — the
-  JS module uses a hashed identifier that needs a fresh asset manifest.
+- the browser console for a module that failed to load,
+- :guilabel:`Maintenance > Flush TYPO3 and PHP Cache`, so the import map and
+  the ``~labels/mcp_server.mod`` label module are rebuilt,
+- a CDN or proxy that caches ``/_assets/`` without the cache-busting query.
 
 Still stuck?
 ============

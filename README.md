@@ -36,7 +36,7 @@ by Marco Pfeiffer.
 | TYPO3 | `^14.3` (`cms-core`, `cms-backend`, `cms-workspaces`) |
 | PHP | `^8.4` (tested on 8.4 and 8.5) |
 | MCP SDK | `logiscape/mcp-sdk-php ^2.0` |
-| Abilities | `webconsulting/typo3-abilities ^1.0` (VCS repository, see below) |
+| Abilities | `webconsulting/typo3-abilities ^1.2` (VCS repository, see below) |
 
 ## Install
 
@@ -50,9 +50,10 @@ Distribution is Composer/Git only — there is no TER release.
 
 ## Configure
 
-Open **User → MCP Server** in the backend: it shows the endpoint URL, one-click
-Cursor setup, ready-to-paste configs for Claude Desktop, n8n, Manus and the MCP
-Inspector, health checks and token management. Extension settings
+Open **User → MCP Server** in the backend: the endpoint URL with setup steps
+for Claude, Cursor and Codex, your access tokens, a server-side connection
+check and the list of tools a client is offered (English and German, light and
+dark mode). Extension settings
 (`fileSandboxRoot`, `maxFileSizeMb`, `localUnsafeMode`, `allowedOrigins`,
 `enforceCapabilityManifest`, `sessionTimeout`, …) are documented in
 [Configuration](Documentation/Configuration/Index.rst); hardening means deleting

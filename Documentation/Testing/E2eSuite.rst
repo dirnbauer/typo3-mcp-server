@@ -213,29 +213,34 @@ therefore use ``page.locator('.modal')`` instead of ``frame.locator()``.
 Current test cases
 ==================
 
-``module page loads with expected sections``
-   Verifies that ``#mcpSetupTabs`` and ``#tokens-container`` are present.
+``module page loads with its four sections``
+   Checks the ``<h1>``, the four tabs of ``#mcp-module-tabs`` and the server
+   URL field.
 
-``tab navigation works``
-   Clicks ``#local-mcp-remote-tab``, ``#local-cli-tab``, and
-   ``#remote-setup-tab`` and verifies that the matching panels become visible.
+``tabs and client panels switch``
+   Opens the connection check (``#mcp-tab-check-tab``) and the setup tab
+   again, then expands the Cursor and Codex panels and checks the generated
+   configuration.
 
-``create token via central button shows name modal then token modal``
-   Creates a token named ``test-token``, verifies the "Token Created" modal,
-   checks that the shown token is a 64-character hexadecimal value, closes the
-   modal, and confirms that ``test-token`` appears in the token table.
+``create token from the docheader shows the name modal, then the token once``
+   Uses the docheader button, names the token, checks the "Access token
+   created" modal (64-character hexadecimal token, copy element), closes it
+   and finds the token in ``#mcp-tokens-table``.
 
-``revoke token shows confirmation modal``
-   Uses an existing token when available. If no token exists, the test skips
-   itself. Otherwise it opens the revoke confirmation modal and cancels it.
+``an empty token name is rejected in the modal``
+   Submits the name modal empty and expects ``aria-invalid`` on the field.
 
-``refresh tokens button works``
-   Clicks ``#refresh-tokens-btn`` and verifies that the token container remains
-   visible after the AJAX refresh.
+``revoke token asks for confirmation``
+   Uses an existing token when available (skips otherwise), opens the
+   confirmation modal and cancels it.
 
-``endpoint status indicators exist``
-   Confirms that at least one ``.endpoint-status`` indicator is rendered.
+``connection check lists every check and can run again``
+   Expects ten rows in ``#diagnostics-table-body`` before and after
+   :guilabel:`Run checks again`.
 
-``copy buttons exist``
-   Confirms that at least one setup copy button is rendered.
+``tool filter narrows the tool list``
+   Filters for ``readtable`` and for a term without a match.
+
+``copy elements exist``
+   Confirms that a ``typo3-copy-to-clipboard`` element is rendered.
 

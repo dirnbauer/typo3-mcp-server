@@ -50,7 +50,7 @@ Repository layout
      Capabilities.yaml   subsystems, per-tool requirements, outbound policy
      Services.yaml       DI, console.command and listener registration
    Documentation/    this manual (reStructuredText)
-   Resources/        module template, CSS/JS, XLIFF labels, bundled skills
+   Resources/        module templates and JavaScript, XLIFF labels (en, de), bundled skills
    Tests/            Unit, Functional, Architecture (phpat), Llm
 
 .. _developer-rules:

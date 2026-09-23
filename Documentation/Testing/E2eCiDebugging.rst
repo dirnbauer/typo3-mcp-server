@@ -15,8 +15,8 @@ GitHub Actions
 ==============
 
 The workflow job is named ``E2E Tests`` in :file:`.github/workflows/tests.yml`.
-It runs on ``ubuntu-latest`` with PHP 8.4, Node.js 22, SQLite, and Playwright
-1.52.0.
+It runs on ``ubuntu-latest`` with PHP 8.4, Node.js 24, SQLite, and Playwright
+1.63.0.
 
 The CI job performs these steps:
 
@@ -118,8 +118,8 @@ Local no-Docker mode depends on browser libraries being present on the machine
 that runs Playwright. If Chromium cannot start, install Playwright's browser
 dependencies for the local environment, or use Docker mode.
 
-Node.js should satisfy the range in :file:`Build/package.json`:
-``>=22.18.0 <23.0.0``. CI uses Node.js 22.
+Node.js should satisfy the range in :file:`Build/package.json`
+(``>=22.18.0``); :file:`Build/.nvmrc` and CI use Node.js 24.
 
 The local web server is temporary and is stopped by the cleanup trap in
 :file:`Build/runTests.sh`. If a run is interrupted and port ``8080`` remains

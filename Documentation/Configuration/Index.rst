@@ -11,8 +11,10 @@ Configuration
 Backend module
 ==============
 
-Open :guilabel:`User > MCP Server` to inspect the endpoint URL, OAuth
-discovery health, client setup, token management, and workspace warnings.
+Open :guilabel:`User > MCP Server` for the endpoint URL and client setup, the
+access tokens of your backend user, the connection check (OAuth discovery,
+Authorization header, workspaces, reachability) and the list of tools a
+client is offered.
 
 Remote requests are bound to the authenticated TYPO3 backend user. The
 extension creates only an in-memory request session for TYPO3 internals; it

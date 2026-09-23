@@ -53,47 +53,37 @@ versions before updating the SDK; see :doc:`../Testing/ProtocolCompatibility`.
 First backend check
 ===================
 
-Open the backend module and verify that you can see:
+Open :guilabel:`User > MCP Server`. The module has four tabs:
 
-- the MCP endpoint URL
-- the main connection setup tabs
-- the remote client setup tabs
-- the active token management area
-- endpoint status indicators for MCP and OAuth discovery URLs
+:guilabel:`Connect a client`
+   The MCP endpoint URL with a copy button, and collapsible setup steps for
+   Claude (remote, OAuth), Cursor and Codex (local stdio). When a connection
+   check fails, the tab starts with a pointer to it.
+:guilabel:`Access tokens`
+   The tokens of *your* backend user: name, creation, last use and expiry,
+   with revoke and revoke-all. :guilabel:`Create access token` in the
+   docheader mints a token for clients that cannot run OAuth; the plaintext
+   is shown exactly once.
+:guilabel:`Connection check`
+   Server-side checks of the site URL, the MCP endpoint, both OAuth discovery
+   documents, the Authorization header, workspaces, tools, the local CLI,
+   internet reachability and your tokens. Each failing check says what to do
+   and how to verify it; :guilabel:`Run checks again` repeats them.
+:guilabel:`Tools`
+   Every tool a connected client is offered, with a filter and badges for
+   read-only tools, tools that change data, administrator-only and
+   development-only tools.
 
-Backend module setup
-====================
-
-The backend module is designed around the most common connection flow first.
-
-At the top of the page you get:
-
-- the remote MCP server URL
-- a copy button for the server URL
-- endpoint health checks for the MCP and OAuth discovery URLs
-
-The client chooser then provides focused setup steps for:
-
-- Claude Desktop
-- n8n
-- Manus
-- MCP Inspector
-- other MCP clients
-
-Separate top-level tabs also cover:
-
-- Remote MCP Setup
-- Local Setup (mcp-remote)
-- Local Setup (TYPO3 CLI)
+The module is available in English and German and follows the backend's light
+and dark mode.
 
 The common path is:
 
 1. Open :guilabel:`User > MCP Server`.
 2. Copy the server URL.
-3. Choose your client tab.
-4. Follow the short client-specific setup.
-5. Complete OAuth in TYPO3, or create a direct-access token for clients such as
-   n8n or Manus.
+3. Open the panel of your client and follow its steps.
+4. Complete OAuth in TYPO3, or create an access token for a client that
+   cannot sign in itself.
 
 .. _installation-connection-options:
 

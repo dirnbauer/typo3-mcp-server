@@ -328,15 +328,19 @@ checks still apply.
 Backend module and localization
 ===============================
 
-The backend module was expanded into an operator-facing setup UI:
+The backend module is an operator-facing setup UI built from TYPO3 v14 core
+patterns (Module layout, docheader actions, core tabs, panels, infoboxes,
+``table-fit`` tables, ``<typo3-copy-to-clipboard>``) without an own stylesheet:
 
-- Remote and local client setup instructions are rendered from the module.
+- Remote (Claude) and local (Cursor, Codex) client setup instructions.
 - Cursor local stdio setup preserves stdin and supports DDEV project execution.
-- Token creation and revocation happen inside the module.
+- Token creation and revocation happen inside the module; the token list and
+  the connection check are Fluid partials that the AJAX refreshes re-render.
 - Health checks report endpoint reachability, OAuth metadata, tool count,
   local CLI availability, workspace state, and token state.
-- Module labels were migrated to XLIFF 2 with ICU-style messages and German
-  translations.
+- A tools tab lists what connected clients are offered.
+- Labels are XLIFF 2 with ICU messages in English and German; the JavaScript
+  reads them from the v14 ``~labels/mcp_server.mod`` module.
 
 .. _fork-changes-quality:
 
