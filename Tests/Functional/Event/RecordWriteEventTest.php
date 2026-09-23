@@ -10,6 +10,7 @@ use Hn\McpServer\MCP\Tool\Record\ReadTableTool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -96,6 +97,7 @@ class RecordWriteEventTest extends AbstractFunctionalTest
 
         // Register test listeners in the DI container so ListenerProvider can resolve them
         $container = GeneralUtility::getContainer();
+        self::assertInstanceOf(ContainerInterface::class, $container, 'Test listeners are registered as synthetic services');
         $container->set(BeforeRecordWriteTestListener::class, new BeforeRecordWriteTestListener());
         $container->set(AfterRecordWriteTestListener::class, new AfterRecordWriteTestListener());
 

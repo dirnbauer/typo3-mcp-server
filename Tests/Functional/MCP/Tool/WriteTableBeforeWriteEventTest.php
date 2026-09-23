@@ -8,6 +8,7 @@ use Hn\McpServer\Event\BeforeRecordWriteEvent;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use Hn\McpServer\Tests\Functional\Traits\McpAssertionsTrait;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -48,6 +49,7 @@ final class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
         $reroutedPid = 2;  // "About"
 
         $container = GeneralUtility::getContainer();
+        self::assertInstanceOf(ContainerInterface::class, $container, 'Test listeners are registered as synthetic services');
         $container->set(ReroutePidListener::class, new ReroutePidListener($reroutedPid));
         $container->get(ListenerProvider::class)->addListener(BeforeRecordWriteEvent::class, ReroutePidListener::class);
 

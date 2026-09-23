@@ -267,32 +267,6 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
     }
 
     /**
-     * Helper method to build WHERE clause from array structure
-     */
-    protected function buildWhereClause(array $where): string
-    {
-        if (isset($where['type']) && $where['type'] === 'AND') {
-            $conditions = [];
-            foreach ($where['conditions'] as $condition) {
-                if (isset($condition['type']) && $condition['type'] === 'OR') {
-                    $orConditions = [];
-                    foreach ($condition['conditions'] as $orCond) {
-                        $orConditions[] = sprintf(
-                            "%s %s '%s'",
-                            $orCond['field'],
-                            $orCond['operator'],
-                            $orCond['value'],
-                        );
-                    }
-                    $conditions[] = '(' . implode(' OR ', $orConditions) . ')';
-                }
-            }
-            return implode(' AND ', $conditions);
-        }
-        return '1=1';
-    }
-
-    /**
      * Test handling of query complexity limits
      */
     public function testQueryComplexityLimits(): void
@@ -332,25 +306,16 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
     }
 
     /**
-     * Flatten the nested AND/OR test structure into the ReadTable filters format.
+     * Flatten the AND-of-OR-groups test structure into the ReadTable filters format.
      *
-     * @param array{type: string, conditions: array<mixed>} $structure
-     * @return list<array{field: string, operator: string, value?: mixed}>
+     * @param array{type: string, conditions: list<array{type: string, conditions: list<array{field: string, operator: string, value: string}>}>} $structure
+     * @return list<array{field: string, operator: string, value: string}>
      */
     private function buildFiltersFromStructure(array $structure): array
     {
         $filters = [];
-        foreach ($structure['conditions'] as $condition) {
-            if (!is_array($condition)) {
-                continue;
-            }
-            if (isset($condition['conditions'])) {
-                foreach ($this->buildFiltersFromStructure($condition) as $inner) {
-                    $filters[] = $inner;
-                }
-                continue;
-            }
-            if (isset($condition['field'], $condition['operator'])) {
+        foreach ($structure['conditions'] as $group) {
+            foreach ($group['conditions'] as $condition) {
                 $filters[] = $condition;
             }
         }

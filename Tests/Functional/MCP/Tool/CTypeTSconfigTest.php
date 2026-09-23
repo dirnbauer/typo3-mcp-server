@@ -95,7 +95,9 @@ class CTypeTSconfigTest extends FunctionalTestCase
         // Find the line that introduces the CType field — it carries the
         // [Options: ...] block listing allowed values. Removed CTypes must not appear.
         $ctypeLine = null;
-        foreach (preg_split('/\r?\n/', $content) as $line) {
+        $lines = preg_split('/\r?\n/', $content);
+        self::assertIsArray($lines, preg_last_error_msg());
+        foreach ($lines as $line) {
             if (preg_match('/(^|\W)CType\b/', $line) && str_contains($line, '[Options:')) {
                 $ctypeLine = $line;
                 break;

@@ -25,7 +25,7 @@ final class ToolSchemaOptimizerIntegrationTest extends AbstractFunctionalTest
         $server = $factory->createServer();
         $handlers = $server->getHandlers();
         self::assertIsCallable($handlers['tools/list']);
-        $result = $handlers['tools/list']();
+        $result = $handlers['tools/list'](null);
         self::assertInstanceOf(ListToolsResult::class, $result);
 
         $byName = [];

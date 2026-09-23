@@ -327,6 +327,8 @@ MD;
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
         self::assertGreaterThan(2, $data['totalCreated']);
+        self::assertIsArray($data['created']);
+        self::assertTrue(array_is_list($data['created']));
 
         $createdUids = array_map(
             static fn(array $created): int => (int)$created['uid'],

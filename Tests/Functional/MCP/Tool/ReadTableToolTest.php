@@ -326,6 +326,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         self::assertFalse($result->isError);
         $data = json_decode((string)$result->content[0]->text, true);
         $textmediaRecord = $data['records'][0];
+        self::assertIsArray($textmediaRecord);
 
         // Verify this is a textmedia record
         self::assertEquals('textmedia', $textmediaRecord['CType']);
@@ -352,6 +353,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         self::assertFalse($result->isError);
         $data = json_decode((string)$result->content[0]->text, true);
         $listRecord = $data['records'][0];
+        self::assertIsArray($listRecord);
 
         // Verify this is a plugin record.
         self::assertContains($listRecord['CType'], ['list', 'news_pi1']);
@@ -419,6 +421,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
         self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
+        self::assertIsArray($record);
 
         // Even with unknown CTypes, essential fields should be present
         $essentialFields = ['uid', 'pid', 'CType', 'header', 'sorting', 'tstamp', 'crdate'];

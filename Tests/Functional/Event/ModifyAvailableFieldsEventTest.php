@@ -7,6 +7,7 @@ namespace Hn\McpServer\Tests\Functional\Event;
 use Hn\McpServer\Event\AfterSchemaLoadEvent;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -19,10 +20,10 @@ class ModifyAvailableFieldsTestListener
     public static string $table = '';
     public static string $type = '';
     public static ?string $removeField = null;
-    public static ?array $addField = null;
     /** @var array{name: string, config: array<string, mixed>}|null */
-    public static ?array $replaceFields = null;
+    public static ?array $addField = null;
     /** @var array<string, array<string, mixed>>|null */
+    public static ?array $replaceFields = null;
 
     public static function reset(): void
     {
@@ -69,6 +70,7 @@ class ModifyAvailableFieldsEventTest extends AbstractFunctionalTest
         ModifyAvailableFieldsTestListener::reset();
 
         $container = GeneralUtility::getContainer();
+        self::assertInstanceOf(ContainerInterface::class, $container, 'Test listeners are registered as synthetic services');
         $container->set(ModifyAvailableFieldsTestListener::class, new ModifyAvailableFieldsTestListener());
 
         $listenerProvider = $container->get(ListenerProvider::class);

@@ -31,7 +31,6 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
 {
     private ReadTableTool $readTool;
     private WorkspaceContextService $workspaceService;
-    private EventDispatcherInterface $originalDispatcher;
     private CapturingEventDispatcher $capturingDispatcher;
 
     protected function setUp(): void
@@ -43,14 +42,13 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
 
         $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
 
-        $this->originalDispatcher = GeneralUtility::makeInstance(EventDispatcherInterface::class);
-        $this->capturingDispatcher = new CapturingEventDispatcher($this->originalDispatcher);
+        $this->capturingDispatcher = new CapturingEventDispatcher(GeneralUtility::makeInstance(EventDispatcherInterface::class));
         GeneralUtility::setSingletonInstance(EventDispatcherInterface::class, $this->capturingDispatcher);
     }
 
     protected function tearDown(): void
     {
-        GeneralUtility::setSingletonInstance(EventDispatcherInterface::class, $this->originalDispatcher);
+        GeneralUtility::removeSingletonInstance(EventDispatcherInterface::class, $this->capturingDispatcher);
         parent::tearDown();
     }
 

@@ -189,7 +189,7 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
     private function dispatch(array $jsonRpc, string $token, array $extraHeaders = []): ResponseInterface
     {
         $body = new Stream('php://temp', 'rw');
-        $body->write(json_encode($jsonRpc));
+        $body->write(json_encode($jsonRpc, JSON_THROW_ON_ERROR));
         $body->rewind();
 
         $request = new ServerRequest(

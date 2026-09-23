@@ -57,6 +57,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $image = imagecreatetruecolor(1, 1);
         $red = imagecolorallocate($image, 255, 0, 0);
+        self::assertNotFalse($red, 'GD could not allocate the pixel colour');
         imagesetpixel($image, 0, 0, $red);
         imagepng($image, $this->storageBasePath . '/images/banner.png');
 

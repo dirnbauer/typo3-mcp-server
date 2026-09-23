@@ -311,8 +311,11 @@ final class FileUploadEndpointTest extends AbstractFunctionalTest
 
         $data = $this->decode($response);
         self::assertSame('roundtrip.png', $data['originalFilename'], 'File name preset in the tool call must be used');
-        self::assertSame($toolData['targetFolder'], $data['targetFolder']);
-        self::assertStringStartsWith((string)$toolData['targetFolder'], (string)$data['identifier']);
+        $targetFolder = $toolData['targetFolder'];
+        self::assertIsString($targetFolder);
+        self::assertNotSame('', $targetFolder);
+        self::assertSame($targetFolder, $data['targetFolder']);
+        self::assertStringStartsWith($targetFolder, (string)$data['identifier']);
     }
 
     #[Test]
