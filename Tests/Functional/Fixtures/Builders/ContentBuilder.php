@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class ContentBuilder
 {
+    /** @var array<string, mixed> tt_content row to insert */
     private array $data = [
         'pid' => 0,
         'CType' => 'textmedia',
@@ -208,7 +209,7 @@ class ContentBuilder
     /**
      * Set custom data field
      */
-    public function with(string $field, $value): self
+    public function with(string $field, mixed $value): self
     {
         $this->data[$field] = $value;
         return $this;
@@ -233,7 +234,7 @@ class ContentBuilder
      * Create multiple content elements with incremented headers
      *
      * @param int $count Number of elements to create
-     * @return array Array of created UIDs
+     * @return list<int> Created UIDs
      */
     public function createMultiple(int $count): array
     {

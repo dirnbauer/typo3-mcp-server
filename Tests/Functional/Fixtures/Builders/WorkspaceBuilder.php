@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class WorkspaceBuilder
 {
+    /** @var array<string, mixed> sys_workspace row to insert */
     private array $data = [
         'pid' => 0,
         'title' => 'Test Workspace',
@@ -134,7 +135,7 @@ class WorkspaceBuilder
     /**
      * Set custom data field
      */
-    public function with(string $field, $value): self
+    public function with(string $field, mixed $value): self
     {
         $this->data[$field] = $value;
         return $this;

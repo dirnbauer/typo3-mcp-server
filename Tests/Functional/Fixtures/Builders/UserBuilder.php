@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class UserBuilder
 {
+    /** @var array<string, mixed> be_users row to insert */
     private array $data = [
         'pid' => 0,
         'username' => 'testuser',
@@ -171,7 +172,7 @@ class UserBuilder
     /**
      * Set custom data field
      */
-    public function with(string $field, $value): self
+    public function with(string $field, mixed $value): self
     {
         $this->data[$field] = $value;
         return $this;

@@ -32,7 +32,6 @@ trait McpAssertionsTrait
      */
     protected function assertSuccessfulToolResult(CallToolResult $result, string $message = ''): void
     {
-        $this->assertInstanceOf(CallToolResult::class, $result, $message);
         $this->assertFalse(
             $result->isError,
             ($message ?: 'Tool returned error') . ': ' . json_encode($result->jsonSerialize()),
@@ -47,7 +46,6 @@ trait McpAssertionsTrait
      */
     protected function assertToolError(CallToolResult $result, ?string $expectedMessage = null): string
     {
-        $this->assertInstanceOf(CallToolResult::class, $result);
         $this->assertTrue($result->isError, 'Expected error but tool succeeded: ' . json_encode($result->jsonSerialize()));
 
         $errorMessage = $this->getFirstTextContent($result);
@@ -80,9 +78,9 @@ trait McpAssertionsTrait
     /**
      * Assert that a record contains expected field values
      *
-     * @param array $expected Expected field values
-     * @param array $actual Actual record data
-     * @param array|null $fields Fields to check (null = all fields in expected)
+     * @param array<string, mixed> $expected Expected field values
+     * @param array<string, mixed> $actual Actual record data
+     * @param list<string>|null $fields Fields to check (null = all fields in expected)
      */
     protected function assertRecordEquals(array $expected, array $actual, ?array $fields = null): void
     {
@@ -156,8 +154,8 @@ trait McpAssertionsTrait
     /**
      * Assert that essential fields are present in a record
      *
-     * @param array $record
-     * @param array $additionalFields Additional fields to check beyond essentials
+     * @param array<string, mixed> $record
+     * @param list<string> $additionalFields Additional fields to check beyond essentials
      */
     protected function assertHasEssentialFields(array $record, array $additionalFields = []): void
     {
@@ -192,7 +190,7 @@ trait McpAssertionsTrait
      * Extract JSON data from MCP result
      *
      * @param CallToolResult $result
-     * @return array
+     * @return array<string, mixed> The decoded JSON object of the first text content
      */
     protected function extractJsonFromResult(CallToolResult $result): array
     {

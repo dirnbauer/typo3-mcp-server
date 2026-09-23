@@ -35,6 +35,9 @@ class ThrowingOnlineMediaHelper extends AbstractOnlineMediaHelper
         return '';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getMetaData(File $file)
     {
         return [];

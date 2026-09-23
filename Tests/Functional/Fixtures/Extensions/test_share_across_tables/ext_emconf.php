@@ -1,6 +1,6 @@
 <?php
 
-$EM_CONF[$_EXTKEY] = [
+$EM_CONF['test_share_across_tables'] = [
     'title' => 'MCP Server Test Fixture: shareAcrossTables inline child',
     'description' => 'Minimal child table using foreign_table_field (Content Blocks "shareAcrossTables" pattern), for functional tests only.',
     'category' => 'example',

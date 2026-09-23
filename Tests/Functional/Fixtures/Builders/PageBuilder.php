@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 class PageBuilder
 {
+    /** @var array<string, mixed> pages row to insert */
     private array $data = [
         'pid' => 0,
         'title' => 'Test Page',
@@ -175,7 +176,7 @@ class PageBuilder
     /**
      * Set custom data field
      */
-    public function with(string $field, $value): self
+    public function with(string $field, mixed $value): self
     {
         $this->data[$field] = $value;
         return $this;
@@ -205,7 +206,7 @@ class PageBuilder
      * Create multiple pages with incremented titles
      *
      * @param int $count Number of pages to create
-     * @return array Array of created UIDs
+     * @return list<int> Created UIDs
      */
     public function createMultiple(int $count): array
     {
