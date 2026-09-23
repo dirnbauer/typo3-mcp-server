@@ -21,7 +21,7 @@ The repository installs a throw-away TYPO3 (SQLite) into ``public/`` and
    composer test               # unit + functional (paratest, SQLite)
    composer test:protocol      # stable + stateless stdio lifecycles
    composer test:llm           # LLM ergonomics tests (needs OPENROUTER_API_KEY)
-   composer phpstan            # level 8, no baseline (Classes, Tests/Unit, Tests/Architecture)
+   composer phpstan            # level 8, no baseline, all own PHP (code, tests, build scripts)
    composer php-cs-fixer:fix   # TYPO3 coding standards
    composer rector             # PHP migrations, dry-run
    composer fractor            # FlexForm/TypoScript/Fluid migrations, dry-run
@@ -69,7 +69,7 @@ Rules of the codebase
   ergonomics; document the change in the tool description, the tests and
   :doc:`../Tools/Index` together.
 - In functional tests assert success with
-  ``self::assertFalse($result->isError, json_encode($result->jsonSerialize()));``.
+  ``self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));``.
 
 .. _developer-upstream:
 

@@ -1,13 +1,12 @@
 <?php
 
-$EM_CONF[$_EXTKEY] = [
+$EM_CONF['mcp_server'] = [
     'title' => 'MCP Server',
     'description' => 'TYPO3 extension that provides a Model Context Protocol (MCP) server for interacting with TYPO3 pages and records',
     'category' => 'module',
     'author' => 'Marco Pfeiffer',
     'author_email' => 'marco@hauptsache.net',
     'state' => 'beta',
-    'clearCacheOnLoad' => true,
     'version' => '0.8.0',
     'constraints' => [
         'depends' => [
