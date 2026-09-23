@@ -37,7 +37,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @phpstan-type SearchReplaceMap array<string, list<SearchReplaceOperation>>
  * @phpstan-type DataMap array<string, array<int|string, array<string, mixed>>>
  */
-final class WriteTableTool extends AbstractRecordTool
+final class WriteTableTool extends AbstractRecordTool implements SiteRequestAwareToolInterface
 {
     public function __construct(
         TableAccessService $tableAccessService,
@@ -52,6 +52,27 @@ final class WriteTableTool extends AbstractRecordTool
         private readonly TableTcaResolver $tcaResolver,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    #[\Override]
+    public function needsSiteRequest(array $params): bool
+    {
+        return in_array($params['action'] ?? null, ['create', 'update', 'translate'], true);
+    }
+
+    #[\Override]
+    public function resolveSiteRequestPageId(array $params): ?int
+    {
+        $table = is_string($params['table'] ?? null) ? $params['table'] : '';
+        if (($params['action'] ?? null) === 'create') {
+            $data = is_array($params['data'] ?? null) ? $params['data'] : [];
+            $pid = $params['pid'] ?? $data['pid'] ?? null;
+
+            return is_numeric($pid) && (int)$pid > 0 ? (int)$pid : null;
+        }
+        $uid = $params['uid'] ?? null;
+
+        return is_numeric($uid) ? $this->findPageIdOfRecord($table, (int)$uid) : null;
     }
 
     private function getBackendUser(): BackendUserAuthentication

@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * More efficient than calling WriteTable N times. Supports create, update,
  * and delete in a single call. Capped at 50 operations per call.
  */
-final class BulkWriteTool extends AbstractRecordTool
+final class BulkWriteTool extends AbstractRecordTool implements SiteRequestAwareToolInterface
 {
     private const int MAX_OPERATIONS = 50;
 
@@ -29,6 +29,46 @@ final class BulkWriteTool extends AbstractRecordTool
         private readonly BatchedRecordPositioningService $batchedRecordPositioningService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    #[\Override]
+    public function needsSiteRequest(array $params): bool
+    {
+        $operations = is_array($params['operations'] ?? null) ? $params['operations'] : [];
+
+        return array_any(
+            $operations,
+            static fn(mixed $operation): bool => is_array($operation) && in_array($operation['action'] ?? null, ['create', 'update'], true),
+        );
+    }
+
+    /**
+     * The first operation that names a page decides the site: one
+     * DataHandler run processes every operation.
+     */
+    #[\Override]
+    public function resolveSiteRequestPageId(array $params): ?int
+    {
+        $operations = is_array($params['operations'] ?? null) ? $params['operations'] : [];
+        foreach ($operations as $operation) {
+            if (!is_array($operation)) {
+                continue;
+            }
+            $pid = $operation['pid'] ?? null;
+            if (($operation['action'] ?? null) === 'create' && is_numeric($pid) && (int)$pid > 0) {
+                return (int)$pid;
+            }
+            $table = $operation['table'] ?? null;
+            $uid = $operation['uid'] ?? null;
+            if (is_string($table) && is_numeric($uid)) {
+                $pageId = $this->findPageIdOfRecord($table, (int)$uid);
+                if ($pageId !== null) {
+                    return $pageId;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

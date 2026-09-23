@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @phpstan-type CTypeProfile array{label: string, hasBodytext: bool, hasHeader: bool, hasImage: bool, hasAssets: bool, fields: list<string>}
  * @phpstan-type ProposedElement array{index: int, CType: string, header: string, bodytext: string, header_layout: int, summary: string}
  */
-final class ImportFromUrlTool extends AbstractRecordTool
+final class ImportFromUrlTool extends AbstractRecordTool implements SiteRequestAwareToolInterface
 {
     private const MAX_CONTENT_SIZE = 5 * 1024 * 1024; // 5 MB
     private const int REQUEST_TIMEOUT = 30;
@@ -60,6 +60,20 @@ final class ImportFromUrlTool extends AbstractRecordTool
         private readonly OutboundUrlGuardService $outboundUrlGuard,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    #[\Override]
+    public function needsSiteRequest(array $params): bool
+    {
+        return ($params['mode'] ?? self::MODE_ANALYZE) === self::MODE_EXECUTE;
+    }
+
+    #[\Override]
+    public function resolveSiteRequestPageId(array $params): ?int
+    {
+        $targetPid = $params['targetPid'] ?? null;
+
+        return is_numeric($targetPid) && (int)$targetPid > 0 ? (int)$targetPid : null;
     }
 
     /**

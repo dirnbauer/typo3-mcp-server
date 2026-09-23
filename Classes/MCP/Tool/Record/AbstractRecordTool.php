@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\Record;
 
 use Hn\McpServer\MCP\Tool\AbstractTool;
+use Hn\McpServer\Service\SiteRequestContext;
 use Hn\McpServer\Service\TableAccessService;
 use Hn\McpServer\Service\WorkspaceContextService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -44,7 +46,54 @@ abstract class AbstractRecordTool extends AbstractTool
         }
         $this->readWorkspaceInitialized = false;
         $this->writeWorkspaceInitialized = false;
-        return parent::executeInternal($params);
+
+        if (!$this instanceof SiteRequestAwareToolInterface || !$this->needsSiteRequest($params)) {
+            return parent::executeInternal($params);
+        }
+
+        // Without an HTTP request (CLI commands, the stdio server) publish one
+        // for the site of the written record for the duration of the call.
+        $scope = GeneralUtility::makeInstance(SiteRequestContext::class)
+            ->enterForPage(self::resolveSiteRequestPageIdSafely($this, $params));
+        try {
+            $result = parent::executeInternal($params);
+        } finally {
+            $scope->leave();
+        }
+
+        return $scope->annotate($result);
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private static function resolveSiteRequestPageIdSafely(SiteRequestAwareToolInterface $tool, array $params): ?int
+    {
+        try {
+            return $tool->resolveSiteRequestPageId($params);
+        } catch (\Throwable) {
+            // Invalid arguments are reported by the tool's own validation.
+            return null;
+        }
+    }
+
+    /**
+     * The page a stored record lives on: the page itself for "pages", its pid
+     * for any other table. Null for unknown tables, missing records and
+     * root-level records.
+     */
+    protected function findPageIdOfRecord(string $table, int $uid): ?int
+    {
+        if ($uid <= 0 || !$this->tableAccessService->canAccessTable($table)) {
+            return null;
+        }
+        if ($table === 'pages') {
+            return $uid;
+        }
+
+        $pid = BackendUtility::getRecord($table, $uid, 'pid')['pid'] ?? null;
+
+        return is_numeric($pid) && (int)$pid > 0 ? (int)$pid : null;
     }
 
     /**

@@ -7,6 +7,9 @@ namespace Hn\McpServer\Tests\Functional\MCP\Tool;
 use Hn\McpServer\MCP\Tool\Record\WriteTableTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
+use TYPO3\CMS\Core\Http\NormalizedParams;
+use TYPO3\CMS\Core\Http\ServerRequest;
 
 /** Regression coverage adapted from upstream #128 for the fork's single DataHandler run. */
 final class NestedFileRelationTest extends AbstractFunctionalTest
@@ -149,6 +152,27 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         self::assertIsArray($live, 'The live reference is missing');
         self::assertSame(1, (int)$live['uid_local']);
         self::assertSame(0, (int)$live['deleted']);
+    }
+
+    /**
+     * The /mcp endpoint publishes its frontend-stack request. The write must
+     * not run with frontend file handling (FileRepository, storages), and
+     * the endpoint's request is back in place afterwards.
+     */
+    public function testUpdatesOfLiveChildrenWorkWhileTheEndpointRequestIsActive(): void
+    {
+        $serverParams = ['HTTP_HOST' => 'example.com', 'HTTPS' => 'on', 'SCRIPT_NAME' => '/index.php', 'REQUEST_URI' => '/mcp'];
+        $endpointRequest = new ServerRequest('https://example.com/mcp', 'POST', 'php://input', [], $serverParams)
+            ->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams))
+            ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_FE);
+        $GLOBALS['TYPO3_REQUEST'] = $endpointRequest;
+
+        try {
+            $this->testUpdatesOfLiveChildrenLeaveLiveReferencesUntouched();
+            self::assertSame($endpointRequest, $GLOBALS['TYPO3_REQUEST'] ?? null);
+        } finally {
+            unset($GLOBALS['TYPO3_REQUEST']);
+        }
     }
 
     /**

@@ -609,6 +609,11 @@ services:
   # public so TYPO3's GeneralUtility bridge cannot inline/remove the service.
   Hn\McpServer\Service\CapabilityManifestService:
     public: true
+
+  # AbstractRecordTool resolves this for every call of a site-request-aware
+  # tool (rich-text writes over the CLI and stdio transports).
+  Hn\McpServer\Service\SiteRequestContext:
+    public: true
     
   # Make WorkspaceContextService public 
   Hn\McpServer\Service\WorkspaceContextService:

@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * Preserves file references, relations, and workspace versioning automatically.
  */
-final class CopyContentTool extends AbstractRecordTool
+final class CopyContentTool extends AbstractRecordTool implements SiteRequestAwareToolInterface
 {
     public function __construct(
         TableAccessService $tableAccessService,
@@ -27,6 +27,21 @@ final class CopyContentTool extends AbstractRecordTool
         private readonly LanguageService $languageService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    /** Only overrides reach DataHandler as field values; a plain copy does not. */
+    #[\Override]
+    public function needsSiteRequest(array $params): bool
+    {
+        return is_array($params['overrides'] ?? null) && $params['overrides'] !== [];
+    }
+
+    #[\Override]
+    public function resolveSiteRequestPageId(array $params): ?int
+    {
+        $targetPid = $params['targetPid'] ?? null;
+
+        return is_numeric($targetPid) && (int)$targetPid > 0 ? (int)$targetPid : null;
     }
 
     /**

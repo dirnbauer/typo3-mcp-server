@@ -24,7 +24,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * @phpstan-type ParsedSection array{type: string, content: string, level: int, raw: string}
  * @phpstan-type CTypeProfile array{label: string, hasBodytext: bool, hasHeader: bool, hasImage: bool, hasAssets: bool, fields: list<string>}
  */
-final class ImportContentTool extends AbstractRecordTool
+final class ImportContentTool extends AbstractRecordTool implements SiteRequestAwareToolInterface
 {
     private const string FORMAT_AUTO = 'auto';
     private const string FORMAT_MARKDOWN = 'markdown';
@@ -55,6 +55,20 @@ final class ImportContentTool extends AbstractRecordTool
         private readonly BatchedRecordPositioningService $batchedRecordPositioningService,
     ) {
         parent::__construct($tableAccessService, $workspaceContextService);
+    }
+
+    #[\Override]
+    public function needsSiteRequest(array $params): bool
+    {
+        return ($params['mode'] ?? self::MODE_ANALYZE) === self::MODE_EXECUTE;
+    }
+
+    #[\Override]
+    public function resolveSiteRequestPageId(array $params): ?int
+    {
+        $targetPid = $params['targetPid'] ?? null;
+
+        return is_numeric($targetPid) && (int)$targetPid > 0 ? (int)$targetPid : null;
     }
 
     /**
