@@ -1,10 +1,10 @@
 # cat=mcp/tables; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.additionalReadOnlyTables
 additionalReadOnlyTables = sys_file
 
-# cat=mcp/tables; type=string; label=Additional standalone hidden tables
+# cat=mcp/tables; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.additionalStandaloneTables
 additionalStandaloneTables = sys_file_metadata
 
-# cat=mcp/http; type=int+; label=Session timeout (seconds): Idle lifetime for session-based MCP clients. Expired sessions return HTTP 404 and require a new handshake. Stateless clients are unaffected. Default: 14400 (4 hours)
+# cat=mcp/http; type=int+; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.sessionTimeout
 sessionTimeout = 14400
 
 # cat=paths//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.fileSandboxRoot
@@ -13,20 +13,20 @@ fileSandboxRoot = 1:/mcp/
 # cat=paths//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.workspaceUploadSubfolders
 workspaceUploadSubfolders = 1
 
-# cat=paths//c; type=int+; label=Maximum file size (MiB): Upper limit for base64 payloads, files fetched from URLs, and pre-signed uploads via the UploadFile / UploadFileFromUrl tools. Default: 500
+# cat=paths//c; type=int+; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.maxFileSizeMb
 maxFileSizeMb = 500
 
-# cat=security//a; type=string; label=Allowed browser origins (comma-separated exact http(s) origins; same-origin is always allowed)
+# cat=security//a; type=string; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.allowedOrigins
 allowedOrigins =
 
 # cat=security//b; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enableMcpAuthHeaderDiagnostic
 enableMcpAuthHeaderDiagnostic = 0
 
-# cat=security//c; type=options[Auto-detect (DDEV / Development context)=auto, Always on (UNSAFE — local dev only)=on, Always off (production default)=off]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode
+# cat=security//c; type=options[LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode.auto=auto, LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode.on=on, LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode.off=off]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.localUnsafeMode
 localUnsafeMode = auto
 
 # cat=security//d; type=boolean; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.enforceCapabilityManifest
 enforceCapabilityManifest = 1
 
-# cat=mcp//z; type=options[Concise (lean tools/list, saves context-window tokens)=concise, Full (verbose descriptions)=full]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.schemaDetail
+# cat=mcp//z; type=options[LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.schemaDetail.concise=concise, LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.schemaDetail.full=full]; label=LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf:extconf.schemaDetail
 schemaDetail = concise

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+  <file id="mcp_server.modules.mcp_server" original="EXT:mcp_server/Resources/Private/Language/Modules/mcp_server.xlf">
+    <unit id="title">
+      <segment>
+        <source>MCP Server</source>
+      </segment>
+    </unit>
+    <unit id="short_description">
+      <segment>
+        <source>Connect AI assistants to TYPO3</source>
+      </segment>
+    </unit>
+    <unit id="description">
+      <segment>
+        <source>Connect AI assistants such as Claude, Cursor or Codex to this TYPO3 installation through the Model Context Protocol (MCP), manage their access tokens and check the connection.</source>
+      </segment>
+    </unit>
+  </file>
+</xliff>

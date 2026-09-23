@@ -10,90 +10,92 @@ test.describe('MCP Server Backend Module', () => {
     await expect(frame.locator('.module-body')).toBeVisible();
   });
 
-  test('module page loads with expected sections', async () => {
-    await expect(frame.locator('#mcpSetupTabs')).toBeVisible();
-    await expect(frame.locator('#tokens-container')).toBeVisible();
+  test('module page loads with its four sections', async () => {
+    await expect(frame.locator('h1')).toHaveText('MCP Server');
+    await expect(frame.locator('#mcp-module-tabs [role="tab"]')).toHaveCount(4);
+    await expect(frame.locator('#mcp-tab-setup')).toBeVisible();
+    await expect(frame.locator('#mcp-server-url')).toHaveValue(/\/mcp$/);
   });
 
-  test('tab navigation works', async () => {
-    await frame.locator('#connection-check-tab').click();
-    await expect(frame.locator('#connection-check-panel')).toBeVisible();
+  test('tabs and client panels switch', async () => {
+    await frame.locator('#mcp-tab-check-tab').click();
+    await expect(frame.locator('#mcp-tab-check')).toBeVisible();
     await expect(frame.locator('#diagnostics-table-body tr').first()).toBeVisible();
 
-    await frame.locator('#setup-tab').click();
-    await expect(frame.locator('#setup-panel')).toBeVisible();
+    await frame.locator('#mcp-tab-setup-tab').click();
+    await expect(frame.locator('#mcp-tab-setup')).toBeVisible();
 
-    await frame.locator('[data-mcp-target="claude-panel"]').click();
-    await expect(frame.locator('#claude-panel')).toBeVisible();
+    await frame.locator('#mcp-client-cursor-toggle').click();
+    await expect(frame.locator('#mcp-client-cursor')).toBeVisible();
+    await expect(frame.locator('#mcp-config-cursor')).toHaveValue(/mcpServers/);
 
-    await frame.locator('[data-mcp-target="codex-panel"]').click();
-    await expect(frame.locator('#codex-panel')).toBeVisible();
+    await frame.locator('#mcp-client-codex-toggle').click();
+    await expect(frame.locator('#mcp-client-codex')).toBeVisible();
   });
 
-  test('create token via central button shows name modal then token modal', async ({ page }) => {
+  test('create token from the docheader shows the name modal, then the token once', async ({ page }) => {
     const tokenName = `test-token-${Date.now()}`;
-    const createBtn = frame.locator('#create-token-btn');
-    await expect(createBtn).toBeVisible();
-    await createBtn.click();
+    await frame.locator('.module-docheader [data-mcp-action="create-token"]').click();
 
-    // Name input modal renders in the top frame (TYPO3 Modal API appends to top document).
-    // Target by title to avoid strict-mode violations when TYPO3 stacks multiple modals.
-    const nameModal = page.locator('.modal').filter({ hasText: 'Create Token' });
+    // TYPO3 renders modals in the top frame.
+    const nameModal = page.locator('.modal').filter({ hasText: 'Create access token' });
     await expect(nameModal).toBeVisible({ timeout: 15000 });
-
-    const nameInput = nameModal.locator('#modal-token-name-input');
-    await expect(nameInput).toBeVisible();
-    await nameInput.fill(tokenName);
+    await nameModal.locator('#mcp-token-name').fill(tokenName);
     await nameModal.getByRole('button', { name: 'Create', exact: true }).click();
 
-    // Token "show once" modal appears (may coexist briefly with the name modal)
-    const tokenModal = page.locator('.modal').filter({ hasText: 'Token Created' });
+    const tokenModal = page.locator('.modal').filter({ hasText: 'Access token created' });
     await expect(tokenModal).toBeVisible({ timeout: 15000 });
-    await expect(tokenModal.locator('.alert-warning')).toContainText('only be shown once');
-
-    const tokenInput = tokenModal.locator('#modal-token-value');
-    await expect(tokenInput).toBeVisible();
-    const tokenValue = await tokenInput.inputValue();
+    await expect(tokenModal.locator('.callout-warning')).toContainText('shown only once');
+    const tokenValue = await tokenModal.locator('#mcp-token-value').inputValue();
     expect(tokenValue).toMatch(/^[0-9a-f]{64}$/);
+    await expect(tokenModal.locator('typo3-copy-to-clipboard')).toContainText('Copy token');
+    await tokenModal.getByRole('button', { name: 'I have copied the token' }).click();
 
-    await expect(tokenModal.locator('button', { hasText: 'Copy' })).toBeVisible();
-    await tokenModal.locator('button', { hasText: 'I have copied the token' }).click();
-
-    // Verify token appears in the table
-    const tokensContainer = frame.locator('#tokens-container');
-    await expect(tokensContainer.locator('table')).toBeVisible({ timeout: 10000 });
-    await expect(tokensContainer.locator('td', { hasText: tokenName })).toBeVisible();
+    // The module switches to the token list, which now contains the token.
+    await expect(frame.locator('#mcp-tab-tokens')).toBeVisible();
+    await expect(frame.locator('#mcp-tokens-table th[scope="row"]', { hasText: tokenName })).toBeVisible({ timeout: 10000 });
   });
 
-  test('revoke token shows confirmation modal', async ({ page }) => {
-    // Need existing tokens — check if any revoke buttons exist
-    const revokeBtn = frame.locator('.revoke-token-btn').first();
-    test.skip(!(await revokeBtn.isVisible({ timeout: 3000 }).catch(() => false)),
+  test('an empty token name is rejected in the modal', async ({ page }) => {
+    await frame.locator('.module-docheader [data-mcp-action="create-token"]').click();
+    const nameModal = page.locator('.modal').filter({ hasText: 'Create access token' });
+    await expect(nameModal).toBeVisible({ timeout: 15000 });
+    await nameModal.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(nameModal.locator('#mcp-token-name')).toHaveAttribute('aria-invalid', 'true');
+    await nameModal.getByRole('button', { name: 'Cancel' }).click();
+    await expect(nameModal).not.toBeVisible({ timeout: 5000 });
+  });
+
+  test('revoke token asks for confirmation', async ({ page }) => {
+    await frame.locator('#mcp-tab-tokens-tab').click();
+    const revokeButton = frame.locator('[data-mcp-action="revoke-token"]').first();
+    test.skip(!(await revokeButton.isVisible({ timeout: 3000 }).catch(() => false)),
       'No tokens exist to revoke — create tokens first');
 
-    await revokeBtn.click();
-
-    const modal = page.locator('.modal');
+    await revokeButton.click();
+    const modal = page.locator('.modal').filter({ hasText: 'Revoke access token?' });
     await expect(modal).toBeVisible({ timeout: 5000 });
-
-    await modal.locator('button', { hasText: 'Cancel' }).click();
+    await modal.getByRole('button', { name: 'Cancel' }).click();
     await expect(modal).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('refresh tokens button works', async () => {
-    const refreshBtn = frame.locator('#refresh-tokens-btn');
-    await expect(refreshBtn).toBeVisible();
-    await refreshBtn.click();
-    await expect(frame.locator('#tokens-container')).toBeVisible();
-  });
-
-  test('connection check table is populated', async () => {
-    await frame.locator('#connection-check-tab').click();
-    await expect(frame.locator('.mcp-diagnostic-table')).toBeVisible();
+  test('connection check lists every check and can run again', async () => {
+    await frame.locator('#mcp-tab-check-tab').click();
     await expect(frame.locator('#diagnostics-table-body tr')).toHaveCount(10, { timeout: 10000 });
+    await frame.locator('[data-mcp-action="refresh-diagnostics"]').click();
+    await expect(frame.locator('#diagnostics-table-body tr')).toHaveCount(10, { timeout: 20000 });
   });
 
-  test('copy buttons exist', async () => {
-    await expect(frame.locator('.copy-button').first()).toBeVisible({ timeout: 10000 });
+  test('tool filter narrows the tool list', async () => {
+    await frame.locator('#mcp-tab-tools-tab').click();
+    await frame.locator('#mcp-tool-filter').fill('readtable');
+    await expect(frame.locator('tr[data-mcp-tool]:visible')).toHaveCount(1, { timeout: 5000 });
+    await expect(frame.locator('tr[data-mcp-tool]:visible code')).toHaveText('ReadTable');
+    await frame.locator('#mcp-tool-filter').fill('no tool is called like this');
+    await expect(frame.locator('tr[data-mcp-tool-empty]')).toBeVisible();
+  });
+
+  test('copy elements exist', async () => {
+    await expect(frame.locator('typo3-copy-to-clipboard').first()).toBeVisible({ timeout: 10000 });
   });
 });

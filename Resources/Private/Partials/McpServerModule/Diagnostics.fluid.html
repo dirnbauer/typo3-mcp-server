@@ -1,0 +1,74 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
+<f:switch expression="{diagnostics.overallStatus}">
+    <f:case value="error">
+        <f:be.infobox
+            state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::ERROR')}"
+            title="{f:translate(id: 'diagnostic.summaryError.title', domain: 'mcp_server.mod')}"
+        >
+            <p><f:translate id="diagnostic.summaryError" domain="mcp_server.mod" /></p>
+        </f:be.infobox>
+    </f:case>
+    <f:case value="warning">
+        <f:be.infobox
+            state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}"
+            title="{f:translate(id: 'diagnostic.summaryWarning.title', domain: 'mcp_server.mod')}"
+        >
+            <p><f:translate id="diagnostic.summaryWarning" domain="mcp_server.mod" /></p>
+        </f:be.infobox>
+    </f:case>
+    <f:defaultCase>
+        <f:be.infobox
+            state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}"
+            title="{f:translate(id: 'diagnostic.summaryOk.title', domain: 'mcp_server.mod')}"
+        >
+            <p><f:translate id="diagnostic.summaryOk" domain="mcp_server.mod" /></p>
+        </f:be.infobox>
+    </f:defaultCase>
+</f:switch>
+
+<div class="table-fit">
+    <table class="table table-striped table-vertical-top" id="mcp-diagnostics-table">
+        <caption class="visually-hidden"><f:translate id="diagnostic.caption" domain="mcp_server.mod" /></caption>
+        <thead>
+            <tr>
+                <th scope="col"><f:translate id="diagnostic.colStatus" domain="mcp_server.mod" /></th>
+                <th scope="col"><f:translate id="diagnostic.colCheck" domain="mcp_server.mod" /></th>
+                <th scope="col"><f:translate id="diagnostic.colDetails" domain="mcp_server.mod" /></th>
+            </tr>
+        </thead>
+        <tbody id="diagnostics-table-body">
+            <f:for each="{diagnostics.checks}" as="check">
+                <tr data-check-id="{check.id}" data-check-status="{check.status}">
+                    <td class="text-nowrap">
+                        <f:switch expression="{check.status}">
+                            <f:case value="ok"><span class="badge badge-success"><f:translate id="diagnostic.status.ok" domain="mcp_server.mod" /></span></f:case>
+                            <f:case value="warning"><span class="badge badge-warning"><f:translate id="diagnostic.status.warning" domain="mcp_server.mod" /></span></f:case>
+                            <f:case value="error"><span class="badge badge-danger"><f:translate id="diagnostic.status.error" domain="mcp_server.mod" /></span></f:case>
+                            <f:defaultCase><span class="badge badge-info"><f:translate id="diagnostic.status.info" domain="mcp_server.mod" /></span></f:defaultCase>
+                        </f:switch>
+                    </td>
+                    <th scope="row">{check.label}</th>
+                    <td>
+                        <p class="mb-1">{check.message}</p>
+                        <f:if condition="{check.status} != 'ok'">
+                            <p class="mb-1"><strong><f:translate id="diagnostic.fixLabel" domain="mcp_server.mod" /></strong> {check.fixHint}</p>
+                        </f:if>
+                        <p class="mb-0 text-muted"><f:translate id="diagnostic.howToCheckLabel" domain="mcp_server.mod" /> {check.howToCheck}</p>
+                    </td>
+                </tr>
+            </f:for>
+        </tbody>
+    </table>
+</div>
+
+<f:if condition="!{hasWorkspace}">
+    <p class="mb-0">
+        <a href="{createWorkspaceUrl}" class="btn btn-default"><f:translate id="diagnostic.createWorkspace" domain="mcp_server.mod" /></a>
+    </p>
+</f:if>
+
+</html>

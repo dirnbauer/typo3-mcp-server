@@ -5,7 +5,8 @@ declare(strict_types=1);
 use Hn\McpServer\Controller\McpServerModuleController;
 
 /**
- * Backend module configuration for MCP Server
+ * "MCP Server" in the User section: every backend user connects their own
+ * clients and manages their own access tokens.
  */
 return [
     'user_mcp_server' => [
@@ -15,7 +16,7 @@ return [
         'workspaces' => '*',
         'path' => '/module/user/mcp-server',
         'iconIdentifier' => 'module-mcp-server',
-        'labels' => 'LLL:EXT:mcp_server/Resources/Private/Language/locallang_mod.xlf',
+        'labels' => 'mcp_server.modules.mcp_server',
         'routes' => [
             '_default' => [
                 'target' => McpServerModuleController::class . '::mainAction',
