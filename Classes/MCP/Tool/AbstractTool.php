@@ -10,9 +10,12 @@ use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\MCP\Tool\Attribute\DevSiteOnly;
 use Hn\McpServer\Service\CapabilityManifestService;
 use Hn\McpServer\Service\DevSiteToolService;
+use Hn\McpServer\Service\SiteRequestContext;
+use Hn\McpServer\Service\SiteRequestScope;
 use Hn\McpServer\Traits\ExceptionHandlerTrait;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -21,7 +24,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * execute() is the template method: it enforces the capability manifest and
  * the #[AdminOnly] / #[DevSiteOnly] attributes, then delegates to doExecute()
- * and turns every exception into a structured error result.
+ * and turns every exception into a structured error result. Over HTTP the
+ * endpoint's request is shown to the tool as a backend request.
  */
 abstract class AbstractTool implements ToolInterface
 {
@@ -68,6 +72,7 @@ abstract class AbstractTool implements ToolInterface
      */
     protected function executeInternal(array $params): CallToolResult
     {
+        $scope = $this->enterBackendView();
         try {
             $this->enforceCapabilityManifest();
             if ($this->isAdminOnly()) {
@@ -80,7 +85,23 @@ abstract class AbstractTool implements ToolInterface
             return $this->doExecute($params);
         } catch (\Throwable $e) {
             return $this->handleException($e, $this->getName());
+        } finally {
+            $scope->leave();
         }
+    }
+
+    /**
+     * Over HTTP the tool acts as the backend user it is, not as a website
+     * visitor: see SiteRequestContext::enterBackendView(). Without a request
+     * (CLI, stdio, unit tests) there is nothing to show differently.
+     */
+    private function enterBackendView(): SiteRequestScope
+    {
+        if (!($GLOBALS['TYPO3_REQUEST'] ?? null) instanceof ServerRequestInterface) {
+            return SiteRequestScope::inactive();
+        }
+
+        return GeneralUtility::makeInstance(SiteRequestContext::class)->enterBackendView();
     }
 
     /**

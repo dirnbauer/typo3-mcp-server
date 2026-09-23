@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hn\McpServer\Service;
 
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\FileProcessingAspect;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
@@ -24,6 +26,10 @@ use TYPO3\CMS\Core\Site\SiteFinder;
  * the stdio server (and any other caller outside the frontend request
  * handler) have none.
  *
+ * Over HTTP every tool sees the endpoint's request as a backend request
+ * ({@see enterBackendView()}); the write tools additionally get a request
+ * where there is none ({@see enterForPage()}).
+ *
  * The request represents the site the written record belongs to, resolved
  * the way TYPO3 resolves it: SiteFinder::getSiteByPageId() on the record's
  * page, that site's default language and its base. Only a record without a
@@ -36,7 +42,23 @@ final readonly class SiteRequestContext
 
     public function __construct(
         private SiteFinder $siteFinder,
+        private Context $context,
     ) {}
+
+    /**
+     * For every tool call: show an active frontend request (the /mcp
+     * endpoint's) as a backend request while the tool runs. Without a request
+     * (CLI, stdio) nothing is published; tools that need one use
+     * {@see enterForPage()}.
+     */
+    public function enterBackendView(): SiteRequestScope
+    {
+        $activeRequest = $GLOBALS['TYPO3_REQUEST'] ?? null;
+
+        return $activeRequest instanceof ServerRequestInterface
+            ? $this->enterBackendViewOf($activeRequest)
+            : SiteRequestScope::inactive();
+    }
 
     /**
      * Publish a request for the site that owns $pageId. An active request
@@ -68,18 +90,16 @@ final readonly class SiteRequestContext
             );
         }
 
-        $request = $this->createRequest($site);
-        $GLOBALS['TYPO3_REQUEST'] = $request;
-
-        return SiteRequestScope::published($request, $site?->getIdentifier(), $fallbackNote);
+        return $this->publish($this->createRequest($site), null, $site?->getIdentifier(), $fallbackNote);
     }
 
     /**
      * The /mcp endpoint answers inside the frontend middleware stack, so the
-     * request it publishes says "frontend" - and FileRepository, storages and
-     * the permission aspects then switch to frontend behaviour in the middle
-     * of a backend-user DataHandler write (updating a live file reference of
-     * a nested child in a workspace failed). The tools see the same request
+     * request it publishes says "frontend" - and core file APIs then behave
+     * as for a website visitor while a backend user works: FileRepository
+     * and storages switch to frontend behaviour (updating a live file
+     * reference of a nested child in a workspace failed), and file metadata
+     * is overlaid with drafts only over HTTP. The tools see the same request
      * as a backend request; the endpoint's request is restored afterwards.
      */
     private function enterBackendViewOf(ServerRequestInterface $activeRequest): SiteRequestScope
@@ -91,10 +111,33 @@ final readonly class SiteRequestContext
             return SiteRequestScope::inactive();
         }
 
-        $backendView = $activeRequest->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
-        $GLOBALS['TYPO3_REQUEST'] = $backendView;
+        return $this->publish(
+            $activeRequest->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE),
+            $activeRequest,
+            null,
+            null,
+        );
+    }
 
-        return SiteRequestScope::replaced($backendView, $activeRequest);
+    /**
+     * A backend request defers image processing to a later request of the
+     * backend (DeferredBackendImageProcessor). Tools read the processed file
+     * (a thumbnail) in the same call, as they did without a backend request,
+     * so processing stays immediate while the request is published.
+     */
+    private function publish(
+        ServerRequestInterface $request,
+        ?ServerRequestInterface $replacedRequest,
+        ?string $siteIdentifier,
+        ?string $fallbackNote,
+    ): SiteRequestScope {
+        $previousFileProcessing = $this->context->hasAspect('fileProcessing')
+            ? $this->context->getAspect('fileProcessing')
+            : null;
+        $this->context->setAspect('fileProcessing', new FileProcessingAspect(false));
+        $GLOBALS['TYPO3_REQUEST'] = $request;
+
+        return SiteRequestScope::published($this->context, $request, $replacedRequest, $previousFileProcessing, $siteIdentifier, $fallbackNote);
     }
 
     /**

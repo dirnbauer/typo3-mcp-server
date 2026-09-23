@@ -10,6 +10,8 @@ use Hn\McpServer\Service\FileAccessService;
 use Hn\McpServer\Service\McpFileSandboxService;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Resource\File;
@@ -100,7 +102,7 @@ final class ReadFileMetadataTool extends AbstractTool
 
         $props = $file->getProperties();
         $metadataFile = $file instanceof ProcessedFile ? $file->getOriginalFile() : $file;
-        $metaData = $metadataFile->getMetaData()->get();
+        $metaData = $this->overlayWorkspace($metadataFile->getMetaData()->get());
 
         $result = [
             'uid' => $file->getUid(),
@@ -186,5 +188,27 @@ final class ReadFileMetadataTool extends AbstractTool
             'uid' => is_numeric($r['uid_foreign'] ?? null) ? (int)$r['uid_foreign'] : 0,
             'field' => is_scalar($r['fieldname'] ?? null) ? (string)$r['fieldname'] : '',
         ], $rows);
+    }
+
+    /**
+     * The File API returns the live metadata record; only a frontend request
+     * overlays it with a workspace draft (FileMetadataOverlayAspect). The tool
+     * reads in the user's workspace on every transport, like ReadTable.
+     *
+     * @param array<string, mixed> $metaData
+     * @return array<string, mixed>
+     */
+    private function overlayWorkspace(array $metaData): array
+    {
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        $workspaceId = $backendUser instanceof BackendUserAuthentication ? (int)$backendUser->workspace : 0;
+        if ($workspaceId <= 0 || !is_numeric($metaData['uid'] ?? null)) {
+            return $metaData;
+        }
+
+        $overlaid = $metaData;
+        BackendUtility::workspaceOL('sys_file_metadata', $overlaid, $workspaceId);
+
+        return is_array($overlaid) ? $overlaid : $metaData;
     }
 }

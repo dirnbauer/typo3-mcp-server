@@ -7,6 +7,9 @@ namespace Hn\McpServer\Service;
 use Mcp\Types\CallToolResult;
 use Mcp\Types\TextContent;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Context\AspectInterface;
+use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\FileProcessingAspect;
 
 /**
  * The request {@see SiteRequestContext} published for one tool call.
@@ -21,24 +24,30 @@ final readonly class SiteRequestScope
         public ?ServerRequestInterface $request,
         public ?string $siteIdentifier,
         public ?string $fallbackNote,
+        private ?Context $context = null,
         private ?ServerRequestInterface $replacedRequest = null,
+        private ?AspectInterface $previousFileProcessing = null,
     ) {}
 
-    /** A backend request was already active; nothing was published. */
+    /** Nothing was published: no request (CLI) or already a backend request. */
     public static function inactive(): self
     {
         return new self(null, null, null);
     }
 
-    public static function published(ServerRequestInterface $request, ?string $siteIdentifier, ?string $fallbackNote): self
-    {
-        return new self($request, $siteIdentifier, $fallbackNote);
-    }
-
-    /** $request stands in for $replacedRequest until leave() restores it. */
-    public static function replaced(ServerRequestInterface $request, ServerRequestInterface $replacedRequest): self
-    {
-        return new self($request, null, null, $replacedRequest);
+    /**
+     * $request is published; it stands in for $replacedRequest (null: there
+     * was none) until leave(), which also restores the fileProcessing aspect.
+     */
+    public static function published(
+        Context $context,
+        ServerRequestInterface $request,
+        ?ServerRequestInterface $replacedRequest,
+        ?AspectInterface $previousFileProcessing,
+        ?string $siteIdentifier,
+        ?string $fallbackNote,
+    ): self {
+        return new self($request, $siteIdentifier, $fallbackNote, $context, $replacedRequest, $previousFileProcessing);
     }
 
     public function isPublished(): bool
@@ -53,7 +62,12 @@ final readonly class SiteRequestScope
 
     public function leave(): void
     {
-        if ($this->request === null || ($GLOBALS['TYPO3_REQUEST'] ?? null) !== $this->request) {
+        if ($this->request === null) {
+            return;
+        }
+        // No aspect before means deferred processing: TYPO3's default.
+        $this->context?->setAspect('fileProcessing', $this->previousFileProcessing ?? new FileProcessingAspect());
+        if (($GLOBALS['TYPO3_REQUEST'] ?? null) !== $this->request) {
             return;
         }
         if ($this->replacedRequest !== null) {
