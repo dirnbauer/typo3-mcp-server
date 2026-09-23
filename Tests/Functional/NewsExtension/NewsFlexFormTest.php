@@ -421,7 +421,7 @@ class NewsFlexFormTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $sheets = $this->getStoredFlexFormSheets($pluginUid);
         self::assertSame('datetime', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null);
@@ -445,7 +445,7 @@ class NewsFlexFormTest extends FunctionalTestCase
                 'pi_flexform' => $flexForm,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $uid = json_decode((string)$result->content[0]->text, true)['uid'] ?? null;
         self::assertIsInt($uid);
@@ -476,7 +476,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $uid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $settings = json_decode((string)$result->content[0]->text, true)['records'][0]['pi_flexform']['settings'] ?? null;
         self::assertIsArray($settings);
 

@@ -436,7 +436,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
             'depth' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
         self::assertStringContainsString('[2001] Parent With Many Children', $content);
         for ($i = 1; $i <= 10; $i++) {
@@ -465,7 +465,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
             'depth' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
         for ($i = 1; $i <= 15; $i++) {
             self::assertStringContainsString('[' . (3000 + $i) . '] First Layer Child ' . $i . ' ', $content);
