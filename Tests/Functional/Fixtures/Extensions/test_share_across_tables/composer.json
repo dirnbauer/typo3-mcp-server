@@ -5,7 +5,11 @@
     "license": "GPL-2.0-or-later",
     "extra": {
         "typo3/cms": {
-            "extension-key": "test_share_across_tables"
+            "extension-key": "test_share_across_tables",
+            "version": "1.0.0",
+            "Package": {
+                "providesPackages": {}
+            }
         }
     }
 }

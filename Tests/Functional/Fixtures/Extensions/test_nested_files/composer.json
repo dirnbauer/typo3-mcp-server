@@ -5,7 +5,11 @@
     "license": "GPL-2.0-or-later",
     "extra": {
         "typo3/cms": {
-            "extension-key": "test_nested_files"
+            "extension-key": "test_nested_files",
+            "version": "1.0.0",
+            "Package": {
+                "providesPackages": {}
+            }
         }
     }
 }

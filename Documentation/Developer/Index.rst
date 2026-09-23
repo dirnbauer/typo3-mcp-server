@@ -96,8 +96,11 @@ coverage, then run the tests, PHPStan and the protocol smoke matrix.
 Releasing
 =========
 
-1. Update :file:`CHANGELOG.md`, :file:`ext_emconf.php`,
-   :file:`Documentation/guides.xml` and :file:`Documentation/Includes.rst.txt`.
+1. Update :file:`CHANGELOG.md`, ``extra.typo3/cms.version`` in
+   :file:`composer.json`, :file:`Documentation/guides.xml` and
+   :file:`Documentation/Includes.rst.txt`. The extension ships no
+   :file:`ext_emconf.php`; TYPO3 reads title, description, version and
+   constraints from :file:`composer.json`.
 2. Run ``composer test``, ``composer phpstan``, ``composer php-cs-fixer``.
 3. Tag ``vX.Y.Z`` and push ``main`` plus the tag to ``origin`` (GitHub) and
    ``gitlab``. The extension is distributed through Composer/Git only; there

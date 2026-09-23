@@ -1,7 +1,7 @@
 {
 	"name": "hn/typo3-mcp-server",
 	"type": "typo3-cms-extension",
-	"description": "TYPO3 extension that provides a Model Context Protocol (MCP) server for interacting with TYPO3 pages and records",
+	"description": "MCP Server - Model Context Protocol (MCP) server that lets AI assistants read and edit TYPO3 pages and records through workspaces",
 	"license": "GPL-2.0-or-later",
 	"homepage": "https://github.com/dirnbauer/typo3-mcp-server",
 	"authors": [
@@ -63,7 +63,11 @@
 	},
 	"extra": {
 		"typo3/cms": {
-			"extension-key": "mcp_server"
+			"extension-key": "mcp_server",
+			"version": "0.9.2",
+			"Package": {
+				"providesPackages": {}
+			}
 		}
 	},
 	"scripts": {

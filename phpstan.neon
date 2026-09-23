@@ -19,7 +19,6 @@ parameters:
         - Configuration
         - Tests
         - Build
-        - ext_emconf.php
         - .php-cs-fixer.dist.php
         - fractor.php
         - rector.php
