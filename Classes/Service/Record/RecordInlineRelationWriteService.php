@@ -173,7 +173,7 @@ final readonly class RecordInlineRelationWriteService
                         if (isset($config['foreign_sortby'])) {
                             $item[$config['foreign_sortby']] = ($index + 1) * 256;
                         }
-                        $item = $this->dataWriteConverter->convert($foreignTable, $item);
+                        $item = $this->dataWriteConverter->convert($foreignTable, $item, $existingUid);
                         if (!empty($item)) {
                             $dataMap[$foreignTable][$existingUid] = $item;
                         }
@@ -253,7 +253,7 @@ final readonly class RecordInlineRelationWriteService
             }
         }
 
-        $dataMap[$table][$uid] = $this->dataWriteConverter->convert($table, $childData);
+        $dataMap[$table][$uid] = $this->dataWriteConverter->convert($table, $childData, is_int($uid) ? $uid : null);
         if ($inlineRelations === []) {
             return;
         }

@@ -619,8 +619,9 @@ final class WriteTableTool extends AbstractRecordTool
         // Extract inline relations and build unified dataMap
         $inlineRelations = $this->inlineRelationService->extractFromData($table, $data);
 
-        // Convert data for storage
-        $data = $this->dataWriteConverter->convert($table, $data);
+        // Convert data for storage. The uid lets FlexForm values find the
+        // DataStructure of the stored record type when CType is not updated.
+        $data = $this->dataWriteConverter->convert($table, $data, $uid);
 
         // Resolve the live UID to workspace UID (once, used throughout)
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);

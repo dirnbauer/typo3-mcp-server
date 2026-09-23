@@ -212,7 +212,7 @@ class NewsFlexFormTest extends FunctionalTestCase
 
             foreach ($modeSettings as $key => $value) {
                 self::assertStringContainsString(
-                    'settings' . $key,
+                    'index="settings.' . $key . '"',
                     $piFlexform,
                     "Setting key '$key' not found in FlexForm XML for $modeName mode",
                 );
@@ -361,6 +361,126 @@ class NewsFlexFormTest extends FunctionalTestCase
         self::assertStringContainsString('datetime', $piFlexform);
         self::assertStringContainsString('10', $piFlexform);
         self::assertStringContainsString('100', $piFlexform);
+    }
+
+    /**
+     * Settings must land in the sheet their DataStructure declares, with the
+     * dotted field name intact. The news list FlexForm has the sheets sDEF,
+     * additional and template.
+     *
+     * The raw XML is inspected on purpose: ReadTable ignores sheets and used
+     * to rebuild the same values from dot-stripped tag names, so the round
+     * trip alone could not show that the backend form and the plugin never
+     * saw these values. Adapted from upstream hauptsacheNet/typo3-mcp-server#131.
+     */
+    public function testFlexFormFieldsAreStoredInTheirDeclaredSheet(): void
+    {
+        $pluginUid = $this->createNewsPlugin([
+            'settings' => [
+                'orderBy' => 'datetime',
+                'detailPid' => '20',
+                'media' => [
+                    'maxWidth' => '800',
+                ],
+            ],
+        ]);
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('datetime', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null, 'settings.orderBy belongs to sheet "sDEF"');
+        self::assertSame('20', $sheets['additional']['lDEF']['settings.detailPid']['vDEF'] ?? null, 'settings.detailPid belongs to sheet "additional"');
+        self::assertSame('800', $sheets['template']['lDEF']['settings.media.maxWidth']['vDEF'] ?? null, 'settings.media.maxWidth belongs to sheet "template" and keeps its dots');
+        self::assertArrayNotHasKey('settings.detailPid', $sheets['sDEF']['lDEF'] ?? []);
+        self::assertArrayNotHasKey('settings.media.maxWidth', $sheets['sDEF']['lDEF'] ?? []);
+
+        $settings = $this->readFlexFormSettings($pluginUid);
+        self::assertSame('datetime', $settings['orderBy'] ?? null);
+        self::assertSame('20', $settings['detailPid'] ?? null);
+        self::assertSame('800', $settings['media']['maxWidth'] ?? null);
+    }
+
+    /**
+     * An update that does not repeat CType still has to find the plugin's
+     * DataStructure, so the sheets are resolved from the stored record.
+     */
+    public function testFlexFormUpdateWithoutTypeFieldKeepsDeclaredSheets(): void
+    {
+        $pluginUid = $this->createNewsPlugin(['settings' => ['orderBy' => 'title']]);
+
+        $result = GeneralUtility::makeInstance(WriteTableTool::class)->execute([
+            'table' => 'tt_content',
+            'action' => 'update',
+            'uid' => $pluginUid,
+            'data' => [
+                'pi_flexform' => [
+                    'settings' => [
+                        'orderBy' => 'datetime',
+                        'limit' => '5',
+                        'hidePagination' => false,
+                        'categories' => [1, 2],
+                    ],
+                ],
+            ],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('datetime', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null);
+        self::assertSame('1,2', $sheets['sDEF']['lDEF']['settings.categories']['vDEF'] ?? null, 'A list becomes the comma-separated value of one field');
+        self::assertSame('5', $sheets['additional']['lDEF']['settings.limit']['vDEF'] ?? null);
+        self::assertSame('0', $sheets['additional']['lDEF']['settings.hidePagination']['vDEF'] ?? null, 'false is stored as "0", like an unchecked checkbox');
+    }
+
+    /**
+     * @param array<string, mixed> $flexForm
+     */
+    private function createNewsPlugin(array $flexForm): int
+    {
+        $result = GeneralUtility::makeInstance(WriteTableTool::class)->execute([
+            'table' => 'tt_content',
+            'action' => 'create',
+            'pid' => 1,
+            'data' => [
+                'CType' => 'news_pi1',
+                'header' => 'Sheet placement',
+                'pi_flexform' => $flexForm,
+            ],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+
+        $uid = json_decode((string)$result->content[0]->text, true)['uid'] ?? null;
+        self::assertIsInt($uid);
+
+        return $uid;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getStoredFlexFormSheets(int $uid): array
+    {
+        $xml = $this->getRawFlexFormXml($uid);
+        self::assertNotSame('', $xml);
+        $flexForm = GeneralUtility::xml2array($xml);
+        self::assertIsArray($flexForm, 'Stored pi_flexform must be parseable FlexForm XML');
+        self::assertIsArray($flexForm['data'] ?? null);
+
+        return $flexForm['data'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function readFlexFormSettings(int $uid): array
+    {
+        $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute([
+            'table' => 'tt_content',
+            'uid' => $uid,
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        $settings = json_decode((string)$result->content[0]->text, true)['records'][0]['pi_flexform']['settings'] ?? null;
+        self::assertIsArray($settings);
+
+        return $settings;
     }
 
     /**
