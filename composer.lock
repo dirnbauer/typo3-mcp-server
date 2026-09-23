@@ -6599,38 +6599,38 @@
         },
         {
             "name": "webconsulting/typo3-abilities",
-            "version": "v1.2.0",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
-                "url": "git@github.com:dirnbauer/typo3-abilities.git",
-                "reference": "c95ff165284f9ba01e1d3dd8ebaee6b7a1db23ab"
+                "url": "https://github.com/dirnbauer/typo3-abilities.git",
+                "reference": "33e54c0256a50d30ca2c06888f791691bd74c1ec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/c95ff165284f9ba01e1d3dd8ebaee6b7a1db23ab",
-                "reference": "c95ff165284f9ba01e1d3dd8ebaee6b7a1db23ab",
+                "url": "https://api.github.com/repos/dirnbauer/typo3-abilities/zipball/33e54c0256a50d30ca2c06888f791691bd74c1ec",
+                "reference": "33e54c0256a50d30ca2c06888f791691bd74c1ec",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.4",
-                "psr/http-message": "^1.1 || ^2.0",
+                "psr/http-message": "^2.0",
                 "psr/http-server-middleware": "^1.0",
-                "symfony/console": "^7.0",
-                "symfony/yaml": "^7.0",
+                "symfony/console": "^7.4",
+                "symfony/yaml": "^7.4",
                 "typo3/cms-backend": "^14.3",
                 "typo3/cms-core": "^14.3",
                 "typo3/cms-fluid": "^14.3",
                 "typo3/cms-frontend": "^14.3"
             },
             "require-dev": {
-                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan": "^2.2",
                 "phpstan/phpstan-phpunit": "^2.0",
-                "phpunit/phpunit": "^12.4 || ^13.0",
+                "phpunit/phpunit": "^13.3",
                 "saschaegerer/phpstan-typo3": "^3.0",
                 "typo3/cms-reactions": "^14.3",
                 "typo3/cms-workspaces": "^14.3",
                 "typo3/coding-standards": "^0.9",
-                "typo3/testing-framework": "^9.5"
+                "typo3/testing-framework": "^9.7"
             },
             "suggest": {
                 "hn/typo3-mcp-server": "MCP projection bridge: exposes McpProjection descriptors as MCP tools",
@@ -6697,6 +6697,7 @@
                 }
             ],
             "description": "Abilities registry for TYPO3 — one typed, permissioned registry of what the installation can do; CLI, REST, MCP, webhooks, Fluid, the backend module and agent skills are projections of it.",
+            "homepage": "https://github.com/dirnbauer/typo3-abilities",
             "keywords": [
                 "abilities",
                 "agents",
@@ -6706,7 +6707,11 @@
                 "rest",
                 "typo3"
             ],
-            "time": "2026-09-19T05:08:06+00:00"
+            "support": {
+                "issues": "https://github.com/dirnbauer/typo3-abilities/issues",
+                "source": "https://github.com/dirnbauer/typo3-abilities"
+            },
+            "time": "2026-09-23T09:13:35+00:00"
         },
         {
             "name": "webmozart/assert",
