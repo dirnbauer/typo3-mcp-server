@@ -1,10 +1,10 @@
 {
   "private": true,
   "engines": {
-    "node": ">=22.18.0 <23.0.0"
+    "node": ">=22.18.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.52.0"
+    "@playwright/test": "1.63.0"
   },
   "scripts": {
     "playwright:install": "playwright install",
