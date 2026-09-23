@@ -333,6 +333,7 @@ class FileUploadTest extends LlmTestCase
             }
         }
 
+        self::assertNotNull($uploadResult, 'The UploadFile call was requested but not executed');
         self::assertFalse($uploadResult['isError'] ?? false, 'Requesting the upload URL failed: ' . $uploadResult['content']);
 
         $data = json_decode($uploadResult['content'], true);
@@ -341,7 +342,7 @@ class FileUploadTest extends LlmTestCase
 
         // The instructions must reach the user: the client harness has to run
         // the upload, so the model needs to pass the URL/token on.
-        $final = $this->continueWithToolResult($response, $results);
+        $final = $this->continueWithToolResults($response, $results);
         $text = $final->getContent();
         self::assertTrue(
             str_contains($text, $data['uploadToken']) || str_contains($text, 'mcp_upload') || str_contains(strtolower($text), 'curl'),
@@ -442,6 +443,9 @@ class FileUploadTest extends LlmTestCase
         return $uid ? (int)$uid : null;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function fetchFile(int $uid): array
     {
         $qb = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('sys_file');
@@ -453,6 +457,9 @@ class FileUploadTest extends LlmTestCase
             ->fetchAssociative() ?: [];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function fetchContent(int $uid): array
     {
         $qb = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tt_content');

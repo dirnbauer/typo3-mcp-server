@@ -6,9 +6,15 @@ namespace Hn\McpServer\Tests\Llm\Client;
 
 /**
  * Represents an LLM response with tool calls
+ *
+ * @phpstan-type ToolCall array{name: string, arguments: array<string, mixed>}
  */
 class LlmResponse
 {
+    /**
+     * @param list<ToolCall> $toolCalls
+     * @param array<string, mixed> $rawResponse Decoded chat-completions JSON
+     */
     public function __construct(private readonly string $content, private readonly array $toolCalls, private readonly array $rawResponse) {}
 
     /**
@@ -22,7 +28,7 @@ class LlmResponse
     /**
      * Get tool calls made by the LLM
      *
-     * @return array Array of tool calls with 'name' and 'arguments' keys
+     * @return list<ToolCall> Tool calls with 'name' and 'arguments' keys
      */
     public function getToolCalls(): array
     {
@@ -31,6 +37,8 @@ class LlmResponse
 
     /**
      * Get the raw API response for debugging
+     *
+     * @return array<string, mixed>
      */
     public function getRawResponse(): array
     {
@@ -49,7 +57,7 @@ class LlmResponse
      * Get tool calls by name
      *
      * @param string $toolName
-     * @return array Array of matching tool calls
+     * @return list<ToolCall> Array of matching tool calls
      */
     public function getToolCallsByName(string $toolName): array
     {

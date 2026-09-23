@@ -23,12 +23,17 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * Set OPENROUTER_API_KEY to enable tests.
  *
  * @group llm
+ * @phpstan-import-type LlmTool from LlmClientInterface
+ * @phpstan-import-type ToolResult from LlmClientInterface
+ * @phpstan-import-type ToolCall from LlmResponse
  */
 abstract class LlmTestCase extends FunctionalTestCase
 {
     /**
      * Models available via OpenRouter for multi-model tests.
      * Keys are used as labels in TestDox output and must include model version.
+     *
+     * @var array<string, string> label => OpenRouter model ID
      */
     protected const MODELS = [
         'haiku-4.5' => 'anthropic/claude-haiku-4.5',
@@ -38,6 +43,9 @@ abstract class LlmTestCase extends FunctionalTestCase
         'gemini-3-flash' => 'google/gemini-3-flash-preview',
     ];
 
+    /**
+     * @var array<string, array<string, mixed>> label => extra request options
+     */
     protected const MODEL_OPTIONS = [
         'gpt-5.4-mini' => ['reasoning' => ['effort' => 'high']],
     ];
@@ -54,6 +62,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     protected ?LlmClientInterface $llmClient = null;
     protected string $lastPrompt = '';
     protected ?LlmResponse $lastResponse = null;
+    /** @var list<string> Names of the tools called by executeUntilToolFound() */
     protected array $toolCallHistory = [];
 
     /** @var string The model to use for LLM calls, set via setModel() or data providers */
@@ -100,7 +109,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
             return;
         }
-        $model = $this->dataName() !== null ? (string)$this->dataName() : '';
+        $model = (string)$this->dataName();
         $key = sha1(static::class . '::' . $this->name() . '::' . $model);
         file_put_contents($dir . '/' . $key . '.json', json_encode([
             'class' => static::class,
@@ -176,6 +185,14 @@ abstract class LlmTestCase extends FunctionalTestCase
     }
 
     /**
+     * The client initializeLlmClient() set up; setUp() skips the test without one.
+     */
+    private function requireLlmClient(): LlmClientInterface
+    {
+        return $this->llmClient ?? throw new \LogicException('No LLM client: initializeLlmClient() did not run or found no OPENROUTER_API_KEY.');
+    }
+
+    /**
      * Initialize the LLM client based on available API keys.
      */
     protected function initializeLlmClient(): void
@@ -207,6 +224,8 @@ abstract class LlmTestCase extends FunctionalTestCase
     /**
      * Data provider for multi-model tests.
      * Returns all configured models to test against.
+     *
+     * @return array<string, array{string}>
      */
     public static function modelProvider(): array
     {
@@ -219,7 +238,7 @@ abstract class LlmTestCase extends FunctionalTestCase
     /**
      * Convert MCP tool schemas to OpenAI-compatible function format
      *
-     * @return array
+     * @return list<LlmTool>
      */
     protected function getMcpToolsAsLlmFunctions(): array
     {
@@ -246,7 +265,7 @@ abstract class LlmTestCase extends FunctionalTestCase
      * Call LLM with a prompt and available tools
      *
      * @param string $prompt
-     * @param array $options Additional options for the LLM call
+     * @param array<string, mixed> $options Additional options for the LLM call
      * @return LlmResponse
      */
     protected function callLlm(string $prompt, array $options = []): LlmResponse
@@ -265,7 +284,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         }
 
         $this->llmCallCount++;
-        $this->lastResponse = $this->llmClient->complete(
+        $this->lastResponse = $this->requireLlmClient()->complete(
             $prompt,
             $tools,
             array_merge($defaults, $options),
@@ -274,6 +293,9 @@ abstract class LlmTestCase extends FunctionalTestCase
         return $this->lastResponse;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function getModelOptions(): array
     {
         $modelKey = array_search($this->llmModel, static::MODELS, true);
@@ -305,7 +327,7 @@ abstract class LlmTestCase extends FunctionalTestCase
      *
      * @param LlmResponse $response
      * @param string $toolName
-     * @param array|null $expectedParams Partial params to match (null to skip param checking)
+     * @param array<string, mixed>|null $expectedParams Partial params to match (null to skip param checking)
      */
     protected function assertToolCalled(LlmResponse $response, string $toolName, ?array $expectedParams = null): void
     {
@@ -354,7 +376,7 @@ abstract class LlmTestCase extends FunctionalTestCase
      * Assert that tools were called in a specific order (with flexibility)
      *
      * @param LlmResponse $response
-     * @param array $expectedSequence Array of tool names
+     * @param list<string> $expectedSequence Array of tool names
      * @param bool $strict If true, no other tools allowed between expected ones
      */
     protected function assertToolSequence(LlmResponse $response, array $expectedSequence, bool $strict = false): void
@@ -408,6 +430,9 @@ abstract class LlmTestCase extends FunctionalTestCase
      * Extract the record data from a WriteTable tool call's arguments.
      * Some models (e.g. OpenAI GPT) place record fields at the top level
      * instead of nesting them inside the 'data' parameter.
+     *
+     * @param array<string, mixed> $arguments
+     * @return array<mixed>
      */
     protected function extractWriteData(array $arguments): array
     {
@@ -423,7 +448,7 @@ abstract class LlmTestCase extends FunctionalTestCase
      * Assert that the response follows one of the acceptable patterns
      *
      * @param LlmResponse $response
-     * @param array $acceptablePatterns Array of tool sequences, each can be partial
+     * @param list<list<string>> $acceptablePatterns Array of tool sequences, each can be partial
      * @param string $description Description of what patterns are expected
      */
     protected function assertFollowsPattern(LlmResponse $response, array $acceptablePatterns, string $description = ''): void
@@ -449,6 +474,9 @@ abstract class LlmTestCase extends FunctionalTestCase
 
     /**
      * Check if actual sequence matches a pattern (pattern can be partial)
+     *
+     * @param list<string> $actualSequence
+     * @param list<string> $pattern
      */
     private function matchesPattern(array $actualSequence, array $pattern): bool
     {
@@ -466,8 +494,8 @@ abstract class LlmTestCase extends FunctionalTestCase
     /**
      * Execute a tool call using the real MCP tool
      *
-     * @param array $toolCall Tool call from LLM response
-     * @return array Tool result with 'content' and optionally 'error' keys
+     * @param ToolCall $toolCall Tool call from LLM response
+     * @return ToolResult Tool result with 'content' and optionally 'error' keys
      */
     protected function executeToolCall(array $toolCall): array
     {
@@ -519,23 +547,34 @@ abstract class LlmTestCase extends FunctionalTestCase
     }
 
     /**
-     * Continue conversation with tool results
+     * Continue conversation with the result of the previous response's first tool call
      *
      * @param LlmResponse $previousResponse Previous LLM response
-     * @param array $toolResults Array of tool results (from executeToolCall)
-     * @param array $options Additional options for the LLM call
+     * @param ToolResult $toolResult Tool result (from executeToolCall)
+     * @param array<string, mixed> $options Additional options for the LLM call
      * @return LlmResponse
      */
     protected function continueWithToolResult(
         LlmResponse $previousResponse,
+        array $toolResult,
+        array $options = [],
+    ): LlmResponse {
+        return $this->continueWithToolResults($previousResponse, [$toolResult], $options);
+    }
+
+    /**
+     * Continue conversation with the results of the previous response's tool calls
+     *
+     * @param LlmResponse $previousResponse Previous LLM response
+     * @param list<ToolResult> $toolResults Tool results (from executeToolCall), in tool-call order
+     * @param array<string, mixed> $options Additional options for the LLM call
+     * @return LlmResponse
+     */
+    protected function continueWithToolResults(
+        LlmResponse $previousResponse,
         array $toolResults,
         array $options = [],
     ): LlmResponse {
-        // Wrap single result in array if needed
-        if (isset($toolResults['content'])) {
-            $toolResults = [$toolResults];
-        }
-
         $defaults = [
             'temperature' => 0,
             'max_tokens' => 4000,
@@ -547,7 +586,7 @@ abstract class LlmTestCase extends FunctionalTestCase
         }
 
         $this->llmCallCount++;
-        $this->lastResponse = $this->llmClient->completeWithHistory(
+        $this->lastResponse = $this->requireLlmClient()->completeWithHistory(
             $this->lastPrompt,
             $previousResponse,
             $toolResults,
@@ -562,7 +601,7 @@ abstract class LlmTestCase extends FunctionalTestCase
      * Execute all tool calls from a response and continue the conversation
      *
      * @param LlmResponse $response Response containing tool calls
-     * @param array $options Additional options for the LLM call
+     * @param array<string, mixed> $options Additional options for the LLM call
      * @return LlmResponse
      */
     protected function executeAndContinue(LlmResponse $response, array $options = []): LlmResponse
@@ -573,7 +612,7 @@ abstract class LlmTestCase extends FunctionalTestCase
             $toolResults[] = $this->executeToolCall($toolCall);
         }
 
-        return $this->continueWithToolResult($response, $toolResults, $options);
+        return $this->continueWithToolResults($response, $toolResults, $options);
     }
 
     /**
@@ -647,11 +686,11 @@ abstract class LlmTestCase extends FunctionalTestCase
     /**
      * Get all tool names that were called during exploration
      *
-     * @return array
+     * @return list<string>
      */
     protected function getToolCallHistory(): array
     {
-        return $this->toolCallHistory ?? [];
+        return $this->toolCallHistory;
     }
 
     /**

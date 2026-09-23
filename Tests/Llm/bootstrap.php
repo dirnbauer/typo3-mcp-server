@@ -28,6 +28,9 @@ require_once __DIR__ . '/LlmTestCase.php';
     }
 
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        throw new \RuntimeException('Cannot read ' . $envFile);
+    }
 
     foreach ($lines as $line) {
         // Skip comments

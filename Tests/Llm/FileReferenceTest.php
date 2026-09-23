@@ -352,6 +352,8 @@ class FileReferenceTest extends LlmTestCase
 
     /**
      * Get all file references for a content element across all field types.
+     *
+     * @return list<array<string, mixed>>
      */
     protected function getAllFileReferencesForContent(int $parentUid): array
     {
@@ -364,6 +366,8 @@ class FileReferenceTest extends LlmTestCase
 
     /**
      * Query file references created for a given parent content element (including workspace versions).
+     *
+     * @return list<array<string, mixed>>
      */
     protected function queryFileReferencesForContent(int $parentUid, string $fieldName): array
     {

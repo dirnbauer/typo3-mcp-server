@@ -279,6 +279,7 @@ class SysFileMetadataTest extends LlmTestCase
 
         // Pre-populated rows must not be flattened or overwritten.
         $personMeta = $this->loadMetadataForFile(3);
+        self::assertNotNull($personMeta, 'person.jpg metadata row should still exist.');
         self::assertSame(
             'Original alt for person',
             (string)$personMeta['alternative'],

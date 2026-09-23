@@ -121,6 +121,7 @@ LLM tests can fail because:
 - `executeUntilToolFound($response, $toolName, $maxSteps = ...)`
 - `executeToolCall($toolCall)`
 - `continueWithToolResult($previousResponse, $toolResult)`
+- `continueWithToolResults($previousResponse, $toolResults)` (one result per tool call)
 - `assertToolCalled($response, $toolName, $expectedParams = null)`
 - `getToolCallHistory()`
 - `getToolCallsDebugString()`

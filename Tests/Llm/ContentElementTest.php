@@ -120,12 +120,8 @@ class ContentElementTest extends LlmTestCase
             'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
-        // LLM should also check existing content to understand column layout
-        $history = $this->getToolCallHistory();
-        if (in_array('ReadTable', $history)) {
-            // Good - LLM checked existing content
-            self::assertTrue(true, 'LLM checked existing content to understand layout');
-        }
+        // Checking existing content (ReadTable) to understand the column layout
+        // is welcome but not required.
 
         // Now verify content creation in right column
         $writeTableCalls = $response->getToolCallsByName('WriteTable');
@@ -153,20 +149,17 @@ class ContentElementTest extends LlmTestCase
                 'Content should be created in right column (colPos=1 or 2)',
             );
         } elseif ($writeCall['action'] === 'update') {
-            // For updates, the content might already be in the right column
-            // Check if the LLM is updating uid=108 which is already in colPos=1
-            if (isset($writeCall['where']['uid']) && $writeCall['where']['uid'] == 108) {
-                // This is fine - updating existing office hours in right column
-                self::assertTrue(true, 'Updating existing Office Hours content in right column');
-            } else {
-                // Otherwise, verify colPos is being set to right column
-                if (isset($writeCall['data']['colPos'])) {
-                    self::assertContains(
-                        $writeCall['data']['colPos'],
-                        [1, 2],
-                        'Content should be moved to right column',
-                    );
-                }
+            // For updates, the content might already be in the right column:
+            // updating uid=108 (the existing Office Hours element, already in
+            // colPos=1) is fine as is. Any other update that sets colPos must
+            // move the element into the right column.
+            $updatesOfficeHours = isset($writeCall['where']['uid']) && $writeCall['where']['uid'] == 108;
+            if (!$updatesOfficeHours && isset($writeCall['data']['colPos'])) {
+                self::assertContains(
+                    $writeCall['data']['colPos'],
+                    [1, 2],
+                    'Content should be moved to right column',
+                );
             }
         }
     }
@@ -266,7 +259,7 @@ class ContentElementTest extends LlmTestCase
         $foundWriteTable = false;
 
         // Keep executing until we find a WriteTable or run out of iterations
-        while ($iterations < 5 && $currentResponse->hasToolCalls() && !$foundWriteTable) {
+        while ($iterations < 5 && $currentResponse->hasToolCalls()) {
             if ($currentResponse->getToolCallsByName('WriteTable')) {
                 $foundWriteTable = true;
                 break;
@@ -292,7 +285,11 @@ class ContentElementTest extends LlmTestCase
                 }
             }
 
-            self::assertTrue($hasOrderingChange, 'Expected content ordering to be changed');
+            self::assertTrue(
+                $hasOrderingChange,
+                'Expected update with position or sorting field. '
+                . 'WriteTable calls: ' . json_encode(array_map(fn($c) => $c['arguments'], $writeCalls), JSON_PRETTY_PRINT)
+            );
         } else {
             // If no WriteTable found, at least verify the LLM understood the task
             $finalContent = $currentResponse->getContent();
@@ -301,11 +298,5 @@ class ContentElementTest extends LlmTestCase
             // Skip the strict assertion if LLM chose to just describe the change
             self::markTestIncomplete("LLM described the change but didn't execute it");
         }
-
-        self::assertTrue(
-            $hasOrderingChange,
-            'Expected update with position or sorting field. '
-            . 'WriteTable calls: ' . json_encode(array_map(fn($c) => $c['arguments'], $writeCalls), JSON_PRETTY_PRINT)
-        );
     }
 }

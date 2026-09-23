@@ -62,7 +62,6 @@ class SeoMetaTest extends LlmTestCase
             if (!empty($finalContent)) {
                 // LLM might explain why no updates were made, or apologize for errors and retry
                 // Both are reasonable behaviors
-                self::assertNotEmpty($finalContent, 'Expected LLM to provide some response');
 
                 // If the LLM mentions that pages already have descriptions, that's ideal
                 if (preg_match('/already|have|description|complete|found|none|all/i', $finalContent)) {
@@ -152,11 +151,8 @@ class SeoMetaTest extends LlmTestCase
             'Expected LLM to explore page context. Tools used: ' . implode(', ', $history),
         );
 
-        // LLM might check table schema to understand available fields
-        $history = $this->getToolCallHistory();
-        if (in_array('GetTableSchema', $history)) {
-            self::assertTrue(true, 'LLM checked table schema to understand OG fields');
-        }
+        // Checking the table schema (GetTableSchema) to understand the available
+        // OG fields is welcome but not required.
 
         // Expect update with OG fields
         $this->assertToolCalled($response, 'WriteTable', [

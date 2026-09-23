@@ -96,7 +96,7 @@ class NewsTest extends LlmTestCase
                      . ($data['teaser'] ?? '') . ' '
                      . ($data['bodytext'] ?? '');
 
-        self::assertNotEmpty($allContent, 'Content should not be empty');
+        self::assertNotSame('', trim($allContent), 'Content should not be empty');
         self::assertMatchesRegularExpression(
             '/launch|website|site|online|live|released|today/i',
             $allContent,
@@ -178,19 +178,12 @@ class NewsTest extends LlmTestCase
             'Content should mention product launch',
         );
 
-        // Check if LLM attempted category handling
-        $hasCategories = isset($data['categories']) && !empty($data['categories']);
-        $createdCategories = array_filter($writeCalls, fn($call) => $call['arguments']['table'] === 'sys_category');
-
         // Category handling is optional - the LLM was asked to "categorize appropriately"
         // which it might interpret as:
         // 1. Assigning existing categories
         // 2. Creating new categories
         // 3. Simply creating the news in an appropriate location/section
-        // All are valid interpretations
-        if ($hasCategories || count($createdCategories) > 0) {
-            self::assertTrue(true, 'LLM handled categories by assigning or creating them');
-        }
+        // All are valid interpretations, so categories are not asserted.
     }
 
     #[DataProvider('modelProvider')]

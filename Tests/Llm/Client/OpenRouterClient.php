@@ -15,13 +15,15 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * Uses the OpenAI-compatible API provided by OpenRouter to access
  * multiple LLM providers (Anthropic, OpenAI, Mistral, Moonshot, etc.)
+ *
+ * @phpstan-import-type LlmTool from LlmClientInterface
  */
 class OpenRouterClient implements LlmClientInterface
 {
     private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     private readonly RequestFactory $requestFactory;
 
-    /** @var array Full conversation history for multi-turn support */
+    /** @var list<array<string, mixed>> Full conversation history for multi-turn support */
     private array $conversationHistory = [];
 
     public function __construct(private readonly string $apiKey)
@@ -133,6 +135,8 @@ class OpenRouterClient implements LlmClientInterface
 
     /**
      * Send a request to OpenRouter API with retry on transient failures
+     *
+     * @param array<string, mixed> $requestBody
      */
     private function sendRequest(array $requestBody): LlmResponse
     {
@@ -230,6 +234,9 @@ class OpenRouterClient implements LlmClientInterface
      *
      * Tools are already in OpenAI format from getMcpToolsAsLlmFunctions(),
      * so this is essentially a pass-through with validation.
+     *
+     * @param list<LlmTool> $tools
+     * @return list<array{type: 'function', function: array{name: string, description: string, parameters: array<string, mixed>}}>
      */
     private function convertToolsToOpenAIFormat(array $tools): array
     {
@@ -256,6 +263,8 @@ class OpenRouterClient implements LlmClientInterface
 
     /**
      * Parse OpenAI-format response into LlmResponse
+     *
+     * @param array<string, mixed> $responseData Decoded chat-completions JSON
      */
     private function parseResponse(array $responseData): LlmResponse
     {
@@ -286,6 +295,8 @@ class OpenRouterClient implements LlmClientInterface
 
     /**
      * Build assistant message from previous response for conversation history
+     *
+     * @return array<string, mixed>
      */
     private function buildAssistantMessage(LlmResponse $previousResponse): array
     {
