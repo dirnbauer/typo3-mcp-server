@@ -71,7 +71,7 @@ final class AbilityToolBridgeTest extends TestCase
     #[Test]
     public function bridgeProjectsOneToolPerMcpExposedAbility(): void
     {
-        $tools = [...(new AbilityToolBridge($this->projection))->getTools()];
+        $tools = [...new AbilityToolBridge($this->projection)->getTools()];
 
         self::assertContainsOnlyInstancesOf(AbilityTool::class, $tools);
         self::assertSame(
@@ -263,7 +263,7 @@ final class AbilityToolBridgeTest extends TestCase
 
     private function tool(string $name): AbilityTool
     {
-        foreach ((new AbilityToolBridge($this->projection))->getTools() as $tool) {
+        foreach (new AbilityToolBridge($this->projection)->getTools() as $tool) {
             if ($tool->getName() === $name) {
                 return $tool;
             }

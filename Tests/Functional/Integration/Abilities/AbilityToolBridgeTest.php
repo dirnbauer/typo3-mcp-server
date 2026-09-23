@@ -36,7 +36,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class AbilityToolBridgeTest extends AbstractFunctionalTest
 {
-    private const PROTOCOL_VERSION = '2026-07-28';
+    private const string PROTOCOL_VERSION = '2026-07-28';
 
     protected array $testExtensionsToLoad = [
         'mcp_server',

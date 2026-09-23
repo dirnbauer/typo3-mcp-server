@@ -93,8 +93,8 @@ final class BackendUserConfigurationMiddlewareTest extends TestCase
         $GLOBALS['BE_USER'] = $backendUser;
 
         $response = self::createStub(ResponseInterface::class);
-        $handler = new class ($response) implements RequestHandlerInterface {
-            public function __construct(private readonly ResponseInterface $response) {}
+        $handler = new readonly class ($response) implements RequestHandlerInterface {
+            public function __construct(private ResponseInterface $response) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {

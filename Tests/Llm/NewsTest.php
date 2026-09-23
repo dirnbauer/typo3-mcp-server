@@ -136,14 +136,7 @@ class NewsTest extends LlmTestCase
 
         // Find news creation
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $newsWriteCall = null;
-
-        foreach ($writeCalls as $call) {
-            if ($call['arguments']['table'] === 'tx_news_domain_model_news') {
-                $newsWriteCall = $call;
-                break;
-            }
-        }
+        $newsWriteCall = array_find($writeCalls, fn($call) => $call['arguments']['table'] === 'tx_news_domain_model_news');
 
         self::assertNotNull(
             $newsWriteCall,
@@ -211,14 +204,7 @@ class NewsTest extends LlmTestCase
 
         // Verify news creation
         $writeCalls = $response->getToolCallsByName('WriteTable');
-        $newsWriteCall = null;
-
-        foreach ($writeCalls as $call) {
-            if ($call['arguments']['table'] === 'tx_news_domain_model_news') {
-                $newsWriteCall = $call;
-                break;
-            }
-        }
+        $newsWriteCall = array_find($writeCalls, fn($call) => $call['arguments']['table'] === 'tx_news_domain_model_news');
 
         self::assertNotNull(
             $newsWriteCall,

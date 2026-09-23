@@ -243,7 +243,7 @@ final class UploadFileFromUrlToolTest extends AbstractFunctionalTest
                 'Online media helper failed and was skipped',
                 ['extension' => 'broken', 'exceptionClass' => \Exception::class],
             );
-            (new \ReflectionProperty(AbstractTool::class, 'logger'))->setValue($tool, $logger);
+            new \ReflectionProperty(AbstractTool::class, 'logger')->setValue($tool, $logger);
             $result = $tool->execute(['url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&access_token=test-only']);
             self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         } finally {

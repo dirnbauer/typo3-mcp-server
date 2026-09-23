@@ -82,13 +82,13 @@ final class SubdirectoryRoutingTest extends AbstractFunctionalTest
             'REQUEST_URI' => $requestPath,
         ];
 
-        return (new ServerRequest(
+        return new ServerRequest(
             new Uri('https://example.com' . $requestPath),
             'GET',
             'php://input',
             [],
             $serverParams,
-        ))->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams));
+        )->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams));
     }
 
     /** @return array<string, mixed> */
@@ -105,7 +105,7 @@ final class SubdirectoryRoutingTest extends AbstractFunctionalTest
         return new class implements RequestHandlerInterface {
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
-                return (new Response())->withStatus(418);
+                return new Response()->withStatus(418);
             }
         };
     }

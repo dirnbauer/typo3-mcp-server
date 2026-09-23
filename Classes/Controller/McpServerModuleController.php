@@ -40,10 +40,10 @@ use TYPO3\CMS\Core\Localization\LanguageService;
  */
 final readonly class McpServerModuleController
 {
-    private const LABELS = 'mcp_server.mod';
-    private const MODULE_LABELS = 'mcp_server.modules.mcp_server';
-    private const CSRF_FORM = 'mcpserver';
-    private const CSRF_ACTION = 'tokenManagement';
+    private const string LABELS = 'mcp_server.mod';
+    private const string MODULE_LABELS = 'mcp_server.modules.mcp_server';
+    private const string CSRF_FORM = 'mcpserver';
+    private const string CSRF_ACTION = 'tokenManagement';
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,

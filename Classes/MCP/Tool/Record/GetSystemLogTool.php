@@ -19,8 +19,8 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 final class GetSystemLogTool extends AbstractRecordTool
 {
-    private const DEFAULT_LIMIT = 50;
-    private const MAX_LIMIT = 500;
+    private const int DEFAULT_LIMIT = 50;
+    private const int MAX_LIMIT = 500;
 
     public function __construct(
         TableAccessService $tableAccessService,

@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class ReadFileMetadataToolTest extends AbstractFunctionalTest
 {
-    private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
+    private const string PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     #[Test]
     public function readsImageMetadataByAbsoluteIdentifier(): void

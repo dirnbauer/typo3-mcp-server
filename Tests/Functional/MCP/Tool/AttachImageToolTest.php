@@ -23,7 +23,7 @@ final class AttachImageToolTest extends FunctionalTestCase
     use GetServiceTrait;
     use DevSiteTestTrait;
 
-    private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
+    private const string PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     protected array $coreExtensionsToLoad = [
         'workspaces',

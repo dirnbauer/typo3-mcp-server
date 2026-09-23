@@ -273,17 +273,9 @@ class ContentElementTest extends LlmTestCase
         if ($foundWriteTable) {
             $writeCalls = $currentResponse->getToolCallsByName('WriteTable');
             self::assertGreaterThan(0, count($writeCalls), 'Expected WriteTable calls');
-
-            // Verify it's updating content order
-            $hasOrderingChange = false;
-            foreach ($writeCalls as $call) {
-                if ($call['arguments']['action'] === 'update'
-                    && (isset($call['arguments']['data']['sorting'])
-                     || isset($call['arguments']['where']['uid']))) {
-                    $hasOrderingChange = true;
-                    break;
-                }
-            }
+            $hasOrderingChange = array_any($writeCalls, fn($call) => $call['arguments']['action'] === 'update'
+                && (isset($call['arguments']['data']['sorting'])
+                 || isset($call['arguments']['where']['uid'])));
 
             self::assertTrue(
                 $hasOrderingChange,

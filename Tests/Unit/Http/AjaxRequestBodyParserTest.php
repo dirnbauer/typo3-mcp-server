@@ -15,7 +15,7 @@ final class AjaxRequestBodyParserTest extends TestCase
     #[Test]
     public function parseStringFieldsReadsParsedBody(): void
     {
-        $request = (new ServerRequest(new Uri('https://example.com/ajax'), 'POST'))
+        $request = new ServerRequest(new Uri('https://example.com/ajax'), 'POST')
             ->withParsedBody(['csrfToken' => 'abc', 'tokenId' => '5']);
 
         $parser = new AjaxRequestBodyParser();

@@ -9,7 +9,7 @@ use TYPO3\CMS\Core\Core\Environment;
 /** Bounded tail-reader for TYPO3 file logs. */
 final class DeveloperLogReader
 {
-    private const TAIL_BYTES = 262144;
+    private const int TAIL_BYTES = 262144;
 
     /** @return list<string> */
     private function listLogFiles(): array

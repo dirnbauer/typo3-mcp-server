@@ -15,9 +15,9 @@ final readonly class AuthenticationRateLimiter
 {
     use CorsHeadersTrait;
 
-    public const BEARER = 'mcp-server-bearer';
-    public const TOKEN = 'mcp-server-token';
-    public const UPLOAD = 'mcp-server-upload';
+    public const string BEARER = 'mcp-server-bearer';
+    public const string TOKEN = 'mcp-server-token';
+    public const string UPLOAD = 'mcp-server-upload';
 
     public function __construct(
         private RateLimiterFactoryInterface $rateLimiterFactory,

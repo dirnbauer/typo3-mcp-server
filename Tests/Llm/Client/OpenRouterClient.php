@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class OpenRouterClient implements LlmClientInterface
 {
-    private const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+    private const string API_URL = 'https://openrouter.ai/api/v1/chat/completions';
     private readonly RequestFactory $requestFactory;
 
     /** @var list<array<string, mixed>> Full conversation history for multi-turn support */

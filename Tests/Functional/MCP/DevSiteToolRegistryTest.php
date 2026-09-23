@@ -14,7 +14,7 @@ final class DevSiteToolRegistryTest extends AbstractFunctionalTest
 {
     use DevSiteTestTrait;
 
-    private const DEVELOPER_INTROSPECTION_TOOLS = [
+    private const array DEVELOPER_INTROSPECTION_TOOLS = [
         'ApplicationInfo',
         'TypoScript',
         'PageTsConfig',

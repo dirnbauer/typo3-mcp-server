@@ -34,8 +34,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FileEnrichmentListener
 {
-    private const SYS_FILE_FIELDS = ['public_url'];
-    private const SYS_FILE_REFERENCE_FIELDS = [
+    private const array SYS_FILE_FIELDS = ['public_url'];
+    private const array SYS_FILE_REFERENCE_FIELDS = [
         'file_name',
         'file_identifier',
         'file_mime_type',

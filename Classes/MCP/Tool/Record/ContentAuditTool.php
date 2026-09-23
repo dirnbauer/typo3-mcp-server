@@ -25,12 +25,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ContentAuditTool extends AbstractRecordTool
 {
-    private const DEFAULT_LIMIT = 50;
-    private const MAX_LIMIT = 200;
-    private const DEFAULT_DEPTH = 5;
-    private const MAX_DEPTH = 10;
+    private const int DEFAULT_LIMIT = 50;
+    private const int MAX_LIMIT = 200;
+    private const int DEFAULT_DEPTH = 5;
+    private const int MAX_DEPTH = 10;
 
-    private const AVAILABLE_CHECKS = [
+    private const array AVAILABLE_CHECKS = [
         'missing_meta_description',
         'missing_alt_text',
         'empty_content',
@@ -38,7 +38,7 @@ final class ContentAuditTool extends AbstractRecordTool
         'missing_page_title',
     ];
 
-    private const TEXT_CTYPES = ['text', 'textmedia', 'textpic'];
+    private const array TEXT_CTYPES = ['text', 'textmedia', 'textpic'];
 
     public function __construct(
         TableAccessService $tableAccessService,

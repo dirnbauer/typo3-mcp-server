@@ -16,7 +16,7 @@ use PHPUnit\Framework\Attributes\Test;
  */
 class HashExistingTokensUpgradeWizardTest extends AbstractFunctionalTest
 {
-    private const TABLE = 'tx_mcpserver_access_tokens';
+    private const string TABLE = 'tx_mcpserver_access_tokens';
 
     private HashExistingTokensUpgradeWizard $subject;
 

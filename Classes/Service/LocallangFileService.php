@@ -14,8 +14,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class LocallangFileService
 {
-    private const EXTENSION_KEY_PATTERN = '/^[a-z][a-z0-9_]*$/';
-    private const XLIFF2_NS = 'urn:oasis:names:tc:xliff:document:2.0';
+    private const string EXTENSION_KEY_PATTERN = '/^[a-z][a-z0-9_]*$/';
+    private const string XLIFF2_NS = 'urn:oasis:names:tc:xliff:document:2.0';
 
     /**
      * @param list<array{id: string, source: string, target?: string}> $transUnits

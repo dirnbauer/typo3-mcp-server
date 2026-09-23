@@ -852,9 +852,7 @@ final class GetPageTool extends AbstractRecordTool
         $groupedElements = [];
         foreach ($contentInfo['records'] as $record) {
             $colPos = is_numeric($record['colPos'] ?? null) ? (int)$record['colPos'] : 0;
-            if (!isset($groupedElements[$colPos])) {
-                $groupedElements[$colPos] = [];
-            }
+            $groupedElements[$colPos] ??= [];
             $groupedElements[$colPos][] = $record;
         }
 

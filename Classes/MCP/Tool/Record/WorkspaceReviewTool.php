@@ -22,8 +22,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class WorkspaceReviewTool extends AbstractRecordTool
 {
-    private const DEFAULT_LIMIT = 100;
-    private const MAX_LIMIT = 500;
+    private const int DEFAULT_LIMIT = 100;
+    private const int MAX_LIMIT = 500;
 
     public function __construct(
         TableAccessService $tableAccessService,

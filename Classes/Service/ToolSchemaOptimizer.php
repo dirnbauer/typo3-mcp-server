@@ -27,10 +27,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final readonly class ToolSchemaOptimizer
 {
     /** Character budget for the top-level tool description. */
-    private const TOP_LEVEL_BUDGET = 220;
+    private const int TOP_LEVEL_BUDGET = 220;
 
     /** Character budget for each per-field description. */
-    private const FIELD_BUDGET = 110;
+    private const int FIELD_BUDGET = 110;
 
     /**
      * Sentences containing one of these markers are kept even when they fall
@@ -39,7 +39,7 @@ final readonly class ToolSchemaOptimizer
      *
      * @var list<string>
      */
-    private const CRITICAL_MARKERS = [
+    private const array CRITICAL_MARKERS = [
         'CRITICAL',
         'REQUIRED',
         'MUST',
@@ -178,11 +178,6 @@ final readonly class ToolSchemaOptimizer
 
     private function isCritical(string $sentence): bool
     {
-        foreach (self::CRITICAL_MARKERS as $marker) {
-            if (str_contains($sentence, $marker)) {
-                return true;
-            }
-        }
-        return false;
+        return array_any(self::CRITICAL_MARKERS, static fn(string $marker): bool => str_contains($sentence, $marker));
     }
 }

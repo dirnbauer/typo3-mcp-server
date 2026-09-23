@@ -13,8 +13,8 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
  */
 final readonly class McpConnectionDiagnosticService
 {
-    private const SHARED_FIX_OK = 'diagnostic.fixOk';
-    private const OAUTH_METADATA_PREFIX = 'diagnostic.oauthMetadata';
+    private const string SHARED_FIX_OK = 'diagnostic.fixOk';
+    private const string OAUTH_METADATA_PREFIX = 'diagnostic.oauthMetadata';
 
     public function __construct(
         private ExtensionConfiguration $extensionConfiguration,

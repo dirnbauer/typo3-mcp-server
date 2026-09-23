@@ -16,7 +16,7 @@ return RectorConfig::configure()
         __DIR__ . '/Resources',
     ])
     ->withSets([
-        LevelSetList::UP_TO_PHP_82,
+        LevelSetList::UP_TO_PHP_84,
         Typo3LevelSetList::UP_TO_TYPO3_14,
     ])
     // importShortClasses: false keeps \Exception etc. and matches TYPO3 Coding Standards

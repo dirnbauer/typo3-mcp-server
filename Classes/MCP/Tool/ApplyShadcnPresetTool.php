@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Core\Environment;
 #[DevSiteOnly]
 final class ApplyShadcnPresetTool extends AbstractTool
 {
-    private const PRESET_PATTERN = '/^[A-Za-z0-9_-]{2,128}$/';
+    private const string PRESET_PATTERN = '/^[A-Za-z0-9_-]{2,128}$/';
 
     /**
      * @return array<string, mixed>

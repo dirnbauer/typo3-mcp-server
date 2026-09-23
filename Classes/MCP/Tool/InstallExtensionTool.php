@@ -30,17 +30,17 @@ final class InstallExtensionTool extends AbstractTool
     /**
      * Characters that indicate potential shell injection.
      */
-    private const DANGEROUS_CHARACTERS = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "\n", "\r", "\0"];
+    private const array DANGEROUS_CHARACTERS = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "\n", "\r", "\0"];
 
     /**
      * Valid Composer package name pattern (vendor/package).
      */
-    private const PACKAGE_NAME_PATTERN = '/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?\/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/';
+    private const string PACKAGE_NAME_PATTERN = '/^[a-z0-9]([a-z0-9._-]*[a-z0-9])?\/[a-z0-9]([a-z0-9._-]*[a-z0-9])?$/';
 
     /**
      * Valid TYPO3 extension key pattern.
      */
-    private const EXTENSION_KEY_PATTERN = '/^[a-z][a-z0-9_]*$/';
+    private const string EXTENSION_KEY_PATTERN = '/^[a-z][a-z0-9_]*$/';
 
     /**
      * @return array<string, mixed>

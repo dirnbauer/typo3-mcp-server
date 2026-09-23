@@ -173,12 +173,12 @@ final class SiteBaseUrlResolverTest extends TestCase
             '/var/www/html/subfolder',
         );
 
-        return (new ServerRequest(
+        return new ServerRequest(
             new Uri('https://example.com' . $requestPath),
             'GET',
             'php://input',
             [],
             $serverParams,
-        ))->withAttribute('normalizedParams', $normalizedParams);
+        )->withAttribute('normalizedParams', $normalizedParams);
     }
 }

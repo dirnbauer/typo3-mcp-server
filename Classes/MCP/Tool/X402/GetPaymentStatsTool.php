@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hn\McpServer\MCP\Tool\X402;
 
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Schema\Column;
 use Hn\McpServer\MCP\Tool\Attribute\AdminOnly;
 use Hn\McpServer\MCP\Tool\Record\AbstractRecordTool;
 use Hn\McpServer\Service\TableAccessService;
@@ -244,12 +245,7 @@ final class GetPaymentStatsTool extends AbstractRecordTool
         }
         try {
             $connection = $this->connectionPool->getConnectionForTable($table);
-            foreach ($connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table) as $tableColumn) {
-                if ($tableColumn->getObjectName()->getIdentifier()->getValue() === $column) {
-                    return true;
-                }
-            }
-            return false;
+            return array_any($connection->createSchemaManager()->introspectTableColumnsByUnquotedName($table), static fn(Column $tableColumn): bool => $tableColumn->getObjectName()->getIdentifier()->getValue() === $column);
         } catch (\Exception) {
             return false;
         }

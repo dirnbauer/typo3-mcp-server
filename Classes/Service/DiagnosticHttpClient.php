@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Http\Client\GuzzleClientFactory;
  */
 readonly class DiagnosticHttpClient
 {
-    private const REQUEST_TIMEOUT = 8;
+    private const int REQUEST_TIMEOUT = 8;
 
     public function __construct(
         private GuzzleClientFactory $clientFactory,

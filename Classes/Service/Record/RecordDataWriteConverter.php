@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
  */
 final readonly class RecordDataWriteConverter
 {
-    private const DEFAULT_FLEXFORM_SHEET = 'sDEF';
+    private const string DEFAULT_FLEXFORM_SHEET = 'sDEF';
 
     public function __construct(
         private TableAccessService $tableAccessService,

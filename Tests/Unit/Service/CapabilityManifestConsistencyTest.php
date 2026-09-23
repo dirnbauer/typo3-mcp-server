@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class CapabilityManifestConsistencyTest extends TestCase
 {
-    private const PUBLIC_SUBSYSTEMS = [
+    private const array PUBLIC_SUBSYSTEMS = [
         'database:read',
         'database:write',
         'database:schema',

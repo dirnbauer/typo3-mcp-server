@@ -26,7 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final readonly class X402ContentAccessService
 {
-    private const PAYWALL_FIELDS = [
+    private const array PAYWALL_FIELDS = [
         'tx_x402_paywall_enabled',
         'tx_x402_paywall_price',
         'tx_x402_paywall_description',
@@ -286,13 +286,7 @@ final readonly class X402ContentAccessService
 
     private function canAccessPaywallFields(int $pageUid): bool
     {
-        foreach (self::PAYWALL_FIELDS as $field) {
-            if (!$this->tableAccessService->canAccessField('pages', $field, '', $pageUid)) {
-                return false;
-            }
-        }
-
-        return true;
+        return array_all(self::PAYWALL_FIELDS, fn(string $field): bool => $this->tableAccessService->canAccessField('pages', $field, '', $pageUid));
     }
 
     /**

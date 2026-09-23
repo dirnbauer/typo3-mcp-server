@@ -29,7 +29,7 @@ final class DeveloperLogEntryParserTest extends TestCase
             'file' => 'typo3_test.log',
         ];
 
-        $parsed = (new DeveloperLogEntryParser())->parse($entry, false, 2);
+        $parsed = new DeveloperLogEntryParser()->parse($entry, false, 2);
 
         self::assertSame(\RuntimeException::class, $parsed['exception']['class']);
         self::assertSame(42, $parsed['exception']['code']);

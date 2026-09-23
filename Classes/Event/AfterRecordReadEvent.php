@@ -94,11 +94,6 @@ final class AfterRecordReadEvent
         if (empty($this->requestedFields)) {
             return true;
         }
-        foreach ($fields as $field) {
-            if ($this->isFieldRequested($field)) {
-                return true;
-            }
-        }
-        return false;
+        return array_any($fields, $this->isFieldRequested(...));
     }
 }

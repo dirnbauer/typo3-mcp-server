@@ -40,29 +40,29 @@ use TYPO3\CMS\Core\Validation\ResultException;
  */
 final readonly class FileUploadService
 {
-    public const UPLOAD_TOKEN_LIFETIME = 900;
+    public const int UPLOAD_TOKEN_LIFETIME = 900;
 
     /**
      * sys_file_metadata columns a client may set on an uploaded file.
      */
-    private const METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
+    private const array METADATA_FIELDS = ['title', 'description', 'alternative', 'copyright'];
 
-    private const DEFAULT_MAX_FILE_SIZE_MB = 500;
-    private const TOKEN_TABLE = 'tx_mcpserver_upload_tokens';
+    private const int DEFAULT_MAX_FILE_SIZE_MB = 500;
+    private const string TOKEN_TABLE = 'tx_mcpserver_upload_tokens';
 
     /**
      * Formats a browser would execute in the site's origin (stored XSS).
      * TYPO3's fileDenyPattern does not cover these - it only guards against
      * server-side execution.
      */
-    private const BROWSER_EXECUTABLE_EXTENSIONS = ['htm', 'html', 'xhtml', 'js', 'mjs', 'svgz', 'swf', 'hta'];
+    private const array BROWSER_EXECUTABLE_EXTENSIONS = ['htm', 'html', 'xhtml', 'js', 'mjs', 'svgz', 'swf', 'hta'];
 
     /**
      * Formats the server itself could execute. TYPO3's fileDenyPattern already
      * blocks these, but it is a configurable setting an integrator can loosen,
      * so uploads coming in through MCP refuse them independently.
      */
-    private const SERVER_EXECUTABLE_EXTENSIONS = [
+    private const array SERVER_EXECUTABLE_EXTENSIONS = [
         'php', 'php3', 'php4', 'php5', 'php6', 'php7', 'php8', 'phps', 'phpsh', 'phtml', 'phtm', 'pht', 'phar',
         'shtml', 'shtm', 'cgi', 'pl', 'py', 'rb', 'sh', 'htaccess',
     ];
@@ -73,7 +73,7 @@ final readonly class FileUploadService
      * it sets per-directory PHP options such as auto_prepend_file, and unlike
      * ".htaccess" it is NOT part of TYPO3's fileDenyPattern.
      */
-    private const DENIED_FILE_NAMES = ['.user.ini', '.htaccess', '.htpasswd', 'web.config'];
+    private const array DENIED_FILE_NAMES = ['.user.ini', '.htaccess', '.htpasswd', 'web.config'];
 
     public function __construct(
         private ConnectionPool $connectionPool,

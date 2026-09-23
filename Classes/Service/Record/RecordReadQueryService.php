@@ -26,7 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final readonly class RecordReadQueryService
 {
-    private const ALLOWED_OPERATORS = [
+    private const array ALLOWED_OPERATORS = [
         'eq', 'neq', 'lt', 'lte', 'gt', 'gte',
         'like', 'notLike',
         'in', 'notIn',
@@ -327,9 +327,7 @@ final readonly class RecordReadQueryService
                 if ($pid !== null && $pid > 0) {
                     $resolved = $this->languageService->getUidFromIsoCodeForPage($pid, $iso);
                 }
-                if ($resolved === null) {
-                    $resolved = $this->languageService->getUidFromIsoCode($iso);
-                }
+                $resolved ??= $this->languageService->getUidFromIsoCode($iso);
                 if ($resolved === null) {
                     throw new ValidationException(['Unknown language code in filter: ' . $iso]);
                 }

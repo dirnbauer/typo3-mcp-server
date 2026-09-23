@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\View\ViewFactoryInterface;
  */
 final readonly class McpModulePartialRenderer
 {
-    private const PARTIALS = 'EXT:mcp_server/Resources/Private/Partials/';
+    private const string PARTIALS = 'EXT:mcp_server/Resources/Private/Partials/';
 
     public function __construct(
         private ViewFactoryInterface $viewFactory,

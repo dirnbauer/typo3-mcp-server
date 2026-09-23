@@ -21,12 +21,12 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 #[AdminOnly]
 final class SolrIndexQueueTool extends AbstractTool
 {
-    private const MAX_RUNS = 10;
+    private const int MAX_RUNS = 10;
 
     /**
      * @var list<string>
      */
-    private const SOLR_MARKERS = [
+    private const array SOLR_MARKERS = [
         'solr',
         'ApacheSolrForTypo3',
         'IndexQueue',
@@ -306,12 +306,7 @@ final class SolrIndexQueueTool extends AbstractTool
 
     private function looksLikeSolrTask(string $value): bool
     {
-        foreach (self::SOLR_MARKERS as $marker) {
-            if (stripos($value, $marker) !== false) {
-                return true;
-            }
-        }
-        return false;
+        return array_any(self::SOLR_MARKERS, static fn(string $marker): bool => stripos($value, $marker) !== false);
     }
 
     private function extractSerializedObjectClass(string $serializedTask): string

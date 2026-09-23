@@ -35,22 +35,22 @@ final readonly class SiteEditorGroupService
     /**
      * Tables a content editor needs to work in the Page module.
      */
-    private const EDITOR_TABLES = 'pages,tt_content';
+    private const string EDITOR_TABLES = 'pages,tt_content';
 
     /**
      * Doktypes editors may create: standard, link, shortcut, spacer, folder.
      */
-    private const EDITOR_PAGETYPES = '1,3,4,199,254';
+    private const string EDITOR_PAGETYPES = '1,3,4,199,254';
 
     /**
      * Backend modules editors need: Page (web_layout) and List (web_list).
      */
-    private const EDITOR_MODULES = 'web_layout,web_list';
+    private const string EDITOR_MODULES = 'web_layout,web_list';
 
     /**
      * Full page permission bitmask (show + edit page + delete + new + edit content).
      */
-    private const PERMS_ALL = 31;
+    private const int PERMS_ALL = 31;
 
     public function __construct(
         private ConnectionPool $connectionPool,

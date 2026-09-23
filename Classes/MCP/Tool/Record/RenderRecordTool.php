@@ -39,7 +39,7 @@ final class RenderRecordTool extends AbstractRecordTool
 {
     private const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
 
-    private const MAX_LENGTH = 200000;
+    private const int MAX_LENGTH = 200000;
 
     public function __construct(
         TableAccessService $tableAccessService,

@@ -21,12 +21,12 @@ use Mcp\Types\ResourceTemplate;
  */
 final readonly class ResourceRegistry
 {
-    public const URI_OVERVIEW = 'typo3-mcp:///tca';
-    public const URI_TABLE_PREFIX = 'typo3-mcp:///tca/';
-    public const LEGACY_URI_OVERVIEW = 'typo3-mcp://tca';
-    public const LEGACY_URI_TABLE_PREFIX = 'typo3-mcp://tca/';
-    public const URI_SKILLS_OVERVIEW = 'typo3-mcp:///skills';
-    public const URI_SKILL_PREFIX = 'typo3-mcp:///skills/';
+    public const string URI_OVERVIEW = 'typo3-mcp:///tca';
+    public const string URI_TABLE_PREFIX = 'typo3-mcp:///tca/';
+    public const string LEGACY_URI_OVERVIEW = 'typo3-mcp://tca';
+    public const string LEGACY_URI_TABLE_PREFIX = 'typo3-mcp://tca/';
+    public const string URI_SKILLS_OVERVIEW = 'typo3-mcp:///skills';
+    public const string URI_SKILL_PREFIX = 'typo3-mcp:///skills/';
 
     public function __construct(
         private TcaResourceFormatter $tcaResourceFormatter,

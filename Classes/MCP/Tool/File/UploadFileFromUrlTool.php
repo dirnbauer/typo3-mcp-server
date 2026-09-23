@@ -27,9 +27,9 @@ use TYPO3\CMS\Core\Resource\OnlineMedia\Helpers\OnlineMediaHelperRegistry;
  */
 final class UploadFileFromUrlTool extends AbstractTool
 {
-    private const ALLOWED_SCHEMES = ['http', 'https'];
-    private const REQUEST_TIMEOUT = 30;
-    private const ONLINE_MEDIA_HOST_PATTERN = '#^https?://(?:[a-z0-9-]+\.)*(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)(?:[/?\#]|$)#i';
+    private const array ALLOWED_SCHEMES = ['http', 'https'];
+    private const int REQUEST_TIMEOUT = 30;
+    private const string ONLINE_MEDIA_HOST_PATTERN = '#^https?://(?:[a-z0-9-]+\.)*(?:youtube\.com|youtu\.be|youtube-nocookie\.com|vimeo\.com)(?:[/?\#]|$)#i';
 
     public function __construct(
         private readonly McpFileSandboxService $fileSandboxService,

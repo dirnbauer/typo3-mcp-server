@@ -15,8 +15,8 @@ use TYPO3\CMS\Core\Package\PackageManager;
 #[DevSiteOnly]
 final class ListEventsTool extends AbstractTool
 {
-    private const DEFAULT_LIMIT = 25;
-    private const MAXIMUM_LIMIT = 60;
+    private const int DEFAULT_LIMIT = 25;
+    private const int MAXIMUM_LIMIT = 60;
 
     /** @var array<string, string>|null */
     private ?array $namespaceMap = null;
@@ -225,13 +225,7 @@ final class ListEventsTool extends AbstractTool
     /** @param list<array<string, string>> $listeners */
     private function matchesListener(array $listeners, string $filter): bool
     {
-        foreach ($listeners as $listener) {
-            if (str_contains(strtolower(implode(' ', $listener)), $filter)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($listeners, static fn(array $listener): bool => str_contains(strtolower(implode(' ', $listener)), $filter));
     }
 
     private function packageOfClass(string $eventClass): ?string

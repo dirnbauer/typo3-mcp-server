@@ -90,13 +90,11 @@ final class ListTablesTool extends AbstractRecordTool
         foreach ($tables as $tableName => $tableInfo) {
             $extension = $tableInfo['extension'];
 
-            if (!isset($grouped[$extension])) {
-                $grouped[$extension] = [
-                    'extension' => $extension,
-                    'extensionLabel' => $this->getExtensionLabel($extension),
-                    'tables' => [],
-                ];
-            }
+            $grouped[$extension] ??= [
+                'extension' => $extension,
+                'extensionLabel' => $this->getExtensionLabel($extension),
+                'tables' => [],
+            ];
 
             $grouped[$extension]['tables'][$tableName] = $tableInfo;
         }

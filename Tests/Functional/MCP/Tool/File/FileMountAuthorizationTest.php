@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FileMountAuthorizationTest extends AbstractFunctionalTest
 {
-    private const EDITOR_UID = 99;
+    private const int EDITOR_UID = 99;
 
     protected function setUp(): void
     {

@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 #[DevSiteOnly]
 final class ContentBlocksTool extends AbstractTool
 {
-    private const REGISTRY_CLASS = 'TYPO3\\CMS\\ContentBlocks\\Registry\\ContentBlockRegistry';
+    private const string REGISTRY_CLASS = 'TYPO3\\CMS\\ContentBlocks\\Registry\\ContentBlockRegistry';
 
     public function getSchema(): array
     {

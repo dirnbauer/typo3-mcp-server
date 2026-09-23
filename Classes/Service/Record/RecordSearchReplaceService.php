@@ -14,7 +14,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 final readonly class RecordSearchReplaceService
 {
     /** @var list<string> */
-    private const STRING_FIELD_TYPES = ['input', 'text', 'email', 'link', 'slug', 'color'];
+    private const array STRING_FIELD_TYPES = ['input', 'text', 'email', 'link', 'slug', 'color'];
 
     public function __construct(
         private TableAccessService $tableAccessService,

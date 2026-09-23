@@ -15,14 +15,14 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 final readonly class OAuthService
 {
-    public const BUILT_IN_CLIENT_ID = 'typo3-mcp-server';
-    public const DEFAULT_SCOPE = 'mcp_access';
+    public const string BUILT_IN_CLIENT_ID = 'typo3-mcp-server';
+    public const string DEFAULT_SCOPE = 'mcp_access';
 
-    private const CODE_EXPIRY_SECONDS = 600; // 10 minutes
-    private const TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
-    private const REFRESH_TOKEN_EXPIRY_SECONDS = 7776000; // 90 days
-    private const SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
-    private const SUPPORTED_RESPONSE_TYPES = ['code'];
+    private const int CODE_EXPIRY_SECONDS = 600; // 10 minutes
+    private const int TOKEN_EXPIRY_SECONDS = 2592000; // 30 days
+    private const int REFRESH_TOKEN_EXPIRY_SECONDS = 7776000; // 90 days
+    private const array SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
+    private const array SUPPORTED_RESPONSE_TYPES = ['code'];
 
     private LoggerInterface $logger;
 

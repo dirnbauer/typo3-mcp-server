@@ -26,19 +26,19 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ImportContentTool extends AbstractRecordTool
 {
-    private const FORMAT_AUTO = 'auto';
-    private const FORMAT_MARKDOWN = 'markdown';
-    private const FORMAT_HTML = 'html';
-    private const FORMAT_TEXT = 'text';
+    private const string FORMAT_AUTO = 'auto';
+    private const string FORMAT_MARKDOWN = 'markdown';
+    private const string FORMAT_HTML = 'html';
+    private const string FORMAT_TEXT = 'text';
 
-    private const MODE_ANALYZE = 'analyze';
-    private const MODE_EXECUTE = 'execute';
+    private const string MODE_ANALYZE = 'analyze';
+    private const string MODE_EXECUTE = 'execute';
 
     /**
      * Section types produced by the parsers.
      * Each maps to a set of field requirements used for CType scoring.
      */
-    private const SECTION_NEEDS = [
+    private const array SECTION_NEEDS = [
         // type => [needs_bodytext, needs_header_only, needs_image, prefers_raw_html]
         'heading' => [false, true, false, false],
         'text' => [true, false, false, false],

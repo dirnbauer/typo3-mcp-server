@@ -44,7 +44,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class TableAccessService
 {
     /** @var array<string, string> */
-    private const DEPRECATED_LABEL_FALLBACKS = [
+    private const array DEPRECATED_LABEL_FALLBACKS = [
         'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:header_formlabel' => 'Header',
         'LLL:EXT:frontend/Resources/Private/Language/locallang_ttc.xlf:bodytext_formlabel' => 'Text',
         'LLL:EXT:frontend/Resources/Private/Language/locallang_tca.xlf:pages.palettes.editorial' => 'Editorial',

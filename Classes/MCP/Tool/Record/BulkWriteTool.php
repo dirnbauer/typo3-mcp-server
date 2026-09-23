@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class BulkWriteTool extends AbstractRecordTool
 {
-    private const MAX_OPERATIONS = 50;
+    private const int MAX_OPERATIONS = 50;
 
     public function __construct(
         TableAccessService $tableAccessService,

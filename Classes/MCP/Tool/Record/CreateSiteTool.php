@@ -36,7 +36,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 #[AdminOnly]
 final class CreateSiteTool extends AbstractRecordTool
 {
-    private const GLOBAL_TYPOSCRIPT_INCLUDE = <<<'TYPOSCRIPT'
+    private const string GLOBAL_TYPOSCRIPT_INCLUDE = <<<'TYPOSCRIPT'
 page = PAGE
 page.10 = CONTENT
 page.10 {
@@ -54,7 +54,7 @@ TYPOSCRIPT;
      *
      * @var array<string, string>
      */
-    private const FLAG_MAP = [
+    private const array FLAG_MAP = [
         'de' => 'de',
         'fr' => 'fr',
         'es' => 'es',

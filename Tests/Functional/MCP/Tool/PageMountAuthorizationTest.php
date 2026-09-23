@@ -19,7 +19,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
  */
 final class PageMountAuthorizationTest extends AbstractFunctionalTest
 {
-    private const EDITOR_UID = 99;
+    private const int EDITOR_UID = 99;
 
     protected function setUp(): void
     {

@@ -31,16 +31,16 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class ImportFromUrlTool extends AbstractRecordTool
 {
     private const MAX_CONTENT_SIZE = 5 * 1024 * 1024; // 5 MB
-    private const REQUEST_TIMEOUT = 30;
+    private const int REQUEST_TIMEOUT = 30;
 
-    private const MODE_ANALYZE = 'analyze';
-    private const MODE_EXECUTE = 'execute';
+    private const string MODE_ANALYZE = 'analyze';
+    private const string MODE_EXECUTE = 'execute';
 
     /**
      * Section types produced by the HTML parser.
      * Each maps to a set of field requirements used for CType scoring.
      */
-    private const SECTION_NEEDS = [
+    private const array SECTION_NEEDS = [
         // type => [needs_bodytext, needs_header_only, needs_image, prefers_raw_html]
         'heading' => [false, true, false, false],
         'text'    => [true, false, false, false],

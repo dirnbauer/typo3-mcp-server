@@ -18,7 +18,7 @@ final readonly class OAuthTokenEndpoint
 {
     use CorsHeadersTrait;
 
-    private const MAX_REQUEST_BODY_BYTES = 65536;
+    private const int MAX_REQUEST_BODY_BYTES = 65536;
 
     public function __construct(
         private LoggerInterface $logger,

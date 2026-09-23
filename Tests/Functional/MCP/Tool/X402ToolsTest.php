@@ -214,13 +214,7 @@ final class X402ToolsTest extends AbstractFunctionalTest
     private function installPaywallColumns(): void
     {
         $connection = $this->connectionPool->getConnectionForTable('pages');
-        $hasPaywallColumn = false;
-        foreach ($connection->createSchemaManager()->introspectTableColumnsByUnquotedName('pages') as $column) {
-            if ($column->getObjectName()->getIdentifier()->getValue() === 'tx_x402_paywall_enabled') {
-                $hasPaywallColumn = true;
-                break;
-            }
-        }
+        $hasPaywallColumn = array_any($connection->createSchemaManager()->introspectTableColumnsByUnquotedName('pages'), fn($column) => $column->getObjectName()->getIdentifier()->getValue() === 'tx_x402_paywall_enabled');
         if (!$hasPaywallColumn) {
             $connection->executeStatement('ALTER TABLE pages ADD COLUMN tx_x402_paywall_enabled INTEGER DEFAULT 0 NOT NULL');
             $connection->executeStatement("ALTER TABLE pages ADD COLUMN tx_x402_paywall_price VARCHAR(20) DEFAULT '' NOT NULL");

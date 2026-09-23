@@ -1925,9 +1925,7 @@ final class WriteTableTool extends AbstractRecordTool
         if ($pageId !== null && $pageId > 0) {
             $languageUid = $this->languageService->getUidFromIsoCodeForPage($pageId, $isoCode);
         }
-        if ($languageUid === null) {
-            $languageUid = $this->languageService->getUidFromIsoCode($isoCode);
-        }
+        $languageUid ??= $this->languageService->getUidFromIsoCode($isoCode);
         if ($languageUid === null) {
             throw new ValidationException(['Unknown language code: ' . $isoCode]);
         }

@@ -229,9 +229,7 @@ final readonly class RecordRelationReadService
         foreach ($relatedRecords as $relatedRecord) {
             $parentUid = $relatedRecord[$foreignField] ?? null;
             if ($parentUid !== null) {
-                if (!isset($groupedRecords[$parentUid])) {
-                    $groupedRecords[$parentUid] = [];
-                }
+                $groupedRecords[$parentUid] ??= [];
                 $groupedRecords[$parentUid][] = $relatedRecord;
             }
         }

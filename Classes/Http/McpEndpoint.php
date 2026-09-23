@@ -31,7 +31,7 @@ final readonly class McpEndpoint
     use CorsHeadersTrait;
 
     private const MAX_MCP_REQUEST_BODY_BYTES = 25 * 1024 * 1024;
-    private const DEFAULT_SESSION_TIMEOUT = 14400;
+    private const int DEFAULT_SESSION_TIMEOUT = 14400;
 
     public function __construct(
         private LoggerInterface $logger,

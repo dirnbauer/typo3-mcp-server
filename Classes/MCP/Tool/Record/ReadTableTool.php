@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
  */
 final class ReadTableTool extends AbstractRecordTool
 {
-    private const ALLOWED_OPERATORS = [
+    private const array ALLOWED_OPERATORS = [
         'eq', 'neq', 'lt', 'lte', 'gt', 'gte',
         'like', 'notLike',
         'in', 'notIn',

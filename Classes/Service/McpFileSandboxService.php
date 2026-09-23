@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final readonly class McpFileSandboxService
 {
-    private const DEFAULT_BASE_FOLDER = '1:/mcp/';
+    private const string DEFAULT_BASE_FOLDER = '1:/mcp/';
 
     public function __construct(
         private ExtensionConfiguration $extensionConfiguration,

@@ -176,13 +176,13 @@ final class RequestGlobalTest extends AbstractFunctionalTest
             'REQUEST_URI' => $requestUri,
         ];
 
-        return (new ServerRequest(
+        return new ServerRequest(
             new Uri('https://example.com' . $requestUri),
             $method,
             'php://input',
             [],
             $serverParams,
-        ))->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams));
+        )->withAttribute('normalizedParams', NormalizedParams::createFromServerParams($serverParams));
     }
 
     private function sentinelHandler(): RequestHandlerInterface
@@ -190,7 +190,7 @@ final class RequestGlobalTest extends AbstractFunctionalTest
         return new class implements RequestHandlerInterface {
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
-                return (new Response())->withStatus(418);
+                return new Response()->withStatus(418);
             }
         };
     }

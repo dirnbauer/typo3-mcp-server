@@ -30,7 +30,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class GetPageTreeTool extends AbstractRecordTool
 {
-    private const SUBPAGE_LIMIT = 10;
+    private const int SUBPAGE_LIMIT = 10;
 
     public function __construct(
         TableAccessService $tableAccessService,
@@ -305,9 +305,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 continue;
             }
             $pid = (int)$pageData['pid'];
-            if (!isset($grouped[$pid])) {
-                $grouped[$pid] = ['pages' => [], 'total' => 0];
-            }
+            $grouped[$pid] ??= ['pages' => [], 'total' => 0];
 
             $grouped[$pid]['total']++;
 
@@ -660,9 +658,7 @@ final class GetPageTreeTool extends AbstractRecordTool
                 $pid = (int)$row['pid'];
                 $count = (int)$row['count'];
 
-                if (!isset($recordCounts[$pid])) {
-                    $recordCounts[$pid] = [];
-                }
+                $recordCounts[$pid] ??= [];
 
                 $recordCounts[$pid][$table] = $count;
             }

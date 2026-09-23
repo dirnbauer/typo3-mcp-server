@@ -83,12 +83,8 @@ final class LanguageService
                 if ($isoCode !== null) {
                     $this->isoCodeUnion[$isoCode] = true;
                     // Store the mapping (first occurrence wins if there are conflicts)
-                    if (!isset($this->isoToUidMap[$isoCode])) {
-                        $this->isoToUidMap[$isoCode] = $uid;
-                    }
-                    if (!isset($this->uidToIsoMap[$uid])) {
-                        $this->uidToIsoMap[$uid] = $isoCode;
-                    }
+                    $this->isoToUidMap[$isoCode] ??= $uid;
+                    $this->uidToIsoMap[$uid] ??= $isoCode;
 
                     // Set default language ISO code
                     if ($uid === 0 && $this->defaultIsoCode === null) {

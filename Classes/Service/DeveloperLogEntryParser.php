@@ -7,9 +7,9 @@ namespace Hn\McpServer\Service;
 /** Convert verbose TYPO3 exception log lines into focused diagnostic data. */
 final class DeveloperLogEntryParser
 {
-    public const DEFAULT_TRACE_FRAMES = 5;
+    public const int DEFAULT_TRACE_FRAMES = 5;
 
-    private const EXCEPTION_PATTERN = '/(?P<class>[\w\\\\]+),\s*code\s*#(?P<code>\d+),\s*file\s*(?P<file>.+?),\s*line\s*(?P<line>\d+):\s*(?P<message>.*)$/s';
+    private const string EXCEPTION_PATTERN = '/(?P<class>[\w\\\\]+),\s*code\s*#(?P<code>\d+),\s*file\s*(?P<file>.+?),\s*line\s*(?P<line>\d+):\s*(?P<message>.*)$/s';
 
     /**
      * @param array{timestamp: ?string, level: string, message: string, file: string} $entry

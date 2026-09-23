@@ -16,7 +16,7 @@ use TYPO3\CMS\Core\Resource\StorageRepository;
 
 final class UploadFileToolTest extends AbstractFunctionalTest
 {
-    private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
+    private const string PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     private mixed $previousRequest = null;
 
@@ -288,7 +288,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
 
     private function createRequest(string $url): ServerRequest
     {
-        return (new ServerRequest(new Uri($url), 'POST'))
+        return new ServerRequest(new Uri($url), 'POST')
             ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
     }
 }

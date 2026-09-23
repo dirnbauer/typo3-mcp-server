@@ -283,7 +283,7 @@ trait CorsHeadersTrait
      */
     private function handlePreflightRequest(?ServerRequestInterface $request = null): ResponseInterface
     {
-        $response = $this->addCorsHeaders((new Response())->withStatus(200), $request);
+        $response = $this->addCorsHeaders(new Response()->withStatus(200), $request);
         return $this->addSecurityHeaders($response);
     }
 

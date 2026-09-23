@@ -22,8 +22,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class SearchMediaTool extends AbstractTool
 {
-    private const DEFAULT_LIMIT = 50;
-    private const MAX_LIMIT = 200;
+    private const int DEFAULT_LIMIT = 50;
+    private const int MAX_LIMIT = 200;
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,

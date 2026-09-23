@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 #[UpgradeWizard('mcpServer_hashExistingTokens')]
 class HashExistingTokensUpgradeWizard implements UpgradeWizardInterface
 {
-    private const TABLE = 'tx_mcpserver_access_tokens';
+    private const string TABLE = 'tx_mcpserver_access_tokens';
 
     public function getTitle(): string
     {

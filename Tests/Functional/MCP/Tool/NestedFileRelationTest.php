@@ -11,7 +11,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 /** Regression coverage adapted from upstream #128 for the fork's single DataHandler run. */
 final class NestedFileRelationTest extends AbstractFunctionalTest
 {
-    private const ITEM_TABLE = 'tx_testnestedfiles_item';
+    private const string ITEM_TABLE = 'tx_testnestedfiles_item';
 
     protected array $testExtensionsToLoad = [
         __DIR__ . '/../../Fixtures/Extensions/test_nested_files',

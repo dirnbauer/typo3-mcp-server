@@ -29,10 +29,10 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  */
 final readonly class BeforeRecordReadEvent
 {
-    public const SOURCE_READ = 'read';
-    public const SOURCE_READ_INLINE = 'read-inline';
-    public const SOURCE_SEARCH = 'search';
-    public const SOURCE_SEARCH_PARENT = 'search-parent';
+    public const string SOURCE_READ = 'read';
+    public const string SOURCE_READ_INLINE = 'read-inline';
+    public const string SOURCE_SEARCH = 'search';
+    public const string SOURCE_SEARCH_PARENT = 'search-parent';
 
     /**
      * @param string $table The table being queried

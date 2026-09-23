@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FileUploadEndpointTest extends AbstractFunctionalTest
 {
-    private const PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
+    private const string PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     private mixed $previousRequest = null;
 
@@ -337,7 +337,7 @@ final class FileUploadEndpointTest extends AbstractFunctionalTest
 
     private function createToolRequest(): ServerRequest
     {
-        return (new ServerRequest(new Uri('https://example.com/mcp'), 'POST'))
+        return new ServerRequest(new Uri('https://example.com/mcp'), 'POST')
             ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
     }
 

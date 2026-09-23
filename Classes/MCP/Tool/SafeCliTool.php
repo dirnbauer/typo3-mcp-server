@@ -22,7 +22,7 @@ final class SafeCliTool extends AbstractTool
      *
      * @var array<string, array{description: string, allowedArgs: list<string>, timeout: int}>
      */
-    private const ALLOWED_COMMANDS = [
+    private const array ALLOWED_COMMANDS = [
         'cache:flush' => [
             'description' => 'Flush all caches or a specific cache group',
             'allowedArgs' => ['--group'],
@@ -58,7 +58,7 @@ final class SafeCliTool extends AbstractTool
     /**
      * Characters that indicate potential shell injection.
      */
-    private const DANGEROUS_CHARACTERS = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "\n", "\r", "\0"];
+    private const array DANGEROUS_CHARACTERS = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "\n", "\r", "\0"];
 
     /**
      * @return array<string, mixed>

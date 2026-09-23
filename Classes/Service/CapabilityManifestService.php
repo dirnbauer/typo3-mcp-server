@@ -35,13 +35,13 @@ final class CapabilityManifestService
      * The manifest ships inside this extension, so it always sits two levels
      * above Classes/Service/ - no extension-path lookup required.
      */
-    private const MANIFEST_PATH = __DIR__ . '/../../Configuration/Capabilities.yaml';
+    private const string MANIFEST_PATH = __DIR__ . '/../../Configuration/Capabilities.yaml';
 
     /**
      * Abilities declare direct HTTP in the same vocabulary; the manifest
      * expresses it as `network.outbound` host rules rather than a subsystem.
      */
-    private const SIDE_EFFECT_NETWORK_OUTBOUND = 'network:outbound';
+    private const string SIDE_EFFECT_NETWORK_OUTBOUND = 'network:outbound';
 
     /**
      * @var array<string, mixed>|null

@@ -12,7 +12,7 @@ final class McpHttpLogRedactor
     /**
      * @var list<string>
      */
-    private const SENSITIVE_HEADER_NAMES = [
+    private const array SENSITIVE_HEADER_NAMES = [
         'authorization',
         'cookie',
         'proxy-authorization',

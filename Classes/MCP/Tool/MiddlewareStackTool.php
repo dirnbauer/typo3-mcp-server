@@ -15,7 +15,7 @@ use TYPO3\CMS\Core\Package\PackageManager;
 #[DevSiteOnly]
 final class MiddlewareStackTool extends AbstractTool
 {
-    private const STACKS = ['frontend', 'backend', 'core'];
+    private const array STACKS = ['frontend', 'backend', 'core'];
 
     public function __construct(
         private readonly MiddlewareStackResolver $middlewareStackResolver,

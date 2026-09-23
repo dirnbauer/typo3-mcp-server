@@ -25,7 +25,7 @@ final class McpSkillAbilitiesTest extends TestCase
     #[Test]
     public function listAbilityProjectsEveryBundledSkill(): void
     {
-        $result = (new ListMcpSkillsAbility($this->registry))->execute([], ExecutionContext::cli());
+        $result = new ListMcpSkillsAbility($this->registry)->execute([], ExecutionContext::cli());
 
         self::assertIsArray($result);
         self::assertSame(2, $result['total'] ?? null);
@@ -38,7 +38,7 @@ final class McpSkillAbilitiesTest extends TestCase
     #[Test]
     public function getAbilityReturnsAgentSkillsMarkdownAndResourceUri(): void
     {
-        $result = (new GetMcpSkillAbility($this->registry))->execute(
+        $result = new GetMcpSkillAbility($this->registry)->execute(
             ['name' => 'typo3-content-edit'],
             ExecutionContext::cli(),
         );
@@ -54,7 +54,7 @@ final class McpSkillAbilitiesTest extends TestCase
     {
         $this->expectException(\OutOfBoundsException::class);
 
-        (new GetMcpSkillAbility($this->registry))->execute(
+        new GetMcpSkillAbility($this->registry)->execute(
             ['name' => 'missing-skill'],
             ExecutionContext::cli(),
         );

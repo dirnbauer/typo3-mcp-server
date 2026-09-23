@@ -26,7 +26,7 @@ use TYPO3\CMS\Core\Resource\ResourceFactory;
  */
 final class AttachImageTool extends AbstractRecordTool
 {
-    private const ALLOWED_OUTPUT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+    private const array ALLOWED_OUTPUT_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
 
     public function __construct(
         TableAccessService $tableAccessService,

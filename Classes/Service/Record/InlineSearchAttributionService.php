@@ -87,9 +87,7 @@ final readonly class InlineSearchAttributionService
         foreach ($parentRecordCache as $parentKey => $parentRecord) {
             $parentTable = explode('_', $parentKey)[0];
 
-            if (!isset($attributedResults[$parentTable])) {
-                $attributedResults[$parentTable] = [];
-            }
+            $attributedResults[$parentTable] ??= [];
 
             // Remove the cached key prefix and add to results
             unset($parentRecord['_parent_key']);

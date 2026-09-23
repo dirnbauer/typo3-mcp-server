@@ -25,10 +25,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class SearchFileTool extends AbstractRecordTool
 {
-    private const DEFAULT_LIMIT = 10;
-    private const MAX_LIMIT = 30;
-    private const THUMBNAIL_WIDTH = 150;
-    private const THUMBNAIL_HEIGHT = 150;
+    private const int DEFAULT_LIMIT = 10;
+    private const int MAX_LIMIT = 30;
+    private const int THUMBNAIL_WIDTH = 150;
+    private const int THUMBNAIL_HEIGHT = 150;
 
     public function __construct(
         TableAccessService $tableAccessService,

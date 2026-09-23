@@ -28,7 +28,7 @@ MD);
 
     public function testLoadsAndValidatesSkillMetadata(): void
     {
-        $skill = (new SkillRegistry($this->path))->getSkill('valid-skill');
+        $skill = new SkillRegistry($this->path)->getSkill('valid-skill');
 
         self::assertNotNull($skill);
         self::assertSame('A validated workflow', $skill->description);

@@ -20,11 +20,11 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class ManageRedirectsTool extends AbstractRecordTool
 {
-    private const TABLE = 'sys_redirect';
-    private const DEFAULT_LIMIT = 50;
-    private const MAX_LIMIT = 200;
-    private const ALLOWED_STATUS_CODES = [301, 302, 303, 307];
-    private const WRITE_UNSUPPORTED_MESSAGE = 'ManageRedirects cannot modify redirects on this TYPO3 instance because '
+    private const string TABLE = 'sys_redirect';
+    private const int DEFAULT_LIMIT = 50;
+    private const int MAX_LIMIT = 200;
+    private const array ALLOWED_STATUS_CODES = [301, 302, 303, 307];
+    private const string WRITE_UNSUPPORTED_MESSAGE = 'ManageRedirects cannot modify redirects on this TYPO3 instance because '
         . 'sys_redirect is not workspace-capable and local live writes are disabled. '
         . 'Use the TYPO3 backend or another admin workflow for redirect changes, or run in trusted local mode '
         . '(DDEV, TYPO3 Development context, or localUnsafeMode=on with strictSandbox off).';

@@ -18,7 +18,7 @@ final class CompatibleToolAdapter extends AbstractTool
 
     public function getName(): string
     {
-        return $this->callStringMethod('getName', (new \ReflectionClass($this->tool))->getShortName());
+        return $this->callStringMethod('getName', new \ReflectionClass($this->tool)->getShortName());
     }
 
     /**
@@ -26,7 +26,7 @@ final class CompatibleToolAdapter extends AbstractTool
      */
     protected function hasAttribute(string $attribute): bool
     {
-        return (new \ReflectionClass($this->tool))->getAttributes($attribute) !== [];
+        return new \ReflectionClass($this->tool)->getAttributes($attribute) !== [];
     }
 
     /**

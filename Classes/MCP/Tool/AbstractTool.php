@@ -32,7 +32,7 @@ abstract class AbstractTool implements ToolInterface
      */
     public function getName(): string
     {
-        return str_replace('Tool', '', (new \ReflectionClass($this))->getShortName());
+        return str_replace('Tool', '', new \ReflectionClass($this)->getShortName());
     }
 
     /**
@@ -88,7 +88,7 @@ abstract class AbstractTool implements ToolInterface
      */
     protected function hasAttribute(string $attribute): bool
     {
-        return (new \ReflectionClass($this))->getAttributes($attribute) !== [];
+        return new \ReflectionClass($this)->getAttributes($attribute) !== [];
     }
 
     /**

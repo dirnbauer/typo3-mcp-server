@@ -16,7 +16,7 @@ final class McpClientConfigBuilderTest extends TestCase
             'IS_DDEV_PROJECT' => 'true',
             'DDEV_PROJECT' => 'example-project',
         ], function (): void {
-            $config = (new McpClientConfigBuilder())->buildLocalStdioConfig();
+            $config = new McpClientConfigBuilder()->buildLocalStdioConfig();
 
             self::assertSame('ddev', $config['command']);
             self::assertSame([
@@ -40,7 +40,7 @@ final class McpClientConfigBuilderTest extends TestCase
             'DDEV_HOSTNAME' => false,
             'DDEV_TLD' => false,
         ], function (): void {
-            $config = (new McpClientConfigBuilder())->buildLocalStdioConfig();
+            $config = new McpClientConfigBuilder()->buildLocalStdioConfig();
 
             self::assertSame('php', $config['command']);
             self::assertSame([

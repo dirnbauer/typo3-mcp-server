@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
  */
 final class ModuleLabelsTest extends TestCase
 {
-    private const LANGUAGE = __DIR__ . '/../../../Resources/Private/Language/';
-    private const PRIVATE = __DIR__ . '/../../../Resources/Private/';
+    private const string LANGUAGE = __DIR__ . '/../../../Resources/Private/Language/';
+    private const string PRIVATE = __DIR__ . '/../../../Resources/Private/';
 
     #[Test]
     public function everyReferencedLabelExistsInBothLanguages(): void

@@ -18,7 +18,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class OAuthTokenEndpointTest extends AbstractFunctionalTest
 {
-    private const RESOURCE = 'https://example.com/mcp';
+    private const string RESOURCE = 'https://example.com/mcp';
 
     private OAuthService $oauthService;
 

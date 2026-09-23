@@ -30,10 +30,8 @@ trait ExceptionHandlerTrait
      */
     protected function getLogger(): LoggerInterface
     {
-        if ($this->logger === null) {
-            $this->logger = GeneralUtility::makeInstance(LogManager::class)
-                ->getLogger(static::class);
-        }
+        $this->logger ??= GeneralUtility::makeInstance(LogManager::class)
+            ->getLogger(static::class);
         return $this->logger;
     }
 
