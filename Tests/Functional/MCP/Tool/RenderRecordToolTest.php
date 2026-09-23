@@ -16,7 +16,7 @@ final class RenderRecordToolTest extends AbstractFunctionalTest
         $tool = $this->get(RenderRecordTool::class);
         $result = $tool->execute(['pageId' => 0]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('pageId', (string)$result->content[0]->text);
     }
 
@@ -26,7 +26,7 @@ final class RenderRecordToolTest extends AbstractFunctionalTest
         $tool = $this->get(RenderRecordTool::class);
         $result = $tool->execute(['pageId' => 1, 'mode' => 'binary']);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('mode', (string)$result->content[0]->text);
     }
 

@@ -37,7 +37,7 @@ final class ManageRedirectsToolHappyPathTest extends AbstractFunctionalTest
             'source_host' => 'audit.example.test',
             'source_path' => '/redirect-happy-path',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -81,7 +81,7 @@ final class ManageRedirectsToolHappyPathTest extends AbstractFunctionalTest
             'target_statuscode' => 302,
             'respect_query_parameters' => true,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -110,7 +110,7 @@ final class ManageRedirectsToolHappyPathTest extends AbstractFunctionalTest
             'source_path' => '/local-create-active-workspace',
             'target' => 'https://example.test/local-create-active-workspace',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -154,7 +154,7 @@ final class ManageRedirectsToolHappyPathTest extends AbstractFunctionalTest
             'action' => 'delete',
             'uid' => $redirectUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

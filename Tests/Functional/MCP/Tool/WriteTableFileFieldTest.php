@@ -59,7 +59,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('Inline relation field must be an array', $result->content[0]->text);
     }
 
@@ -76,7 +76,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('uid_local', $result->content[0]->text);
     }
 
@@ -93,7 +93,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('uid', $result->content[0]->text);
     }
 
@@ -112,7 +112,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     public function testFileFieldAcceptsObjectsWithUidAndMetadata(): void
@@ -132,7 +132,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $json = json_decode((string)$result->content[0]->text, true);
         $uid = $json['uid'] ?? 0;
@@ -163,7 +163,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             'path' => 'images/write-table-metadata.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $uploadJson = json_decode((string)$uploadResult->content[0]->text, true);
         self::assertIsArray($uploadJson);
         $fileUid = (int)($uploadJson['uid'] ?? 0);
@@ -186,7 +186,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $metadata = $metadataConnection->createQueryBuilder()
             ->select('width', 'height')
@@ -211,7 +211,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
                 'title' => 'Download PDF',
             ],
         ]);
-        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $uploadJson = json_decode((string)$uploadResult->content[0]->text, true);
         self::assertIsArray($uploadJson);
         $fileUid = (int)($uploadJson['uid'] ?? 0);
@@ -231,7 +231,7 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $metadataConnection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_file_metadata');
@@ -261,6 +261,6 @@ final class WriteTableFileFieldTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 }

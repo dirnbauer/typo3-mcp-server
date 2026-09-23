@@ -45,7 +45,7 @@ class GetTableSchemaControlFieldsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 

@@ -86,14 +86,14 @@ class GetPageTreeToolTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $treeResult = $treeTool->execute([
             'startPage' => 1,
             'depth' => 1,
         ]);
 
-        self::assertFalse($treeResult->isError, json_encode($treeResult->jsonSerialize()));
+        self::assertFalse($treeResult->isError, json_encode($treeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $treeResult->content[0]->text;
 
         self::assertStringContainsString('Draft Tree Page', $content);

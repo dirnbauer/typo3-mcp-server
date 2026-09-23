@@ -17,7 +17,7 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
         $tool = $this->get(GetCapabilitiesTool::class);
 
         $result = $tool->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode((string)$result->content[0]->text, true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($payload);
@@ -74,7 +74,7 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
         $workspaceCountBefore = $this->connectionPool->getConnectionForTable('sys_workspace')->count('*', 'sys_workspace', []);
 
         $result = $this->get(GetCapabilitiesTool::class)->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true, flags: JSON_THROW_ON_ERROR);
         $summary = $payload['user'];
         self::assertFalse($summary['isAdmin']);
@@ -97,7 +97,7 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
         $user->groupData['tables_modify'] = '';
 
         $result = $this->get(GetCapabilitiesTool::class)->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(['scope' => 'none', 'mountPageIds' => []], $payload['user']['pageAccess']);
     }
@@ -106,7 +106,7 @@ final class GetCapabilitiesToolTest extends AbstractFunctionalTest
     {
         unset($GLOBALS['BE_USER']);
         $result = $this->get(GetCapabilitiesTool::class)->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(['authenticated' => false], $payload['user']);
         self::assertSame('mcp_server', $payload['manifest']['extension']);

@@ -138,7 +138,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         self::assertEquals('create', $data['action']);
@@ -195,7 +195,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createData = json_decode((string)$createResult->content[0]->text, true);
         $originalUid = $createData['uid'];
 
@@ -211,7 +211,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translateData = json_decode((string)$translateResult->content[0]->text, true);
 
         self::assertEquals('translate', $translateData['action']);
@@ -255,7 +255,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translateData = json_decode((string)$translateResult->content[0]->text, true);
         self::assertIsInt($translateData['translationUid']);
 
@@ -288,7 +288,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'bodytext' => 'Original body',
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createData = json_decode((string)$createResult->content[0]->text, true);
         $uid = (int)$createData['uid'];
 
@@ -301,7 +301,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertTrue($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $errorMessage = $translateResult->content[0]->text ?? '';
         self::assertStringContainsString('Translate requires translated field values', $errorMessage);
         self::assertStringContainsString('header', $errorMessage);
@@ -327,7 +327,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'bodytext' => 'This is the original content',
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $originalUid = json_decode($createResult->content[0]->text, true)['uid'];
 
         $translateResult = $tool->execute([
@@ -340,7 +340,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'bodytext' => 'Das ist der übersetzte Inhalt',
             ],
         ]);
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
         self::assertIsInt($translationUid);
 
@@ -371,7 +371,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
                 'alternative' => 'Foto vom Teamleiter',
             ],
         ]);
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translationUid = json_decode($translateResult->content[0]->text, true)['translationUid'];
         self::assertIsInt($translationUid);
 
@@ -397,7 +397,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             'pid' => 1,
             'data' => ['CType' => 'text', 'header' => 'Original'],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $originalUid = json_decode($createResult->content[0]->text, true)['uid'];
 
         $translateResult = $tool->execute([
@@ -617,7 +617,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify the update - need to use BackendUtility to get workspace overlay
         $record = BackendUtility::getRecord('tt_content', $germanUid);

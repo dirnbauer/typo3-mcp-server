@@ -233,7 +233,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Test 3: Invalid field value (exceeds max length)
         $longTitle = str_repeat('x', 300); // Title field typically has max length of 255
@@ -347,7 +347,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
 
         // The tool should handle this gracefully - DataHandler will fail
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // But the record shouldn't actually be created
         $record = BackendUtility::getRecord('pages', 99999);
@@ -366,7 +366,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
         ]);
 
         // Should succeed but report no deletion
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('delete', $data['action']);
         self::assertEquals(99999, $data['uid']);
@@ -408,7 +408,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('create', $data['action']);
     }
@@ -455,7 +455,7 @@ class WriteTableToolErrorTest extends FunctionalTestCase
 
         // TYPO3 DataHandler might handle this differently
         // The tool itself doesn't enforce required fields, DataHandler does
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // But the page shouldn't be properly created without title
         $data = json_decode((string)$result->content[0]->text, true);

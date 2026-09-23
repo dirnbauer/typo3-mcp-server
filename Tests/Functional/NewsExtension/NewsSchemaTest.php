@@ -46,7 +46,7 @@ class NewsSchemaTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -95,7 +95,7 @@ class NewsSchemaTest extends FunctionalTestCase
             'table' => 'sys_category',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Verify sys_category fields that News uses
@@ -116,7 +116,7 @@ class NewsSchemaTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_tag',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Verify tag fields
@@ -135,7 +135,7 @@ class NewsSchemaTest extends FunctionalTestCase
             'table' => 'sys_file_reference',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_UNESCAPED_SLASHES));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         self::assertStringContainsString('sys_file_reference', $result->content[0]->text);
     }
 
@@ -180,7 +180,7 @@ class NewsSchemaTest extends FunctionalTestCase
                 'type' => '0', // Default news type
             ]);
 
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertStringContainsString('Type: 0', $result->content[0]->text);
         } else {
             // No types used, which is also valid
@@ -201,7 +201,7 @@ class NewsSchemaTest extends FunctionalTestCase
             'type' => 'news_pi1', // News plugin
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Verify it's the News plugin type

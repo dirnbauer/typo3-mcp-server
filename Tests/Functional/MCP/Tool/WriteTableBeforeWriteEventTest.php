@@ -62,7 +62,7 @@ final class WriteTableBeforeWriteEventTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true);
         $newUid = (int)($payload['uid'] ?? 0);
         self::assertGreaterThan(0, $newUid, 'Expected a created record uid in the response');

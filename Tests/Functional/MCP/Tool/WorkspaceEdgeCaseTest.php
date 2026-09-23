@@ -69,7 +69,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['title' => 'Update from Tool 1'],
         ]);
 
-        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data1 = json_decode((string)$result1->content[0]->text, true);
 
         // Get the workspace ID that was created/used
@@ -87,7 +87,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
+        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Both operations should use the same workspace
         $currentWorkspaceId = $this->workspaceService->getCurrentWorkspace();
@@ -135,7 +135,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
+        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $liveData = json_decode((string)$liveResult->content[0]->text, true);
         $livePageId = $liveData['uid'];
 
@@ -154,7 +154,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($workspaceResult->isError, json_encode($workspaceResult->jsonSerialize()));
+        self::assertFalse($workspaceResult->isError, json_encode($workspaceResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $workspaceData = json_decode((string)$workspaceResult->content[0]->text, true);
         $workspacePageId = $workspaceData['uid'];
 
@@ -166,7 +166,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['title' => 'Live Page Modified in Workspace'],
         ]);
 
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read both pages
         $readLiveResult = $this->readTool->execute([
@@ -179,8 +179,8 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $workspacePageId,
         ]);
 
-        self::assertFalse($readLiveResult->isError, json_encode($readLiveResult->jsonSerialize()));
-        self::assertFalse($readWorkspaceResult->isError, json_encode($readWorkspaceResult->jsonSerialize()));
+        self::assertFalse($readLiveResult->isError, json_encode($readLiveResult->jsonSerialize(), JSON_THROW_ON_ERROR));
+        self::assertFalse($readWorkspaceResult->isError, json_encode($readWorkspaceResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $readLiveData = json_decode((string)$readLiveResult->content[0]->text, true);
         $readWorkspaceData = json_decode((string)$readWorkspaceResult->content[0]->text, true);
@@ -231,7 +231,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify workspace was created
         $currentWorkspaceId = $this->workspaceService->getCurrentWorkspace();
@@ -261,7 +261,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $liveUid,
         ]);
 
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify delete placeholder exists
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -291,7 +291,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $liveUid,
         ]);
 
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = json_decode((string)$readResult->content[0]->text, true);
         self::assertCount(0, $readData['records'], 'Deleted record should not be visible');
     }
@@ -314,7 +314,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createData = json_decode((string)$createResult->content[0]->text, true);
         $uid = $createData['uid'];
 
@@ -406,7 +406,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['header' => 'First Update'],
         ]);
 
-        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Second update
         $result2 = $this->writeTool->execute([
@@ -416,7 +416,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'data' => ['header' => 'Second Update'],
         ]);
 
-        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
+        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Third update with more fields
         $result3 = $this->writeTool->execute([
@@ -429,7 +429,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result3->isError, json_encode($result3->jsonSerialize()));
+        self::assertFalse($result3->isError, json_encode($result3->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify only one workspace version exists
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -457,7 +457,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
             'uid' => $uid,
         ]);
 
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = json_decode((string)$readResult->content[0]->text, true);
 
         // The record might not have been properly updated in the test environment
@@ -489,7 +489,7 @@ class WorkspaceEdgeCaseTest extends FunctionalTestCase
                 ],
             ]);
 
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $data = json_decode((string)$result->content[0]->text, true);
             $uids[] = $data['uid'];
         }

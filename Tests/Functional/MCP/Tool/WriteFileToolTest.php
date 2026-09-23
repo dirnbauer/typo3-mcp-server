@@ -23,7 +23,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'Hello from MCP',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('created', $json['action']);
         self::assertSame('1:/mcp/notes/test-mcp.txt', $json['identifier']);
@@ -43,14 +43,14 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'notes/overwrite-me.txt',
             'content' => 'original',
         ]);
-        self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
+        self::assertFalse($first->isError, json_encode($first->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $second = $tool->execute([
             'path' => 'notes/overwrite-me.txt',
             'content' => 'replaced',
             'overwrite' => true,
         ]);
-        self::assertFalse($second->isError, json_encode($second->jsonSerialize()));
+        self::assertFalse($second->isError, json_encode($second->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$second->content[0]->text, true);
         self::assertSame('overwritten', $json['action']);
 
@@ -67,7 +67,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'notes/no-overwrite.txt',
             'content' => 'original',
         ]);
-        self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
+        self::assertFalse($first->isError, json_encode($first->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $second = $tool->execute([
             'path' => 'notes/no-overwrite.txt',
@@ -112,7 +112,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => '{"created": true}',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('created', $json['action']);
 
@@ -144,7 +144,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => $jsonContent,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
         self::assertSame($jsonContent, $storage->getFile('/mcp/config.json')->getContents());
@@ -164,7 +164,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('created', $json['action']);
         self::assertSame('My Document', $json['metadata']['title']);
@@ -195,7 +195,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('metadata_updated', $json['action']);
         self::assertSame('Updated Title', $json['metadata']['title']);
@@ -253,7 +253,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'content' => 'absolute target',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('1:/mcp/absolute/location.txt', $json['identifier']);
 
@@ -269,7 +269,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             'path' => 'images/update-me.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
         $identifier = (string)$uploaded['identifier'];
@@ -284,7 +284,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('metadata_updated', $json['action']);
         self::assertSame('Updated image title', $json['metadata']['title']);

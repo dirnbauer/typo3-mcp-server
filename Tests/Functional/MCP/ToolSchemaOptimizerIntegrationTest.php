@@ -83,7 +83,7 @@ final class ToolSchemaOptimizerIntegrationTest extends AbstractFunctionalTest
 
         $tool = $this->getService(GetCapabilitiesTool::class);
         $result = $tool->execute(['tool' => 'WriteTable']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode((string)$result->content[0]->text, true);
         self::assertSame('WriteTable', $payload['tool']);

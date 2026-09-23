@@ -74,7 +74,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ListTablesTool::class);
         $result = $tool->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -97,7 +97,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file', 'uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('metadata', $file);
@@ -112,7 +112,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $records = json_decode((string)$result->content[0]->text, true)['records'];
         self::assertCount(1, $records);
@@ -133,12 +133,12 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
                 'description' => 'New Description via MCP',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read back through the standard read pipeline (workspace overlay applied).
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $record = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertSame('New Title via MCP', $record['title']);
@@ -176,12 +176,12 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
                 'alternative' => 'DE Alt',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Default-language record is unchanged
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $readTool->execute(['table' => 'sys_file_metadata', 'uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $record = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertSame('Team Photo', $record['title']);
     }
@@ -230,7 +230,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = $result->content[0]->text;
         $records = json_decode((string)$payload, true)['records'] ?? [];
@@ -259,7 +259,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertSame(0, $data['total']);
@@ -288,7 +288,7 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
 
         $tool = GeneralUtility::makeInstance(ReadTableTool::class);
         $result = $tool->execute(['table' => 'sys_file_metadata']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $titles = array_column(
             json_decode((string)$result->content[0]->text, true)['records'],

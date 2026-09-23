@@ -45,7 +45,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -63,7 +63,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -78,7 +78,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -94,7 +94,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -107,7 +107,7 @@ class ListStoragesToolTest extends FunctionalTestCase
 
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 

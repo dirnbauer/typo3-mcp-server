@@ -20,13 +20,13 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'path' => 'browse/root.txt',
             'content' => 'root file',
         ]);
-        self::assertFalse($rootWrite->isError, json_encode($rootWrite->jsonSerialize()));
+        self::assertFalse($rootWrite->isError, json_encode($rootWrite->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $nestedWrite = $writeTool->execute([
             'path' => 'browse/nested/deeper.txt',
             'content' => 'nested file',
         ]);
-        self::assertFalse($nestedWrite->isError, json_encode($nestedWrite->jsonSerialize()));
+        self::assertFalse($nestedWrite->isError, json_encode($nestedWrite->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $browseTool = $this->get(BrowseFilesTool::class);
         $result = $browseTool->execute([
@@ -34,7 +34,7 @@ final class BrowseFilesToolTest extends AbstractFunctionalTest
             'recursive' => true,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = (string)$result->content[0]->text;
 
         self::assertStringContainsString('FOLDER: /mcp/browse/', $content);

@@ -52,7 +52,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create a news record
@@ -65,7 +65,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'bodytext' => 'Test news body',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create content elements with foreign field set
@@ -83,7 +83,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'sorting' => $i * 256,
                 ],
             ]);
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
 
@@ -93,7 +93,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 
@@ -163,7 +163,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create a news record
@@ -175,7 +175,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'title' => 'News to update with inline content',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create content elements separately
@@ -190,7 +190,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                     'CType' => 'text',
                 ],
             ]);
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
 
@@ -203,7 +203,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $contentUids,  // Array of UIDs
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify the inline relations were set
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -211,7 +211,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 
@@ -277,7 +277,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'tx_news_related_news' => 0,  // Remove relation
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify relation is removed
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -466,7 +466,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'content_elements' => $keptUids,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify only the specified UIDs remain linked and the others are unlinked.
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -588,7 +588,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
     /**
      * Test patching an existing embedded inline relation by uid.
@@ -624,7 +624,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read back to capture the sys_file_reference uid
@@ -646,7 +646,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify: same reference uid, title patched, uid_local preserved (not reset to 0)
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
@@ -690,7 +690,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'A-original']],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $parentAUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Parent B with its own asset
@@ -704,7 +704,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'B-original']],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $parentBUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $aRef = (int)json_decode(
@@ -775,7 +775,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 'assets' => [['uid_local' => 1, 'title' => 'existing']],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $existingParentUid = json_decode((string)$result->content[0]->text, true)['uid'];
         $existingRef = (int)json_decode(
             (string)$readTool->execute(['table' => 'tt_content', 'uid' => $existingParentUid])->content[0]->text,
@@ -841,7 +841,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $assets = json_decode(
@@ -867,7 +867,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $assets = json_decode(
             (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,

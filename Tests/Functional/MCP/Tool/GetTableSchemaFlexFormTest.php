@@ -43,7 +43,7 @@ class GetTableSchemaFlexFormTest extends FunctionalTestCase
             'type' => 'news_pi1',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Check if pi_flexform appears

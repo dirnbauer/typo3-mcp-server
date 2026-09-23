@@ -50,7 +50,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'tt_content',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -122,7 +122,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'pages',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
@@ -141,7 +141,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'type' => '137',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
@@ -165,7 +165,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
         ]);
 
         // sys_category doesn't have a type field, but should work now
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
 
         $content = $result->content[0]->text;
@@ -345,7 +345,7 @@ class GetTableSchemaToolTest extends FunctionalTestCase
             'table' => 'sys_file_metadata',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // The "Extended" tab in sys_file_metadata's TCA contains no fields,

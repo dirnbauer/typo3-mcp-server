@@ -16,7 +16,7 @@ final class GetPreviewUrlToolTest extends AbstractFunctionalTest
         $tool = $this->get(GetPreviewUrlTool::class);
         $result = $tool->execute(['table' => 'sys_file', 'uid' => 1]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('"pages" or "tt_content"', (string)$result->content[0]->text);
     }
 
@@ -26,7 +26,7 @@ final class GetPreviewUrlToolTest extends AbstractFunctionalTest
         $tool = $this->get(GetPreviewUrlTool::class);
         $result = $tool->execute(['table' => 'pages']);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('uid', (string)$result->content[0]->text);
     }
 
@@ -36,7 +36,7 @@ final class GetPreviewUrlToolTest extends AbstractFunctionalTest
         $tool = $this->get(GetPreviewUrlTool::class);
         $result = $tool->execute(['table' => 'pages', 'uid' => 0]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('> 0', (string)$result->content[0]->text);
     }
 
@@ -46,7 +46,7 @@ final class GetPreviewUrlToolTest extends AbstractFunctionalTest
         $tool = $this->get(GetPreviewUrlTool::class);
         $result = $tool->execute(['table' => 'tt_content', 'uid' => 999_999_999]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('No content element found', (string)$result->content[0]->text);
     }
 }

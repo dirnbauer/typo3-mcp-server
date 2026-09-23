@@ -48,7 +48,7 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'doktype' => 1,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create a news record
@@ -62,7 +62,7 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'bodytext' => 'Main news text',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create content elements related to the news
@@ -79,7 +79,7 @@ class NewsContentElementsTest extends FunctionalTestCase
                     'tx_news_related_news' => $newsUid,
                 ],
             ]);
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $contentUids[] = json_decode((string)$result->content[0]->text, true)['uid'];
         }
 
@@ -89,7 +89,7 @@ class NewsContentElementsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $resultData = $result->jsonSerialize();
         self::assertArrayHasKey('content', $resultData);
@@ -142,7 +142,7 @@ class NewsContentElementsTest extends FunctionalTestCase
                 'title' => 'News without content elements',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read the news record
@@ -151,7 +151,7 @@ class NewsContentElementsTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 

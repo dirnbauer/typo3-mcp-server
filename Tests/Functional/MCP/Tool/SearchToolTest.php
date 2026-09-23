@@ -51,7 +51,7 @@ class SearchToolTest extends FunctionalTestCase
             'terms' => ['welcome'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 

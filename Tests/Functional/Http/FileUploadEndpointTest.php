@@ -294,7 +294,7 @@ final class FileUploadEndpointTest extends AbstractFunctionalTest
         $GLOBALS['TYPO3_REQUEST'] = $this->createToolRequest();
 
         $result = $this->get(UploadFileTool::class)->execute(['path' => 'images/roundtrip.png']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $toolData = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($toolData);
 
@@ -321,7 +321,7 @@ final class FileUploadEndpointTest extends AbstractFunctionalTest
         $GLOBALS['TYPO3_REQUEST'] = $this->createToolRequest();
 
         $result = $this->get(UploadFileTool::class)->execute(['path' => 'images/']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $toolData = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($toolData);
         self::assertNull($toolData['fileName']);

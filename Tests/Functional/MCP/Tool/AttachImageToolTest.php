@@ -56,7 +56,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             'path' => 'images/attach-pixel.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($up->isError, json_encode($up->jsonSerialize()));
+        self::assertFalse($up->isError, json_encode($up->jsonSerialize(), JSON_THROW_ON_ERROR));
         $ujson = json_decode((string)$up->content[0]->text, true);
         self::assertIsArray($ujson);
         $sysFileUid = (int)($ujson['uid'] ?? 0);
@@ -72,7 +72,7 @@ final class AttachImageToolTest extends FunctionalTestCase
                 'header' => 'Attach image test',
             ],
         ]);
-        self::assertFalse($create->isError, json_encode($create->jsonSerialize()));
+        self::assertFalse($create->isError, json_encode($create->jsonSerialize(), JSON_THROW_ON_ERROR));
         $cjson = json_decode((string)$create->content[0]->text, true);
         self::assertIsArray($cjson);
         $contentUid = (int)($cjson['uid'] ?? 0);
@@ -90,7 +90,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($json);
         self::assertSame([$sysFileUid], $json['attachedSysFileUids'] ?? []);
@@ -118,7 +118,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             'path' => 'images/attach-metadata-pixel.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($up->isError, json_encode($up->jsonSerialize()));
+        self::assertFalse($up->isError, json_encode($up->jsonSerialize(), JSON_THROW_ON_ERROR));
         $ujson = json_decode((string)$up->content[0]->text, true);
         self::assertIsArray($ujson);
         $sysFileUid = (int)($ujson['uid'] ?? 0);
@@ -138,7 +138,7 @@ final class AttachImageToolTest extends FunctionalTestCase
                 'header' => 'Attach metadata repair test',
             ],
         ]);
-        self::assertFalse($create->isError, json_encode($create->jsonSerialize()));
+        self::assertFalse($create->isError, json_encode($create->jsonSerialize(), JSON_THROW_ON_ERROR));
         $cjson = json_decode((string)$create->content[0]->text, true);
         self::assertIsArray($cjson);
         $contentUid = (int)($cjson['uid'] ?? 0);
@@ -152,7 +152,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             'source' => ['sys_file_uid' => $sysFileUid],
             'mode' => 'replace',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $metadata = $metadataConnection->createQueryBuilder()
             ->select('width', 'height')
@@ -186,7 +186,7 @@ final class AttachImageToolTest extends FunctionalTestCase
                 'header' => 'Versioned in workspace for attach test',
             ],
         ]);
-        self::assertFalse($touch->isError, json_encode($touch->jsonSerialize()));
+        self::assertFalse($touch->isError, json_encode($touch->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('tt_content');
         $workspaceId = (int)($GLOBALS['BE_USER']->workspace ?? 0);
@@ -217,7 +217,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             'path' => 'images/attach-ws-ref.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($up->isError, json_encode($up->jsonSerialize()));
+        self::assertFalse($up->isError, json_encode($up->jsonSerialize(), JSON_THROW_ON_ERROR));
         $ujson = json_decode((string)$up->content[0]->text, true);
         self::assertIsArray($ujson);
         $sysFileUid = (int)($ujson['uid'] ?? 0);
@@ -231,7 +231,7 @@ final class AttachImageToolTest extends FunctionalTestCase
             'source' => ['sys_file_uid' => $sysFileUid],
             'mode' => 'replace',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $refConnection = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getConnectionForTable('sys_file_reference');

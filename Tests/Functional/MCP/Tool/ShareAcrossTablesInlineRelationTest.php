@@ -33,7 +33,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
     {
         $this->seedSharedChildren();
         $result = $this->getService(ReadTableTool::class)->execute(['table' => 'tt_content', 'uid' => 100]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $record = $this->extractJsonFromResult($result)['records'][0];
         self::assertSame(['Content child'], array_column($record['tx_testsat_items'], 'title'));
     }
@@ -45,7 +45,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             'table' => 'tt_content', 'action' => 'update', 'uid' => 100,
             'data' => ['tx_testsat_items' => []],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $foreignChild = BackendUtility::getRecordWSOL('tx_testsat_item', 2);
         self::assertIsArray($foreignChild);
         self::assertSame('Page child', $foreignChild['title']);
@@ -98,7 +98,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode($result->content[0]->text, true)['uid'];
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -136,7 +136,7 @@ class ShareAcrossTablesInlineRelationTest extends AbstractFunctionalTest
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $record = json_decode($result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('tx_testsat_items', $record);
         self::assertCount(2, $record['tx_testsat_items']);

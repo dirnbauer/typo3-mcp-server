@@ -20,7 +20,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
     public function testRunAllChecks(): void
     {
         $result = $this->tool->execute(['rootPageId' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -40,7 +40,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
             'rootPageId' => 1,
             'checks' => ['missing_meta_description'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -54,7 +54,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
             'rootPageId' => 1,
             'checks' => ['missing_meta_description'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -75,7 +75,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
             'depth' => 1,
             'checks' => ['missing_meta_description'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -90,7 +90,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
             'limit' => 1,
             'checks' => ['missing_meta_description'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -104,7 +104,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
             'rootPageId' => 1,
             'checks' => ['missing_meta_description', 'missing_page_title'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -116,7 +116,7 @@ final class ContentAuditToolTest extends AbstractFunctionalTest
     public function testSummaryCountsMatchIssues(): void
     {
         $result = $this->tool->execute(['rootPageId' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

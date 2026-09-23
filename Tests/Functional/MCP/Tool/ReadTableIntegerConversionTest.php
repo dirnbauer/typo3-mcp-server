@@ -69,7 +69,7 @@ class ReadTableIntegerConversionTest extends FunctionalTestCase
             'uid' => $pageUid,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readResult = json_decode((string)$result->content[0]->text);
         self::assertNotNull($readResult);
         self::assertIsObject($readResult);

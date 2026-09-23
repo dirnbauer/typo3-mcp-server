@@ -183,7 +183,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'terms' => ['team'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should find results in all languages
@@ -213,7 +213,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show language filter
@@ -242,7 +242,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show language filter
@@ -272,7 +272,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'en',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show language filter
@@ -301,7 +301,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'terms' => ['Kontaktformular'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should find German-only content
@@ -336,7 +336,7 @@ class SearchLanguageTest extends FunctionalTestCase
                 'language' => $lang,
             ]);
 
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $output = $result->content[0]->text;
 
             // Should find content marked for all languages
@@ -375,7 +375,7 @@ class SearchLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should find German content with both terms

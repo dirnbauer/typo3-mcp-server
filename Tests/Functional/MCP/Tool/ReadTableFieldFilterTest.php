@@ -53,7 +53,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read without related_links in fields list
@@ -63,7 +63,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
             'uid' => $newsUid,
             'fields' => ['title', 'bodytext'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 
@@ -95,7 +95,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read WITH related_links in fields list
@@ -105,7 +105,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
             'uid' => $newsUid,
             'fields' => ['title', 'related_links'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 
@@ -138,7 +138,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
                 'bodytext' => 'Some text',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Create a content element related to the news
@@ -152,7 +152,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
                 'tx_news_related_news' => $newsUid,
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read news without content_elements in fields list
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -161,7 +161,7 @@ class ReadTableFieldFilterTest extends FunctionalTestCase
             'uid' => $newsUid,
             'fields' => ['title', 'bodytext'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $news = json_decode((string)$result->content[0]->text, true)['records'][0];
 

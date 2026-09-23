@@ -70,7 +70,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -88,7 +88,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/images/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -103,7 +103,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/documents/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -118,7 +118,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -134,7 +134,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -150,7 +150,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
 
         $result = $tool->execute(['folder' => '1:/empty/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -166,7 +166,7 @@ class BrowseFolderToolTest extends FunctionalTestCase
             'recursive' => true,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 

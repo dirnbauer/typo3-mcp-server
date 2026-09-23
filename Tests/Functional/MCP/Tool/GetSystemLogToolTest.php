@@ -27,7 +27,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
     public function testReadAllLogEntries(): void
     {
         $result = $this->tool->execute([]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -40,7 +40,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
     {
         // severity 3 = error and above → PSR-3 level <= 3
         $result = $this->tool->execute(['severity' => 3]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -56,7 +56,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
             'since' => '2023-11-15T00:00:00',
             'until' => '2023-11-15T01:00:00',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -66,7 +66,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
     public function testFilterByTablename(): void
     {
         $result = $this->tool->execute(['tablename' => 'tt_content']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -81,7 +81,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
     public function testPagination(): void
     {
         $result = $this->tool->execute(['limit' => 2, 'offset' => 0]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -93,7 +93,7 @@ final class GetSystemLogToolTest extends AbstractFunctionalTest
     public function testEntryFormat(): void
     {
         $result = $this->tool->execute(['limit' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

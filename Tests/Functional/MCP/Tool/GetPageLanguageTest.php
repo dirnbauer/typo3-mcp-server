@@ -189,7 +189,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'uid' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show default English content
@@ -214,7 +214,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show German page title and subtitle
@@ -247,7 +247,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show French page title and subtitle
@@ -277,7 +277,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'en',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show available translations
@@ -315,7 +315,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'languageId' => 1,  // Using deprecated parameter
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should work with numeric languageId
@@ -337,7 +337,7 @@ class GetPageLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should resolve URL and show German version

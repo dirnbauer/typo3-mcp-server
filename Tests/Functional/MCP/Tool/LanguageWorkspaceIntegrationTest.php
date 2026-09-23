@@ -123,7 +123,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createData = json_decode((string)$createResult->content[0]->text, true);
         $contentId = $createData['uid'];
 
@@ -139,7 +139,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($germanResult->isError, json_encode($germanResult->jsonSerialize()));
+        self::assertFalse($germanResult->isError, json_encode($germanResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $germanData = json_decode((string)$germanResult->content[0]->text, true);
 
         // Verify it was created with correct language UID
@@ -173,7 +173,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'pid' => 1,
         ]);
 
-        self::assertFalse($allResult->isError, json_encode($allResult->jsonSerialize()));
+        self::assertFalse($allResult->isError, json_encode($allResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $allData = json_decode((string)$allResult->content[0]->text, true);
 
         // Should find content in multiple languages
@@ -201,7 +201,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createData = json_decode((string)$createResult->content[0]->text, true);
         $originalId = $createData['uid'];
 
@@ -216,7 +216,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify translation was created
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
@@ -261,7 +261,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translateData = json_decode((string)$translateResult->content[0]->text, true);
         self::assertIsInt($translateData['translationUid']);
 
@@ -326,7 +326,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read it back to verify
         $readResult = $this->readTool->execute([
@@ -334,7 +334,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'uid' => $germanRecord['uid'],
         ]);
 
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = json_decode((string)$readResult->content[0]->text, true);
 
         self::assertCount(1, $readData['records']);
@@ -382,7 +382,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize()));
+        self::assertFalse($liveResult->isError, json_encode($liveResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $liveData = json_decode((string)$liveResult->content[0]->text, true);
         $liveId = $liveData['uid'];
 
@@ -400,7 +400,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Update original in workspace
         $updateResult = $this->writeTool->execute([
@@ -412,7 +412,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read both versions through tool - should see workspace versions
         $englishRead = $this->readTool->execute([
@@ -420,7 +420,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             'uid' => $liveId,
         ]);
 
-        self::assertFalse($englishRead->isError, json_encode($englishRead->jsonSerialize()));
+        self::assertFalse($englishRead->isError, json_encode($englishRead->jsonSerialize(), JSON_THROW_ON_ERROR));
         $englishData = json_decode((string)$englishRead->content[0]->text, true);
         self::assertEquals('Workspace English', $englishData['records'][0]['header']);
 
@@ -447,7 +447,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
                 'uid' => $germanRecord['uid'],
             ]);
 
-            self::assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize()));
+            self::assertFalse($germanRead->isError, json_encode($germanRead->jsonSerialize(), JSON_THROW_ON_ERROR));
             $germanData = json_decode((string)$germanRead->content[0]->text, true);
             self::assertEquals('Workspace Deutsch', $germanData['records'][0]['header']);
         }

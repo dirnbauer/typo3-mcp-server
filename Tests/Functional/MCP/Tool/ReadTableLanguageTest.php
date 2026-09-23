@@ -111,7 +111,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         self::assertEquals('tt_content', $data['table']);
@@ -154,7 +154,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
             'language' => 'en',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         // All records should be in English (sys_language_uid = 0)
@@ -178,7 +178,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
             'includeTranslationSource' => true,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         // Should have translation source data
@@ -220,7 +220,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
             'includeTranslationSource' => true,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         // Should not have translation source for default language
@@ -240,7 +240,7 @@ class ReadTableLanguageTest extends FunctionalTestCase
             'pid' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         // Should contain records from multiple languages

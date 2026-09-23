@@ -67,7 +67,7 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $captured = $this->capturingDispatcher->capturedSqlForTable('sys_file');
         self::assertArrayHasKey('count', $captured, 'Count query should have been dispatched.');
@@ -95,7 +95,7 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
             'uid' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode((string)$result->content[0]->text, true);
         self::assertSame(1, $payload['total']);
@@ -113,7 +113,7 @@ class ReadTableNonWorkspaceTableTest extends AbstractFunctionalTest
             'uid' => [1, 3],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode((string)$result->content[0]->text, true);
         self::assertSame(2, $payload['total']);

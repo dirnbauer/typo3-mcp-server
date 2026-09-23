@@ -117,7 +117,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
             'thumbnails' => false,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $text = implode("\n", array_map(
             static fn(object $content): string => (string)($content->text ?? ''),
             $result->content,
@@ -133,7 +133,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
             'keyword' => 'mount-',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode($this->getFirstTextContent($result), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(1, $payload['total']);
         self::assertSame(1, $payload['returned']);
@@ -145,7 +145,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
     {
         $result = $this->getService(ListStoragesTool::class)->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $text = $this->getFirstTextContent($result);
         self::assertStringContainsString('Storage 1:', $text);
         self::assertStringNotContainsString('Storage 2:', $text);
@@ -163,7 +163,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
 
         foreach ($calls as [$tool, $params]) {
             $result = $tool->execute($params);
-            self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+            self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
             self::assertStringNotContainsString('mount-hidden.txt', $this->getFirstTextContent($result));
         }
@@ -171,18 +171,18 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
         $browseResult = $this->getService(BrowseFolderTool::class)->execute([
             'folder' => '1:/allowed/',
         ]);
-        self::assertFalse($browseResult->isError, json_encode($browseResult->jsonSerialize()));
+        self::assertFalse($browseResult->isError, json_encode($browseResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('mount-visible.txt', $this->getFirstTextContent($browseResult));
     }
 
     public function testMetadataAndSandboxBrowserAllowMountedFile(): void
     {
         $metadata = $this->getService(ReadFileMetadataTool::class)->execute(['uid' => 9001]);
-        self::assertFalse($metadata->isError, json_encode($metadata->jsonSerialize()));
+        self::assertFalse($metadata->isError, json_encode($metadata->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('mount-visible.txt', $this->getFirstTextContent($metadata));
 
         $browse = $this->getService(BrowseFilesTool::class)->execute(['path' => '1:/allowed/']);
-        self::assertFalse($browse->isError, json_encode($browse->jsonSerialize()));
+        self::assertFalse($browse->isError, json_encode($browse->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('mount-visible.txt', $this->getFirstTextContent($browse));
     }
 
@@ -201,7 +201,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
 
         foreach ($calls as [$tool, $params]) {
             $result = $tool->execute($params);
-            self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+            self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertStringNotContainsString('mount-visible.txt', $this->getFirstTextContent($result));
         }
     }
@@ -224,7 +224,7 @@ final class FileMountAuthorizationTest extends AbstractFunctionalTest
 
         $result = $this->getService(BrowseFolderTool::class)->execute(['folder' => '1:/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('📂 /', $this->getFirstTextContent($result));
     }
 }

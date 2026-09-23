@@ -20,7 +20,7 @@ final class ListWorkspacesToolTest extends AbstractFunctionalTest
         $tool = GeneralUtility::makeInstance(ListWorkspacesTool::class);
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $text = $result->content[0]->text;
         self::assertStringContainsString('WS Alpha', $text);
     }
@@ -31,7 +31,7 @@ final class ListWorkspacesToolTest extends AbstractFunctionalTest
         $tool = GeneralUtility::makeInstance(ListWorkspacesTool::class);
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $text = $result->content[0]->text;
         self::assertStringContainsString('No workspaces available', $text);
     }

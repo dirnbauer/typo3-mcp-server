@@ -51,7 +51,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame('uploaded', $json['action']);
@@ -110,7 +110,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             $GLOBALS['BE_USER'] = $originalBackendUser;
         }
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame(0, $json['workspaceId']);
@@ -144,7 +144,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame(['title' => 'Known title'], $json['metadata']);
@@ -198,7 +198,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
         $first = json_decode((string)$tool->execute(['path' => 'images/first.png', 'content_base64' => self::PIXEL_PNG_BASE64])->content[0]->text, true);
 
         $secondResult = $tool->execute(['path' => 'other/second.png', 'content_base64' => self::PIXEL_PNG_BASE64]);
-        self::assertFalse($secondResult->isError, json_encode($secondResult->jsonSerialize()));
+        self::assertFalse($secondResult->isError, json_encode($secondResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $second = json_decode((string)$secondResult->content[0]->text, true);
 
         self::assertTrue($second['deduplicated']);
@@ -215,7 +215,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
 
         $result = $this->get(UploadFileTool::class)->execute(['path' => 'images/local-photo.jpg']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame('presigned_upload', $json['action']);
@@ -241,7 +241,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
             unset($GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyBaseUrl']);
         }
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('https://example.com/subdir/mcp_upload', $json['uploadUrl']);
     }
@@ -253,7 +253,7 @@ final class UploadFileToolTest extends AbstractFunctionalTest
 
         $result = $this->get(UploadFileTool::class)->execute(['path' => 'images/']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertNull($json['fileName']);
         self::assertStringContainsString('?fileName=', (string)$json['instructions']);

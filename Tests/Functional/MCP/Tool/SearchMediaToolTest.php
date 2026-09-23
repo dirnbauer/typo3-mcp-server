@@ -28,7 +28,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testSearchByKeywordInTitle(): void
     {
         $result = $this->tool->execute(['keyword' => 'Team Photo']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -48,7 +48,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testSearchByKeywordInFileName(): void
     {
         $result = $this->tool->execute(['keyword' => 'logo']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -61,7 +61,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testFilterByMimeType(): void
     {
         $result = $this->tool->execute(['mimeType' => 'image/']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -74,7 +74,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testFilterByExtension(): void
     {
         $result = $this->tool->execute(['extension' => 'pdf']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -88,7 +88,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testFilterByMinDimensions(): void
     {
         $result = $this->tool->execute(['minWidth' => 1000, 'minHeight' => 700]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -106,7 +106,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testPagination(): void
     {
         $result = $this->tool->execute(['mimeType' => 'image/', 'limit' => 2, 'offset' => 0]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -124,7 +124,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testEmptyResults(): void
     {
         $result = $this->tool->execute(['keyword' => 'nonexistent_file_xyz_12345']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -135,7 +135,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testCombinedFilters(): void
     {
         $result = $this->tool->execute(['keyword' => 'logo', 'mimeType' => 'image/']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -145,7 +145,7 @@ final class SearchMediaToolTest extends AbstractFunctionalTest
     public function testFilterByFolder(): void
     {
         $result = $this->tool->execute(['folder' => '/user_upload/']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

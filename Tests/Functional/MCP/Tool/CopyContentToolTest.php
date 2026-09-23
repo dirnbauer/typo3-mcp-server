@@ -27,7 +27,7 @@ final class CopyContentToolTest extends AbstractFunctionalTest
             'targetPid' => 1,
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -47,7 +47,7 @@ final class CopyContentToolTest extends AbstractFunctionalTest
             'targetPid' => 2,
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -67,7 +67,7 @@ final class CopyContentToolTest extends AbstractFunctionalTest
             'overrides' => ['header' => 'Copied Content Header'],
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -109,7 +109,7 @@ final class CopyContentToolTest extends AbstractFunctionalTest
             'targetPid' => 1,
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

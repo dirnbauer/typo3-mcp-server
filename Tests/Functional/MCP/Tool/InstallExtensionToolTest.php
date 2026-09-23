@@ -68,7 +68,7 @@ final class InstallExtensionToolTest extends AbstractFunctionalTest
     {
         $result = $this->tool->execute(['action' => 'list']);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         self::assertSame('list', $data['action']);
         self::assertGreaterThan(0, $data['total']);

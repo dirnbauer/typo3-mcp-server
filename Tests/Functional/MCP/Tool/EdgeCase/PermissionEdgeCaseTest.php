@@ -112,7 +112,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'table' => 'pages',
             'uid' => 1,
         ]);
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Should NOT be able to update pages
         $updateResult = $this->writeTool->execute([
@@ -138,7 +138,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'uid' => 1,
             'data' => ['header' => 'Allowed Update'],
         ]);
-        self::assertFalse($contentResult->isError, json_encode($contentResult->jsonSerialize()));
+        self::assertFalse($contentResult->isError, json_encode($contentResult->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -246,7 +246,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 0,
             ],
         ]);
-        self::assertFalse($defaultContentResult->isError, json_encode($defaultContentResult->jsonSerialize()));
+        self::assertFalse($defaultContentResult->isError, json_encode($defaultContentResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentInLanguages[0] = json_decode((string)$defaultContentResult->content[0]->text, true)['uid'];
 
         // Create content in German
@@ -260,7 +260,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 1,
             ],
         ]);
-        self::assertFalse($germanContentResult->isError, json_encode($germanContentResult->jsonSerialize()));
+        self::assertFalse($germanContentResult->isError, json_encode($germanContentResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentInLanguages[1] = json_decode((string)$germanContentResult->content[0]->text, true)['uid'];
 
         // Create content in French
@@ -274,7 +274,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
                 'sys_language_uid' => 2,
             ],
         ]);
-        self::assertFalse($frenchContentResult->isError, json_encode($frenchContentResult->jsonSerialize()));
+        self::assertFalse($frenchContentResult->isError, json_encode($frenchContentResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentInLanguages[2] = json_decode((string)$frenchContentResult->content[0]->text, true)['uid'];
 
         // Verify that content was created with correct language UIDs
@@ -291,7 +291,7 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'language' => 'de',  // Filter for German content
         ]);
 
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$readResult->content[0]->text, true);
 
         // Should only return German content when filtering by German language

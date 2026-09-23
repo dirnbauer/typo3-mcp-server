@@ -48,7 +48,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
@@ -86,7 +86,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
@@ -124,7 +124,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $responseData = json_decode((string)$result->content[0]->text, true);
         $contentUid = $responseData['uid'];
@@ -135,7 +135,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
@@ -172,7 +172,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
@@ -182,7 +182,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
@@ -212,7 +212,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with new file references (replaces all)
@@ -226,7 +226,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read back
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -234,7 +234,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
@@ -254,7 +254,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertNotEmpty($data['records']);
@@ -279,7 +279,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $defaultFile = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('public_url', $defaultFile, 'public_url should be in the default response');
 
@@ -289,7 +289,7 @@ class FileReferenceTest extends FunctionalTestCase
             'uid' => 1,
             'fields' => ['name'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $narrowed = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayNotHasKey('public_url', $narrowed, 'public_url should drop when whitelist excludes it');
         self::assertEquals('test.jpg', $narrowed['name']);
@@ -305,7 +305,7 @@ class FileReferenceTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
         $result = $tool->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringNotContainsString('No field layout defined', $content);
@@ -324,7 +324,7 @@ class FileReferenceTest extends FunctionalTestCase
     {
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
         $result = $tool->execute(['table' => 'sys_file_reference']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         foreach (['title', 'description', 'alternative', 'link', 'crop', 'autoplay'] as $column) {
@@ -341,12 +341,12 @@ class FileReferenceTest extends FunctionalTestCase
         $tool = GeneralUtility::makeInstance(GetTableSchemaTool::class);
 
         $sysFile = $tool->execute(['table' => 'sys_file']);
-        self::assertFalse($sysFile->isError, json_encode($sysFile->jsonSerialize()));
+        self::assertFalse($sysFile->isError, json_encode($sysFile->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('Computed read-only — included by default', $sysFile->content[0]->text);
         self::assertStringContainsString('public_url', $sysFile->content[0]->text);
 
         $sysFileReference = $tool->execute(['table' => 'sys_file_reference']);
-        self::assertFalse($sysFileReference->isError, json_encode($sysFileReference->jsonSerialize()));
+        self::assertFalse($sysFileReference->isError, json_encode($sysFileReference->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $sysFileReference->content[0]->text;
         self::assertStringContainsString('Computed read-only — included by default', $content);
         foreach (['file_name', 'file_identifier', 'file_mime_type', 'file_size', 'public_url'] as $field) {
@@ -369,7 +369,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('public_url', $file);
@@ -390,7 +390,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $ref = json_decode((string)$result->content[0]->text, true)['records'][0]['assets'][0];
         foreach (['t3ver_oid', 't3ver_wsid', 't3ver_state', 't3ver_stage', 'l10n_state', 'deleted'] as $leaked) {
@@ -416,7 +416,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'sys_file',
             'uid' => 1,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $file = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertArrayHasKey('metadata', $file);
@@ -485,12 +485,12 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read after create — crop must come back as the same array
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $afterCreate = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $afterCreate['assets']);
         self::assertIsArray(
@@ -521,11 +521,11 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read after update — crop must still be the (updated) array, not "Array"
         $result = $readTool->execute(['table' => 'tt_content', 'uid' => $contentUid]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $afterUpdate = json_decode((string)$result->content[0]->text, true)['records'][0];
         self::assertCount(1, $afterUpdate['assets']);
 
@@ -574,7 +574,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         $afterCreate = json_decode(
@@ -594,7 +594,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $afterUpdate = json_decode(
             (string)$readTool->execute(['table' => 'tt_content', 'uid' => $contentUid])->content[0]->text,
@@ -629,7 +629,7 @@ class FileReferenceTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $contentUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with empty assets array to remove all references
@@ -641,7 +641,7 @@ class FileReferenceTest extends FunctionalTestCase
                 'assets' => [],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read back - should have no assets
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -649,7 +649,7 @@ class FileReferenceTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => $contentUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];

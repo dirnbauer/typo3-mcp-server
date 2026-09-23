@@ -61,7 +61,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
             'type' => 'textmedia',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -92,7 +92,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
             'type' => 'textmedia',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Essential fields should still appear
@@ -116,7 +116,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
             'type' => 'textmedia',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section
@@ -136,7 +136,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
             'table' => 'pages',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section
@@ -165,7 +165,7 @@ class GetTableSchemaTSconfigTest extends FunctionalTestCase
             'type' => 'text',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Extract just the FIELDS section

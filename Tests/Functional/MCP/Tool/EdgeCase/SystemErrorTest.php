@@ -100,7 +100,7 @@ final class SystemErrorTest extends AbstractFunctionalTest
             ]);
 
             // Tool should handle this by creating workspace or switching to valid one
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         } finally {
             // Restore original workspace
@@ -269,11 +269,11 @@ final class SystemErrorTest extends AbstractFunctionalTest
         ]);
 
         // Should succeed (last write wins) but data integrity might be compromised
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify final state
         $finalRead = $this->readTool->execute(['table' => 'pages', 'uid' => $uid]);
-        self::assertFalse($finalRead->isError, json_encode($finalRead->jsonSerialize()));
+        self::assertFalse($finalRead->isError, json_encode($finalRead->jsonSerialize(), JSON_THROW_ON_ERROR));
         $finalData = json_decode((string)$finalRead->content[0]->text, true);
         self::assertIsArray($finalData);
         if (isset($finalData['title'])) {

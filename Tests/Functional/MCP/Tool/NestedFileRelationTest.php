@@ -155,7 +155,7 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
             'action' => 'create', 'table' => 'tt_content', 'pid' => 1,
             'data' => ['CType' => 'textmedia', 'header' => 'Nested files', 'tx_testnestedfiles_items' => $items],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         return (int)$this->extractJsonFromResult($result)['uid'];
     }
 
@@ -165,7 +165,7 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
             'action' => 'update', 'table' => 'tt_content', 'uid' => $uid,
             'data' => ['tx_testnestedfiles_items' => $items],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     private function items(int $uid): array

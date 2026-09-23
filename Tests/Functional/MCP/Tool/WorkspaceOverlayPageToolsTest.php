@@ -129,11 +129,11 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 2,
             'data' => ['title' => 'About - Workspace Draft'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // GetPage should show the workspace-modified title
         $result = $this->getPageTool->execute(['uid' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Title: About - Workspace Draft', $content);
@@ -153,10 +153,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 100,
             'data' => ['header' => 'Welcome Header - Updated in WS'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Welcome Header - Updated in WS', $content);
@@ -175,10 +175,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'tt_content',
             'uid' => 100,
         ]);
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // Record 100 should no longer appear
@@ -200,7 +200,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'pages',
             'uid' => 6,
         ]);
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 6]);
         self::assertTrue($result->isError, 'GetPage should error for page deleted in workspace');
@@ -220,10 +220,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 2,
             'data' => ['title' => 'About Modified'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // UID should be the live UID 2, not the workspace version's internal UID
@@ -244,10 +244,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 102,
             'data' => ['header' => 'Team Intro - WS'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // Should show live UID 102, not workspace overlay UID
@@ -264,7 +264,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('[WORKSPACE:', $content);
@@ -283,7 +283,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
         $this->workspaceService->switchToOptimalWorkspace($GLOBALS['BE_USER']);
 
         $result = $this->getPageTool->execute(['uid' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Test Workspace', $content);
@@ -307,13 +307,13 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'nav_title' => 'Ueberblick',
             ],
         ]);
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute([
             'uid' => 2,
             'language' => 'de',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('UID: 2', $content);
@@ -347,10 +347,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'nav_title' => 'About WS Nav',
             ],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('About WS Nav', $content);
@@ -372,10 +372,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact WS'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Contact WS', $content);
@@ -400,10 +400,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'table' => 'pages',
             'uid' => 6,
         ]);
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // Non-deleted pages must still appear
@@ -429,11 +429,11 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'uid' => $pageUid,
                 'data' => ['title' => 'Modified ' . $pageUid],
             ]);
-            self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+            self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         }
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -457,10 +457,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact Overlaid'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Contact Overlaid', $content);
@@ -484,10 +484,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'slug' => '/brand-new-ws-page',
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Brand New WS Page', $content);
@@ -512,7 +512,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'nav_title' => 'Ueberblick',
             ],
         ]);
-        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize()));
+        self::assertFalse($translateResult->isError, json_encode($translateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $translationData = json_decode((string)$translateResult->content[0]->text, true);
         $translationUid = $translationData['translationUid'];
         self::assertIsInt($translationUid);
@@ -522,7 +522,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'depth' => 1,
             'language' => 'de',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // Translations are created visible by default now (hidden=0), so no [HIDDEN] marker.
@@ -537,7 +537,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
     {
         // Tools auto-switch to workspace
         $result = $this->getPageTreeTool->execute(['startPage' => 0, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('[1]', $content);
@@ -568,11 +568,11 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
                 'slug' => '/about/new-child',
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Get tree with depth 1 — page 2 should show increased subpage count
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 1]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -611,10 +611,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 102,
             'data' => ['header' => 'Team Intro WS Version'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTool->execute(['uid' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         // Modified record should show workspace version
@@ -638,7 +638,7 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 6,
             'data' => ['title' => 'Contact WS'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $updateResult = $this->writeTool->execute([
             'action' => 'update',
@@ -646,10 +646,10 @@ class WorkspaceOverlayPageToolsTest extends FunctionalTestCase
             'uid' => 5,
             'data' => ['title' => 'Mission WS'],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->getPageTreeTool->execute(['startPage' => 1, 'depth' => 2]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
         self::assertStringContainsString('Contact WS', $content);

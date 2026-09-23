@@ -59,7 +59,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         self::assertGreaterThan(0, count($data['records']));
@@ -77,7 +77,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -94,7 +94,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         self::assertGreaterThan(0, count($data['records']));
@@ -112,7 +112,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -129,7 +129,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -146,7 +146,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         $uids = array_column($data['records'], 'uid');
@@ -164,7 +164,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -181,7 +181,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -198,7 +198,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -215,7 +215,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         $uids = array_column($data['records'], 'uid');
@@ -233,7 +233,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
         ]);
 
         // Should succeed (even if zero results)
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     public function testFilterByIsNotNull(): void
@@ -245,7 +245,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         self::assertGreaterThan(0, count($data['records']));
     }
@@ -262,7 +262,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {
@@ -392,7 +392,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         // Total count must match the number of actual textmedia records, not all records
@@ -411,7 +411,7 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
 
         foreach ($data['records'] as $record) {

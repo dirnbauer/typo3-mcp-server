@@ -96,7 +96,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->setUpBackendUser(1); // admin
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals(5, $data['total'], 'Admin should see all 5 seeded files');
@@ -118,7 +118,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals(0, $data['total'], 'User without mounts should see zero files');
@@ -134,7 +134,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
 
@@ -160,7 +160,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals(
@@ -186,7 +186,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file']);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals(
@@ -243,7 +243,7 @@ class FileMountPermissionTest extends FunctionalTestCase
         $this->authenticateUser($uid);
 
         $result = GeneralUtility::makeInstance(ReadTableTool::class)->execute(['table' => 'sys_file', 'uid' => 1]); // test.jpg
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals(

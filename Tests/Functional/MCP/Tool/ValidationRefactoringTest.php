@@ -147,7 +147,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
         ];
 
         $result = $this->writeTool->execute($params);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $resultData = $result->jsonSerialize();
         self::assertArrayHasKey('content', $resultData);
@@ -212,7 +212,7 @@ class ValidationRefactoringTest extends FunctionalTestCase
         ];
 
         $result = $this->writeTool->execute($params);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // The important part of this test is that the validation refactoring maintains
         // the array to CSV conversion logic in validateRecordData method

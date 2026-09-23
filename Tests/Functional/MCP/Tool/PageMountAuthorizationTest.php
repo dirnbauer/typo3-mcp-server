@@ -50,7 +50,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
     {
         $result = $this->getService(GetPageTool::class)->execute(['uid' => 7]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
     }
 
@@ -58,7 +58,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
     {
         $result = $this->getService(GetPageTool::class)->execute(['uid' => 2]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('UID: 2', $this->getFirstTextContent($result));
         self::assertStringNotContainsString('News Header', $this->getFirstTextContent($result));
     }
@@ -70,7 +70,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'depth' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $tree = $this->getFirstTextContent($result);
         self::assertStringContainsString('[2] About Us', $tree);
         self::assertStringContainsString('[4] Our Team', $tree);
@@ -86,7 +86,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'depth' => 2,
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
     }
 
@@ -109,7 +109,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'depth' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $tree = $this->getFirstTextContent($result);
         self::assertStringContainsString('[5] Mission', $tree);
         self::assertStringNotContainsString('[4] Our Team', $tree);
@@ -122,7 +122,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'checks' => ['missing_meta_description'],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
     }
 
@@ -132,7 +132,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'checks' => ['missing_meta_description'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode($this->getFirstTextContent($result), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(2, $payload['rootPageId']);
         foreach ($payload['issues']['missing_meta_description'] as $issue) {
@@ -159,7 +159,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
 
         foreach ($calls as [$tool, $params]) {
             $result = $tool->execute($params);
-            self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+            self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertStringContainsString('tt_content', $this->getFirstTextContent($result));
         }
 
@@ -169,7 +169,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'startPage' => 0,
             'depth' => 2,
         ]);
-        self::assertFalse($treeResult->isError, json_encode($treeResult->jsonSerialize()));
+        self::assertFalse($treeResult->isError, json_encode($treeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     public function testPreviewUrlRejectsPageAndContentOutsideWebMount(): void
@@ -181,7 +181,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             ['table' => 'tt_content', 'uid' => 106],
         ] as $params) {
             $result = $tool->execute($params);
-            self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+            self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
         }
     }
@@ -193,7 +193,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'mode' => 'preview',
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('permission', strtolower($this->getFirstTextContent($result)));
     }
 
@@ -236,7 +236,7 @@ final class PageMountAuthorizationTest extends AbstractFunctionalTest
             'table' => 'pages',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode($this->getFirstTextContent($result), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame(1, $payload['totalChanges']);
         self::assertSame('Mounted draft', $payload['changes']['pages'][0]['label']);

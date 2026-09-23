@@ -19,7 +19,7 @@ final class FileSandboxToolTest extends AbstractFunctionalTest
         $tool = $this->get(BrowseFilesTool::class);
         $result = $tool->execute([]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('MCP FILE SANDBOX', $result->content[0]->text);
         self::assertStringContainsString('1:/mcp/', $result->content[0]->text);
     }
@@ -32,14 +32,14 @@ final class FileSandboxToolTest extends AbstractFunctionalTest
             'path' => 'images/inside.txt',
             'content' => 'inside sandbox',
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $tool = $this->get(ReadFileMetadataTool::class);
         $result = $tool->execute([
             'identifier' => 'images/inside.txt',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('1:/mcp/images/inside.txt', $json['identifier']);
         self::assertSame('txt', $json['extension']);

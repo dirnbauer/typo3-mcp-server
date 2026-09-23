@@ -25,7 +25,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
                 'alternative' => 'Pixel alternative text',
             ],
         ]);
-        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
 
@@ -34,7 +34,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'identifier' => (string)$uploaded['identifier'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame((string)$uploaded['identifier'], $json['identifier']);
@@ -53,7 +53,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'path' => 'images/relations-pixel.png',
             'content_base64' => self::PIXEL_PNG_BASE64,
         ]);
-        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize()));
+        self::assertFalse($uploadResult->isError, json_encode($uploadResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $uploaded = json_decode((string)$uploadResult->content[0]->text, true);
         $fileUid = (int)$uploaded['uid'];
@@ -96,7 +96,7 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
             'uid' => $fileUid,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $json = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame('Hero Images', $json['categories'][0]['title']);

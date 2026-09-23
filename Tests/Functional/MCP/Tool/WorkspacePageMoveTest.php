@@ -29,7 +29,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'uid' => 6,
             'data' => ['pid' => 2],
         ]);
-        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
+        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Moving 2 below 6 now closes the cycle 2 -> 6 -> 2, visible only in the
         // workspace.
@@ -40,7 +40,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'data' => ['pid' => 6, 'title' => 'Must not be changed'],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('Error moving record', $result->content[0]->text);
 
         $versionsBelowSix = $this->getConnectionForTable('pages')->fetchAllAssociative(
@@ -80,7 +80,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'uid' => 4,
             'data' => ['pid' => 7],
         ]);
-        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize()));
+        self::assertFalse($staged->isError, json_encode($staged->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->writeTool->execute([
             'action' => 'update',
@@ -89,7 +89,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'data' => ['pid' => 4],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -114,7 +114,7 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'data' => ['pid' => 4],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Assert the guard's own message, not just that some error came back.
         // Without the guard the move is let through and DataHandler raises a

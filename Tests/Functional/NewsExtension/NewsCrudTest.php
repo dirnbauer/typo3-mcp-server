@@ -51,7 +51,7 @@ class NewsCrudTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Check that categories field shows MM table information
@@ -87,7 +87,7 @@ class NewsCrudTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createdRecord = json_decode((string)$result->content[0]->text);
         $this->categoryUids[] = $createdRecord->uid;
 
@@ -110,7 +110,7 @@ class NewsCrudTest extends FunctionalTestCase
                 ],
             ]);
 
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $createdRecord = json_decode((string)$result->content[0]->text);
             $this->categoryUids[] = $createdRecord->uid;
         }
@@ -122,7 +122,7 @@ class NewsCrudTest extends FunctionalTestCase
             'pid' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readResult = json_decode((string)$result->content[0]->text);
         self::assertCount(4, $readResult->records);
     }
@@ -152,7 +152,7 @@ class NewsCrudTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createdRecord = json_decode((string)$result->content[0]->text);
         $newsUid = $createdRecord->uid;
 
@@ -163,7 +163,7 @@ class NewsCrudTest extends FunctionalTestCase
             'uid' => $newsUid,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readResult = json_decode((string)$result->content[0]->text);
         self::assertCount(1, $readResult->records);
 
@@ -211,7 +211,7 @@ class NewsCrudTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read back and verify
         $result = $readTool->execute([
@@ -305,7 +305,7 @@ class NewsCrudTest extends FunctionalTestCase
             'uid' => $newsUid,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Try to read it - should not be found
         $readTool = $this->getService(ReadTableTool::class);
@@ -345,7 +345,7 @@ class NewsCrudTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $createdRecord = json_decode((string)$result->content[0]->text);
         $newsUid = $createdRecord->uid;
 

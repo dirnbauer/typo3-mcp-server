@@ -307,7 +307,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('update', $data['action']);
@@ -334,7 +334,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($bottomResult->isError, json_encode($bottomResult->content));
+        self::assertFalse($bottomResult->isError, json_encode($bottomResult->content, JSON_THROW_ON_ERROR));
 
         // Create content after specific element
         $afterResult = $tool->execute([
@@ -349,7 +349,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($afterResult->isError, json_encode($afterResult->content));
+        self::assertFalse($afterResult->isError, json_encode($afterResult->content, JSON_THROW_ON_ERROR));
         $afterData = json_decode((string)$afterResult->content[0]->text, true);
 
         // Verify the record was created and positioned
@@ -395,7 +395,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
 
@@ -478,7 +478,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('update', $data['action']);
@@ -562,7 +562,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             'uid' => 101,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('delete', $data['action']);
@@ -651,7 +651,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $newUid = $data['uid'];
@@ -688,7 +688,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
                 ],
             ]);
 
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
             $data = json_decode((string)$result->content[0]->text, true);
             self::assertIsArray($data);
@@ -728,7 +728,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($data);
@@ -741,7 +741,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $referenceIndex = $this->findRecordIndexByUid($records, 100);
         $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        self::assertSame($referenceIndex + 1, $newIndex, json_encode($records));
+        self::assertSame($referenceIndex + 1, $newIndex, json_encode($records, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -769,7 +769,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         $newUid = $data['uid'];
@@ -824,7 +824,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($data);
@@ -837,7 +837,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $referenceIndex = $this->findRecordIndexByUid($records, 101);
         $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        self::assertSame($referenceIndex - 1, $newIndex, json_encode($records));
+        self::assertSame($referenceIndex - 1, $newIndex, json_encode($records, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -864,7 +864,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($data);
@@ -920,7 +920,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsInt($data['uid']);
@@ -949,7 +949,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertEquals('create', $data['action']);
         self::assertSame(1, $data['pid']);
@@ -967,7 +967,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
                 'header' => 'Workspace Overlay Reference',
             ],
         ]);
-        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize()));
+        self::assertFalse($updateResult->isError, json_encode($updateResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $createResult = $tool->execute([
             'action' => 'create',
@@ -981,14 +981,14 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$createResult->content[0]->text, true);
 
         $records = $this->readVisibleContentRows(1);
         $referenceIndex = $this->findRecordIndexByUid($records, 100);
         $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        self::assertSame($referenceIndex + 1, $newIndex, json_encode($records));
+        self::assertSame($referenceIndex + 1, $newIndex, json_encode($records, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -1019,7 +1019,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode((string)$result->content[0]->text, true);
         self::assertIsArray($data);
@@ -1031,7 +1031,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
         $referenceIndex = $this->findRecordIndexByUid($records, 102);
         $newIndex = $this->findRecordIndexByUid($records, $data['uid']);
 
-        self::assertSame($referenceIndex - 1, $newIndex, json_encode($records));
+        self::assertSame($referenceIndex - 1, $newIndex, json_encode($records, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -1056,7 +1056,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
                 'doktype' => 1,
             ],
         ]);
-        self::assertFalse($pageResult->isError, json_encode($pageResult->content));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->content, JSON_THROW_ON_ERROR));
         $pageData = json_decode((string)$pageResult->content[0]->text, true);
         $createResults[] = ['table' => 'pages', 'uid' => $pageData['uid']];
 
@@ -1070,7 +1070,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
                 'header' => 'Workspace Test Content',
             ],
         ]);
-        self::assertFalse($contentResult->isError, json_encode($contentResult->content));
+        self::assertFalse($contentResult->isError, json_encode($contentResult->content, JSON_THROW_ON_ERROR));
         $contentData = json_decode((string)$contentResult->content[0]->text, true);
         $createResults[] = ['table' => 'tt_content', 'uid' => $contentData['uid']];
 
@@ -1122,7 +1122,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('must be one of:', $result->content[0]->text);
     }
 
@@ -1334,7 +1334,7 @@ XML;
             ]);
 
             // Check for errors first
-            self::assertFalse($result->isError, json_encode($result->content));
+            self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
             // Check the result
             $data = json_decode((string)$result->content[0]->text, true);
@@ -1391,7 +1391,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
         // The tool should convert ISO date to timestamp
         $data = json_decode((string)$result->content[0]->text, true);
@@ -1418,7 +1418,7 @@ XML;
         ]);
 
         // Check for errors first
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
 
         // This test is now just checking that the tool handles data correctly
         $data = json_decode((string)$result->content[0]->text, true);
@@ -1539,7 +1539,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -1612,7 +1612,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = $this->extractJsonFromResult($result);
         $uid = $data['uid'];
@@ -1656,7 +1656,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
@@ -1702,7 +1702,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $resultData = $this->extractJsonFromResult($result);
         self::assertEquals('update', $resultData['action']);
         self::assertEquals($contentUid, $resultData['uid']);
@@ -1749,7 +1749,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -1792,7 +1792,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -1835,7 +1835,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -1877,7 +1877,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -1917,7 +1917,7 @@ XML;
                 'bodytext' => 'Workspace content here.',
             ],
         ]);
-        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Second update uses search-and-replace — should operate on the workspace version
         $result2 = $this->tool->execute([
@@ -1930,7 +1930,7 @@ XML;
                 ],
             ],
         ]);
-        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize()));
+        self::assertFalse($result2->isError, json_encode($result2->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -1972,7 +1972,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $resultData = $this->extractJsonFromResult($result);
         self::assertEquals('update', $resultData['action']);
         self::assertEquals($contentUid, $resultData['uid']);
@@ -2017,7 +2017,7 @@ XML;
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('tt_content');
@@ -2052,7 +2052,7 @@ XML;
             'pid' => $this->getRootPageUid(),
             'data' => ['title' => 'Position Bottom Test', 'slug' => '/pos-bottom', 'doktype' => 1],
         ]);
-        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageUid = $this->extractJsonFromResult($pageResult)['uid'];
 
         $uids = [];
@@ -2064,7 +2064,7 @@ XML;
                 'position' => 'bottom',
                 'data' => ['CType' => 'textmedia', 'header' => $header, 'colPos' => 0],
             ]);
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $uids[$header] = $this->extractJsonFromResult($result)['uid'];
         }
 
@@ -2075,14 +2075,14 @@ XML;
             'uid' => $uids['A'],
             'position' => 'bottom',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read back and verify order is now B, C, A
         $readResult = $readTool->execute([
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = $this->extractJsonFromResult($readResult);
         $headers = array_map(fn(array $r) => $r['header'], $readData['records']);
         self::assertSame(['B', 'C', 'A'], $headers, 'position=bottom should move A after C');
@@ -2102,7 +2102,7 @@ XML;
             'pid' => $this->getRootPageUid(),
             'data' => ['title' => 'No Position Test', 'slug' => '/no-pos', 'doktype' => 1],
         ]);
-        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageUid = $this->extractJsonFromResult($pageResult)['uid'];
 
         $resultA = $this->tool->execute([
@@ -2112,7 +2112,7 @@ XML;
             'position' => 'bottom',
             'data' => ['CType' => 'textmedia', 'header' => 'A', 'colPos' => 0],
         ]);
-        self::assertFalse($resultA->isError, json_encode($resultA->jsonSerialize()));
+        self::assertFalse($resultA->isError, json_encode($resultA->jsonSerialize(), JSON_THROW_ON_ERROR));
         $uidA = $this->extractJsonFromResult($resultA)['uid'];
 
         $resultB = $this->tool->execute([
@@ -2122,7 +2122,7 @@ XML;
             'position' => 'bottom',
             'data' => ['CType' => 'textmedia', 'header' => 'B', 'colPos' => 0],
         ]);
-        self::assertFalse($resultB->isError, json_encode($resultB->jsonSerialize()));
+        self::assertFalse($resultB->isError, json_encode($resultB->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Update A's header without specifying position — order must stay A, B
         $result = $this->tool->execute([
@@ -2131,13 +2131,13 @@ XML;
             'uid' => $uidA,
             'data' => ['header' => 'A modified'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $readResult = $readTool->execute([
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = $this->extractJsonFromResult($readResult);
         $headers = array_map(fn(array $r) => $r['header'], $readData['records']);
         self::assertSame(['A modified', 'B'], $headers, 'Omitting position should not change order');
@@ -2166,7 +2166,7 @@ XML;
                 'doktype' => 1,
             ],
         ]);
-        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize()));
+        self::assertFalse($pageResult->isError, json_encode($pageResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageData = $this->extractJsonFromResult($pageResult);
         $pageUid = $pageData['uid'];
 
@@ -2186,7 +2186,7 @@ XML;
                     'colPos' => 0,
                 ],
             ]);
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
             $data = $this->extractJsonFromResult($result);
             $createdUids[] = $data['uid'];
         }
@@ -2196,7 +2196,7 @@ XML;
             'table' => 'tt_content',
             'pid' => $pageUid,
         ]);
-        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize()));
+        self::assertFalse($readResult->isError, json_encode($readResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $readData = $this->extractJsonFromResult($readResult);
 
         self::assertArrayHasKey('records', $readData);

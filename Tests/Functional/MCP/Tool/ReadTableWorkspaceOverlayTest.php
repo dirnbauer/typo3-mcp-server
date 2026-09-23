@@ -50,7 +50,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
                 'header' => 'Patched in workspace',
             ],
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $workspaceView = $this->readSingle('tt_content', $liveUid, ['CType', 'header']);
 
@@ -78,14 +78,14 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'uid' => $liveUid,
             'data' => ['header' => 'WS Header'],
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->readTool->execute([
             'table' => 'tt_content',
             'pid' => 1,
             'fields' => ['uid', 'header'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true);
 
         $rowsForLive = array_values(array_filter(
@@ -123,14 +123,14 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'action' => 'delete',
             'uid' => $liveUid,
         ]);
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $this->readTool->execute([
             'table' => 'tt_content',
             'uid' => $liveUid,
             'fields' => ['uid', 'header'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true);
 
         self::assertSame(
@@ -150,7 +150,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
             'uid' => $uid,
             'fields' => $fields,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true);
         self::assertCount(1, $payload['records'], 'Expected exactly one record for uid ' . $uid);
         return $payload['records'][0];

@@ -216,7 +216,7 @@ class WorkspaceRecoveryTest extends AbstractFunctionalTest
             ],
         ]);
 
-        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize()));
+        self::assertFalse($result1->isError, json_encode($result1->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Simulate a scenario where workspace record might be partially corrupted
         // by directly manipulating database (this simulates database inconsistency)

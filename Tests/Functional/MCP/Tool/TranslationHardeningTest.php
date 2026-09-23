@@ -32,7 +32,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'data' => ['sys_language_uid' => 0, 'header' => 'Willkommen'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     #[Test]
@@ -48,7 +48,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'uid' => 100,
             'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
         ]);
-        self::assertFalse($first->isError, json_encode($first->jsonSerialize()));
+        self::assertFalse($first->isError, json_encode($first->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $duplicate = $tool->execute([
             'action' => 'translate',
@@ -73,7 +73,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'uid' => 100,
             'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode($result->content[0]->text ?? '', true);
         self::assertIsArray($payload);
@@ -102,7 +102,7 @@ final class TranslationHardeningTest extends AbstractFunctionalTest
             'hidden' => true,
             'data' => ['sys_language_uid' => 'de', 'header' => 'Willkommen'],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $payload = json_decode($result->content[0]->text ?? '', true);
         self::assertIsArray($payload);

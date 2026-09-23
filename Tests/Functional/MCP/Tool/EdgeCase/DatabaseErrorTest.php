@@ -74,7 +74,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // Should handle even complex queries
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -107,7 +107,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 DataHandler might handle this by modifying the slug
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Check if TYPO3 modified the slug
         $data = json_decode((string)$result->content[0]->text, true);
@@ -234,7 +234,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         ]);
 
         // Tool should handle corrupted data gracefully
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
 
         // Verify the tool returns the data even if references are invalid
@@ -302,7 +302,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             ]);
 
             // Should still work even with many connections
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         } catch (\Exception $e) {
             // If we hit a connection limit, that's what we're testing for

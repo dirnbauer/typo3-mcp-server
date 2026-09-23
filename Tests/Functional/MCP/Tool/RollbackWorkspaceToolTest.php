@@ -25,7 +25,7 @@ final class RollbackWorkspaceToolTest extends AbstractFunctionalTest
         $this->switchToWorkspace(0);
 
         $result = $this->tool->execute(['workspace_id' => $workspaceId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -45,7 +45,7 @@ final class RollbackWorkspaceToolTest extends AbstractFunctionalTest
             'workspace_id' => $workspaceId,
             'dryRun' => false,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -80,7 +80,7 @@ final class RollbackWorkspaceToolTest extends AbstractFunctionalTest
             'data' => ['title' => $title],
             'workspace_id' => $workspaceId,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         return $workspaceId;
     }

@@ -35,7 +35,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -73,7 +73,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
         }
 
         $result = $this->tool->execute(['operations' => $operations]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -107,7 +107,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $createData = json_decode($this->getFirstTextContent($createResult), true);
         self::assertIsArray($createData);
@@ -132,7 +132,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -208,7 +208,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -239,7 +239,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $createData = json_decode($this->getFirstTextContent($createResult), true);
         self::assertIsArray($createData);
@@ -256,7 +256,7 @@ final class BulkWriteToolTest extends AbstractFunctionalTest
                 ],
             ],
         ]);
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $deleteData = json_decode($this->getFirstTextContent($deleteResult), true);
         self::assertIsArray($deleteData);

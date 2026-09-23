@@ -31,7 +31,7 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
             'data' => ['header' => 'Dry Run Content', 'CType' => 'text'],
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Prove the call honors its explicit workspace_id rather than an
         // ambient workspace inherited from a previous operation.
@@ -39,7 +39,7 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
 
         // Dry-run publish (default)
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -61,7 +61,7 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
             'data' => ['title' => 'Published Title'],
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $this->switchToWorkspace(0);
 
@@ -70,7 +70,7 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
             'workspace_id' => $wsId,
             'dryRun' => false,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -93,7 +93,7 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
         $wsId = $this->createAndSwitchToWorkspace('Empty Publish Test');
 
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -114,14 +114,14 @@ final class PublishWorkspaceToolTest extends AbstractFunctionalTest
             'data' => ['header' => 'Filter Content', 'CType' => 'text'],
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Dry-run with table filter
         $result = $this->tool->execute([
             'workspace_id' => $wsId,
             'table' => 'tt_content',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);

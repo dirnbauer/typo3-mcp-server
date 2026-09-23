@@ -88,7 +88,7 @@ class CTypeTSconfigTest extends FunctionalTestCase
             'pid' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertInstanceOf(TextContent::class, $result->content[0]);
         $content = $result->content[0]->text;
 
@@ -119,7 +119,7 @@ class CTypeTSconfigTest extends FunctionalTestCase
             'pid' => 2,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // When the requested type is filtered out, the tool emits an ERROR text
@@ -175,6 +175,6 @@ class CTypeTSconfigTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 }

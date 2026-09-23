@@ -166,7 +166,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'depth' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show default language titles
@@ -189,7 +189,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show German titles where available
@@ -227,7 +227,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'fr',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Should show French title for page 2
@@ -267,7 +267,7 @@ class GetPageTreeLanguageTest extends FunctionalTestCase
             'language' => 'de',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // German translation has nav_title "Über", should use that instead of title

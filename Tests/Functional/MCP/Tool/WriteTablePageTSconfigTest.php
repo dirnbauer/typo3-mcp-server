@@ -89,7 +89,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
 
         // The write itself is staged in a workspace, so assert on the tool result
         // rather than on the live row.
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -105,7 +105,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             'data' => ['nav_title' => 'should not be written'],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('nav_title', $result->content[0]->text);
     }
 
@@ -124,7 +124,7 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             'fields' => ['uid', 'nav_title'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('nav_title', $result->content[0]->text);
         self::assertStringContainsString('About us', $result->content[0]->text);
     }
@@ -152,11 +152,11 @@ class WriteTablePageTSconfigTest extends AbstractFunctionalTest
             'table' => 'tt_content', 'action' => 'update', 'uid' => 102,
             'data' => ['header' => 'Enabled on About'],
         ]);
-        self::assertFalse($write->isError, json_encode($write->jsonSerialize()));
+        self::assertFalse($write->isError, json_encode($write->jsonSerialize(), JSON_THROW_ON_ERROR));
         $read = $this->getService(ReadTableTool::class)->execute([
             'table' => 'tt_content', 'uid' => 102, 'fields' => ['header'],
         ]);
-        self::assertFalse($read->isError, json_encode($read->jsonSerialize()));
+        self::assertFalse($read->isError, json_encode($read->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertSame('Enabled on About', $this->extractJsonFromResult($read)['records'][0]['header']);
     }
 }

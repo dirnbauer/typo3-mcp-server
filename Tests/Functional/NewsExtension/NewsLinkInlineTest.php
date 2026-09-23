@@ -71,7 +71,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Read the news record (ReadTableTool will automatically use the same workspace)
@@ -80,7 +80,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
             'table' => 'tx_news_domain_model_news',
             'uid' => $newsUid,
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $response = json_decode((string)$result->content[0]->text, true);
         self::assertArrayHasKey('records', $response, 'Response should have records key. Got: ' . json_encode($response));
@@ -139,7 +139,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'title' => 'News to update with links',
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with embedded links
@@ -161,7 +161,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Read and verify
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -206,7 +206,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 'related_links' => [],  // Empty array removes all
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify links are removed
         $readTool = GeneralUtility::makeInstance(ReadTableTool::class);
@@ -241,7 +241,7 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         // Read and verify order
@@ -306,11 +306,11 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $newsUid = json_decode($result->content[0]->text, true)['uid'];
 
         $result = $readTool->execute(['table' => 'tx_news_domain_model_news', 'uid' => $newsUid]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $news = json_decode($result->content[0]->text, true)['records'][0];
         $byTitle = [];
         foreach ($news['related_links'] as $link) {
@@ -331,10 +331,10 @@ class NewsLinkInlineTest extends FunctionalTestCase
                 ],
             ],
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $result = $readTool->execute(['table' => 'tx_news_domain_model_news', 'uid' => $newsUid]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $news = json_decode($result->content[0]->text, true)['records'][0];
         self::assertCount(3, $news['related_links'], 'No links should be lost during reorder');
 

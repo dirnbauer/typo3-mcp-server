@@ -89,7 +89,7 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
         $this->assertSuccessfulToolResult($result);
 
         $workspaceInfo = GeneralUtility::makeInstance(WorkspaceContextService::class)->getWorkspaceInfo();
-        self::assertTrue($workspaceInfo['is_live'], json_encode($workspaceInfo));
+        self::assertTrue($workspaceInfo['is_live'], json_encode($workspaceInfo, JSON_THROW_ON_ERROR));
     }
 
     #[Test]
@@ -110,7 +110,7 @@ final class WorkspaceSelectionTest extends AbstractFunctionalTest
         $this->assertSuccessfulToolResult($result);
 
         $workspaceInfo = GeneralUtility::makeInstance(WorkspaceContextService::class)->getWorkspaceInfo();
-        self::assertFalse($workspaceInfo['is_live'], json_encode($workspaceInfo));
+        self::assertFalse($workspaceInfo['is_live'], json_encode($workspaceInfo, JSON_THROW_ON_ERROR));
     }
 
     #[Test]

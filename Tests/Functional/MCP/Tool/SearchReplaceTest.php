@@ -53,7 +53,7 @@ final class SearchReplaceTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('update', $result->content[0]->text);
     }
 
@@ -70,7 +70,7 @@ final class SearchReplaceTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('empty search string', $result->content[0]->text);
     }
 
@@ -86,7 +86,7 @@ final class SearchReplaceTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $json = json_decode((string)$result->content[0]->text, true);
         return (int)($json['uid'] ?? 0);

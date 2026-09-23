@@ -130,7 +130,7 @@ final class ImportFromUrlToolTest extends AbstractFunctionalTest
             'targetPid' => 1,
         ]);
 
-        self::assertTrue($result->isError, json_encode($result->jsonSerialize()));
+        self::assertTrue($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         self::assertStringContainsString('exceeds maximum size', $this->getFirstTextContent($result));
     }
 

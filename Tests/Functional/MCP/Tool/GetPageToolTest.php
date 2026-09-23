@@ -196,7 +196,7 @@ class GetPageToolTest extends FunctionalTestCase
         // Verify result structure
         self::assertCount(1, $result->content);
         self::assertInstanceOf(TextContent::class, $result->content[0]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $content = $result->content[0]->text;
 
@@ -229,7 +229,7 @@ class GetPageToolTest extends FunctionalTestCase
             'languageId' => 0,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Verify page information
@@ -256,7 +256,7 @@ class GetPageToolTest extends FunctionalTestCase
             'includeHidden' => false,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         // Verify content elements are properly listed
@@ -292,14 +292,14 @@ class GetPageToolTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $tool = $this->getService(GetPageTool::class);
         $result = $tool->execute([
             'uid' => 1,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
 
         self::assertStringContainsString('Image Summary Test', $content);
@@ -371,7 +371,7 @@ class GetPageToolTest extends FunctionalTestCase
             'includeHidden' => false,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
         self::assertStringContainsString('UID: 1', $content);
         self::assertStringContainsString('Title: Home', $content);
@@ -530,7 +530,7 @@ class GetPageToolTest extends FunctionalTestCase
             'url' => '/about/',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
         self::assertStringContainsString('UID: 2', $content);
         self::assertStringContainsString('Title: About', $content);
@@ -548,7 +548,7 @@ class GetPageToolTest extends FunctionalTestCase
             'url' => 'https://example.com/about/team/',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $content = $result->content[0]->text;
         self::assertStringContainsString('UID: 4', $content);
         self::assertStringContainsString('Title: Team', $content);
@@ -759,7 +759,7 @@ class GetPageToolTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createPageResult->isError, json_encode($createPageResult->jsonSerialize()));
+        self::assertFalse($createPageResult->isError, json_encode($createPageResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pageData = json_decode((string)$createPageResult->content[0]->text, true);
         $newPageUid = $pageData['uid'];
 
@@ -775,7 +775,7 @@ class GetPageToolTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($createContentResult->isError, json_encode($createContentResult->jsonSerialize()));
+        self::assertFalse($createContentResult->isError, json_encode($createContentResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Now get the page and verify it shows the content element
         $getPageTool = $this->getService(GetPageTool::class);

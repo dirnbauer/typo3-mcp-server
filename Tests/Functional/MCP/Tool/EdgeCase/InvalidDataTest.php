@@ -106,7 +106,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             }
         } elseif ($expectedError === 'success') {
             // Special case for operations that should succeed
-            self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+            self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         } else {
             // Normal error case
             self::assertTrue($result->isError, 'Expected error but got success');
@@ -150,7 +150,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             'data' => ['title' => 'To be deleted'],
         ]);
 
-        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize()));
+        self::assertFalse($createResult->isError, json_encode($createResult->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = json_decode((string)$createResult->content[0]->text, true);
         $uid = $data['uid'];
 
@@ -161,7 +161,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
             'uid' => $uid,
         ]);
 
-        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize()));
+        self::assertFalse($deleteResult->isError, json_encode($deleteResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Try to read the deleted record
         $readResult = $this->readTool->execute([
@@ -293,7 +293,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
 
         // The tool might handle this gracefully or error
         // TYPO3 typically expects XML for flexforms
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -349,7 +349,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 DataHandler might provide defaults
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Check what was actually created
         $data = json_decode((string)$result->content[0]->text, true);
@@ -452,7 +452,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
         ]);
 
         // TYPO3 should sanitize the slug
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify the slug was sanitized
         $data = json_decode((string)$result->content[0]->text, true);

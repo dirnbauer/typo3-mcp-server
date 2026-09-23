@@ -43,7 +43,7 @@ final class LastErrorToolTest extends AbstractFunctionalTest
 
         $result = $this->getService(LastErrorTool::class)->execute(['full' => true]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $payload = json_decode((string)$result->content[0]->text, true, 512, JSON_THROW_ON_ERROR);
         self::assertSame('typo3_newer.log', $payload['error']['file']);
         self::assertSame("Newer error\nContinuation", $payload['error']['message']);

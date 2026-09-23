@@ -416,7 +416,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'uid' => 100,
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->content));
+        self::assertFalse($result->isError, json_encode($result->content, JSON_THROW_ON_ERROR));
         $data = json_decode((string)$result->content[0]->text, true);
         $record = $data['records'][0];
 
@@ -441,7 +441,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['header', 'bodytext'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
@@ -478,8 +478,8 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => [],
         ]);
 
-        self::assertFalse($resultWithout->isError, json_encode($resultWithout->jsonSerialize()));
-        self::assertFalse($resultWith->isError, json_encode($resultWith->jsonSerialize()));
+        self::assertFalse($resultWithout->isError, json_encode($resultWithout->jsonSerialize(), JSON_THROW_ON_ERROR));
+        self::assertFalse($resultWith->isError, json_encode($resultWith->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $dataWithout = $this->extractJsonFromResult($resultWithout);
         $dataWith = $this->extractJsonFromResult($resultWith);
@@ -517,7 +517,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['title'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
@@ -546,7 +546,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['tstamp', 'crdate', 'pid'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 
@@ -579,7 +579,7 @@ class ReadTableToolTest extends AbstractFunctionalTest
             'fields' => ['ctype', 'HEADER', 'Bodytext'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $data = $this->extractJsonFromResult($result);
         $record = $data['records'][0];
 

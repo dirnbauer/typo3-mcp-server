@@ -109,7 +109,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
             'type' => 'text',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // Check that sys_language_uid field is shown
@@ -134,7 +134,7 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
             'table' => 'sys_category',
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $output = $result->content[0]->text;
 
         // sys_category may have language support but not in visible fields

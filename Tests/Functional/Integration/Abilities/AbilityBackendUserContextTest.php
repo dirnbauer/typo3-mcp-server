@@ -159,7 +159,7 @@ final class AbilityBackendUserContextTest extends FunctionalTestCase
         ], $this->restContext());
 
         self::assertIsArray($result);
-        self::assertFalse((bool)($result['isError'] ?? false), json_encode($result));
+        self::assertFalse((bool)($result['isError'] ?? false), json_encode($result, JSON_THROW_ON_ERROR));
 
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('pages');
         $queryBuilder->getRestrictions()->removeAll();

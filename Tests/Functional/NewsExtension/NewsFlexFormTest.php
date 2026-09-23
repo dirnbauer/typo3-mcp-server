@@ -76,7 +76,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pluginUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Verify FlexForm XML was stored in the database
@@ -94,7 +94,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             'fields' => ['CType', 'header'],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $plugin = json_decode((string)$result->content[0]->text, true)['records'][0];
 
         self::assertEquals('news_pi1', $plugin['CType']);
@@ -125,7 +125,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pluginUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update the FlexForm settings
@@ -148,7 +148,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify updates via raw DB
         $piFlexform = $this->getRawFlexFormXml($pluginUid);
@@ -239,7 +239,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pluginUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update with empty settings
@@ -254,7 +254,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -300,7 +300,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pluginUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Update in workspace
@@ -319,7 +319,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Verify workspace version has the updates via raw DB
         $piFlexform = $this->getRawFlexFormXml($pluginUid);
@@ -352,7 +352,7 @@ class NewsFlexFormTest extends FunctionalTestCase
             ],
         ]);
 
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
         $pluginUid = json_decode((string)$result->content[0]->text, true)['uid'];
 
         // Verify FlexForm data was stored via raw DB

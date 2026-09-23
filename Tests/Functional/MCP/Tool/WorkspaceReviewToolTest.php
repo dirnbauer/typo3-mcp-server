@@ -24,7 +24,7 @@ final class WorkspaceReviewToolTest extends AbstractFunctionalTest
         // The review should show zero changes for a fresh workspace
         $wsId = $this->createAndSwitchToWorkspace('Fresh Workspace');
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -36,7 +36,7 @@ final class WorkspaceReviewToolTest extends AbstractFunctionalTest
         $wsId = $this->createAndSwitchToWorkspace('Empty Test Workspace');
 
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -58,11 +58,11 @@ final class WorkspaceReviewToolTest extends AbstractFunctionalTest
             'data' => ['title' => 'Modified Title in Workspace'],
             'workspace_id' => $wsId,
         ]);
-        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize()));
+        self::assertFalse($writeResult->isError, json_encode($writeResult->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         // Now review
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -77,7 +77,7 @@ final class WorkspaceReviewToolTest extends AbstractFunctionalTest
             'workspace_id' => $wsId,
             'table' => 'pages',
         ]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
@@ -92,7 +92,7 @@ final class WorkspaceReviewToolTest extends AbstractFunctionalTest
         $wsId = $this->createAndSwitchToWorkspace('Structure Test Workspace');
 
         $result = $this->tool->execute(['workspace_id' => $wsId]);
-        self::assertFalse($result->isError, json_encode($result->jsonSerialize()));
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
         $data = json_decode($this->getFirstTextContent($result), true);
         self::assertIsArray($data);
