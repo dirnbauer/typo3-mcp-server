@@ -1,0 +1,18 @@
+# Development files stay out of Composer dist archives (GitHub zipballs).
+/.cursor export-ignore
+/.ddev export-ignore
+/.gitattributes export-ignore
+/.github export-ignore
+/.gitignore export-ignore
+/.gitleaks.toml export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/AGENTS.md export-ignore
+/Build export-ignore
+/CLAUDE.md export-ignore
+/TECHNICAL_OVERVIEW.md export-ignore
+/Tests export-ignore
+/composer.lock export-ignore
+/fractor.php export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
+/rector.php export-ignore

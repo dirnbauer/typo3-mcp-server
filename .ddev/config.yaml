@@ -4,9 +4,8 @@ docroot: public
 php_version: "8.4"
 webserver_type: nginx-fpm
 xdebug_enabled: false
-# Extra hostnames for multisite / demo TYPO3 site configs (same docroot).
+# Extra hostname for the news demo site of Documentation/Testing/ChatbotScript.rst.
 additional_hostnames:
-  - typo3-v14-launch
   - mcp-news-demo
 additional_fqdns: []
 database:
