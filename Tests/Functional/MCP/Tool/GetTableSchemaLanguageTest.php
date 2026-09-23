@@ -138,12 +138,13 @@ class GetTableSchemaLanguageTest extends FunctionalTestCase
         $output = $result->content[0]->text;
 
         // sys_category may have language support but not in visible fields
-        // So we just check that if sys_language_uid appears, it has ISO codes
-        if (str_contains((string)$output, '- sys_language_uid')) {
+        // So we just check that if sys_language_uid appears, it has ISO codes.
+        // Field lines read "- field (" or, inside a palette, "├─ field (".
+        if (str_contains((string)$output, ' sys_language_uid (')) {
             self::assertStringContainsString('[ISO codes accepted:', $output);
         } else {
-            // If no sys_language_uid in fields, that's also fine
-            self::assertTrue(true);
+            // If no sys_language_uid in fields, that's also fine - but then no ISO code hint either
+            self::assertStringNotContainsString('[ISO codes accepted:', $output);
         }
     }
 

@@ -228,8 +228,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         // Verify the translation was created - need to use BackendUtility to get workspace overlay
         $translation = BackendUtility::getRecord('tt_content', $translateData['translationUid']);
 
-        self::assertNotFalse($translation, 'Translation record not found. UID was: ' . $translateData['translationUid']);
-        self::assertIsArray($translation, 'Translation should be an array');
+        self::assertIsArray($translation, 'Translation record not found. UID was: ' . $translateData['translationUid']);
 
         self::assertEquals(1, $translation['sys_language_uid']); // German
         self::assertEquals($originalUid, $translation['l18n_parent']); // TYPO3 uses l18n_parent for tt_content
@@ -261,8 +260,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
 
         $translation = BackendUtility::getRecord('pages', $translateData['translationUid']);
 
-        self::assertNotFalse($translation, 'Page translation record not found');
-        self::assertIsArray($translation, 'Page translation should be an array');
+        self::assertIsArray($translation, 'Page translation record not found');
         self::assertEquals(1, $translation['sys_language_uid']);
         self::assertEquals(2, $translation['l10n_parent']);
         self::assertEquals('Ueber uns', $translation['title']);
@@ -622,7 +620,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         // Verify the update - need to use BackendUtility to get workspace overlay
         $record = BackendUtility::getRecord('tt_content', $germanUid);
 
-        self::assertNotFalse($record, 'German translation record not found');
+        self::assertIsArray($record, 'German translation record not found');
         self::assertEquals('Aktualisierter deutscher Titel', $record['header']);
         self::assertEquals('Aktualisierter deutscher Inhalt', $record['bodytext']);
         self::assertEquals(1, $record['sys_language_uid']); // Still German

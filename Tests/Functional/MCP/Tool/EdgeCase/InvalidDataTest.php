@@ -396,8 +396,10 @@ final class InvalidDataTest extends AbstractFunctionalTest
         if ($result->isError) {
             self::assertStringContainsString('Invalid', $result->content[0]->text);
         } else {
-            // Values might be stored or clamped
-            self::assertTrue(true);
+            // Values might be stored or clamped; the write is reported for page 1
+            $data = $this->extractJsonFromResult($result);
+            self::assertSame('update', $data['action']);
+            self::assertSame(1, $data['uid']);
         }
     }
 
@@ -430,8 +432,10 @@ final class InvalidDataTest extends AbstractFunctionalTest
                 "Expected error about invalid relations, got: $errorText",
             );
         } else {
-            // TYPO3 might filter out invalid UIDs
-            self::assertTrue(true);
+            // TYPO3 might filter out invalid UIDs; the page itself is created
+            $data = $this->extractJsonFromResult($result);
+            self::assertSame('create', $data['action']);
+            self::assertGreaterThan(0, $data['uid']);
         }
     }
 

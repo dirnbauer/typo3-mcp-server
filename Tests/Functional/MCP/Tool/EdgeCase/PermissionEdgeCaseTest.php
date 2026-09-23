@@ -168,20 +168,13 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
         // The tool might error if nav_title is not available
         if ($result->isError) {
             self::assertStringContainsString('nav_title', $result->content[0]->text);
-        } else {
-            // If successful, tool should have filtered unauthorized fields
-            self::assertTrue(true);
         }
 
-        // Verify only allowed fields were updated
+        // Whether the write was rejected or filtered, it went to a workspace:
+        // the live record keeps its title.
         $record = BackendUtility::getRecord('pages', 1);
-        // TYPO3 might not enforce field-level restrictions in all contexts
-        if ($record['title'] === 'Allowed Field Update') {
-            self::assertEquals('Allowed Field Update', $record['title']);
-        } else {
-            // If the update didn't work, that's also valid for permission test
-            self::assertTrue(true);
-        }
+        self::assertIsArray($record);
+        self::assertSame('Home', $record['title']);
     }
 
     /**
@@ -375,12 +368,9 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
             'data' => ['title' => 'Updated Title'],
         ]);
 
-        // Update might fail due to permissions
+        // Update might fail due to permissions, or it might work
         if ($updateResult->isError) {
             self::assertStringContainsString('permission', strtolower((string)$updateResult->content[0]->text));
-        } else {
-            // Or it might work
-            self::assertTrue(true);
         }
 
         // Creating new might be restricted by other means in TYPO3
@@ -506,8 +496,6 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
         // Might fail due to table access
         if ($textResult->isError) {
             self::assertStringContainsString('tt_content', $textResult->content[0]->text);
-        } else {
-            self::assertTrue(true);
         }
 
         // Might be restricted from creating image content

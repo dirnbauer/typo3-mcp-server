@@ -86,7 +86,15 @@ class TableAccessServiceFieldAccessTest extends FunctionalTestCase
      */
     public function testInlineRelationsToInaccessibleTablesAreHidden(): void
     {
-        self::assertTrue(true, 'Inline relation filtering for restricted tables is enforced by canAccessField');
+        // sys_workspace.custom_stages is an inline relation to sys_workspace_stage,
+        // a table without workspace versioning and therefore not accessible.
+        self::assertNotNull($this->service->getFieldConfig('sys_workspace', 'custom_stages'));
+        self::assertFalse($this->service->canAccessTable('sys_workspace_stage'));
+
+        self::assertFalse(
+            $this->service->canAccessField('sys_workspace', 'custom_stages'),
+            'Inline relation filtering for restricted tables is enforced by canAccessField',
+        );
     }
 
     /**

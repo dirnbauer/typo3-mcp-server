@@ -311,9 +311,11 @@ class GetPageTreeToolTest extends FunctionalTestCase
         $lines = explode("\n", (string)$content);
         $currentIndent = -1;
         $indentStack = [];
+        $pageLines = 0;
 
         foreach ($lines as $line) {
             if (preg_match('/^(\s*)(?:- )?\[(\d+)\]/', $line, $matches)) {
+                $pageLines++;
                 $indent = strlen($matches[1]) / 2; // Assuming 2 spaces per level
                 $uid = (int)$matches[2];
 
@@ -338,7 +340,7 @@ class GetPageTreeToolTest extends FunctionalTestCase
             }
         }
 
-        self::assertTrue(true, 'Tree structure is valid');
+        self::assertGreaterThan(0, $pageLines, "No '[uid] title' page lines to validate in:\n" . $content);
     }
 
     /**

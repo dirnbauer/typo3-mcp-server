@@ -6,7 +6,6 @@ namespace Hn\McpServer\Tests\Functional\Service;
 
 use Hn\McpServer\Exception\AccessDeniedException;
 use Hn\McpServer\Service\WorkspaceContextService;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -65,7 +64,6 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
 
         $backendUser = $this->setUpBackendUser(2);
-        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
 
         // Model an untrusted preselection made by an optional transport adapter,
         // for example from an X-TYPO3-Workspace request header.
@@ -85,7 +83,6 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
 
         $backendUser = $this->setUpBackendUser(2);
-        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
         $backendUser->workspace = 20;
         $backendUser->user['workspace_id'] = 20;
         $GLOBALS['BE_USER'] = $backendUser;
@@ -119,7 +116,6 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->createBackendUser(2);
         $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
         $backendUser = $this->setUpBackendUser(2);
-        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
         $backendUser->workspace = 20;
         $backendUser->user['workspace_id'] = 20;
 
@@ -135,7 +131,6 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->createBackendUser(2);
         $this->createWorkspace(20, 'Restricted Workspace', 'be_users_1', '');
         $backendUser = $this->setUpBackendUser(2);
-        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
 
         $this->expectException(AccessDeniedException::class);
         $this->service->switchToReadWorkspace($backendUser, 20);
@@ -146,7 +141,6 @@ final class WorkspaceContextServiceTest extends FunctionalTestCase
         $this->createBackendUser(2);
         $this->createWorkspace(10, 'Readable Workspace', '', 'be_users_2');
         $backendUser = $this->setUpBackendUser(2);
-        self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
 
         $workspaceId = $this->service->switchToReadWorkspace($backendUser, 10);
 

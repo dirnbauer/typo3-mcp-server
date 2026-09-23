@@ -260,13 +260,9 @@ final class ResourceConstraintTest extends AbstractFunctionalTest
             ]);
 
             self::assertFalse($readResult->isError);
-            $recordData = json_decode((string)$readResult->content[0]->text, true);
-            if (isset($recordData['bodytext'])) {
-                self::assertNotEmpty($recordData['bodytext']);
-            } else {
-                // Field might have been truncated or filtered
-                self::assertTrue(true);
-            }
+            $recordData = $this->extractJsonFromResult($readResult);
+            // ReadTable lists the record under `records`; its body may be truncated but not lost
+            self::assertNotEmpty($recordData['records'][0]['bodytext'] ?? null);
         }
     }
 

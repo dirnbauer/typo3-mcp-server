@@ -71,7 +71,9 @@ final class SystemErrorTest extends AbstractFunctionalTest
                 );
             } else {
                 // Or it might succeed if it doesn't rely on that specific config
-                self::assertTrue(true);
+                $data = $this->extractJsonFromResult($result);
+                self::assertSame('update', $data['action']);
+                self::assertSame(1, $data['uid']);
             }
 
         } finally {
@@ -149,8 +151,6 @@ final class SystemErrorTest extends AbstractFunctionalTest
         // Should handle gracefully
         if ($result->isError) {
             self::assertStringNotContainsString('Division by zero', $result->content[0]->text);
-        } else {
-            self::assertTrue(true);
         }
 
         // 2. Invalid array access
@@ -234,9 +234,11 @@ final class SystemErrorTest extends AbstractFunctionalTest
         $data2 = json_decode((string)$result2->content[0]->text, true);
         $uid2 = $data2['uid'];
 
-        // Now try to create circular references (if the schema allows)
-        // This is more of a data integrity test
-        self::assertTrue(true, 'Circular dependency test completed');
+        // No fixture schema allows a circular reference between two content
+        // elements; the test covers creating the two records such a cycle needs.
+        self::assertGreaterThan(0, $uid1);
+        self::assertGreaterThan(0, $uid2);
+        self::assertNotSame($uid1, $uid2, 'Each create must yield its own record');
     }
 
     /**
@@ -276,11 +278,7 @@ final class SystemErrorTest extends AbstractFunctionalTest
         self::assertFalse($finalRead->isError, json_encode($finalRead->jsonSerialize(), JSON_THROW_ON_ERROR));
         $finalData = json_decode((string)$finalRead->content[0]->text, true);
         self::assertIsArray($finalData);
-        if (isset($finalData['title'])) {
-            self::assertEquals('Modified by process 1', $finalData['title']);
-        } else {
-            // Record might have been deleted or filtered
-            self::assertTrue(true, 'Race condition test completed');
-        }
+        // ReadTable lists the record under `records`: last write wins
+        self::assertSame('Modified by process 1', $finalData['records'][0]['title'] ?? null);
     }
 }

@@ -171,6 +171,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         // Create two separate database connections
         $conn1 = $this->connectionPool->getConnectionForTable('pages');
         $conn2 = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('pages');
+        $now = time();
 
         try {
             // Start transactions
@@ -178,8 +179,8 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             $conn2->beginTransaction();
 
             // Update records in different order to create potential deadlock
-            $conn1->update('pages', ['tstamp' => time()], ['uid' => 1]);
-            $conn2->update('pages', ['tstamp' => time()], ['uid' => 2]);
+            $conn1->update('pages', ['tstamp' => $now], ['uid' => 1]);
+            $conn2->update('pages', ['tstamp' => $now], ['uid' => 2]);
 
             // This could potentially create a deadlock if we had concurrent operations
             // In a real test, we'd use threads or processes
@@ -187,9 +188,6 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
             // For now, just verify we can handle the scenario
             $conn1->commit();
             $conn2->commit();
-
-            self::assertTrue(true, 'Deadlock handling test completed');
-
         } catch (\Exception $e) {
             // Rollback on any exception
             if ($conn1->isTransactionActive()) {
@@ -199,13 +197,17 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
                 $conn2->rollBack();
             }
 
-            // Check if it's a deadlock exception
-            if (stripos($e->getMessage(), 'deadlock') !== false) {
-                self::assertTrue(true, 'Deadlock detected and handled');
-            } else {
-                throw $e;
-            }
+            // A deadlock is the only acceptable failure here
+            self::assertStringContainsStringIgnoringCase('deadlock', $e->getMessage(), sprintf('Unexpected %s: %s', $e::class, $e->getMessage()));
+            self::assertFalse($conn1->isTransactionActive(), 'The deadlock rollback must end the transaction');
+            return;
         }
+
+        // Both transactions are closed and both writes are visible
+        self::assertFalse($conn1->isTransactionActive(), 'The commits must end the transaction');
+        self::assertFalse($conn2->isTransactionActive(), 'The commits must end the transaction');
+        self::assertSame(1, $conn1->count('uid', 'pages', ['uid' => 1, 'tstamp' => $now]));
+        self::assertSame(1, $conn2->count('uid', 'pages', ['uid' => 2, 'tstamp' => $now]));
     }
 
     /**
@@ -253,28 +255,31 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
         // SQLite doesn't support SELECT FOR UPDATE
         // Test with concurrent updates instead
         $connection = $this->connectionPool->getConnectionForTable('pages');
+        $now = time();
 
         try {
             // Start a transaction
             $connection->beginTransaction();
 
             // Update a record
-            $connection->update('pages', ['tstamp' => time()], ['uid' => 1]);
+            $connection->update('pages', ['tstamp' => $now], ['uid' => 1]);
 
             // In a real scenario, another process would try to update the same record
             // For this test, we just verify transaction handling
 
             $connection->commit();
-            self::assertTrue(true, 'Transaction handling tested');
-
         } catch (\Exception $e) {
             if ($connection->isTransactionActive()) {
                 $connection->rollBack();
             }
 
-            // Handle any database errors
-            self::assertTrue(true, 'Database error handled: ' . $e->getMessage());
+            // Any database error is acceptable as long as the transaction is rolled back
+            self::assertFalse($connection->isTransactionActive(), 'Database error not rolled back: ' . $e->getMessage());
+            return;
         }
+
+        self::assertFalse($connection->isTransactionActive(), 'The commit must end the transaction');
+        self::assertSame(1, $connection->count('uid', 'pages', ['uid' => 1, 'tstamp' => $now]));
     }
 
     /**
@@ -306,12 +311,7 @@ final class DatabaseErrorTest extends AbstractFunctionalTest
 
         } catch (\Exception $e) {
             // If we hit a connection limit, that's what we're testing for
-            if (stripos($e->getMessage(), 'connection') !== false
-                || stripos($e->getMessage(), 'too many') !== false) {
-                self::assertTrue(true, 'Connection pool limit detected');
-            } else {
-                throw $e;
-            }
+            self::assertMatchesRegularExpression('/connection|too many/i', $e->getMessage(), sprintf('Unexpected %s: %s', $e::class, $e->getMessage()));
         }
     }
 }

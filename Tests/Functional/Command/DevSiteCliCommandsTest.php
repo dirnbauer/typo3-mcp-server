@@ -42,9 +42,7 @@ final class DevSiteCliCommandsTest extends AbstractFunctionalTest
 
     public function testApplicationInfoCliReturnsCompactRuntimeJson(): void
     {
-        $command = $this->getToolCommand('ApplicationInfoToolCommand');
-        self::assertInstanceOf(Command::class, $command);
-        $tester = new CommandTester($command);
+        $tester = new CommandTester($this->getToolCommand('ApplicationInfoToolCommand'));
         $exitCode = $tester->execute(['--json' => true]);
 
         self::assertSame(Command::SUCCESS, $exitCode);

@@ -218,8 +218,13 @@ class ValidationRefactoringTest extends FunctionalTestCase
         // the array to CSV conversion logic in validateRecordData method
         // This is tested implicitly by the other tests passing
 
-        // Verify that the validation logic in TableAccessService works correctly
-        self::assertTrue(true, 'Array to CSV conversion logic is maintained in validateRecordData');
+        // The category was stored below its parent
+        $created = json_decode((string)$result->content[0]->text, true);
+        self::assertIsArray($created);
+        self::assertIsInt($created['uid']);
+        $record = $this->getRecordByUid('sys_category', $created['uid']);
+        self::assertSame('Test Category with Array Parent', $record['title'] ?? null);
+        self::assertEquals($cat1Data['uid'], $record['parent'] ?? null);
     }
 
     public function testValidationDelegation(): void
