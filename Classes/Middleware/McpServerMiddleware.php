@@ -55,6 +55,17 @@ final readonly class McpServerMiddleware implements MiddlewareInterface
 
         $path = $this->baseUrlResolver->resolveApplicationRoutePath($request);
 
+        // Both routes run tools, and core APIs behind them still read
+        // $GLOBALS['TYPO3_REQUEST']: with security.backend.htmlSanitizeRte
+        // enabled, DataHandler's RTE sanitizer throws without it, so rich text
+        // containing a t3:// link could not be saved. The core RequestHandler
+        // that publishes the request never runs for routes answered here. This
+        // middleware runs after normalized-params-attribute, so the request
+        // carries the attributes those APIs expect.
+        if ($path === '/mcp' || $path === '/mcp_upload') {
+            $GLOBALS['TYPO3_REQUEST'] = $request;
+        }
+
         return match ($path) {
             '/mcp' => ($this->mcpEndpoint)($request),
 
