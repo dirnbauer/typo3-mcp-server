@@ -76,7 +76,7 @@ class OAuthPkceTest extends AbstractFunctionalTest
     public function testAuthorizationCodeCreationRejectsMissingPkceChallenge(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('PKCE requires a valid S256 code challenge');
+        $this->expectExceptionMessageIsOrContains('PKCE requires a valid S256 code challenge');
 
         $this->service->createAuthorizationCode(1, 'test-client');
     }

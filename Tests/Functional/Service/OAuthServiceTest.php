@@ -92,7 +92,7 @@ final class OAuthServiceTest extends FunctionalTestCase
     public function testCreateAuthorizationCodeRejectsNonS256Method(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('PKCE requires a valid S256 code challenge');
+        $this->expectExceptionMessageIsOrContains('PKCE requires a valid S256 code challenge');
 
         $this->service->createAuthorizationCode(1, 'TestClient', '', str_repeat('a', 43), 'plain');
     }
