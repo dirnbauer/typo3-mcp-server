@@ -699,13 +699,15 @@ final class WriteTableTool extends AbstractRecordTool
             ]);
         }
 
-        // Resolve the live UID to workspace UID
-        $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
-
-        // Delete the record using DataHandler
+        // Hand DataHandler the uid the client knows: the live uid, or the
+        // record's own uid when it only exists in this workspace. Unlike
+        // updates, a delete must not be resolved to the draft row: for a
+        // workspace uid DataHandler discards the draft and keeps the record,
+        // while for a live uid it turns an existing draft into the delete
+        // placeholder.
         $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
         $dataHandler->BE_USER = $GLOBALS['BE_USER'];
-        $dataHandler->start([], [$table => [$workspaceUid => ['delete' => 1]]]);
+        $dataHandler->start([], [$table => [$uid => ['delete' => 1]]]);
         $dataHandler->process_cmdmap();
 
         // Check for errors

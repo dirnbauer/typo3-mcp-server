@@ -115,6 +115,55 @@ final class WriteTableDeleteIdempotencyTest extends FunctionalTestCase
         self::assertSame([], $this->readVisibleUids($targetUid), 'The record stays deleted in the workspace');
     }
 
+    /**
+     * Deleting a record that has a draft must delete it. DataHandler reads a
+     * delete command for the draft row as "discard this draft", which threw
+     * the edit away and left the record visible while WriteTable reported a
+     * successful delete. BulkWrite, which passes the live uid, was not
+     * affected.
+     */
+    public function testDeletingARecordWithAWorkspaceDraftDeletesIt(): void
+    {
+        $edit = $this->writeTool->execute([
+            'action' => 'update',
+            'table' => 'tt_content',
+            'uid' => 101,
+            'data' => ['header' => 'Edited in workspace'],
+        ]);
+        self::assertFalse($edit->isError, (string)json_encode($edit->jsonSerialize()));
+        $workspaceId = $this->getService(WorkspaceContextService::class)->getCurrentWorkspace();
+        self::assertSame(1, $this->countWorkspaceRows(101, $workspaceId), 'Baseline: the record has one draft');
+
+        $delete = $this->deleteContent(101);
+        self::assertFalse($delete->isError, (string)json_encode($delete->jsonSerialize()));
+
+        self::assertSame(1, $this->countDeletePlaceholders(101, $workspaceId), 'The draft becomes the delete placeholder');
+        self::assertSame([], $this->readVisibleUids(101), 'The record is deleted in the workspace');
+    }
+
+    public function testDeletingARecordWithEditedInlineChildrenDeletesIt(): void
+    {
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file_storage.csv');
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file.csv');
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/sys_file_reference.csv');
+
+        $edit = $this->writeTool->execute([
+            'action' => 'update',
+            'table' => 'tt_content',
+            'uid' => 100,
+            'data' => ['assets' => [['uid' => 1, 'title' => 'Retitled in workspace'], ['uid' => 2]]],
+        ]);
+        self::assertFalse($edit->isError, (string)json_encode($edit->jsonSerialize()));
+        $workspaceId = $this->getService(WorkspaceContextService::class)->getCurrentWorkspace();
+        self::assertSame(1, $this->countWorkspaceRows(100, $workspaceId), 'Baseline: the parent has a draft');
+
+        $delete = $this->deleteContent(100);
+        self::assertFalse($delete->isError, (string)json_encode($delete->jsonSerialize()));
+
+        self::assertSame(1, $this->countDeletePlaceholders(100, $workspaceId));
+        self::assertSame([], $this->readVisibleUids(100), 'The record is deleted in the workspace');
+    }
+
     private function deleteContent(int $uid): CallToolResult
     {
         return $this->writeTool->execute([
