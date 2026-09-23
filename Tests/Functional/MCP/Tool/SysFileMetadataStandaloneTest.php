@@ -320,6 +320,9 @@ class SysFileMetadataStandaloneTest extends FunctionalTestCase
         return (int)$connection->lastInsertId();
     }
 
+    /**
+     * @param list<string> $tables Tables the user may select and modify
+     */
     private function authenticateAsNonAdmin(int $uid, array $tables): BackendUserAuthentication
     {
         $user = $this->setUpBackendUser($uid);

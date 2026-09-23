@@ -180,6 +180,8 @@ class FileReferenceWriteTest extends AbstractFunctionalTest
 
     /**
      * Helper: get sys_file_reference records for a parent record
+     *
+     * @return list<array<string, mixed>>
      */
     private function getFileReferences(string $tablenames, string $fieldname, int $uidForeign): array
     {

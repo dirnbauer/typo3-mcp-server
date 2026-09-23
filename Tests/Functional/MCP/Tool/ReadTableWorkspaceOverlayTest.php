@@ -141,6 +141,7 @@ class ReadTableWorkspaceOverlayTest extends AbstractFunctionalTest
     }
 
     /**
+     * @param list<string> $fields
      * @return array<string, mixed>
      */
     private function readSingle(string $table, int $uid, array $fields): array

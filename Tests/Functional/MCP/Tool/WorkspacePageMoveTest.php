@@ -64,6 +64,9 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
         self::assertSame(0, $this->getConnectionForTable('pages')->count('*', 'pages', ['t3ver_oid' => 2]));
     }
 
+    /**
+     * @return list<array{string, int}>
+     */
     public static function circularMovePositions(): array
     {
         return [['top', 4], ['bottom', 2], ['after:5', 1], ['before:4', 1]];

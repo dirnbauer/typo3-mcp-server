@@ -26,6 +26,7 @@ class NewsCrudTest extends FunctionalTestCase
         'news',
     ];
 
+    /** @var list<int> */
     protected array $categoryUids = [];
 
     protected function setUp(): void

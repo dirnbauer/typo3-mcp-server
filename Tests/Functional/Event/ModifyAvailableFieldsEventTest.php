@@ -20,7 +20,9 @@ class ModifyAvailableFieldsTestListener
     public static string $type = '';
     public static ?string $removeField = null;
     public static ?array $addField = null;
+    /** @var array{name: string, config: array<string, mixed>}|null */
     public static ?array $replaceFields = null;
+    /** @var array<string, array<string, mixed>>|null */
 
     public static function reset(): void
     {

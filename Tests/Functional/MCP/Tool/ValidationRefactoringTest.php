@@ -45,6 +45,9 @@ class ValidationRefactoringTest extends FunctionalTestCase
         $this->tableAccessService = $this->getService(TableAccessService::class);
     }
 
+    /**
+     * @return array<string, mixed> The row, or [] if there is none
+     */
     protected function getRecordByUid(string $table, int $uid): array
     {
         $queryBuilder = $this->getConnectionPool()->getQueryBuilderForTable($table);

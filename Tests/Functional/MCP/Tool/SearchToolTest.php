@@ -469,6 +469,8 @@ class SearchToolTest extends FunctionalTestCase
 
     /**
      * Helper method to create a page for testing
+     *
+     * @param array<string, mixed> $data pages fields overriding the defaults
      */
     private function createPage(array $data): int
     {

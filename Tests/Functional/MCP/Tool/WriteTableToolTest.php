@@ -54,6 +54,9 @@ class WriteTableToolTest extends AbstractFunctionalTest
     }
 
     protected function findRecordIndexByUid(array $records, int $uid): int
+    /**
+     * @param list<array<string, mixed>> $records
+     */
     {
         foreach ($records as $index => $record) {
             if (($record['uid'] ?? null) === $uid) {
@@ -1583,6 +1586,8 @@ XML;
      * Test that slug fields are normalized: trailing slashes stripped, leading slash ensured.
      * @see https://github.com/hauptsacheNet/typo3-mcp-server/issues/6
      */
+     *
+     * @return array<string, array{string, string}>
     public static function slugNormalizationDataProvider(): array
     {
         return [

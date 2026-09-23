@@ -28,6 +28,8 @@ final class InvalidDataTest extends AbstractFunctionalTest
 
     /**
      * Data provider for invalid data scenarios
+     *
+     * @return array<string, array{array<string, mixed>, string, 'read'|'write'}>
      */
     public static function invalidDataProvider(): array
     {
@@ -85,6 +87,9 @@ final class InvalidDataTest extends AbstractFunctionalTest
         ];
     }
 
+    /**
+     * @param array<string, mixed> $params
+     */
     #[DataProvider('invalidDataProvider')]
     public function testInvalidDataHandling(array $params, string $expectedError, string $toolType): void
     {

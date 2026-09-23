@@ -69,6 +69,8 @@ class FileMountPermissionTest extends FunctionalTestCase
     /**
      * Authenticate as the given user. Non-admin users need tables_select populated too,
      * which we set directly on the runtime object.
+     *
+     * @param list<string> $tablesSelect Tables the user may select and modify
      */
     protected function authenticateUser(int $uid, array $tablesSelect = ['sys_file', 'pages', 'tt_content']): BackendUserAuthentication
     {

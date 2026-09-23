@@ -182,6 +182,9 @@ class McpEndpointSessionTimeoutTest extends AbstractFunctionalTest
     /**
      * Dispatch a JSON-RPC message to the endpoint the way the middleware
      * would: as a PSR-7 request.
+     *
+     * @param array<string, mixed> $jsonRpc
+     * @param array<string, string> $extraHeaders
      */
     private function dispatch(array $jsonRpc, string $token, array $extraHeaders = []): ResponseInterface
     {

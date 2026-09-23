@@ -151,6 +151,9 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         self::assertSame(0, (int)$live['deleted']);
     }
 
+    /**
+     * @param list<array<string, mixed>> $items tx_testnestedfiles_items payload
+     */
     private function createElement(array $items): int
     {
         $result = $this->getService(WriteTableTool::class)->execute([
@@ -161,6 +164,9 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         return (int)$this->extractJsonFromResult($result)['uid'];
     }
 
+    /**
+     * @param list<array<string, mixed>> $items tx_testnestedfiles_items payload
+     */
     private function updateItems(int $uid, array $items): void
     {
         $result = $this->getService(WriteTableTool::class)->execute([
@@ -170,11 +176,17 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private function items(int $uid): array
     {
         return $this->effectiveChildren(self::ITEM_TABLE, 'tt_content_items', $uid, 'sorting');
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     private function references(int $uid): array
     {
         return array_values(array_filter(
@@ -194,6 +206,9 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
         return (int)$references[0]['uid'];
     }
 
+    /**
+     * @return list<array<string, mixed>> Workspace-overlaid children of $parentUid, ordered by $sorting
+     */
     private function effectiveChildren(string $table, string $foreignField, int $parentUid, string $sorting): array
     {
         $rows = $this->getConnectionForTable($table)->select(['*'], $table, ['t3ver_oid' => 0])->fetchAllAssociative();

@@ -521,6 +521,8 @@ final class PermissionEdgeCaseTest extends AbstractFunctionalTest
 
     /**
      * Helper method to create workspace with specific access
+     *
+     * @param list<int> $userIds Backend users that administrate the workspace
      */
     protected function createWorkspaceWithAccess(array $userIds): int
     {
