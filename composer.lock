@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "67b0d5697b221c7e7107b6ef18b2f54e",
+    "content-hash": "96d25ffab83502eba49cbaabcfaf7509",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -6602,7 +6602,7 @@
             "version": "v1.3.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/dirnbauer/typo3-abilities.git",
+                "url": "git@github.com:dirnbauer/typo3-abilities.git",
                 "reference": "33e54c0256a50d30ca2c06888f791691bd74c1ec"
             },
             "dist": {

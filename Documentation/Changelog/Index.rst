@@ -9,6 +9,14 @@ Changelog
 The complete release history lives in :file:`CHANGELOG.md` at the repository
 root (Keep a Changelog format). This page summarizes the current release.
 
+0.9.3 - 2026-09-23
+==================
+
+- Every tool, not only the write tools, sees the ``/mcp`` request as a
+  backend request, so HTTP and the console transports read the same data.
+  ReadFileMetadata shows the workspace draft of a file's metadata on every
+  transport (before, only over HTTP). Image processing stays immediate.
+
 0.9.2 - 2026-09-23
 ==================
 

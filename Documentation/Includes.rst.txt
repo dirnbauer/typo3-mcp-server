@@ -1,4 +1,4 @@
 .. This is included by all documentation files to provide common substitutions.
 
-.. |release| replace:: 0.9.2
+.. |release| replace:: 0.9.3
 .. |today| date:: %Y-%m-%d

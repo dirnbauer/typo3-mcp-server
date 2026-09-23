@@ -7,6 +7,26 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.3 - 2026-09-23
+
+### Fixed
+
+- **Every tool sees the `/mcp` request as a backend request.** 0.9.2 did
+  this for the write tools only. A new parity test reads a workspace draft
+  of a file reference on a nested inline child and a draft of a file's
+  metadata over the HTTP middleware and over the stdio handler: ReadTable,
+  GetPage, Search, SearchMedia and SearchFile answered the same (apart from
+  absolute URLs that carry the HTTP host), ReadFileMetadata did not. Over
+  HTTP TYPO3's frontend-only metadata overlay showed the workspace draft,
+  over the CLI and stdio the live metadata. Now core file APIs behave as
+  for the backend user on every transport, and the endpoint gets its own
+  request back after each tool.
+- ReadFileMetadata overlays a file's metadata with the user's workspace
+  itself, so the draft is read on every transport, as ReadTable does.
+- While the tools see a backend request, image processing stays immediate:
+  the backend would defer it to a later request, and SearchFile reads its
+  thumbnails in the same call.
+
 ## 0.9.2 - 2026-09-23
 
 ### Fixed
