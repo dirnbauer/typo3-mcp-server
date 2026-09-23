@@ -3,11 +3,9 @@
 declare(strict_types=1);
 
 use a9f\Fractor\Configuration\FractorConfiguration;
+use a9f\Fractor\ValueObject\Indent;
+use a9f\FractorXliff\Configuration\XliffProcessorOption;
 use a9f\Typo3Fractor\Set\Typo3LevelSetList;
-
-$typo3LevelSet = defined(Typo3LevelSetList::class . '::UP_TO_TYPO3_14')
-    ? constant(Typo3LevelSetList::class . '::UP_TO_TYPO3_14')
-    : Typo3LevelSetList::UP_TO_TYPO3_13;
 
 return FractorConfiguration::configure()
     ->withPaths([
@@ -15,5 +13,10 @@ return FractorConfiguration::configure()
         __DIR__ . '/Resources/',
     ])
     ->withSets([
-        $typo3LevelSet,
+        Typo3LevelSetList::UP_TO_TYPO3_14,
+    ])
+    // TYPO3 v14 label files are indented with two spaces.
+    ->withOptions([
+        XliffProcessorOption::INDENT_CHARACTER => Indent::STYLE_SPACE,
+        XliffProcessorOption::INDENT_SIZE => 2,
     ]);
