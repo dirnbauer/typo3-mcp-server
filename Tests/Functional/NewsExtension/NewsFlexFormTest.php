@@ -431,6 +431,118 @@ class NewsFlexFormTest extends FunctionalTestCase
     }
 
     /**
+     * An update merges into the stored settings: fields not sent keep their
+     * value and their sheet.
+     */
+    public function testFlexFormUpdateKeepsSettingsThatAreNotSent(): void
+    {
+        $pluginUid = $this->createNewsPlugin([
+            'settings' => [
+                'orderBy' => 'title',
+                'limit' => '5',
+                'detailPid' => '20',
+                'media' => ['maxWidth' => '800'],
+            ],
+        ]);
+
+        $this->updateFlexForm($pluginUid, ['settings' => ['orderBy' => 'datetime']]);
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('datetime', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null, 'The sent field is updated');
+        self::assertSame('5', $sheets['additional']['lDEF']['settings.limit']['vDEF'] ?? null, 'Fields not sent are kept');
+        self::assertSame('20', $sheets['additional']['lDEF']['settings.detailPid']['vDEF'] ?? null);
+        self::assertSame('800', $sheets['template']['lDEF']['settings.media.maxWidth']['vDEF'] ?? null, 'Fields not sent keep their sheet and dotted name');
+    }
+
+    /**
+     * An explicit null removes a field; a null group removes every field
+     * below it. Other settings stay.
+     */
+    public function testFlexFormUpdateRemovesFieldsSentAsNull(): void
+    {
+        $pluginUid = $this->createNewsPlugin([
+            'settings' => [
+                'orderBy' => 'title',
+                'limit' => '5',
+                'media' => ['maxWidth' => '800', 'maxHeight' => '600'],
+            ],
+        ]);
+
+        $this->updateFlexForm($pluginUid, ['settings' => ['limit' => null, 'media' => null]]);
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('title', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null);
+        self::assertArrayNotHasKey('settings.limit', $sheets['additional']['lDEF'] ?? []);
+        self::assertArrayNotHasKey('settings.media.maxWidth', $sheets['template']['lDEF'] ?? []);
+        self::assertArrayNotHasKey('settings.media.maxHeight', $sheets['template']['lDEF'] ?? []);
+
+        $settings = $this->readFlexFormSettings($pluginUid);
+        self::assertSame('title', $settings['orderBy'] ?? null);
+        self::assertArrayNotHasKey('limit', $settings);
+    }
+
+    /**
+     * A value an older write stored in the default sheet moves to the sheet
+     * its DataStructure declares when it is updated (#131 behaviour on merge).
+     */
+    public function testFlexFormUpdateMovesAValueIntoItsDeclaredSheet(): void
+    {
+        $pluginUid = $this->createNewsPlugin(['settings' => ['orderBy' => 'title']]);
+        GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable('tt_content')->update(
+            'tt_content',
+            ['pi_flexform' => '<?xml version="1.0" encoding="utf-8" standalone="yes" ?><T3FlexForms><data><sheet index="sDEF"><language index="lDEF">'
+                . '<field index="settings.orderBy"><value index="vDEF">title</value></field>'
+                . '<field index="settings.detailPid"><value index="vDEF">20</value></field>'
+                . '</language></sheet></data></T3FlexForms>'],
+            ['uid' => $pluginUid],
+        );
+
+        $this->updateFlexForm($pluginUid, ['settings' => ['detailPid' => '25']]);
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('title', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null);
+        self::assertArrayNotHasKey('settings.detailPid', $sheets['sDEF']['lDEF'] ?? []);
+        self::assertSame('25', $sheets['additional']['lDEF']['settings.detailPid']['vDEF'] ?? null);
+    }
+
+    /**
+     * FlexForm XML sent as a string is stored as-is and replaces the whole value.
+     */
+    public function testFlexFormXmlStringReplacesTheStoredValue(): void
+    {
+        $pluginUid = $this->createNewsPlugin(['settings' => ['orderBy' => 'title', 'limit' => '5']]);
+        $xml = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?><T3FlexForms><data><sheet index="sDEF"><language index="lDEF">'
+            . '<field index="settings.orderBy"><value index="vDEF">datetime</value></field>'
+            . '</language></sheet></data></T3FlexForms>';
+
+        $result = GeneralUtility::makeInstance(WriteTableTool::class)->execute([
+            'table' => 'tt_content',
+            'action' => 'update',
+            'uid' => $pluginUid,
+            'data' => ['pi_flexform' => $xml],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
+
+        $sheets = $this->getStoredFlexFormSheets($pluginUid);
+        self::assertSame('datetime', $sheets['sDEF']['lDEF']['settings.orderBy']['vDEF'] ?? null);
+        self::assertArrayNotHasKey('settings.limit', $sheets['additional']['lDEF'] ?? []);
+    }
+
+    /**
+     * @param array<string, mixed> $flexForm
+     */
+    private function updateFlexForm(int $uid, array $flexForm): void
+    {
+        $result = GeneralUtility::makeInstance(WriteTableTool::class)->execute([
+            'table' => 'tt_content',
+            'action' => 'update',
+            'uid' => $uid,
+            'data' => ['pi_flexform' => $flexForm],
+        ]);
+        self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
+    }
+
+    /**
      * @param array<string, mixed> $flexForm
      */
     private function createNewsPlugin(array $flexForm): int

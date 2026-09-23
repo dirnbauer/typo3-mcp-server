@@ -107,6 +107,9 @@ final class WriteTableTool extends AbstractRecordTool implements SiteRequestAwar
                 . 'To keep existing children, include their UIDs: [2546, 2547, {"CType": "textmedia", "header": "New"}]. To update an existing child: {"uid": 2546, "header": "Updated"}. Order in the array defines sorting. '
                 . 'Nested inline relations are supported: child record data may itself contain inline arrays. '
                 . 'FLEXFORM FIELDS: Pass as JSON objects (auto-converted to XML). Use "settings.fieldName" keys for plugin settings. '
+                . 'On update the object is MERGED into the stored settings: fields you send are set, fields you omit keep their value, '
+                . 'a field sent as null is removed ({"settings": {"limit": null}}; a null group removes every field below it). '
+                . 'A FlexForm XML string replaces the whole value. '
                 . 'ORDERING: When creating multiple elements on a page, chain positions: create first with "bottom", then "after:{uid}" for each next. '
                 . 'Before creating content, use GetPage + ReadTable to understand page structure and existing content.',
             'inputSchema' => [
@@ -138,7 +141,8 @@ final class WriteTableTool extends AbstractRecordTool implements SiteRequestAwar
                             . 'FILE FIELDS (image, media, assets): Array of sys_file UIDs [3, 4] or objects [{"uid_local": 3, "title": "...", "alternative": "...", "description": "Caption"}]. '
                             . 'SEARCH-AND-REPLACE (update only): For text/input/email/link/slug fields, pass [{"search": "old", "replace": "new"}] instead of full text. '
                             . 'Add "replaceAll": true per operation if search may match multiple times. Only these field types support search-and-replace. '
-                            . 'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML.',
+                            . 'FLEXFORM: Pass as JSON object with "settings.fieldName" keys — auto-converted to XML. '
+                            . 'Updates merge into the stored settings; null removes a field.',
                         'additionalProperties' => true,
                         'examples' => [
                             ['title' => 'News Title', 'bodytext' => 'News <b>content</b>', 'datetime' => '2024-01-01 10:00:00'],
