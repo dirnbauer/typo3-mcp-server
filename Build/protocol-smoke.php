@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Mcp\Client\Client;
+use Mcp\Types\CallToolResult;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -95,6 +96,9 @@ function runProtocolSmoke(string $mode, string $serverCommand): array
         }
 
         $abilityResult = $session->callTool('ability_system_site-info', []);
+        if (!$abilityResult instanceof CallToolResult) {
+            throw new RuntimeException('The bridged ability_system_site-info tool answered with a task handle instead of a result.');
+        }
         if ($abilityResult->isError) {
             throw new RuntimeException('The bridged ability_system_site-info tool returned an MCP tool error.');
         }
@@ -116,6 +120,9 @@ function runProtocolSmoke(string $mode, string $serverCommand): array
         }
 
         $capabilityResult = $session->callTool('GetCapabilities', []);
+        if (!$capabilityResult instanceof CallToolResult) {
+            throw new RuntimeException('GetCapabilities answered with a task handle instead of a result.');
+        }
         if ($capabilityResult->isError) {
             throw new RuntimeException('GetCapabilities returned an MCP tool error.');
         }
@@ -181,9 +188,6 @@ function protocolSmokeEnvironment(): array
     ];
 
     foreach (getenv() as $name => $value) {
-        if (!is_string($name) || !is_string($value)) {
-            continue;
-        }
         if (!in_array($name, $exactNames, true) && !str_starts_with($name, 'DDEV_')) {
             continue;
         }

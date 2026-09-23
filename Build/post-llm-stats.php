@@ -25,7 +25,7 @@
 $xmlPath = __DIR__ . '/../.Build/llm-results.xml';
 $dryRun  = false;
 
-foreach ($argv as $arg) {
+foreach ($argv ?? [] as $arg) {
     if ($arg === '--dry-run') {
         $dryRun = true;
     }
@@ -49,10 +49,10 @@ $tests        = []; // baseName => true if executed in at least one model
 $modelPasses  = []; // model => int (PASS count)
 
 if ($xml->getName() === 'testsuite') {
-    collectFromSuite($xml, $tests, $modelPasses);
+    collectPassCountsFromSuite($xml, $tests, $modelPasses);
 } else {
     foreach ($xml->testsuite as $suite) {
-        collectFromSuite($suite, $tests, $modelPasses);
+        collectPassCountsFromSuite($suite, $tests, $modelPasses);
     }
 }
 
@@ -93,7 +93,7 @@ $payload['_token'] = $token;
 $ch = curl_init($url);
 curl_setopt_array($ch, [
     CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_SLASHES),
+    CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
     CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_FOLLOWLOCATION => true,
@@ -129,10 +129,17 @@ if (!is_array($decoded) || empty($decoded['ok'])) {
 echo "Published run with $total tests across " . count($modelPasses) . " models (row {$decoded['row']}).\n";
 exit(0);
 
-function collectFromSuite(SimpleXMLElement $suite, array &$tests, array &$modelPasses): void
+/**
+ * Named apart from check-llm-results.php's collectFromSuite(): both scripts
+ * declare global functions and are analysed together.
+ *
+ * @param array<string, bool> $tests
+ * @param array<string, int> $modelPasses
+ */
+function collectPassCountsFromSuite(SimpleXMLElement $suite, array &$tests, array &$modelPasses): void
 {
     foreach ($suite->testsuite as $child) {
-        collectFromSuite($child, $tests, $modelPasses);
+        collectPassCountsFromSuite($child, $tests, $modelPasses);
     }
     foreach ($suite->testcase as $testcase) {
         $name  = (string)$testcase['name'];

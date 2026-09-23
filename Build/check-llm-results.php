@@ -13,7 +13,7 @@
 $minPass = 3;
 $xmlPath = __DIR__ . '/../.Build/llm-results.xml';
 
-foreach ($argv as $arg) {
+foreach ($argv ?? [] as $arg) {
     if (str_starts_with($arg, '--min-pass=')) {
         $minPass = (int)substr($arg, strlen('--min-pass='));
     }
@@ -35,7 +35,7 @@ if ($xml === false) {
 }
 
 // Collect results grouped by base test name (without model suffix)
-$testCases = []; // baseName => ['total' => N, 'passed' => N, 'models' => [...]]
+$testCases = []; // baseName => ['total' => N, 'passed' => N, 'models' => [...], 'stats' => [...]]
 
 // Handle both <testsuites><testsuite>... and root <testsuite>... JUnit formats
 if ($xml->getName() === 'testsuite') {
@@ -46,6 +46,9 @@ if ($xml->getName() === 'testsuite') {
     }
 }
 
+/**
+ * @param array<string, array{total: int, passed: int, models: array<string, 'PASS'|'FAIL'|'SKIP'>, stats: array<string, array<string, mixed>|null>}> $testCases
+ */
 function collectFromSuite(SimpleXMLElement $suite, array &$testCases): void
 {
     foreach ($suite->testsuite as $child) {
@@ -69,7 +72,7 @@ function collectFromSuite(SimpleXMLElement $suite, array &$testCases): void
         $key = $class . '::' . $baseName;
 
         if (!isset($testCases[$key])) {
-            $testCases[$key] = ['total' => 0, 'passed' => 0, 'models' => []];
+            $testCases[$key] = ['total' => 0, 'passed' => 0, 'models' => [], 'stats' => []];
         }
 
         $testCases[$key]['total']++;
@@ -87,6 +90,9 @@ function collectFromSuite(SimpleXMLElement $suite, array &$testCases): void
     }
 }
 
+/**
+ * @return array<string, mixed>|null Decoded JSON written by LlmTestCase::writeTestStats()
+ */
 function loadTestStats(string $class, string $baseName, string $model): ?array
 {
     $statsDir = __DIR__ . '/../.Build/llm-stats';
@@ -99,6 +105,9 @@ function loadTestStats(string $class, string $baseName, string $model): ?array
     return is_array($data) ? $data : null;
 }
 
+/**
+ * @param array<string, mixed>|null $stats
+ */
 function formatStats(?array $stats): string
 {
     if ($stats === null) {
@@ -185,7 +194,7 @@ echo "\n" . str_repeat('=', 80) . "\n";
 // Distinguish "no API key available" (expected on fork PRs — GitHub does not share
 // secrets with workflows triggered from forks) from "API key set but nothing ran"
 // (real CI/test problem). Only the latter should fail the job.
-$executedCount = count(array_filter($testCases, fn($r) => array_diff($r['models'], ['SKIP'])));
+$executedCount = count(array_filter($testCases, static fn(array $r): bool => array_diff($r['models'], ['SKIP']) !== []));
 if ($executedCount === 0) {
     if (getenv('OPENROUTER_API_KEY') === false || getenv('OPENROUTER_API_KEY') === '') {
         fwrite(STDERR, "\033[33mNo LLM tests were executed (no OPENROUTER_API_KEY available — fork PR or local run without secret). Skipping majority-pass check.\033[0m\n");
