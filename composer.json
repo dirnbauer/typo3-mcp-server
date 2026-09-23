@@ -16,18 +16,18 @@
 		"typo3/cms-backend": "^14.3.6",
 		"typo3/cms-core": "^14.3.6",
 		"typo3/cms-workspaces": "^14.3.6",
-		"webconsulting/typo3-abilities": "^1.0"
+		"webconsulting/typo3-abilities": "^1.2"
 	},
 	"require-dev": {
 		"a9f/typo3-fractor": "^1.0",
-		"brianium/paratest": "^7.8",
-		"friendsofphp/php-cs-fixer": "^3.94",
+		"brianium/paratest": "^7.24",
+		"friendsofphp/php-cs-fixer": "^3.95.27",
 		"georgringer/news": "^14.0",
 		"phpat/phpat": "^0.12.3",
-		"phpstan/phpstan": "^2.1.33",
+		"phpstan/phpstan": "^2.2.14",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"phpstan/phpstan-phpunit": "^2.0",
-		"rector/rector": "2.6.3",
+		"rector/rector": "2.6.7",
 		"saschaegerer/phpstan-typo3": "^3.0",
 		"ssch/typo3-rector": "^3.0",
 		"typo3/cms-extbase": "^14.3.6",
@@ -35,8 +35,8 @@
 		"typo3/cms-frontend": "^14.3.6",
 		"typo3/cms-install": "^14.3.6",
 		"typo3/cms-redirects": "^14.3.6",
-		"typo3/coding-standards": "dev-main",
-		"typo3/testing-framework": "^9.4"
+		"typo3/coding-standards": "^0.9",
+		"typo3/testing-framework": "^9.7"
 	},
 	"conflict": {
 		"mcp/sdk": "*"
@@ -127,7 +127,7 @@
 			"typo3/cms-composer-installers": true
 		},
 		"platform": {
-			"php": "8.4.0"
+			"php": "8.4.1"
 		},
 		"sort-packages": true
 	}

@@ -75,7 +75,7 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertSame([], $required);
 
         $this->expectException(AccessDeniedException::class);
-        $this->expectExceptionMessage('not declared in capability manifest');
+        $this->expectExceptionMessageIsOrContains('not declared in capability manifest');
         $service->assertToolAllowed('CompletelyMadeUpTool');
     }
 
@@ -108,7 +108,7 @@ final class CapabilityManifestServiceTest extends TestCase
         ]);
 
         $this->expectException(AccessDeniedException::class);
-        $this->expectExceptionMessage('manifest is missing subsystems: database:write');
+        $this->expectExceptionMessageIsOrContains('manifest is missing subsystems: database:write');
         $service->assertAbilityToolAllowed('ability_demo_write', ['database:write']);
     }
 
@@ -130,7 +130,7 @@ final class CapabilityManifestServiceTest extends TestCase
         );
 
         $this->expectException(AccessDeniedException::class);
-        $this->expectExceptionMessage('manifest is missing subsystems: database:write');
+        $this->expectExceptionMessageIsOrContains('manifest is missing subsystems: database:write');
         $service->assertAbilityToolAllowed('ability_system_site-info', []);
     }
 
@@ -144,7 +144,7 @@ final class CapabilityManifestServiceTest extends TestCase
         ]);
 
         $this->expectException(AccessDeniedException::class);
-        $this->expectExceptionMessage('no network.outbound hosts');
+        $this->expectExceptionMessageIsOrContains('no network.outbound hosts');
         $service->assertAbilityToolAllowed('ability_demo_fetch', ['network:outbound']);
     }
 
@@ -163,7 +163,7 @@ final class CapabilityManifestServiceTest extends TestCase
         self::assertFalse($service->isAbilityBridgeEnabled());
 
         $this->expectException(AccessDeniedException::class);
-        $this->expectExceptionMessage('abilities bridge disabled');
+        $this->expectExceptionMessageIsOrContains('abilities bridge disabled');
         $service->assertAbilityToolAllowed('ability_system_site-info', []);
     }
 

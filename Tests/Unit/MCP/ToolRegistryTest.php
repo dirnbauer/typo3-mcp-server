@@ -171,7 +171,7 @@ final class ToolRegistryTest extends TestCase
         };
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessage('Duplicate MCP tool name: Duplicate');
+        $this->expectExceptionMessageIsOrContains('Duplicate MCP tool name: Duplicate');
         new ToolRegistry([$tool, $tool]);
     }
 

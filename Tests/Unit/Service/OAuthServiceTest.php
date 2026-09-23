@@ -35,7 +35,7 @@ final class OAuthServiceTest extends TestCase
     public function testGenerateAuthorizationUrlRejectsRedirectForBuiltInClient(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('does not accept redirect_uri');
+        $this->expectExceptionMessageIsOrContains('does not accept redirect_uri');
 
         $this->service->generateAuthorizationUrl(
             'https://example.com',
@@ -144,7 +144,7 @@ final class OAuthServiceTest extends TestCase
     public function testRegisterClientRejectsUnsupportedGrantTypes(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('grant_types contains an unsupported value');
+        $this->expectExceptionMessageIsOrContains('grant_types contains an unsupported value');
 
         $this->service->registerClient([
             'client_name' => 'Cursor',

@@ -145,7 +145,7 @@ final class McpFileSandboxServiceTest extends TestCase
         ]);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Workspace uploads must stay inside "1:/mcp/workspaces/ws-5/"');
+        $this->expectExceptionMessageIsOrContains('Workspace uploads must stay inside "1:/mcp/workspaces/ws-5/"');
 
         $subject->resolveUploadTarget('1:/mcp/images/pixel.png');
     }
@@ -185,7 +185,7 @@ final class McpFileSandboxServiceTest extends TestCase
         $subject = $this->createSubject([]);
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Directory traversal is not allowed in folder paths.');
+        $this->expectExceptionMessageIsOrContains('Directory traversal is not allowed in folder paths.');
 
         $subject->resolveFolderTarget('../outside');
     }

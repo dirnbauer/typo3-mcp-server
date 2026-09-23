@@ -165,8 +165,9 @@ final class AbilityToolBridgeTest extends TestCase
         self::assertSame(ExecutionContext::SURFACE_MCP, $context->surface);
         self::assertSame(42, $context->backendUserUid);
         // MCP is a trusted surface: the endpoint authenticated the session,
-        // so scope checks are skipped while policy and permission still run.
-        self::assertTrue($context->isTrusted());
+        // so no grant list is attached (null) and scope checks are skipped
+        // while policy and permission still run.
+        self::assertNull($context->grantedScopes);
 
         self::assertSame(
             ['ok' => true, 'data' => ['echo' => 'hello']],
