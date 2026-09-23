@@ -429,6 +429,23 @@ final readonly class RecordReadQueryService
                 throw new ValidationException(["Filter at index {$index}: operator '{$operator}' requires a 'value'"]);
             }
 
+            // DBAL binds an array through a scalar placeholder as the string
+            // "Array", and an empty list as NULL, so these shapes used to
+            // produce a confident but wrong result instead of an error.
+            if (in_array($operator, ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'like', 'notLike'], true) && !is_scalar($value)) {
+                throw new ValidationException(["Filter at index {$index}: operator '{$operator}' requires a scalar value"]);
+            }
+            if (in_array($operator, ['in', 'notIn'], true)) {
+                if (!is_array($value) || $value === []) {
+                    throw new ValidationException(["Filter at index {$index}: '{$operator}' operator requires a non-empty array value"]);
+                }
+                foreach ($value as $element) {
+                    if (!is_scalar($element)) {
+                        throw new ValidationException(["Filter at index {$index}: '{$operator}' array values must all be scalar"]);
+                    }
+                }
+            }
+
             // Validate field exists in table (case-insensitive lookup)
             $resolvedField = $validFieldsLower[strtolower($field)] ?? null;
             if ($resolvedField === null) {

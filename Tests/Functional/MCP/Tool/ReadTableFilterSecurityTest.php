@@ -431,4 +431,73 @@ class ReadTableFilterSecurityTest extends AbstractFunctionalTest
 
         self::assertTrue($result->isError, 'in operator with non-array value must be rejected');
     }
+
+    // ─── Value shapes the operator cannot bind ───────────────────────
+    // Adapted from upstream hauptsacheNet/typo3-mcp-server#29. DBAL bound
+    // such values as the string "Array" (or as NULL for an empty list), so
+    // the tool answered with a confident but wrong result instead of an error.
+
+    public function testRejectsNonArrayFiltersParameter(): void
+    {
+        $result = $this->tool->execute([
+            'table' => 'tt_content',
+            'filters' => 'CType = textmedia',
+        ]);
+
+        self::assertTrue($result->isError, 'Non-array filters parameter must be rejected');
+    }
+
+    public function testRejectsScalarOperatorWithArrayValue(): void
+    {
+        foreach (['eq', 'like'] as $operator) {
+            $result = $this->tool->execute([
+                'table' => 'tt_content',
+                'filters' => [
+                    ['field' => 'uid', 'operator' => $operator, 'value' => [100, 101]],
+                ],
+            ]);
+
+            self::assertTrue($result->isError, "'{$operator}' with an array value must be rejected");
+            self::assertStringContainsString('scalar value', $this->getFirstTextContent($result));
+        }
+    }
+
+    public function testRejectsEmptyInArray(): void
+    {
+        $result = $this->tool->execute([
+            'table' => 'tt_content',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'in', 'value' => []],
+            ],
+        ]);
+
+        self::assertTrue($result->isError, 'in operator with empty array must be rejected');
+    }
+
+    public function testRejectsEmptyNotInArray(): void
+    {
+        // "Exclude nothing" used to return no rows at all.
+        $result = $this->tool->execute([
+            'table' => 'tt_content',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'notIn', 'value' => []],
+            ],
+        ]);
+
+        self::assertTrue($result->isError, 'notIn operator with empty array must be rejected');
+        self::assertStringContainsString('non-empty array', $this->getFirstTextContent($result));
+    }
+
+    public function testRejectsNestedInArray(): void
+    {
+        $result = $this->tool->execute([
+            'table' => 'tt_content',
+            'filters' => [
+                ['field' => 'uid', 'operator' => 'in', 'value' => [[100, 101]]],
+            ],
+        ]);
+
+        self::assertTrue($result->isError, 'in operator with non-scalar array values must be rejected');
+        self::assertStringContainsString('must all be scalar', $this->getFirstTextContent($result));
+    }
 }
