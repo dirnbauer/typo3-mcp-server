@@ -443,6 +443,10 @@ final readonly class McpConnectionDiagnosticService
 
         if ($fixHintKey === null) {
             $fixHintKey = $status === DiagnosticStatus::Ok ? self::SHARED_FIX_OK : $prefix . '.fixHint';
+        } elseif (!str_contains($fixHintKey, '.')) {
+            // An outcome name ("fixDisabled") belongs to this check's prefix,
+            // like the message outcome above.
+            $fixHintKey = $prefix . '.' . $fixHintKey;
         }
 
         return [
