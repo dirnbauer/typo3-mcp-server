@@ -11,10 +11,22 @@ includes:
 parameters:
     # Portfolio baseline: level 8 everywhere, no baseline file, no ignores.
     level: 8
+    # All own PHP: extension code, its configuration, every test suite
+    # (unit, architecture, functional incl. fixture extensions, LLM) and the
+    # build scripts. ext_emconf.php is left out: it reads the $_EXTKEY the
+    # extension loader injects.
     paths:
         - Classes
-        - Tests/Unit
-        - Tests/Architecture
+        - Configuration
+        - Tests
+        - Build
+        - ext_localconf.php
+    excludePaths:
+        analyse:
+            # Declaration-only stub, scanned below rather than analysed.
+            - Build/PHPStan
+        analyseAndScan:
+            - Build/node_modules (?)
     scanFiles:
         # The optional paywall package cannot be installed in this dependency
         # tree; keep its conditional adapter type-checked against the exact
