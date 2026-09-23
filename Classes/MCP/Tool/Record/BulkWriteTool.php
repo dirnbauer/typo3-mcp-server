@@ -153,6 +153,11 @@ final class BulkWriteTool extends AbstractRecordTool
 
                 case 'delete':
                     $uid = array_key_exists('uid', $op) ? $op['uid'] : 0;
+                    // Already deleted in this workspace: another delete command
+                    // would discard the placeholder and restore the record.
+                    if ($this->isDeletedInCurrentWorkspace($table, $uid)) {
+                        break;
+                    }
                     $cmdMap[$table][$uid] = ['delete' => true];
                     break;
             }

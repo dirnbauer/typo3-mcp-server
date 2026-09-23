@@ -688,6 +688,17 @@ final class WriteTableTool extends AbstractRecordTool
      */
     protected function deleteRecord(string $table, int $uid): CallToolResult
     {
+        // A retried delete (for example after a transient client error) must
+        // not reach DataHandler again: for a record that is already deleted in
+        // this workspace it would discard the placeholder and restore it.
+        if ($this->isDeletedInCurrentWorkspace($table, $uid)) {
+            return $this->createJsonResult([
+                'action' => 'delete',
+                'table' => $table,
+                'uid' => $uid,
+            ]);
+        }
+
         // Resolve the live UID to workspace UID
         $workspaceUid = $this->resolveToWorkspaceUid($table, $uid);
 

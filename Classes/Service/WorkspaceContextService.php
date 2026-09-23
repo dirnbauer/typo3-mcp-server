@@ -15,6 +15,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Versioning\VersionState;
 use TYPO3\CMS\Workspaces\Service\WorkspaceService;
 
 final readonly class WorkspaceContextService
@@ -238,6 +239,35 @@ final readonly class WorkspaceContextService
         }
 
         return $uid === $liveUid ? null : $uid;
+    }
+
+    /**
+     * Whether a **live** record (uid) already carries a delete placeholder in
+     * the given workspace. Only call this for workspace-capable tables; other
+     * tables have no t3ver_* columns.
+     */
+    public function hasDeletePlaceholder(string $table, int $liveUid, int $workspaceId): bool
+    {
+        if ($workspaceId <= 0 || $liveUid <= 0) {
+            return false;
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $placeholderUid = $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq('t3ver_oid', $queryBuilder->createNamedParameter($liveUid, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_wsid', $queryBuilder->createNamedParameter($workspaceId, ParameterType::INTEGER)),
+                $queryBuilder->expr()->eq('t3ver_state', $queryBuilder->createNamedParameter(VersionState::DELETE_PLACEHOLDER->value, ParameterType::INTEGER)),
+            )
+            ->setMaxResults(1)
+            ->executeQuery()
+            ->fetchOne();
+
+        return $placeholderUid !== false;
     }
 
     /**

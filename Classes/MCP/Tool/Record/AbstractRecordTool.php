@@ -191,6 +191,21 @@ abstract class AbstractRecordTool extends AbstractTool
     }
 
     /**
+     * Whether the record already carries a delete placeholder in the current
+     * workspace. DataHandler treats another delete command for such a record
+     * like the backend's waste-bin toggle: it discards the placeholder and the
+     * record re-appears. Delete actions must therefore skip it.
+     */
+    protected function isDeletedInCurrentWorkspace(string $table, int $uid): bool
+    {
+        $workspaceId = $this->workspaceContextService->getCurrentWorkspace();
+
+        return $workspaceId > 0
+            && $this->tableAccessService->isWorkspaceCapable($table)
+            && $this->workspaceContextService->hasDeletePlaceholder($table, $uid, $workspaceId);
+    }
+
+    /**
      * Get workspace capability information for a table
      *
      * @return array{workspace_capable: bool, reason: string}
