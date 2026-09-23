@@ -9,32 +9,33 @@ Changelog
 The complete release history lives in :file:`CHANGELOG.md` at the repository
 root (Keep a Changelog format). This page summarizes the current release.
 
-0.8.0 - 2026-09-18
+0.9.0 - 2026-09-23
 ==================
 
-Behaviour-preserving overhaul of the fork-only code paths, level 8 static
-analysis without a baseline, and a rewritten manual:
+A rebuilt backend module, the relevant open upstream fixes, PHPStan level 8
+over all own PHP and current dependencies:
 
-- ``FileUploadService::storeUpload()`` is the single write path for
-  ``UploadFile``, ``UploadFileFromUrl`` and ``/mcp_upload``; oversized
-  payloads raise ``UploadTooLargeException`` (HTTP 413).
-- ``AbstractTool`` reads the ``#[AdminOnly]`` / ``#[DevSiteOnly]`` attributes
-  itself and offers ``createJsonResult()`` to every tool; the tool registry
-  filters dev-site tools without reflection into adapter internals.
-- ``SolrIndexQueue`` discovers tasks from ``tx_scheduler_task`` and spawns a
-  subprocess only for the validated ``scheduler:run``. Its ``list`` result no
-  longer carries a ``schedulerList`` block.
-- ``mcp:test`` was removed; ``mcp:tool <Name>`` is the single generic runner.
-- The capability manifest is read from its bundled path only and policy is
-  read from ``x-mcp`` only.
-- Adapted fixes from open upstream pull requests: nested inline file
-  relations, shared inline child tables scoped by parent table, field
-  visibility at the record's real page, circular page-move rejection,
-  isolated online-media helper failures, configurable ``sessionTimeout``.
+- The :guilabel:`User > MCP Server` module follows TYPO3 v14 core patterns:
+  docheader action, core tabs (connect a client, access tokens, connection
+  check, tools), collapsible client panels, copy elements, infobox empty
+  states, no own stylesheet, English and German labels, JavaScript labels
+  from ``~labels/mcp_server.mod``.
+- Fixes adapted from open upstream pull requests: FlexForm sheets and dotted
+  field names (#131), the PSR-7 request for rich text with ``t3://`` links
+  (#129), idempotent workspace deletes (#68), strict ReadTable filter values
+  (#29), a readable ``WWW-Authenticate`` header for browser clients; deleting
+  a record with a workspace draft deletes it.
+- PHPStan level 8 analyses code, tests, build scripts and configuration
+  files; PHP 8.4 idioms; PHPUnit 13, Playwright 1.63 on Node.js 24.
 
 Earlier releases
 ================
 
+- **0.8.0** - one upload write path, tool attributes on ``AbstractTool``,
+  ``SolrIndexQueue`` without a subprocess list, level 8 static analysis of
+  the extension code, adapted upstream fixes (nested inline files, shared
+  inline tables, field visibility at the record's page, page-move cycles,
+  isolated online-media helpers, ``sessionTimeout``).
 - **0.7.x** - abilities projected as MCP tools through ``McpProjection``, the
   ``sg_apicore`` integration removed, the ``mcp`` ability category
   registered.

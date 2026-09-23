@@ -7,6 +7,96 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.0 - 2026-09-23
+
+A rebuilt backend module, the relevant open upstream fixes, PHPStan level 8
+over every line of own PHP and current dependencies. Upstream `main`
+(`74e8188`) is still fully merged; it has no newer commits. The public PHP
+API other extensions use (`ToolRegistry`, `McpToolCatalogService`,
+`CapabilityManifestService`, `ToolResultNormalizer`, `ToolInterface`,
+`AbstractTool::isAdminOnly()`, `CompatibleToolAdapter`, `#[AdminOnly]`) is
+unchanged.
+
+### Changed
+
+- **Backend module rebuilt from TYPO3 v14 core patterns.** Module layout
+  with a docheader "Create access token" action, reload and shortcut; core
+  tabs for *Connect a client*, *Access tokens*, *Connection check* and a new
+  *Tools* tab (every tool a client is offered, filterable, badged read-only /
+  changes data / administrators only / development only); client setup as
+  collapsible panels with `<typo3-copy-to-clipboard>`; infobox empty states;
+  `table-fit` tables with captions and scoped headers. The token list and
+  the connection check are Fluid partials (`McpModulePartialRenderer`,
+  replacing `McpDiagnosticsPanelRenderer`) that the AJAX actions re-render,
+  so the JavaScript builds no markup. The JavaScript uses core modules only
+  and reads its labels from the v14 `~labels/mcp_server.mod` module; async
+  results are announced in a live region. The extension stylesheet is gone.
+  The AJAX route names and payload fields are unchanged (`getUserTokens`
+  adds `count` and `html`, `runDiagnostics` adds `overallStatus`).
+- Labels are XLIFF 2.0 with 2-space indentation, English and German for
+  every string; unused labels are gone; the module registration uses the v14
+  keys in `Resources/Private/Language/Modules/mcp_server.xlf`; every
+  extension setting and option label is translated and split into title and
+  description.
+- PHP 8.4 idioms (Rector `UP_TO_PHP_84`, reviewed): typed class constants,
+  `new Foo()->bar()`, `??=`, `array_any()`/`array_all()`/`array_find()` with
+  typed callbacks.
+- PHPStan level 8 analyses all own PHP — `Classes`, `Configuration`, every
+  test suite including the fixture extensions and the LLM tests, `Build/`
+  scripts, `ext_emconf.php` and the tool configurations — without a
+  baseline. Tests that could not fail now assert something; the documented
+  success idiom is `json_encode($result->jsonSerialize(),
+  JSON_THROW_ON_ERROR)`.
+- Dependencies: PHPUnit 12.5 → 13.3 (the platform floor moves to PHP 8.4.1
+  for it), paratest 7.20 → 7.24, `typo3/coding-standards` dev-main → 0.9,
+  php-cs-fixer 3.95.27, Rector 2.6.7, `webconsulting/typo3-abilities` ^1.0
+  → ^1.2 (locked 1.3.0); Playwright 1.52 → 1.63 on Node.js 24; CI actions
+  checkout 7.0.1, setup-node 7.0.0, upload-artifact 7.0.1, setup-php 2.37.2.
+
+### Added
+
+- Tests: the module renders (four tabs, the token partial through its AJAX
+  action, German), every label the templates, the JavaScript and the
+  controller reference exists in English and German, every key the
+  connection check can emit is translated, and regression tests for each
+  adopted upstream fix.
+- `.gitattributes` keeps development files out of the Composer dist archive.
+
+### Fixed
+
+- WriteTable stores FlexForm values in the sheet their DataStructure
+  declares and keeps dotted field names such as `settings.media.maxWidth`
+  (adapted from upstream #131).
+- WriteTable over HTTP can save rich text with `t3://` links while
+  `security.backend.htmlSanitizeRte` is enabled: `/mcp` and `/mcp_upload`
+  publish `$GLOBALS['TYPO3_REQUEST']` (adapted from upstream #129).
+- Workspace deletes: repeating a delete in WriteTable or BulkWrite no longer
+  restores the record (adapted from upstream #68), and deleting a record
+  that has a workspace draft deletes it instead of discarding the draft.
+- ReadTable rejects filter values its operator cannot bind (arrays for
+  scalar operators, empty or nested `in` lists) instead of silently
+  returning nothing (adapted from upstream #29).
+- Browser clients can read the `WWW-Authenticate` challenge of a 401
+  (adapted from upstream branch `claude/stoic-brahmagupta-cx7skz`).
+- The connection check showed an empty fix hint for a disabled
+  Authorization-header probe; the GetPageTree description missed a space.
+
+### Removed
+
+- `Resources/Public/Css/mcp-module.css`, `McpDiagnosticsPanelRenderer`, the
+  empty `ext_localconf.php`, `mcp_setup.png` and the unreferenced
+  `Build/Examples/sites` demo; `clearCacheOnLoad` in `ext_emconf.php`.
+
+### Upstream pull requests reviewed and not adopted
+
+- #76 (delete cascade warnings): does not reproduce on TYPO3 14.3.7.
+- #99 (WriteTable description): says the tool cannot publish, which is
+  wrong for this fork.
+- `feature/compassionate-lamport-gg83nx` (field-name suggestions): a
+  feature, not a fix.
+- #20 and `claude/stoic-brahmagupta-t8h49s` were already covered; #20's
+  tests were added.
+
 ## 0.8.0 - 2026-09-18
 
 Behaviour-preserving overhaul of the fork-only code paths, static analysis at
