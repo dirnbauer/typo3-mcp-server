@@ -134,6 +134,7 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
             'sys_file_reference',
             ['uid' => 100],
         )->fetchAssociative();
+        self::assertIsArray($live, 'The live reference is missing');
         self::assertSame('Live alternative', $live['alternative']);
         self::assertSame(0, (int)$live['deleted']);
         self::assertSame(0, (int)$live['t3ver_wsid']);
@@ -145,6 +146,7 @@ final class NestedFileRelationTest extends AbstractFunctionalTest
             'sys_file_reference',
             ['uid' => 100],
         )->fetchAssociative();
+        self::assertIsArray($live, 'The live reference is missing');
         self::assertSame(1, (int)$live['uid_local']);
         self::assertSame(0, (int)$live['deleted']);
     }

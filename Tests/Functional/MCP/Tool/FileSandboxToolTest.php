@@ -49,6 +49,7 @@ final class FileSandboxToolTest extends AbstractFunctionalTest
     public function readMetadataRejectsFilesOutsideSandboxEvenByUid(): void
     {
         $storage = $this->get(StorageRepository::class)->findByUid(1);
+        self::assertNotNull($storage, 'Storage 1 is missing');
         if (!$storage->hasFolder('/outside-sandbox/')) {
             $storage->createFolder('/outside-sandbox/');
         }

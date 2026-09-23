@@ -90,6 +90,7 @@ class OAuthTokenHashingTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAssociative();
 
+        self::assertIsArray($row, 'No access token was stored');
         self::assertNotEquals($tokenData['access_token'], $row['token']);
     }
 

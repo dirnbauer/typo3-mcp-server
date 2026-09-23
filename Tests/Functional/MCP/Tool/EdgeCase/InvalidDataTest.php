@@ -355,6 +355,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
         $data = json_decode((string)$result->content[0]->text, true);
         if (isset($data['uid'])) {
             $record = BackendUtility::getRecord('tt_content', $data['uid']);
+            self::assertIsArray($record);
             self::assertNotEmpty($record['CType'], 'CType should have a default value');
         }
     }
@@ -462,6 +463,7 @@ final class InvalidDataTest extends AbstractFunctionalTest
         $data = json_decode((string)$result->content[0]->text, true);
         if (isset($data['uid'])) {
             $record = BackendUtility::getRecord('pages', $data['uid']);
+            self::assertIsArray($record);
             self::assertNotEquals('/../../../etc/passwd', $record['slug']);
             self::assertStringNotContainsString('..', $record['slug']);
         }

@@ -368,6 +368,7 @@ class InlineRelationWriteTest extends FunctionalTestCase
                 ->where($queryBuilder->expr()->eq('uid', $uid))
                 ->executeQuery()
                 ->fetchAssociative();
+            self::assertIsArray($record, 'tt_content:' . $uid . ' is missing');
 
             $sortingInfo[$uid] = $record['sorting'];
 

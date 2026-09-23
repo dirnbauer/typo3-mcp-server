@@ -47,7 +47,9 @@ final class WorkspacePageMoveTest extends AbstractFunctionalTest
             'SELECT uid FROM pages WHERE pid = 6 AND t3ver_oid = 2'
         );
         self::assertSame([], $versionsBelowSix, 'A version of page 2 was moved below page 6.');
-        self::assertSame('About', BackendUtility::getRecordWSOL('pages', 2)['title']);
+        $page = BackendUtility::getRecordWSOL('pages', 2);
+        self::assertIsArray($page);
+        self::assertSame('About', $page['title']);
     }
 
     #[DataProvider('circularMovePositions')]

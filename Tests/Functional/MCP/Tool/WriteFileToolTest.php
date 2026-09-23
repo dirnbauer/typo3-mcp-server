@@ -8,6 +8,8 @@ use Hn\McpServer\MCP\Tool\File\UploadFileTool;
 use Hn\McpServer\MCP\Tool\File\WriteFileTool;
 use Hn\McpServer\Tests\Functional\AbstractFunctionalTest;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 
 final class WriteFileToolTest extends AbstractFunctionalTest
@@ -29,8 +31,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         self::assertSame('1:/mcp/notes/test-mcp.txt', $json['identifier']);
         self::assertGreaterThan(0, $json['uid']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $file = $storage->getFile('/mcp/notes/test-mcp.txt');
+        $file = $this->storedFile('/mcp/notes/test-mcp.txt');
         self::assertSame('Hello from MCP', $file->getContents());
     }
 
@@ -54,8 +55,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         $json = json_decode((string)$second->content[0]->text, true);
         self::assertSame('overwritten', $json['action']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        self::assertSame('replaced', $storage->getFile('/mcp/notes/overwrite-me.txt')->getContents());
+        self::assertSame('replaced', $this->storedFile('/mcp/notes/overwrite-me.txt')->getContents());
     }
 
     #[Test]
@@ -116,9 +116,8 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('created', $json['action']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        self::assertTrue($storage->hasFolder('/mcp/deep/nested/'));
-        self::assertSame('{"created": true}', $storage->getFile('/mcp/deep/nested/data.json')->getContents());
+        self::assertTrue($this->defaultStorage()->hasFolder('/mcp/deep/nested/'));
+        self::assertSame('{"created": true}', $this->storedFile('/mcp/deep/nested/data.json')->getContents());
     }
 
     #[Test]
@@ -146,8 +145,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
 
         self::assertFalse($result->isError, json_encode($result->jsonSerialize(), JSON_THROW_ON_ERROR));
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        self::assertSame($jsonContent, $storage->getFile('/mcp/config.json')->getContents());
+        self::assertSame($jsonContent, $this->storedFile('/mcp/config.json')->getContents());
     }
 
     #[Test]
@@ -169,8 +167,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         self::assertSame('created', $json['action']);
         self::assertSame('My Document', $json['metadata']['title']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $file = $storage->getFile('/mcp/documented.txt');
+        $file = $this->storedFile('/mcp/documented.txt');
         $meta = $file->getMetaData()->get();
         self::assertSame('My Document', $meta['title']);
         self::assertSame('A test document created via MCP', $meta['description']);
@@ -200,8 +197,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         self::assertSame('metadata_updated', $json['action']);
         self::assertSame('Updated Title', $json['metadata']['title']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $file = $storage->getFile('/mcp/keep-content.txt');
+        $file = $this->storedFile('/mcp/keep-content.txt');
         self::assertSame('Original content stays', $file->getContents());
         self::assertSame('Updated Title', $file->getMetaData()->get()['title']);
     }
@@ -257,8 +253,7 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         $json = json_decode((string)$result->content[0]->text, true);
         self::assertSame('1:/mcp/absolute/location.txt', $json['identifier']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        self::assertSame('absolute target', $storage->getFile('/mcp/absolute/location.txt')->getContents());
+        self::assertSame('absolute target', $this->storedFile('/mcp/absolute/location.txt')->getContents());
     }
 
     #[Test]
@@ -289,10 +284,23 @@ final class WriteFileToolTest extends AbstractFunctionalTest
         self::assertSame('metadata_updated', $json['action']);
         self::assertSame('Updated image title', $json['metadata']['title']);
 
-        $storage = $this->get(StorageRepository::class)->findByUid(1);
-        $file = $storage->getFile(substr($identifier, 2));
+        $file = $this->storedFile(substr($identifier, 2));
         self::assertSame($originalSize, $file->getSize());
         self::assertSame('Updated image title', $file->getMetaData()->get()['title']);
         self::assertSame('Updated image alt text', $file->getMetaData()->get()['alternative']);
+    }
+
+    private function defaultStorage(): ResourceStorage
+    {
+        $storage = $this->get(StorageRepository::class)->findByUid(1);
+        self::assertInstanceOf(ResourceStorage::class, $storage, 'Storage 1 is missing');
+        return $storage;
+    }
+
+    private function storedFile(string $identifier): File
+    {
+        $file = $this->defaultStorage()->getFile($identifier);
+        self::assertInstanceOf(File::class, $file, $identifier . ' is not a file in storage 1');
+        return $file;
     }
 }

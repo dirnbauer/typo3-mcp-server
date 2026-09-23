@@ -155,6 +155,7 @@ class LanguageWorkspaceIntegrationTest extends FunctionalTestCase
             ->executeQuery()
             ->fetchAssociative();
 
+        self::assertIsArray($record, 'The German content element is missing');
         self::assertEquals(1, $record['sys_language_uid'], 'German ISO code should be converted to UID 1');
         self::assertEquals('Deutscher Header', $record['header']);
     }

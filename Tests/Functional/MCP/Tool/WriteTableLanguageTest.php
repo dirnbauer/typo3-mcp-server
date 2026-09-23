@@ -343,6 +343,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         self::assertIsInt($translationUid);
 
         $translation = BackendUtility::getRecord('tt_content', $translationUid);
+        self::assertIsArray($translation, 'Translation record not found');
         self::assertEquals('Deutscher Titel', $translation['header']);
         self::assertEquals('Das ist der übersetzte Inhalt', $translation['bodytext']);
         self::assertEquals(1, $translation['sys_language_uid']);
@@ -374,6 +375,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         self::assertIsInt($translationUid);
 
         $translation = BackendUtility::getRecord('sys_file_metadata', $translationUid);
+        self::assertIsArray($translation, 'Metadata translation not found');
         self::assertEquals('Personenfoto', $translation['title']);
         self::assertEquals('Foto vom Teamleiter', $translation['alternative']);
         self::assertEquals(1, $translation['sys_language_uid']);
@@ -425,6 +427,7 @@ class WriteTableLanguageTest extends FunctionalTestCase
         self::assertIsInt($translationUid);
 
         $translation = BackendUtility::getRecord('tt_content', $translationUid);
+        self::assertIsArray($translation, 'Translation record not found');
         self::assertEquals('Deutscher Titel', $translation['header']);
     }
 

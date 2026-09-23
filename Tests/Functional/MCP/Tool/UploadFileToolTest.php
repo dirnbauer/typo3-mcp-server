@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Uri;
+use TYPO3\CMS\Core\Resource\File;
 use TYPO3\CMS\Core\Resource\StorageRepository;
 
 final class UploadFileToolTest extends AbstractFunctionalTest
@@ -63,7 +64,9 @@ final class UploadFileToolTest extends AbstractFunctionalTest
         self::assertSame('Pixel', $json['metadata']['title']);
 
         $storage = $this->get(StorageRepository::class)->findByUid(1);
+        self::assertNotNull($storage, 'Storage 1 is missing');
         $file = $storage->getFile(substr((string)$json['identifier'], 2));
+        self::assertInstanceOf(File::class, $file);
         self::assertSame('Pixel', $file->getMetaData()->get()['title']);
         self::assertSame('Single pixel image', $file->getMetaData()->get()['alternative']);
     }

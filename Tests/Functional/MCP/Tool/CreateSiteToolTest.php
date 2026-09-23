@@ -558,6 +558,7 @@ final class CreateSiteToolTest extends AbstractFunctionalTest
             ->getConnectionForTable('pages')
             ->select(['perms_groupid', 'perms_group'], 'pages', ['uid' => $rootPageId])
             ->fetchAssociative();
+        self::assertIsArray($page, 'The created root page is missing');
         self::assertSame((int)$group['id'], (int)$page['perms_groupid']);
         self::assertSame(31, (int)$page['perms_group']);
     }

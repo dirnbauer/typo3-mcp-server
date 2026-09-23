@@ -529,6 +529,7 @@ class WriteTableToolTest extends AbstractFunctionalTest
             ->executeQuery()
             ->fetchAssociative();
 
+        self::assertIsArray($liveRecord, 'The live record is missing');
         self::assertEquals($originalHeader, $liveRecord['header'], 'Live record header should remain unchanged');
         self::assertEquals($originalBodytext, $liveRecord['bodytext'], 'Live record bodytext should remain unchanged');
     }
