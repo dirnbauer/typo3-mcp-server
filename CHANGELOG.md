@@ -7,6 +7,14 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.1 - 2026-09-23
+
+### Fixed
+
+- The E2E test "copy elements exist" matched the hidden "Copy URL of this
+  record" element of the docheader's shortcut dropdown first and failed; it is
+  scoped to the module's setup tab now. No change to the extension itself.
+
 ## 0.9.0 - 2026-09-23
 
 A rebuilt backend module, the relevant open upstream fixes, PHPStan level 8

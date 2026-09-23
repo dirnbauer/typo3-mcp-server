@@ -9,6 +9,13 @@ Changelog
 The complete release history lives in :file:`CHANGELOG.md` at the repository
 root (Keep a Changelog format). This page summarizes the current release.
 
+0.9.1 - 2026-09-23
+==================
+
+Test-only fix: the E2E test for the copy elements is scoped to the module, so
+the hidden copy element of the docheader's shortcut dropdown no longer
+matches first.
+
 0.9.0 - 2026-09-23
 ==================
 
