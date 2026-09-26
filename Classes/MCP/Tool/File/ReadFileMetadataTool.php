@@ -34,7 +34,7 @@ final class ReadFileMetadataTool extends AbstractTool
     public function getSchema(): array
     {
         return [
-            'description' => 'Read detailed metadata for a file in the MCP file sandbox by UID or path. '
+            'description' => 'Read detailed metadata for a file in the MCP file sandbox by UID or path. Provide uid or identifier; uid takes precedence if both are supplied. '
                 . 'All access is restricted to the configured MCP file sandbox root (default: fileadmin/mcp/). '
                 . 'In local mode (DDEV / localUnsafeMode=on), combined identifiers may target any accessible FAL file. '
                 . 'Returns title, description, alternative text, categories, dimensions, and more. '
@@ -51,12 +51,8 @@ final class ReadFileMetadataTool extends AbstractTool
                         'description' => 'File path inside the MCP file sandbox. '
                             . 'Use a relative path like "images/photo.jpg" or an absolute combined identifier inside the sandbox such as "1:/mcp/images/photo.jpg". '
                             . 'In local mode, combined identifiers may point outside the sandbox. '
-                            . 'Use uid OR identifier, not both.',
+                            . 'Provide uid or identifier.',
                     ],
-                ],
-                'oneOf' => [
-                    ['required' => ['uid']],
-                    ['required' => ['identifier']],
                 ],
             ],
             'annotations' => [

@@ -7,6 +7,14 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## Unreleased
+
+### Fixed
+
+- `GetPage` and `ReadFileMetadata` now advertise plain object input schemas.
+  Their former top-level `oneOf` constraints were rejected by function-calling
+  providers and contradicted the tools' existing identifier precedence.
+
 ## 0.9.3 - 2026-09-23
 
 ### Fixed

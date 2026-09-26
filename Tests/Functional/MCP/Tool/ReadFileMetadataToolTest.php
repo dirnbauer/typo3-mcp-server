@@ -14,6 +14,16 @@ final class ReadFileMetadataToolTest extends AbstractFunctionalTest
     private const string PIXEL_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0f8AAAAASUVORK5CYII=';
 
     #[Test]
+    public function schemaUsesAPlainObjectForProviderCompatibility(): void
+    {
+        $schema = $this->get(ReadFileMetadataTool::class)->getSchema()['inputSchema'];
+
+        self::assertSame('object', $schema['type']);
+        self::assertArrayNotHasKey('oneOf', $schema);
+        self::assertSame(['uid', 'identifier'], array_keys($schema['properties']));
+    }
+
+    #[Test]
     public function readsImageMetadataByAbsoluteIdentifier(): void
     {
         $uploadTool = $this->get(UploadFileTool::class);

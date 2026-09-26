@@ -397,6 +397,8 @@ class GetPageToolTest extends FunctionalTestCase
         self::assertIsArray($schema);
         self::assertArrayHasKey('description', $schema);
         self::assertArrayHasKey('inputSchema', $schema);
+        self::assertSame('object', $schema['inputSchema']['type']);
+        self::assertArrayNotHasKey('oneOf', $schema['inputSchema']);
         self::assertArrayHasKey('properties', $schema['inputSchema']);
         self::assertArrayHasKey('uid', $schema['inputSchema']['properties']);
         self::assertArrayHasKey('language', $schema['inputSchema']['properties']);

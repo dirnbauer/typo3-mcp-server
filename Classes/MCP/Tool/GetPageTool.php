@@ -131,27 +131,22 @@ final class GetPageTool extends AbstractRecordTool
         $domainsText = $this->siteInformationService->getAvailableDomainsText();
 
         $schema = [
-            'description' => 'Get detailed information about a TYPO3 page including its records. Can fetch by page ID (uid or pageId) or URL. Shows content in the specified language when available.',
+            'description' => 'Get detailed information about a TYPO3 page including its records. Provide a page ID (uid or pageId) or URL. When more than one is supplied, uid takes precedence over pageId and url. Shows content in the specified language when available.',
             'inputSchema' => [
                 'type' => 'object',
                 'properties' => [
                     'uid' => [
                         'type' => 'integer',
-                        'description' => 'The page ID to retrieve information for. Provide uid (or pageId alias) or url.',
+                        'description' => 'The page ID to retrieve information for. Provide uid, pageId, or url.',
                     ],
                     'pageId' => [
                         'type' => 'integer',
-                        'description' => 'Alias for uid. Provided for ergonomics — either uid, pageId, or url.',
+                        'description' => 'Alias for uid. Provide uid, pageId, or url.',
                     ],
                     'url' => [
                         'type' => 'string',
                         'description' => 'The URL of the page to retrieve (alternative to uid). Can be full URL, path, or slug. Provide uid or url. ' . $domainsText,
                     ],
-                ],
-                'oneOf' => [
-                    ['required' => ['uid']],
-                    ['required' => ['pageId']],
-                    ['required' => ['url']],
                 ],
             ],
         ];
