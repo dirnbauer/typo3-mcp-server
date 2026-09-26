@@ -7,7 +7,7 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
-## Unreleased
+## 0.9.5 - 2026-09-26
 
 ### Fixed
 
