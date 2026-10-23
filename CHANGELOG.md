@@ -7,6 +7,19 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.6 - 2026-10-23
+
+### Fixed
+
+- RenderRecord releases its cURL handle without calling the no-op
+  `curl_close()`, avoiding PHP 8.5 deprecation notices after a render fetch.
+  A regression test exercises the transfer and rejects PHP deprecations.
+
+### Changed
+
+- Refresh the development dependency lock for TYPO3 14.3.10 and update
+  Playwright to 1.64.1.
+
 ## 0.9.5 - 2026-09-26
 
 ### Fixed

@@ -31,6 +31,30 @@ final class RenderRecordToolTest extends AbstractFunctionalTest
     }
 
     #[Test]
+    public function fetchingRenderBodyDoesNotEmitPhpDeprecations(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['mcp_server']['localUnsafeMode'] = 'on';
+        $temporaryFile = tempnam(sys_get_temp_dir(), 'mcp-render-');
+        self::assertNotFalse($temporaryFile);
+        $html = '<main>Rendered page</main>';
+        file_put_contents($temporaryFile, $html);
+        $tool = $this->get(RenderRecordTool::class);
+        $fetch = new \ReflectionMethod($tool, 'fetchUrl');
+
+        // Exercise the real cURL transfer without a web server or outbound
+        // network dependency. PHP 8.5 deprecates curl_close() after a transfer.
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): never {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        }, E_DEPRECATED);
+        try {
+            self::assertSame($html, $fetch->invoke($tool, 'file://localhost' . $temporaryFile));
+        } finally {
+            restore_error_handler();
+            unlink($temporaryFile);
+        }
+    }
+
+    #[Test]
     public function previewModeReturnsUrlWithoutFetching(): void
     {
         // mode=preview short-circuits before any HTTP fetch — safe to call

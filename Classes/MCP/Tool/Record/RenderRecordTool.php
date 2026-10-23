@@ -246,7 +246,7 @@ final class RenderRecordTool extends AbstractRecordTool
         $success = curl_exec($handle);
         $status = curl_getinfo($handle, CURLINFO_HTTP_CODE);
         $error = curl_error($handle);
-        curl_close($handle);
+        unset($handle);
 
         if ($responseTooLarge) {
             throw new ValidationException(['Render response exceeds the 5 MB safety limit.']);
