@@ -7,6 +7,13 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.7 - 2026-10-23
+
+### Fixed
+
+- Configure the TYPO3 documentation theme and GitHub links through the
+  current `guides.xml` schema, restoring the required documentation build.
+
 ## 0.9.6 - 2026-10-23
 
 ### Fixed

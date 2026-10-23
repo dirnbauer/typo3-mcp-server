@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <guides xmlns="https://www.phpdoc.org/guides"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="https://www.phpdoc.org/guides https://docs.typo3.org/render-guides/guides.xsd"
-        links-are-relative="true">
+        xsi:schemaLocation="https://www.phpdoc.org/guides ../vendor/phpdocumentor/guides-cli/resources/schema/guides.xsd"
+        links-are-relative="true"
+        default-code-language="php">
+    <extension class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
+               project-home="https://github.com/dirnbauer/typo3-mcp-server"
+               project-contact="https://github.com/dirnbauer/typo3-mcp-server/issues"
+               project-repository="https://github.com/dirnbauer/typo3-mcp-server"
+               project-issues="https://github.com/dirnbauer/typo3-mcp-server/issues"
+               edit-on-github="dirnbauer/typo3-mcp-server"
+               edit-on-github-branch="main"
+               edit-on-github-directory="Documentation"
+               typo3-core-preferred="14.3"
+               interlink-shortcode="hn/typo3-mcp-server"/>
     <project title="MCP Server"
-             version="0.9.6"/>
-    <extension name="mcp_server"/>
+             version="0.9"
+             release="0.9.7"
+             copyright="2026 by the MCP Server contributors"/>
     <inventory id="t3coreapi"
                url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>
-    <settings>
-        <setting name="edit_on_github"
-                 value="https://github.com/dirnbauer/typo3-mcp-server/edit/main/Documentation/"/>
-        <setting name="edit_on_github_branch"
-                 value="main"/>
-    </settings>
 </guides>
