@@ -1,7 +1,7 @@
 name: typo3-mcp-server
 type: php
 docroot: public
-php_version: "8.4"
+php_version: "8.5"
 webserver_type: nginx-fpm
 xdebug_enabled: false
 # Extra hostname for the news demo site of Documentation/Testing/ChatbotScript.rst.
@@ -13,6 +13,7 @@ database:
     version: "10.11"
 use_dns_when_possible: true
 composer_version: "2"
+nodejs_version: "26.12.1"
 web_environment: []
 corepack_enable: false
 
