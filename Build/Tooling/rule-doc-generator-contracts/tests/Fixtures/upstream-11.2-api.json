@@ -1,0 +1,394 @@
+{
+    "Symplify\\RuleDocGenerator\\Contract\\Category\\CategoryInfererInterface": {
+        "interface": true,
+        "abstract": true,
+        "final": false,
+        "parent": null,
+        "interfaces": [],
+        "methods": {
+            "infer": {
+                "returnType": "?string",
+                "parameters": [
+                    {
+                        "name": "ruleDefinition",
+                        "type": "Symplify\\RuleDocGenerator\\ValueObject\\RuleDefinition",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface": {
+        "interface": true,
+        "abstract": true,
+        "final": false,
+        "parent": null,
+        "interfaces": [],
+        "methods": {
+            "getGoodCode": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "getBadCode": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\Contract\\ConfigurableRuleInterface": {
+        "interface": true,
+        "abstract": false,
+        "final": false,
+        "parent": null,
+        "interfaces": [],
+        "methods": []
+    },
+    "Symplify\\RuleDocGenerator\\Contract\\DocumentedRuleInterface": {
+        "interface": true,
+        "abstract": true,
+        "final": false,
+        "parent": null,
+        "interfaces": [],
+        "methods": {
+            "getRuleDefinition": {
+                "returnType": "Symplify\\RuleDocGenerator\\ValueObject\\RuleDefinition",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\Contract\\RuleCodeSamplePrinterInterface": {
+        "interface": true,
+        "abstract": true,
+        "final": false,
+        "parent": null,
+        "interfaces": [],
+        "methods": {
+            "isMatch": {
+                "returnType": "bool",
+                "parameters": [
+                    {
+                        "name": "class",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "print": {
+                "returnType": "array",
+                "parameters": [
+                    {
+                        "name": "codeSample",
+                        "type": "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "ruleDefinition",
+                        "type": "Symplify\\RuleDocGenerator\\ValueObject\\RuleDefinition",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\Exception\\PoorDocumentationException": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Exception",
+        "interfaces": [
+            "Throwable",
+            "Stringable"
+        ],
+        "methods": []
+    },
+    "Symplify\\RuleDocGenerator\\Exception\\ShouldNotHappenException": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Exception",
+        "interfaces": [
+            "Throwable",
+            "Stringable"
+        ],
+        "methods": []
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\AbstractCodeSample": {
+        "interface": false,
+        "abstract": true,
+        "final": false,
+        "parent": null,
+        "interfaces": [
+            "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface"
+        ],
+        "methods": {
+            "__construct": {
+                "returnType": "",
+                "parameters": [
+                    {
+                        "name": "badCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "goodCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getGoodCode": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "getBadCode": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\CodeSample\\CodeSample": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Symplify\\RuleDocGenerator\\ValueObject\\AbstractCodeSample",
+        "interfaces": [
+            "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface"
+        ],
+        "methods": []
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\CodeSample\\ComposerJsonAwareCodeSample": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Symplify\\RuleDocGenerator\\ValueObject\\AbstractCodeSample",
+        "interfaces": [
+            "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface"
+        ],
+        "methods": {
+            "__construct": {
+                "returnType": "",
+                "parameters": [
+                    {
+                        "name": "badCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "goodCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "composerJson",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getComposerJson": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\CodeSample\\ConfiguredCodeSample": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Symplify\\RuleDocGenerator\\ValueObject\\AbstractCodeSample",
+        "interfaces": [
+            "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface"
+        ],
+        "methods": {
+            "__construct": {
+                "returnType": "",
+                "parameters": [
+                    {
+                        "name": "badCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "goodCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "configuration",
+                        "type": "array",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getConfiguration": {
+                "returnType": "array",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\CodeSample\\ExtraFileCodeSample": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": "Symplify\\RuleDocGenerator\\ValueObject\\AbstractCodeSample",
+        "interfaces": [
+            "Symplify\\RuleDocGenerator\\Contract\\CodeSampleInterface"
+        ],
+        "methods": {
+            "__construct": {
+                "returnType": "",
+                "parameters": [
+                    {
+                        "name": "badCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "goodCode",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "extraFile",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getExtraFile": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            }
+        }
+    },
+    "Symplify\\RuleDocGenerator\\ValueObject\\RuleDefinition": {
+        "interface": false,
+        "abstract": false,
+        "final": true,
+        "parent": null,
+        "interfaces": [],
+        "methods": {
+            "__construct": {
+                "returnType": "",
+                "parameters": [
+                    {
+                        "name": "description",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    },
+                    {
+                        "name": "codeSamples",
+                        "type": "array",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getDescription": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "setRuleClass": {
+                "returnType": "void",
+                "parameters": [
+                    {
+                        "name": "ruleClass",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getRuleClass": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "setRuleFilePath": {
+                "returnType": "void",
+                "parameters": [
+                    {
+                        "name": "ruleFilePath",
+                        "type": "string",
+                        "optional": false,
+                        "byReference": false,
+                        "variadic": false
+                    }
+                ],
+                "static": false
+            },
+            "getRuleFilePath": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "getRuleShortClass": {
+                "returnType": "string",
+                "parameters": [],
+                "static": false
+            },
+            "getCodeSamples": {
+                "returnType": "array",
+                "parameters": [],
+                "static": false
+            },
+            "isConfigurable": {
+                "returnType": "bool",
+                "parameters": [],
+                "static": false
+            }
+        }
+    }
+}

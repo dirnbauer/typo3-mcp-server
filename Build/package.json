@@ -10,6 +10,7 @@
     "playwright:install": "playwright install",
     "playwright:run": "playwright test",
     "playwright:open": "playwright test --ui",
-    "playwright:report": "playwright show-report"
+    "playwright:report": "playwright show-report",
+    "test:helpers": "node --test ../Tests/JavaScript/RunTestsHelper.test.mjs"
   }
 }

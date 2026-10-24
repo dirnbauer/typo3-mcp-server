@@ -7,7 +7,9 @@
 /.gitleaks.toml export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /AGENTS.md export-ignore
-/Build export-ignore
+/Build/* export-ignore
+# Retain the complete maintained development package for its path repository.
+/Build/Tooling -export-ignore
 /CLAUDE.md export-ignore
 /TECHNICAL_OVERVIEW.md export-ignore
 /Tests export-ignore

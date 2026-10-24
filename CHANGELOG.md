@@ -7,6 +7,11 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## Unreleased
+
+- Align the test helper with PHP 8.5 by default while preserving PHP 8.4 selection, match the Docker Playwright image to the locked browser package, and preserve test filters and empty argument lists on macOS Bash. Verify generated commands without starting Docker containers.
+- Maintain the complete RuleDocGenerator 11.2.0 contracts and MIT license under Build/Tooling for the active Fractor gate. Preserve its public API, fail full development audits on abandoned packages, and verify the contracts on PHP 8.1–8.5. The application runtime and release tag are unchanged.
+
 ## 0.9.8 — 2026-10-24
 
 - Update Rector to 2.7.0, Fractor to 1.1.0 and PHPStan to 2.3.1; retain TYPO3 error-handler coverage for malformed user preferences and remove the unreachable LLM retry fallback. Run browser tooling on Node 26.12.1 with npm 12.2.1. Pin the official documentation renderer to 0.47.3 and its verified image digest.

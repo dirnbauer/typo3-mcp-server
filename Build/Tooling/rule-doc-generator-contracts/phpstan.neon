@@ -1,0 +1,13 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/shipmonk/dead-code-detector/rules.neon
+
+parameters:
+    level: 8
+
+    paths:
+        - src
+        - tests
+
+    phpVersion: 80100
+    tmpDir: var/phpstan

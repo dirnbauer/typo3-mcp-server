@@ -11,6 +11,8 @@ if ($finder instanceof Finder) {
     $finder
         ->exclude([
             '.Build',
+            // Independently checked on PHP 8.1–8.5 with its own compatibility rules.
+            'Build/Tooling/rule-doc-generator-contracts',
             'config',
             'packages',
             'public',

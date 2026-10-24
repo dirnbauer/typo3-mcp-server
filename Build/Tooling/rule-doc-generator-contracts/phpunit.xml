@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true" failOnWarning="true" failOnRisky="true" failOnDeprecation="true" failOnPhpunitDeprecation="true" cacheDirectory="var/phpunit">
+    <testsuites>
+        <testsuite name="Public contracts">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include><directory>src</directory></include>
+    </source>
+</phpunit>

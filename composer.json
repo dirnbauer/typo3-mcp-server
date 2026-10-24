@@ -36,12 +36,26 @@
 		"typo3/cms-install": "^14.3.6",
 		"typo3/cms-redirects": "^14.3.6",
 		"typo3/coding-standards": "^0.9",
-		"typo3/testing-framework": "^9.7"
+		"typo3/testing-framework": "^9.7",
+		"webconsulting/rule-doc-generator-contracts": "^1.0"
 	},
 	"conflict": {
 		"mcp/sdk": "*"
 	},
 	"repositories": [
+		{
+			"type": "path",
+			"url": "Build/Tooling/rule-doc-generator-contracts",
+			"options": {
+				"symlink": true,
+				"versions": {
+					"webconsulting/rule-doc-generator-contracts": "1.0.0"
+				}
+			},
+			"only": [
+				"webconsulting/rule-doc-generator-contracts"
+			]
+		},
 		{
 			"type": "vcs",
 			"url": "https://github.com/dirnbauer/typo3-abilities",
@@ -118,10 +132,13 @@
 			"rector process"
 		],
 		"fractor": [
-			"fractor process --dry-run"
+			"fractor process --dry-run --clear-cache"
 		],
 		"fractor:fix": [
 			"fractor process"
+		],
+		"audit:dependencies": [
+			"@composer audit --abandoned=fail"
 		]
 	},
 	"config": {

@@ -1,0 +1,73 @@
+{
+    "name": "webconsulting/rule-doc-generator-contracts",
+    "description": "Maintained, API-compatible RuleDocGenerator contracts for refactoring tools.",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95.27",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpstan/phpstan": "^2.3.1",
+        "phpstan/phpstan-phpunit": "^2.1.1",
+        "phpunit/phpunit": "^10.5 || ^11.5 || ^12.5 || ^13.4.3",
+        "rector/rector": "^2.7",
+        "rector/swiss-knife": "^2.7",
+        "shipmonk/dead-code-detector": "^1.4.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Symplify\\RuleDocGenerator\\": "src"
+        }
+    },
+    "scripts": {
+        "check-cs": "php-cs-fixer check --diff",
+        "fix-cs": "php-cs-fixer fix",
+        "phpstan": "phpstan analyse --no-progress",
+        "rector": "rector process --dry-run",
+        "lint": "parallel-lint src tests",
+        "check-commented-code": "swiss-knife check-commented-code src",
+        "test": "phpunit --configuration=phpunit.xml",
+        "check": [
+            "@composer validate --strict",
+            "@composer audit --abandoned=fail",
+            "@lint",
+            "@check-cs",
+            "@phpstan",
+            "@rector",
+            "@check-commented-code",
+            "@test"
+        ]
+    },
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    },
+    "authors": [
+        {
+            "name": "Tomas Votruba",
+            "role": "Original author"
+        },
+        {
+            "name": "Kurt Dirnbauer",
+            "email": "dirnbauer@webconsulting.at",
+            "role": "Maintainer"
+        }
+    ],
+    "replace": {
+        "symplify/rule-doc-generator-contracts": "11.2.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Webconsulting\\RuleDocGeneratorContracts\\Tests\\": "tests/"
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/vendor",
+            "/var",
+            "/composer.lock",
+            "/.php-cs-fixer.cache"
+        ]
+    }
+}

@@ -13,7 +13,7 @@ set -euo pipefail
 #
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-PHP_VERSION="8.3"
+PHP_VERSION="8.5"
 TEST_SUITE="functional"
 NO_DOCKER=0
 EXTRA_ARGS=()
@@ -21,13 +21,14 @@ RUN_ID="typo3-mcp-tests-$$"
 CONTAINER_NAME="${RUN_ID}"
 NETWORK_NAME="${RUN_ID}-net"
 IMAGE=""
+PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright:v1.64.1-noble"
 
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [options] [-- phpunit-args]
 
 Options:
-    -p <version>    PHP version: 8.3 (default), 8.4, 8.5
+    -p <version>    PHP version: 8.5 (default), 8.4
     -s <suite>      Test suite: functional (default), lint, e2e
     -n, --no-docker Run e2e locally without Docker (uses host PHP, SQLite, local Playwright)
     -h, --help      Show this help
@@ -79,8 +80,8 @@ IMAGE="php:${PHP_VERSION}-cli"
 
 # Validate inputs
 case "${PHP_VERSION}" in
-    8.3|8.4|8.5) ;;
-    *) echo "Error: unsupported PHP version '${PHP_VERSION}'. Use 8.3, 8.4, or 8.5." >&2; exit 1 ;;
+    8.4|8.5) ;;
+    *) echo "Error: unsupported PHP version '${PHP_VERSION}'. Use 8.4 or 8.5." >&2; exit 1 ;;
 esac
 
 case "${TEST_SUITE}" in
@@ -130,7 +131,7 @@ case "${TEST_SUITE}" in
                 curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer >/dev/null 2>&1 && \
                 composer install --no-interaction --prefer-dist -q && \
                 vendor/bin/phpunit -c phpunit.xml.dist "$@"
-            ' sh "${EXTRA_ARGS[@]}"
+            ' sh ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
         ;;
     lint)
         docker run --rm \
@@ -243,7 +244,7 @@ case "${TEST_SUITE}" in
             sleep 1
         done
 
-        # Start TYPO3 web server in Docker (PHP 8.4 with MySQL extensions + native lazy objects)
+        # Start TYPO3 using the selected PHP runtime with MySQL extensions.
         echo "Starting TYPO3 web server..."
         docker run --rm -d \
             --name "${RUN_ID}-web" \
@@ -252,7 +253,7 @@ case "${TEST_SUITE}" in
             -v "${ROOT_DIR}:/app" \
             -w /app \
             -e "TYPO3_CONTEXT=Development" \
-            "chialab/php:8.4" \
+            "chialab/php:${PHP_VERSION}" \
             bash -c 'set -e && rm -rf var/cache var/log && composer install --no-interaction --prefer-dist --no-scripts -q 2>&1 || composer update --no-interaction --prefer-dist --no-scripts -q 2>&1 && mkdir -p public && vendor/bin/typo3 setup --driver=mysqli --host=db --port=3306 --dbname=typo3 --username=root --password=root --admin-username=admin --admin-user-password=Admin123! --admin-email=admin@example.com --project-name=mcp-server-e2e --server-type=other --no-interaction --force && php -r '"'"'$s=include"config/system/settings.php";$s["SYS"]["trustedHostsPattern"]=".*";$s["SYS"]["devIPmask"]="*";file_put_contents("config/system/settings.php","<?php\nreturn ".var_export($s,true).";\n");'"'"' && rm -rf var/cache && exec php -S 0.0.0.0:8080 -t public/'
 
         echo "Waiting for TYPO3..."
@@ -285,8 +286,8 @@ case "${TEST_SUITE}" in
             -w /app \
             -e "TYPO3_BASE_URL=http://web:8080" \
             -e "CI=${CI:-}" \
-            "mcr.microsoft.com/playwright:v1.52.0-noble" \
-            /bin/bash -c "npm ci 2>/dev/null && npx playwright test ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}"
+            "${PLAYWRIGHT_IMAGE}" \
+            /bin/bash -c 'npm ci && npx playwright test "$@"' bash ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
         ;;
     *)
         echo "Unknown test suite: ${TEST_SUITE}" >&2

@@ -26,8 +26,12 @@ parameters:
         analyse:
             # Declaration-only stub, scanned below rather than analysed.
             - Build/PHPStan
+            # Separate complete package: its own PHP 8.1–8.5 analysis/test matrix.
+            - Build/Tooling/rule-doc-generator-contracts
         analyseAndScan:
             - Build/node_modules (?)
+            - Build/Tooling/rule-doc-generator-contracts/vendor (?)
+            - Build/Tooling/rule-doc-generator-contracts/var (?)
     scanFiles:
         # The optional paywall package cannot be installed in this dependency
         # tree; keep its conditional adapter type-checked against the exact

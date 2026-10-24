@@ -30,7 +30,12 @@ The repository installs a throw-away TYPO3 (SQLite) into ``public/`` and
 
 CI (``.github/workflows/tests.yml``) runs the documentation render, unit
 tests with coverage, the protocol smoke matrix, functional tests on PHP 8.4
-and 8.5, PHPStan, PHP CS Fixer and Rector on every push.
+and 8.5, PHPStan, PHP CS Fixer, Rector and a cold Fractor check on every push.
+Full dependency audits fail on advisories or abandoned packages. Fractor uses
+the complete, maintained RuleDocGenerator 11.2.0 compatibility package under
+:file:`Build/Tooling/rule-doc-generator-contracts`, including its MIT license.
+Its own lint, coding standards, PHPStan, Rector and 18 API/behavior tests run
+on PHP 8.1 through 8.5. It is development-only and adds no application dependency.
 
 .. _developer-layout:
 
