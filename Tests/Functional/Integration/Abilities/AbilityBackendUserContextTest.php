@@ -18,6 +18,7 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\UserAspect;
 use TYPO3\CMS\Core\Context\WorkspaceAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Error\ErrorHandler;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -81,6 +82,29 @@ final class AbilityBackendUserContextTest extends FunctionalTestCase
         self::assertInstanceOf(WorkspaceAspect::class, $workspaceAspect);
         self::assertSame(10, $workspaceAspect->getId());
         self::assertSame(10, $backendUser->workspace);
+    }
+
+    #[Test]
+    public function malformedStoredPreferencesKeepDefaultsWithoutPersistingChanges(): void
+    {
+        $storedPreferences = 'not-a-serialized-array';
+        $this->createBackendUser(2, uc: $storedPreferences);
+        $errorHandler = new ErrorHandler(E_WARNING);
+        $errorHandler->setExceptionalErrors(E_WARNING);
+        set_error_handler($errorHandler->handleError(...), E_WARNING);
+
+        try {
+            self::assertSame(0, $this->backendUserContext->initializeFromUserId(2));
+            $backendUser = $GLOBALS['BE_USER'];
+            self::assertInstanceOf(BackendUserAuthentication::class, $backendUser);
+            self::assertSame($backendUser->uc_default['titleLen'], $backendUser->uc['titleLen']);
+            self::assertSame(
+                $storedPreferences,
+                $this->connectionPool->getConnectionForTable('be_users')->fetchOne('SELECT uc FROM be_users WHERE uid = 2'),
+            );
+        } finally {
+            restore_error_handler();
+        }
     }
 
     #[Test]

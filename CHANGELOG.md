@@ -7,6 +7,10 @@ upstream and adds the items below.
 The project follows [Keep a Changelog](https://keepachangelog.com/) and
 SemVer once it leaves the experimental surface.
 
+## 0.9.8 — 2026-10-24
+
+- Update Rector to 2.7.0, Fractor to 1.1.0 and PHPStan to 2.3.1; retain TYPO3 error-handler coverage for malformed user preferences and remove the unreachable LLM retry fallback. Run browser tooling on Node 26.12.1 with npm 12.2.1. Pin the official documentation renderer to 0.47.3 and its verified image digest.
+
 ## 0.9.7 - 2026-10-23
 
 ### Fixed

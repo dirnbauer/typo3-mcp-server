@@ -226,7 +226,7 @@ class OpenRouterClient implements LlmClientInterface
             }
         }
 
-        throw $lastException ?? new \RuntimeException('OpenRouter API request failed after retries');
+        throw $lastException;
     }
 
     /**

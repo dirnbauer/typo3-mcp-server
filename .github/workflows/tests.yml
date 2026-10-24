@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Render TYPO3 documentation
-        run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log
+        run: docker run --rm --pull always -v "$PWD:/project" ghcr.io/typo3-documentation/render-guides:0.47.3@sha256:6fbedbf1b4d546cc69e01b1fa1b4f6c0071c0c4a619f0171dde57596f0977834 --no-progress --fail-on-log
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -121,10 +121,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '24'
+          node-version: '26.12.1'
           cache: 'npm'
           cache-dependency-path: Build/package-lock.json
 
+      - name: Pin npm 12.2.1
+        run: npm install --global npm@12.2.1
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 

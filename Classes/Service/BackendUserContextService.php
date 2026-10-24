@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\UserAspect;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Error\Exception;
 use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -193,6 +194,7 @@ final readonly class BackendUserContextService
         try {
             // TYPO3 stores backend-user UC as serialized arrays; object hydration is disabled.
             // nosemgrep: php.lang.security.unserialize-use.unserialize-use
+            /** @throws Exception Malformed input warnings are converted by TYPO3's error handler. */
             $decoded = unserialize($storedUc, ['allowed_classes' => false]);
         } catch (\Throwable) {
             return [];

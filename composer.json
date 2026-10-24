@@ -27,7 +27,7 @@
 		"phpstan/phpstan": "^2.2.14",
 		"phpstan/phpstan-deprecation-rules": "^2.0",
 		"phpstan/phpstan-phpunit": "^2.0",
-		"rector/rector": "2.6.7",
+		"rector/rector": "2.7.0",
 		"saschaegerer/phpstan-typo3": "^3.0",
 		"ssch/typo3-rector": "^3.0",
 		"typo3/cms-extbase": "^14.3.6",
@@ -64,7 +64,7 @@
 	"extra": {
 		"typo3/cms": {
 			"extension-key": "mcp_server",
-			"version": "0.9.7",
+			"version": "0.9.8",
 			"Package": {
 				"providesPackages": {}
 			}
@@ -100,7 +100,7 @@
 			"php Build/check-llm-results.php --min-pass=3"
 		],
 		"docs:check": [
-			"docker run --rm --pull always -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --no-progress --fail-on-log"
+			"docker run --rm --pull always -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:0.47.3@sha256:6fbedbf1b4d546cc69e01b1fa1b4f6c0071c0c4a619f0171dde57596f0977834 --no-progress --fail-on-log"
 		],
 		"phpstan": [
 			"phpstan analyse --no-progress --memory-limit=1G"

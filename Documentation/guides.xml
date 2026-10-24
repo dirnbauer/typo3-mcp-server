@@ -16,7 +16,7 @@
                interlink-shortcode="hn/typo3-mcp-server"/>
     <project title="MCP Server"
              version="0.9"
-             release="0.9.7"
+             release="0.9.8"
              copyright="2026 by the MCP Server contributors"/>
     <inventory id="t3coreapi"
                url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>
